@@ -1,0 +1,143 @@
+# Carbonatation d'une pate de ciment
+# (Mickael Thiery, mai 2005)
+
+Geometry
+1 plan
+
+Mesh
+3 0 0 0.4
+0.001
+1 100
+1 1
+
+Material
+Model = m41
+porosite = 0.384
+K_henry = 1.
+K_ca = 3.890451449942805e-9
+K_co3 = 4.570881896148751e3
+K_eau = 1.e-14
+k_int = 5e-19
+mu_l = 1.e-3
+D_co2 = 0.5e-3
+V_h2o = 18.e-3
+V_oh = 18.e-3
+V_h = 0
+V_ca = 0
+V_h2co3 = 50.e-3
+V_hco3 = 50.e-3
+V_co3 = 50.e-3
+A_1 = 150
+K_1 = 2.187761623949552e-8
+A_2 = 1e-2
+K_2 = 6.456542290346550e-6
+C_2 = 0.14e6
+N_CaOH2 = 6.1
+n_csh0  = 2.4
+porositef = 0.4
+dv_caoh2 = 0.004
+dv_csh = 0.039
+T = 1.8e-4
+D_ca = 8e-8
+D_oh = 100e-8
+D_h = 93.1e-8
+D_h2co3 = 7.2e-8
+D_hco3 = 11.8e-8
+D_co3 = 9.55e-8
+Curves = ciment
+
+Fields
+5
+Type = affine Value = 2.884031503126606e-15 Gradient = 0. Point = 0.
+Type = affine Value = 2.345989849188018e-2  Gradient = 0. Point = 0.
+Type = affine Value = -5.8e7 		  Gradient = 0. Point = 0.
+Type = affine Value = 3.092616927277036e-9  Gradient = 0. Point = 0.
+Type = affine Value = 0.016 		  Gradient = 0. Point = 0.
+
+Initialization
+4
+Region = 2 Unknown = c_co2  Field = 1
+Region = 2 Unknown = c_oh   Field = 2
+Region = 2 Unknown = p_l    Field = 3
+Region = 2 Unknown = c_hco3 Field = 4
+
+Functions
+0
+
+Boundary Conditions
+2
+Region = 1 Unknown = c_co2 Field = 5 Function = 0
+Region = 1 Unknown = p_l   Field = 3 Function = 0
+
+Loads
+0
+
+Points
+0
+
+Dates
+51
+0.
+ 2.1577444e+04
+   2.3717460e+04
+   2.6069720e+04
+   2.8655273e+04
+   3.1497257e+04
+   3.4621104e+04
+   3.8054769e+04
+   4.1828980e+04
+   4.5977511e+04
+   5.0537486e+04
+   5.5549713e+04
+   6.1059044e+04
+   6.7114782e+04
+   7.3771118e+04
+   8.1087618e+04
+   8.9129758e+04
+   9.7969504e+04
+   1.0768596e+05
+   1.1836608e+05
+   1.3010544e+05
+   1.4300909e+05
+   1.5719250e+05
+   1.7278260e+05
+   1.8991890e+05
+   2.0875475e+05
+   2.2945871e+05
+   2.5221605e+05
+   2.7723044e+05
+   3.0472571e+05
+   3.3494791e+05
+   3.6816751e+05
+   4.0468177e+05
+   4.4481745e+05
+   4.8893373e+05
+   5.3742539e+05
+   5.9072638e+05
+   6.4931367e+05
+   7.1371155e+05
+   7.8449632e+05
+   8.6230140e+05
+   9.4782306e+05
+   1.0418266e+06
+   1.1451533e+06
+   1.2587278e+06
+   1.3835664e+06
+   1.3835664e+06
+   1.8228461e+06
+   2.4015963e+06
+   3.1640985e+06
+   4.1686938e+06 
+   
+Objective Variations
+c_co2 = 1.e-3 
+c_oh = 1.e-3 
+p_l = 1.e4 
+c_caco3 = 1.e-3 
+c_hco3 = 1.e-3
+
+Iterative Process
+Iter = 100 Tol = 1.e-6 Recom = 5 
+
+Time Steps
+Dtini = 1.e-6 Dtmax = 36000

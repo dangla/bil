@@ -1,0 +1,22 @@
+Instructions for compatibility of versions
+------------------------------------------
+
+Models under bil-1.x still work under bil-2.0 without major recoding providing two small changes as described in the following.
+
+1. Substitute the 2 code lines
+
+    #include "../defs.h"
+    #include "../lib.h"
+
+    with
+
+    #include "model.h"
+
+2. Add 2 more code lines of the form
+
+    #define MODELINDEX  99
+    #include "OldMethods.h"
+
+    Replace 99 by the actual index used for the model.
+
+See examples in this directory.

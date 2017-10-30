@@ -1,0 +1,58 @@
+Geometry
+2 plan
+Mesh
+puits.msh
+Material
+Modele = 60
+gravite = 0       # gravity
+rho_s = 0         # masse density of the dry material
+young = 0.8e9     # Young's modulus
+poisson = 0.25    # Poisson's ratio
+phi = 0.3         # porosity
+p_co20 = 1.e5     # initial pressure of CO2
+k_int = 1.e-16    # intrinsic permeability
+mu_co2 = 1.e-3    # viscosity of CO2
+b = 1             # Biot's coefficient
+N = 0             # compressibility of pores
+sig0_11 = 0       # initial stress 11
+sig0_22 = 0       # initial stress 22
+sig0_33 = 0       # initial stress 33
+omega = 1.e8      # solid surface per unit volume
+a0 = 1.e6         # pressure at Gamma_max/2
+Gamma_max = 2.e-7 # maximum concentration (for p = inf)
+c_eps = 63.e6     # derivative d_omega/d_eps
+c_phi = -63.e6    # derivative d_omega/d_phi
+Fields
+2
+Type = affine Valeur = 1.e5 Gradient = 0 Point = 0
+Type = affine Valeur = 1.e6 Gradient = 0 Point = 0
+Initialization
+1
+Region = 2 Inconnue = p_co2 Champ = 1 Fonction = 0
+Functions
+0
+Boundary Conditions
+3
+Region = 10 Inconnue = u_2 Champ = 0 Fonction = 0
+Region = 40 Inconnue = u_1 Champ = 0 Fonction = 0
+Region = 50 Inconnue = p_co2 Champ = 2 Fonction = 0
+Loads
+1
+Region = 50 Equation = meca_1 Type = pression Champ = 2 Fonction = 0
+Points
+1
+1.005e-1 0
+Dates
+3
+0 3600 86400 #864000
+Objective Variations
+u_1 = 1.e-4
+u_2 = 1.e-4
+p_co2 = 1.e5
+Iterative Process
+Iterations = 10 Tolerance = 1.e-4 Recommencement = 0
+
+
+
+Time Steps
+Dtini = 1. Dtmax = 1.e4

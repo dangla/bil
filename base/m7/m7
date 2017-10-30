@@ -1,0 +1,48 @@
+# Consolidation d'un couche de sol
+#
+DIME
+1 plan
+MAIL
+4 -1 -1 0 0
+0.01
+1 100 1
+1 1 1
+MATE
+7
+gravite = 0
+rho_s = 0
+young = 0.833333
+poisson = 0.25
+phi = 0.3
+rho_l = 1
+p_l0 = 0
+k_int = 1
+mu_l = 1
+p_g = 0
+b = 1
+N = 0
+Courbes = sat
+CHMP
+1
+V = -1 G = 0 P = 0
+INIT
+0
+FONC
+0
+COND
+2
+Reg = 1 Inc = u_1 Champ = 0 Fonction = 0
+Reg = 3 Inc = p_l Champ = 0 Fonction = 0
+CHAR
+1
+Reg = 3 Equation = meca_1 Type = force Champ = 1 Fonction = 0
+POIN
+1
+-0.005
+TEMP
+3
+0 0.01 0.1 # 0.25 0.5 1. 2.5
+OBJE
+u_1 = 1. p_l = 1.
+ALGO
+Iter = 2 Tol = 1.e-6 Rec = 0 Dtini = 1.e-1 Dtmax = 1. 

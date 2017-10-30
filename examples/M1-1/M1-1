@@ -1,0 +1,84 @@
+# Imbibition of an engineering barrier
+#
+
+Geometry
+1 axis
+
+
+Mesh
+shaft.m1d
+#4
+#0.425 1.225 10. 10.
+#0.032
+#25 75 1
+#1 2 2
+
+
+Material
+Model = M1
+gravite = 0.
+phi = 0.3
+rho_l = 1.e3
+k_int = 1.e-20
+mu_l = 1.e-3
+p_g = 1.e5
+Courbes_log = bo p_c = Range{x0 = 1.e-2, x1 = 1.e8 , n = 201} S_l = Van-Genuchten(1){a = 1.5e6, m = 0.06} kl_ = Van-Genuchten(1){a = 3.e6, m = 0.5}
+
+Material
+Model = M1
+gravite = 0.
+phi     = 0.05
+rho_l   = 1.e3
+k_int   = 1.e-19
+mu_l    = 1.e-3
+p_g     = 1.e5
+Courbes_log = roche p_c = Range{x0 = 1.e-2, x1 = 1.e8 , n = 201} S_l = Van-Genuchten(1){a = 1.e7, m = 0.4117} k_l = Van-Genuchten(1){a = 1.e7, m = 1.}
+
+
+Fields
+2
+Type = affine Val = -7.611930e+07 Grad = 0. Point = 0.
+Type = affine Val = 4.905000e+06  Grad = 0. Point = 0.
+
+
+Initialization
+2
+Region = 1 Unk = p_l Field = 1
+Region = 2 Unk = p_l Field = 2
+
+
+Functions
+0
+
+
+Boundary Conditions
+1
+Region = 3 Unk = p_l Field = 2 Function = 0
+
+
+Loads
+0
+
+
+Points
+2 0.825 1.225
+
+
+Dates
+11 0. 3.1536e7 6.3072e7 1.26144e8 1.89216e8 2.52288e8
+      3.1536e8 6.3072e8 1.26144e9 1.5768e9  3.1536e9
+     
+      
+Objective Variations
+p_l = 1.e5
+
+
+Iterative Process
+Iter = 20 
+Tol = 1.e-4 
+Recom = 0
+
+
+Time Steps
+Dtini = 1.e6 
+Dtmax = 3.1536e7 

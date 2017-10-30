@@ -1,0 +1,56 @@
+Geometry
+1 sphe
+Mesh
+4 0 0 1 1
+1
+1 1 1 
+1 1 1 
+Material
+Model = Niko_1
+gravite = 0       # gravity
+rho_s = 0         # masse density of the dry material
+K_m = 1.41e9#1.2e+09 #3.62e8 #3e8    # Compression modulus of the non fractured material(K_m > young/(3-6*poisson))
+phi0_1 = 0.032#0.0131 # Macroporosity
+p0_co2 = 1e-4 #3e6        # initial pressure of CO2
+k_int = 262*1e-15    # intrinsic permeability
+mu_co2 = 1.7857e-05 # dynamic viscosity of CO2
+sig0_11 = -8e6       # initial stress 11
+sig0_22 = -8e6      # initial stress 22
+sig0_33 = -8e6      # initial stress 33
+young =  1.12e+09  #1.3e9 #0.8e8  #2.713e9     # Young's modulus of coal
+poisson = 0.26 #0.339    # Poisson's ratio of coal
+Courbes = Sulcis_0.45
+Fields
+4
+Valeur = 1e+06 Grad = 0 Point = 0
+Valeur = 1.5e+07 Grad = 0 Point = 0
+Valeur = -8e+06 Grad = 0 Point = 0
+Valeur = 1e-4 Grad = 0  Point = 0 
+Initialization
+1
+Reg = 1 Inc = p_co2 Champ = 4
+Functions
+1
+N = 2 F(0) = 0 F(86400) = 17
+Boundary Conditions
+2
+Reg = 2 Inc = p_co2 Champ = 1 Fonc = 1 
+Reg = 1 Inc = u_1 Champ = 0 Fonc = 0
+Loads
+1
+Reg = 3 Equ = meca_1 Type = force Champ = 3 Fonc = 0
+Points
+2
+0.5 1 
+Dates
+3
+0 3600 86400
+Objective Variations
+p_co2 = 1000
+u_1 = 0.0001
+Iterative Process
+Iter = 10 Tol = 0.0001 Recom = 0 
+
+
+Time Steps
+Dtini = 1 Dtmax = 1e3

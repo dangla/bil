@@ -1,0 +1,50 @@
+# Electro-diffusion de Na+ et Cl- dans un beton
+Geometry
+1 plan
+Mesh
+4 0 0 0.1 0.1
+0.001
+1 100 1
+1 1 1
+Material
+11
+porosite = 0.3
+permittivite = 	8.85e-11
+D_c = 0.6e-11
+D_a = 1.e-11
+RT = 2.43e3
+F = 9.648e4
+valence = 1
+Fields
+1
+Value = 10 Gradient = 0. Point = 0.
+Initialization
+0
+Functions
+0
+Boundary Conditions
+6
+Reg = 1 Inc = c_c Champ = 1 Fonction = 0
+Reg = 1 Inc = c_a Champ = 1 Fonction = 0
+Reg = 1 Inc = psi Champ = 0 Fonction = 0
+Reg = 3 Inc = c_c Champ = 0 Fonction = 0
+Reg = 3 Inc = c_a Champ = 0 Fonction = 0
+Reg = 3 Inc = psi Champ = 0 Fonction = 0
+Loads
+0
+Points
+0
+Dates
+3
+0 36000 86400
+Objective Variations
+c_c = 1. 
+c_a = 1. 
+psi = 1.
+Iterative Process
+Iter = 20 Tol = 1.e-4 Rec = 0 
+
+
+
+Time Steps
+Dtini = 1 Dtmax = 3600 

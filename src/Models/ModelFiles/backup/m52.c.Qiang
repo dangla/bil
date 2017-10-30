@@ -1,0 +1,1277 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <math.h>
+#include "../defs.h"
+#include "../lib.h"
+
+
+#define TITLE "Freezing and thawing of concrete with salt"
+/* Macros */
+#define NEQ      (3)
+#define NVI      (21)
+#define NVE      (4)
+
+#define E_h2o    (0)
+#define E_salt   (1)
+#define E_the    (2)
+
+
+#define I_p_l    (0)
+#define I_c_s    (1)
+#define I_tem    (2)
+
+
+#define P_l(n)   (u[(n)][I_p_l])
+#define C_s(n)   (u[(n)][I_c_s])
+#define TEM(n)   (u[(n)][I_tem])
+
+
+#define P_l1(n)  (u_1[(n)][I_p_l])
+#define C_s1(n)  (u_1[(n)][I_c_s])
+#define TEM_1(n) (u_1[(n)][I_tem])
+
+
+#define P_ln(n)  (u_n[(n)][I_p_l])
+#define C_sn(n)  (u_n[(n)][I_c_s])
+#define TEM_n(n) (u_n[(n)][I_tem])
+
+#define M_H2O_l(n)  (f[(n)])
+#define M_H2O_i(n)  (f[(n+2)])
+#define M_SALT(n)   (f[(n+4)])
+#define S(n)        (f[(n+6)])
+#define S_H2O_l(n)  (f[(n+8)])
+#define S_H2O_i(n)  (f[(n+10)])
+#define S_SALT(n)   (f[(n+12)])
+#define Rho(n)      (f[(n+14)])
+#define Eps(n)      (f[(n+16)])
+#define W_H2O       (f[(18)])
+#define W_SALT      (f[(19)])
+#define Q           (f[(20)])
+
+#define M_H2O_l1(n)  (f_1[(n)])
+#define M_H2O_i1(n)  (f_1[(n+2)])
+#define M_SALT1(n)   (f_1[(n+4)])
+#define S_1(n)       (f_1[(n+6)])
+#define S_H2O_l1(n)  (f_1[(n+8)])
+#define S_H2O_i1(n)  (f_1[(n+10)])
+#define S_SALT1(n)   (f_1[(n+12)])
+#define Rho1(n)      (f_1[(n+14)])
+#define Eps1(n)      (f_1[(n+16)])
+#define W_H2O1       (f_1[(18)])
+#define W_SALT1      (f_1[(19)])
+#define Q_1          (f_1[(20)])
+
+#define M_H2O_ln(n)  (f_n[(n)])
+#define M_H2O_in(n)  (f_n[(n+2)])
+#define M_SALTn(n)   (f_n[(n+4)])
+#define S_n(n)       (f_n[(n+6)])
+#define S_H2O_ln(n)  (f_n[(n+8)])
+#define S_H2O_in(n)  (f_n[(n+10)])
+#define S_SALTn(n)   (f_n[(n+12)])
+#define Rhon(n)      (f_n[(n+14)])
+#define Epsn(n)      (f_n[(n+16)])
+#define W_H2On       (f_n[(18)])
+#define W_SALTn      (f_n[(19)])
+#define Q_n          (f_n[(20)])
+
+#define KD_H2O      (va[(0)])
+#define KD_salt     (va[(1)])
+#define KF_salt     (va[(2)])
+#define KTH         (va[(3)])
+
+
+
+#define  v_salt  (V_salt/M_salt - V_h2o/M_h2o)
+
+/* Fonctions */
+static int    pm(char *s) ;
+static double activity(double,double, mate_t*) ;
+static double dactivitydc_s(double,double,mate_t*) ;
+static double dactivitydtem(double,double,mate_t*) ;
+static double tortuosity(double,mate_t*) ;
+/* Parametres */
+static double phi,k_int,mu_l,R,lam_s,lam_l,lam_i,C_s,C_l,C_i,S_m,T_m,M_h2o,M_salt,V_h2o,V_salt,rho_h2o_i0,d0_salt,k_s,g_s,K_i,K_l,alpha_i,alpha_l,alpha_s,p_m,rho_h2o_l0 ;
+
+
+
+int pm(char *s)
+{
+  if(strcmp(s,"phi") == 0) return (0) ;
+  else if(strcmp(s,"rho_h2o_i") == 0) return (1) ;
+  else if(strcmp(s,"k_int") == 0) return (2) ;
+  else if(strcmp(s,"mu_l") == 0) return (3) ;
+  else if(strcmp(s,"T_m") == 0) return (4) ;
+  else if(strcmp(s,"M_h2o") == 0) return (5) ;
+  else if(strcmp(s,"M_salt") == 0) return (6) ;
+  else if(strcmp(s,"V_salt") == 0) return (7) ;
+  else if(strcmp(s,"V_h2o") == 0) return (8) ;
+  else if(strcmp(s,"R") == 0) return (9) ;
+  else if(strcmp(s,"lam_s") == 0) return (10) ;
+  else if(strcmp(s,"lam_l") == 0) return (11) ;
+  else if(strcmp(s,"lam_i") == 0) return (12) ;
+  else if(strcmp(s,"C_s") == 0) return (13) ;
+  else if(strcmp(s,"C_l") == 0) return (14) ;
+  else if(strcmp(s,"C_i") == 0) return (15) ;
+  else if(strcmp(s,"S_m") == 0) return (16) ;
+  else if(strcmp(s,"D_salt") == 0) return (17) ;
+  else if(strcmp(s,"rho_h2o_l") == 0) return (18) ;
+  else if(strcmp(s,"K_i") == 0) return (19) ;
+  else if(strcmp(s,"K_l") == 0) return (20) ;
+  else if(strcmp(s,"k_s") == 0) return (21) ;
+  else if(strcmp(s,"g_s") == 0) return (22) ;
+  else if(strcmp(s,"alpha_i") == 0) return (23) ;
+  else if(strcmp(s,"alpha_l") == 0) return (24) ;
+  else if(strcmp(s,"alpha_s") == 0) return (25) ;
+  else if(strcmp(s,"p_m") == 0) return (26) ;
+  else if(strcmp(s,"courbes") == 0) return (27) ;
+  else
+    { printf("donnee \"%s\" non connue (pm52)\n",s) ; exit(0) ; }
+}
+
+
+int dm52(int dim,mate_t *mat,FILE *ficd)
+/* Lecture des donnees materiaux dans le fichier ficd */
+{
+  int n_donnees = 28 ;
+
+  mat->neq    = NEQ ;
+  strcpy(mat->eqn[E_h2o],"water") ;
+  strcpy(mat->eqn[E_salt],"salt") ;
+  strcpy(mat->eqn[E_the],"the") ;
+
+  strcpy(mat->inc[I_p_l],"p_l") ;
+  strcpy(mat->inc[I_c_s],"c_s") ;
+  strcpy(mat->inc[I_tem],"tem") ;
+
+  dmat(mat,ficd,pm,n_donnees) ;
+  return(mat->n) ;
+}
+
+
+int qm52(int dim,FILE *ficd)
+/* Saisie des donnees materiaux */
+{
+  
+  printf(TITLE"\n") ;
+  
+  if(!ficd) return(NEQ) ;
+  
+  return(NEQ) ;
+}
+
+
+void tb52(elem_t *el,inte_t *fi,int *n_fi,int dim)
+{
+  el->n_vi = NVI ;
+  el->n_ve = NVE ;
+}
+
+
+void ch52(double **x,double **u_1,double **u_n,double *f_1,double *f_n,double *va,double *r,elem_t el,int dim,geom_t geom,double dt,double t,char_t cg)
+/* Residu du aux chargements (r) */
+{
+#define R(n,i)    (r[(n)*NEQ+(i)])
+  int    i ;
+  
+  chsurf(x,r,dim,geom,dt,t,cg,el,el.fi) ;
+
+  for(i=0;i<el.nn*NEQ;i++) r[i] = -r[i] ;
+
+  if(isdigit(cg.eqn[0]) && (atoi(cg.eqn) - 1) == E_the)
+  {
+    R(0,E_the) /= TEM_n(0) ;
+  }
+    else if(!strcmp(cg.eqn,el.mat->eqn[E_the]))
+  {
+    R(0,E_the) /= TEM_n(0) ;
+  }
+#undef R
+}
+
+void in52(double **x,double **u,double *f,double *va,elem_t el,int dim,geom_t geom)
+/* Initialise les variables du systeme (f,va) */ 
+{
+  double s_l,s_i,p_l,p_i,p_c,c_s,tem;
+  double rho_h2o_l,rho_h2o_i,rho_l,rho_salt ;
+  double lna ;
+  double s_h2o_l,s_h2o_i,s_salt ;
+  double k_l,tau_l,lam_h2o ;
+  double grd_p_l,grd_c_s,grd_tem ;
+  double dx ;
+  int    i ;
+  double deux = 2. ;
+
+  if(el.dim < dim) return ;
+
+  /*Donnees */
+  phi     = el.mat->pr[pm("phi")] ;
+  rho_h2o_i0  = el.mat->pr[pm("rho_h2o_i")] ;
+  rho_h2o_l0  = el.mat->pr[pm("rho_h2o_l")] ;
+  k_int   = el.mat->pr[pm("k_int")] ;
+  mu_l    = el.mat->pr[pm("mu_l")] ;
+  lam_s   = el.mat->pr[pm("lam_s")] ;
+  lam_l   = el.mat->pr[pm("lam_l")] ;
+  lam_i   = el.mat->pr[pm("lam_i")] ;
+  C_s     = el.mat->pr[pm("C_s")] ;
+  C_l     = el.mat->pr[pm("C_l")] ;
+  C_i     = el.mat->pr[pm("C_i")] ;
+  S_m     = el.mat->pr[pm("S_m")] ;
+  T_m     = el.mat->pr[pm("T_m")] ;
+  M_h2o   = el.mat->pr[pm("M_h2o")] ;
+  M_salt  = el.mat->pr[pm("M_salt")] ;
+  V_h2o   = el.mat->pr[pm("V_h2o")] ;
+  V_salt  = el.mat->pr[pm("V_salt")] ;
+  d0_salt = el.mat->pr[pm("D_salt")] ;
+  R       = el.mat->pr[pm("R")] ;
+  k_s     = el.mat->pr[pm("k_s")] ;
+  g_s     = el.mat->pr[pm("g_s")] ;
+  K_i     = el.mat->pr[pm("K_i")] ;
+  K_l     = el.mat->pr[pm("K_l")] ;
+  alpha_i = el.mat->pr[pm("alpha_i")] ;
+  alpha_l = el.mat->pr[pm("alpha_l")] ;
+  alpha_s = el.mat->pr[pm("alpha_s")] ;
+  p_m     = el.mat->pr[pm("p_m")] ;
+  
+  /* masses of h2o, salt and entropies */
+  for(i=0;i<2;i++)
+  {
+    p_l = P_l(i) ;
+    tem = TEM(i) ;
+    /* c_s = (C_s(i)>5250)? 5250:C_s(i); */
+     c_s =C_s(i);
+     lna = -2*c_s*V_h2o/(1-c_s*V_salt);/* activity(c_s,tem,el.mat) ; */
+    /*pressure of ice crystallization */
+    p_i = p_m + rho_h2o_i0*((p_l - p_m)/rho_h2o_l0 + S_m/M_h2o*(T_m - tem) + R*tem/M_h2o*lna) ;
+    /* capirally pressure */
+    p_c = p_i - p_l ;
+    /*saturation degree  */
+    s_l = p_c>0?courbe(p_c,el.mat->cb[0]):1 ;
+    s_i = 1. - s_l ;
+
+    /* mass densities */
+    rho_h2o_i  = rho_h2o_i0*(1. + (p_i - p_m)/K_i - alpha_i*(tem - T_m));
+    rho_salt   = M_salt*c_s ;
+    rho_l      = rho_h2o_l0*(1. + (p_l - p_m)/K_l - alpha_l*(tem - T_m) - v_salt*rho_salt) ; 
+    rho_h2o_l  = rho_l - rho_salt ;
+
+    M_H2O_l(i) = phi*s_l*rho_h2o_l ;
+    M_H2O_i(i) = phi*s_i*rho_h2o_i ;
+    M_SALT(i)  = phi*s_l*rho_salt ;
+    S_H2O_l(i) = C_l*log(tem/T_m) - alpha_l/rho_h2o_i0*(p_l - p_m) ;
+    S_H2O_i(i) = C_i*log(tem/T_m) - S_m/M_h2o - alpha_i/rho_h2o_i0*(p_i - p_m)  ;
+    S_SALT(i)  = S_H2O_l(i) ;
+    S(i)       = C_s*log(tem/T_m)
+               + M_H2O_l(i)*S_H2O_l(i)
+               + M_H2O_i(i)*S_H2O_i(i)
+               + M_SALT(i)*S_SALT(i) ;
+ 
+  }
+  /* coefficient de transfert */
+  p_l = (P_l(0)+P_l(1))/deux ;
+  tem = (TEM(0)+TEM(1))/deux ;  
+  c_s = (C_s(0)+C_s(1))/deux ;
+  /* c_s  = (c_s1>5250)? 5250:c_s1; */
+  lna   =  -2*c_s*V_h2o/(1-c_s*V_salt);/* activity(c_s,tem,el.mat) ; */
+
+  p_i = p_m + rho_h2o_i0*((p_l - p_m)/rho_h2o_l0 + S_m/M_h2o*(T_m - tem) + R*tem/M_h2o*lna) ;
+  p_c = p_i - p_l ;
+  s_l = (p_c>0)?courbe(p_c,el.mat->cb[0]):1 ;
+  s_i = 1. - s_l ;
+
+  /* mass densities */
+  rho_salt  = M_salt*c_s ;
+  rho_l     = rho_h2o_l0*(1. + (p_l - p_m)/K_l - alpha_l*(tem - T_m) - v_salt*rho_salt) ;
+  rho_h2o_l = rho_l - rho_salt ;
+
+  s_h2o_l = (S_H2O_l(0) + S_H2O_l(1))/deux ;
+  s_h2o_i = (S_H2O_i(0) + S_H2O_i(1))/deux ;
+  s_salt  = (S_SALT(0) + S_SALT(1))/deux ;
+  
+  k_l   = p_c>0?k_int/mu_l*courbe(p_c,el.mat->cb[1]):k_int/mu_l ; /* Darcy liquide */
+  tau_l = tortuosity(s_l,el.mat) ;
+  KD_salt = k_l;
+  KD_H2O  = k_l;
+  KF_salt = phi*s_l*tau_l*d0_salt ; /* Fick */
+
+  lam_h2o = s_l*lam_l + s_i*lam_i ;
+  KTH     = lam_s*(1 - 3*phi*(lam_s - lam_h2o)/(3*lam_s - (1 - phi)*(lam_s - lam_h2o))) ;
+  /* flux */
+  dx        = x[1][0] - x[0][0] ;
+  
+  grd_p_l   = (P_l(1) - P_l(0))/dx ;
+  grd_c_s   = (C_s(1) - C_s(0))/dx ;
+  grd_tem   = (TEM(1) - TEM(0))/dx ;
+
+  W_H2O  = - rho_h2o_l*KD_H2O*grd_p_l + M_salt*KF_salt*grd_c_s ;
+  W_SALT = - rho_salt*KD_salt*grd_p_l - M_salt*KF_salt*grd_c_s ;
+  Q      = - KTH/tem*grd_tem + s_h2o_l*W_H2O + s_salt*W_SALT ;
+}
+
+int ex52(double **x,double **u,double *f,double *va,elem_t el,int dim,geom_t geom,double t) 
+/* Termes explicites (va)  */
+{
+  double s_l,s_i,p_l,c_s,tem,p_i,p_c ;
+  double rho_h2o_l,rho_l,rho_salt ;
+  double lna ;
+  double s_h2o_l,s_h2o_i,s_salt ;
+  double k_l,tau_l,lam_h2o ;
+  double deux = 2. ;
+
+  if(el.dim < dim) return(0) ;
+
+  /*
+    Donnees
+  */
+  phi     = el.mat->pr[pm("phi")] ;
+  rho_h2o_i0  = el.mat->pr[pm("rho_h2o_i")] ;
+  rho_h2o_l0  = el.mat->pr[pm("rho_h2o_l")] ;
+  k_int   = el.mat->pr[pm("k_int")] ;
+  mu_l    = el.mat->pr[pm("mu_l")] ;
+  lam_s   = el.mat->pr[pm("lam_s")] ;
+  lam_l   = el.mat->pr[pm("lam_l")] ;
+  lam_i   = el.mat->pr[pm("lam_i")] ;
+  C_s     = el.mat->pr[pm("C_s")] ;
+  C_l     = el.mat->pr[pm("C_l")] ;
+  C_i     = el.mat->pr[pm("C_i")] ;
+  S_m     = el.mat->pr[pm("S_m")] ;
+  T_m     = el.mat->pr[pm("T_m")] ;
+  M_h2o   = el.mat->pr[pm("M_h2o")] ;
+  M_salt  = el.mat->pr[pm("M_salt")] ;
+  V_h2o   = el.mat->pr[pm("V_h2o")] ;
+  V_salt  = el.mat->pr[pm("V_salt")] ;
+  d0_salt = el.mat->pr[pm("D_salt")] ;
+  R       = el.mat->pr[pm("R")] ;
+  k_s     = el.mat->pr[pm("k_s")] ;
+  g_s     = el.mat->pr[pm("g_s")] ;
+  K_i     = el.mat->pr[pm("K_i")] ;
+  K_l     = el.mat->pr[pm("K_l")] ;
+  alpha_i = el.mat->pr[pm("alpha_i")] ;
+  alpha_l = el.mat->pr[pm("alpha_l")] ;
+  alpha_s = el.mat->pr[pm("alpha_s")] ;
+  p_m     = el.mat->pr[pm("p_m")] ;
+
+  /* coefficient de transfert */
+  p_l = (P_l(0)+P_l(1))/deux ;
+  tem = (TEM(0)+TEM(1))/deux ;  
+  c_s = (C_s(0)+C_s(1))/deux ;
+  /* c_s = (c_s1>5250)?5250:c_s1; */
+
+  lna   =  -2*c_s*V_h2o/(1-c_s*V_salt);/* activity(c_s,tem,el.mat) ; */
+
+  p_i = p_m + rho_h2o_i0*((p_l - p_m)/rho_h2o_l0 + S_m/M_h2o*(T_m - tem) + R*tem/M_h2o*lna) ;
+  p_c   = p_i - p_l;
+
+  s_l   = courbe(p_c,el.mat->cb[0]) ;
+  s_i   = 1. - s_l ;
+
+  /* mass densities */
+  rho_salt = M_salt*c_s ;
+  rho_l    = rho_h2o_l0*(1. + (p_l - p_m)/K_l - alpha_l*(tem - T_m) - v_salt*rho_salt);
+  rho_h2o_l = rho_l - rho_salt ;
+
+  s_h2o_l = (S_H2O_l(0) + S_H2O_l(1))/deux ;
+  s_h2o_i = (S_H2O_i(0) + S_H2O_i(1))/deux ;
+  s_salt  = (S_SALT(0) + S_SALT(1))/deux ;
+  
+  
+  k_l   = p_c>0?k_int/mu_l*courbe(p_c,el.mat->cb[1]):k_int/mu_l ; /* Darcy liquide */
+  tau_l = tortuosity(s_l,el.mat) ;
+
+  KD_H2O  = k_l ;
+  KD_salt = k_l ;
+
+  KF_salt = M_salt*phi*s_l*tau_l*d0_salt ; /* Fick */
+
+  lam_h2o = s_l*lam_l + s_i*lam_i ;
+  KTH     = lam_s*(1 - 3*phi*(lam_s - lam_h2o)/(3*lam_s - (1 - phi)*(lam_s - lam_h2o))) ;
+  return(0) ;
+}
+
+
+int ct52(double **x,double **u_1,double **u_n,double *f_1,double *f_n,double *va,elem_t el,int dim,geom_t geom,double dt,double t)
+/* Les variables donnees par la loi de comportement (f_1) */
+{
+  double s_l,s_i,p_l,c_s,tem,p_i,p_c;
+  double rho_h2o_l,rho_h2o_i,rho_l,rho_salt ;
+  double lna ;
+  double s_h2o_l,s_h2o_i,s_salt ;
+  double grd_p_l,grd_c_s,grd_tem ;
+  double dx ;
+  int    i ;
+  double deux = 2. ;
+
+  if(el.dim < dim) return(0) ;
+
+  /*
+    Donnees
+  */
+  phi     = el.mat->pr[pm("phi")] ;
+  rho_h2o_i0  = el.mat->pr[pm("rho_h2o_i")] ;
+  rho_h2o_l0  = el.mat->pr[pm("rho_h2o_l")] ;
+  k_int   = el.mat->pr[pm("k_int")] ;
+  mu_l    = el.mat->pr[pm("mu_l")] ;
+  lam_s   = el.mat->pr[pm("lam_s")] ;
+  lam_l   = el.mat->pr[pm("lam_l")] ;
+  lam_i   = el.mat->pr[pm("lam_i")] ;
+  C_s     = el.mat->pr[pm("C_s")] ;
+  C_l     = el.mat->pr[pm("C_l")] ;
+  C_i     = el.mat->pr[pm("C_i")] ;
+  S_m     = el.mat->pr[pm("S_m")] ;
+  T_m     = el.mat->pr[pm("T_m")] ;
+  M_h2o   = el.mat->pr[pm("M_h2o")] ;
+  M_salt  = el.mat->pr[pm("M_salt")] ;
+  V_h2o   = el.mat->pr[pm("V_h2o")] ;
+  V_salt  = el.mat->pr[pm("V_salt")] ;
+  d0_salt = el.mat->pr[pm("D_salt")] ;
+  R       = el.mat->pr[pm("R")] ;
+  k_s     = el.mat->pr[pm("k_s")] ;
+  g_s     = el.mat->pr[pm("g_s")] ;
+  K_i     = el.mat->pr[pm("K_i")] ;
+  K_l     = el.mat->pr[pm("K_l")] ;
+  alpha_i = el.mat->pr[pm("alpha_i")] ;
+  alpha_l = el.mat->pr[pm("alpha_l")] ;
+  alpha_s = el.mat->pr[pm("alpha_s")] ;
+  p_m     = el.mat->pr[pm("p_m")] ;
+
+  dx = x[1][0] - x[0][0] ;
+
+  /* masses of h2o, salt and entropies */
+  for(i=0;i<2;i++)
+  {
+    p_l = P_l1(i) ;
+    /* c_s = (C_s1(i)>5250)? 5250:C_s1(i) ; */
+    tem = TEM_1(i) ;
+    c_s = C_s1(i) ;
+    lna     = -2*c_s*V_h2o/(1-c_s*V_salt);/* activity(c_s,tem,el.mat) ; */
+
+    p_i = p_m + rho_h2o_i0*((p_l - p_m)/rho_h2o_l0 + S_m/M_h2o*(T_m - tem) + R*tem/M_h2o*lna) ;
+    p_c   = p_i - p_l ;
+
+    s_l = p_c>0?courbe(p_c,el.mat->cb[0]):1 ;
+    s_i = 1. - s_l ;
+
+    /* mass densities */
+    rho_h2o_i = rho_h2o_i0*(1. + (p_i - p_m)/K_i - alpha_i*(tem - T_m)) ;
+    rho_salt  = M_salt*c_s ;
+    rho_l     = rho_h2o_l0*(1. + (p_l - p_m)/K_l - alpha_l*(tem - T_m) - v_salt*rho_salt);
+    rho_h2o_l = rho_l - rho_salt ;
+
+    M_H2O_l1(i) = phi*s_l*rho_h2o_l ;
+    M_H2O_i1(i) = phi*s_i*rho_h2o_i ;
+    M_SALT1(i)  = phi*s_l*rho_salt ;
+    S_H2O_l1(i) = C_l*log(tem/T_m) - alpha_l/rho_h2o_i0*(p_l - p_m) ;
+    S_H2O_i1(i) = C_i*log(tem/T_m) - S_m/M_h2o - alpha_i/rho_h2o_i0*(p_i - p_m) ;
+    S_SALT1(i)  = S_H2O_l1(i) ;
+    S_1(i)      = C_s*log(tem/T_m)
+                + M_H2O_l1(i)*S_H2O_l1(i)
+                + M_H2O_i1(i)*S_H2O_i1(i)
+                + M_SALT1(i)*S_SALT1(i) ;
+  }
+  /* coefficient de transfert */
+  tem     = (TEM_n(0)+TEM_n(1))/deux ;
+
+  s_h2o_l = (S_H2O_l1(0) + S_H2O_l1(1))/deux ;
+  s_h2o_i = (S_H2O_i1(0) + S_H2O_i1(1))/deux ;
+  s_salt  = (S_SALT1(0) + S_SALT1(1))/deux ;
+
+  /* flux */
+  
+  grd_p_l   = (P_l1(1) - P_l1(0))/dx ;
+  grd_c_s   = (C_s1(1) - C_s1(0))/dx ;
+  grd_tem   = (TEM_1(1) - TEM_1(0))/dx ;
+
+  W_H2O1  = - rho_h2o_l*KD_H2O*grd_p_l + M_salt*KF_salt*grd_c_s ;
+  W_SALT1 = - rho_salt*KD_salt*grd_p_l - M_salt*KF_salt*grd_c_s ;
+  Q_1     = - KTH/tem*grd_tem + s_h2o_l*W_H2O1 + s_salt*W_SALT1 ;
+  return(0) ;
+} 
+
+
+int mx52(double **x,double **u_1,double **u_n,double *f_1,double *f_n,double *va,double *k,elem_t el,int dim,geom_t geom,double dt,double t)
+/* Matrice (k) */
+{
+#define K(i,j)    (k[(i)*2*NEQ+(j)])
+  double s_l,s_i,p_l,c_s,tem,p_i,p_c ;
+  double rho_h2o_l,rho_h2o_i,rho_l,rho_salt ;
+  double lna ;
+  double s_h2o_l,s_salt ;
+  double ds_lsdp_c ;
+  double dp_isdc_s,dp_isdtem,dp_isdp_l ;
+  double dp_csdc_s,dp_csdtem,dp_csdp_l ;
+  double drho_h2o_lsdp_l,drho_h2o_lsdc_s,drho_h2o_lsdtem ;
+  double drho_h2o_isdp_l,drho_h2o_isdc_s,drho_h2o_isdtem ;
+  double dlnasdc_s,dlnasdtem ;
+  double ds_h2o_lsdc_s,ds_h2o_lsdtem,ds_h2o_lsdp_l ;
+  double ds_h2o_isdc_s,ds_h2o_isdtem,ds_h2o_isdp_l ;
+  double ds_saltsdc_s,ds_saltsdtem,ds_saltsdp_l ;
+  double dm_h2o_lsdc_s,dm_h2o_lsdtem,dm_h2o_lsdp_l ;
+  double dm_h2o_isdc_s,dm_h2o_isdtem,dm_h2o_isdp_l ;
+  double dm_saltsdc_s,dm_saltsdtem,dm_saltsdp_l ;
+  double trd_h2o,trf_h2o,trd_salt,trf_salt,trth ;
+  double dx ,xm ;
+  double volume[2],surf ;
+  double c ;
+  int    i ;
+  double zero = 0.,un = 1.,deux = 2. ;
+  
+  /* initialisation */
+  for(i=0;i<el.nn*el.nn*NEQ*NEQ;i++) k[i] = zero ;
+
+  if(el.dim < dim) return(0) ;
+
+  /*
+    Donnees
+  */
+  phi     = el.mat->pr[pm("phi")] ;
+  rho_h2o_i0  = el.mat->pr[pm("rho_h2o_i")] ;
+  rho_h2o_l0  = el.mat->pr[pm("rho_h2o_l")] ;
+  k_int   = el.mat->pr[pm("k_int")] ;
+  mu_l    = el.mat->pr[pm("mu_l")] ;
+  lam_s   = el.mat->pr[pm("lam_s")] ;
+  lam_l   = el.mat->pr[pm("lam_l")] ;
+  lam_i   = el.mat->pr[pm("lam_i")] ;
+  C_s     = el.mat->pr[pm("C_s")] ;
+  C_l     = el.mat->pr[pm("C_l")] ;
+  C_i     = el.mat->pr[pm("C_i")] ;
+  S_m     = el.mat->pr[pm("S_m")] ;
+  T_m     = el.mat->pr[pm("T_m")] ;
+  M_h2o   = el.mat->pr[pm("M_h2o")] ;
+  M_salt  = el.mat->pr[pm("M_salt")] ;
+  V_h2o   = el.mat->pr[pm("V_h2o")] ;
+  V_salt  = el.mat->pr[pm("V_salt")] ;
+  d0_salt = el.mat->pr[pm("D_salt")] ;
+  R       = el.mat->pr[pm("R")] ;
+  k_s     = el.mat->pr[pm("k_s")] ;
+  g_s     = el.mat->pr[pm("g_s")] ;
+  K_i     = el.mat->pr[pm("K_i")] ;
+  K_l     = el.mat->pr[pm("K_l")] ;
+  alpha_i = el.mat->pr[pm("alpha_i")] ;
+  alpha_l = el.mat->pr[pm("alpha_l")] ;
+  alpha_s = el.mat->pr[pm("alpha_s")] ;
+  p_m     = el.mat->pr[pm("p_m")] ;
+
+  /*
+    CALCUL DE volume ET DE surf
+  */
+  dx = x[1][0] - x[0][0] ;
+  xm = (x[1][0] + x[0][0])/deux ;
+  for(i=0;i<2;i++)
+  {
+    volume[i] = fabs(dx)/deux ; 
+    if(geom == AXIS) volume[i] *= M_PI*(x[i][0] + xm) ; 
+  }
+  if(geom == AXIS) surf = deux*M_PI*xm ; else surf = un ;
+  
+  /* termes d'accumulation */
+  for(i=0;i<2;i++)
+  {
+    p_l = P_l1(i) ;
+    /*   c_s = (C_s1(i)>5250)? 5250:C_s1(i) ; */
+    c_s = C_s1(i) ;
+    tem = TEM_1(i) ;
+
+    lna =  -2*c_s*V_h2o/(1-c_s*V_salt);/* activity(c_s,tem,el.mat) ; */
+    p_i = p_m + rho_h2o_i0*((p_l - p_m)/rho_h2o_l0 + S_m/M_h2o*(T_m - tem) + R*tem/M_h2o*lna) ;
+    p_c = p_i - p_l ;
+    
+    s_l = p_c>0? courbe(p_c,el.mat->cb[0]):1 ;
+    s_i = 1. - s_l ;
+
+    /* mass densities */
+    rho_h2o_i = rho_h2o_i0*(1. + (p_i - p_m)/K_i - alpha_i*(tem - T_m)) ;
+    rho_salt  = M_salt*c_s ;
+    rho_l     = rho_h2o_l0*(1. - v_salt*rho_salt + (p_l - p_m)/K_l - alpha_l*(tem - T_m));
+    rho_h2o_l = rho_l - rho_salt ;
+
+    /* derivatives */
+    ds_lsdp_c = p_c>0?dcourbe(p_c,el.mat->cb[0]):0 ;
+    dlnasdc_s = -V_h2o/(1-c_s*V_salt);/* dactivitydc_s(c_s,tem,el.mat) ; */
+    dlnasdtem = 0;/* dactivitydtem(c_s,tem,el.mat) ; */
+   
+    dp_isdp_l = rho_h2o_i0/rho_h2o_l0 ;
+    dp_isdc_s = rho_h2o_i0*(R*tem/M_h2o*dlnasdc_s) ;
+    dp_isdtem = rho_h2o_i0*(- S_m/M_h2o + R/M_h2o*lna + R*tem/M_h2o*dlnasdtem) ;
+
+    dp_csdp_l = p_c>0?(dp_isdp_l - 1.):0 ;
+    dp_csdc_s = p_c>0?dp_isdc_s:0 ;
+    dp_csdtem = p_c>0?dp_isdtem:0 ;
+
+    drho_h2o_lsdp_l = rho_h2o_l0/K_l ;
+    drho_h2o_lsdc_s = -rho_h2o_l0*v_salt*M_salt - M_salt ;
+    drho_h2o_lsdtem = -rho_h2o_l0*alpha_l ;
+
+    drho_h2o_isdp_l = rho_h2o_i0/K_i*dp_isdp_l ;
+    drho_h2o_isdc_s = rho_h2o_i0/K_i*dp_isdc_s ;
+    drho_h2o_isdtem = rho_h2o_i0/K_i*dp_isdtem - rho_h2o_i0*alpha_i ;
+
+    dm_h2o_lsdp_l = phi*(ds_lsdp_c*dp_csdp_l*rho_h2o_l + s_l*drho_h2o_lsdp_l) ;
+    dm_h2o_lsdc_s = phi*(ds_lsdp_c*dp_csdc_s*rho_h2o_l + s_l*drho_h2o_lsdc_s) ;
+    dm_h2o_lsdtem = phi*(ds_lsdp_c*dp_csdtem*rho_h2o_l + s_l*drho_h2o_lsdtem) ;
+
+    dm_h2o_isdp_l = phi*(-ds_lsdp_c*dp_csdp_l*rho_h2o_i + s_i*drho_h2o_isdp_l) ;
+    dm_h2o_isdc_s = phi*(-ds_lsdp_c*dp_csdc_s*rho_h2o_i + s_i*drho_h2o_isdc_s) ;
+    dm_h2o_isdtem = phi*(-ds_lsdp_c*dp_csdtem*rho_h2o_i + s_i*drho_h2o_isdtem) ;
+
+    dm_saltsdp_l  = phi*ds_lsdp_c*dp_csdp_l*rho_salt ;
+    dm_saltsdc_s  = phi*(ds_lsdp_c*dp_csdc_s*rho_salt + s_l*M_salt) ;
+    dm_saltsdtem  = phi*ds_lsdp_c*dp_csdtem*rho_salt ;
+
+    ds_h2o_lsdp_l = -alpha_l/rho_h2o_i0 ;
+    ds_h2o_lsdc_s = 0. ;
+    ds_h2o_lsdtem = C_l/tem ;
+
+    ds_h2o_isdp_l = -alpha_i/rho_h2o_i0*dp_isdp_l ;
+    ds_h2o_isdc_s = -alpha_i/rho_h2o_i0*dp_isdc_s ;
+    ds_h2o_isdtem = C_i/tem - alpha_i/rho_h2o_i0*dp_isdtem ;
+
+    ds_saltsdp_l = ds_h2o_lsdp_l ;
+    ds_saltsdc_s = ds_h2o_lsdc_s ;
+    ds_saltsdtem = ds_h2o_lsdtem ;
+    /*
+      MASS BALANCE FOR H2O : (m_h2o1 - m_h2on) + dt * div(w_h2o1) = 0
+    */
+    K(E_h2o+i*NEQ,I_p_l+i*NEQ) += volume[i]*(dm_h2o_lsdp_l + dm_h2o_isdp_l) ;
+    K(E_h2o+i*NEQ,I_c_s+i*NEQ) += volume[i]*(dm_h2o_lsdc_s + dm_h2o_isdc_s) ;
+    K(E_h2o+i*NEQ,I_tem+i*NEQ) += volume[i]*(dm_h2o_lsdtem + dm_h2o_isdtem) ;
+    /*
+      MASS BALANCE FOR SALT : (m_salt1 - m_saltn) + dt * div(w_salt1) = 0
+    */
+    K(E_salt+i*NEQ,I_p_l+i*NEQ) += volume[i]*dm_saltsdp_l ;
+    K(E_salt+i*NEQ,I_c_s+i*NEQ) += volume[i]*dm_saltsdc_s ;
+    K(E_salt+i*NEQ,I_tem+i*NEQ) += volume[i]*dm_saltsdtem ;
+    /*
+      ENTROPY BALANCE : (S_1 - S_n) + dt * div(q_1/T_n+S_i*w_i1) = 0
+    */
+    K(E_the+i*NEQ,I_p_l+i*NEQ) += volume[i]*(dm_h2o_lsdp_l*S_H2O_l1(i) + dm_h2o_isdp_l*S_H2O_i1(i) + dm_saltsdp_l*S_SALT1(i) + M_H2O_l1(i)*ds_h2o_lsdp_l + M_H2O_i1(i)*ds_h2o_isdp_l + M_SALT1(i)*ds_saltsdp_l) ;
+    K(E_the+i*NEQ,I_c_s+i*NEQ) += volume[i]*(dm_h2o_lsdc_s*S_H2O_l1(i) + dm_h2o_isdc_s*S_H2O_i1(i) + dm_saltsdc_s*S_SALT1(i) + M_H2O_l1(i)*ds_h2o_lsdc_s + M_H2O_i1(i)*ds_h2o_isdc_s + M_SALT1(i)*ds_saltsdc_s) ;
+    K(E_the+i*NEQ,I_tem+i*NEQ) += volume[i]*(C_s/tem + dm_h2o_lsdtem*S_H2O_l1(i) + dm_h2o_isdtem*S_H2O_i1(i) + dm_saltsdtem*S_SALT1(i) + M_H2O_l1(i)*ds_h2o_lsdtem + M_H2O_i1(i)*ds_h2o_isdtem + M_SALT1(i)*ds_saltsdtem) ;
+  }
+  /*
+    termes d'ecoulement
+  */
+  trd_h2o  = dt*surf/dx*KD_H2O*rho_h2o_l ;
+  trf_h2o  = dt*surf/dx*(-KF_salt)*M_salt ;
+  trd_salt = dt*surf/dx*KD_salt*rho_salt ;
+  trf_salt = dt*surf/dx*KF_salt*M_salt ;
+  trth     = dt*surf/dx*KTH ;
+  /*
+    MASS BALANCE FOR H2O : (m_h2o1 - m_h2on) + dt * div(w_h2o1) = 0
+  */
+  K(E_h2o,I_p_l)          += + trd_h2o ;
+  K(E_h2o,I_p_l+NEQ)      += - trd_h2o ;
+  K(E_h2o+NEQ,I_p_l)      += - trd_h2o ;
+  K(E_h2o+NEQ,I_p_l+NEQ)  += + trd_h2o ;
+
+   K(E_h2o,I_c_s)          += + trf_h2o ;
+   K(E_h2o,I_c_s+NEQ)      += - trf_h2o ;
+   K(E_h2o+NEQ,I_c_s)      += - trf_h2o ;
+   K(E_h2o+NEQ,I_c_s+NEQ)  += + trf_h2o ;
+
+  /*
+    MASS BALANCE FOR SALT : (m_salt1 - m_saltn) + dt * div(w_salt1) = 0
+  */
+  K(E_salt,I_p_l)          += + trd_salt ;
+  K(E_salt,I_p_l+NEQ)      += - trd_salt ;
+  K(E_salt+NEQ,I_p_l)      += - trd_salt ;
+  K(E_salt+NEQ,I_p_l+NEQ)  += + trd_salt ;
+
+   K(E_salt,I_c_s)          += + trf_salt ;
+  K(E_salt,I_c_s+NEQ)      += - trf_salt ;
+  K(E_salt+NEQ,I_c_s)      += - trf_salt ;
+  K(E_salt+NEQ,I_c_s+NEQ)  += + trf_salt ;
+  /*
+    ENTROPY BALANCE : (S_1 - S_n) + dt * div(q_1/T_n+S_i*w_i1) = 0
+  */
+  tem     = (TEM_n(0)+TEM_n(1))/deux ;
+
+  s_h2o_l = (S_H2O_ln(0) + S_H2O_ln(1))/deux ;
+  s_salt  = (S_SALTn(0) + S_SALTn(1))/deux ;
+
+  c = s_h2o_l*trd_h2o + s_salt*trd_salt ;
+  K(E_the,I_p_l)           += + c ;
+  K(E_the,I_p_l+NEQ)       += - c ;
+  K(E_the+NEQ,I_p_l+NEQ)   += + c ;
+  K(E_the+NEQ,I_p_l)       += - c ;
+
+  c = s_h2o_l*trf_h2o + s_salt*trf_salt ;
+  K(E_the,I_c_s)           += + c ;
+  K(E_the,I_c_s+NEQ)       += - c ;
+  K(E_the+NEQ,I_c_s+NEQ)   += + c ;
+  K(E_the+NEQ,I_c_s)       += - c ;
+
+  c = trth/tem ;
+  K(E_the,I_tem)           += + c ;
+  K(E_the,I_tem+NEQ)       += - c ;
+  K(E_the+NEQ,I_tem+NEQ)   += + c ;
+  K(E_the+NEQ,I_tem)       += - c ;
+
+  return(0) ;
+#undef K
+}
+
+void rs52(double **x,double **u_1,double **u_n,double *f_1,double *f_n,double *va,double *r,elem_t el,int dim,geom_t geom,double dt,double t)
+/* Residu (r) */
+{
+#define R(n,i)    (r[(n)*NEQ+(i)])
+  double dx ,xm ;
+  double volume[2],surf ;
+  int    i ;
+  double zero = 0.,un = 1.,deux = 2. ;
+  
+  /* initialisation */
+  for(i=0;i<el.nn*NEQ;i++) r[i] = zero ;
+
+  if(el.dim < dim) return ;
+
+  /*
+    CALCUL DE volume ET DE surf
+  */
+  dx = x[1][0] - x[0][0] ;
+  xm = (x[1][0] + x[0][0])/deux ;
+  for(i=0;i<2;i++)
+  {
+    volume[i] = fabs(dx)/deux ; 
+    if(geom == AXIS) volume[i] *= M_PI*(x[i][0] + xm) ; 
+  }
+  if(geom == AXIS) surf = deux*M_PI*xm ; else surf = un ;
+
+  /*
+    MASS BALANCE FOR H2O : (m_h2o1 - m_h2on) + dt * div(w_h2o1) = 0
+  */
+  R(0,E_h2o) -= volume[0]*(M_H2O_l1(0) + M_H2O_i1(0) - M_H2O_ln(0) - M_H2O_in(0)) + dt*surf*W_H2O1 ;
+  R(1,E_h2o) -= volume[1]*(M_H2O_l1(1) + M_H2O_i1(1) - M_H2O_ln(1) - M_H2O_in(1)) - dt*surf*W_H2O1 ;
+  /*
+    MASS BALANCE FOR SALT : (m_salt1 - m_saltn) + dt * div(w_salt1) = 0
+  */
+  R(0,E_salt) -= volume[0]*(M_SALT1(0) - M_SALTn(0)) + dt*surf*W_SALT1 ;
+  R(1,E_salt) -= volume[1]*(M_SALT1(1) - M_SALTn(1)) - dt*surf*W_SALT1 ;
+  /*
+    ENTROPY BALANCE : (S_1 - S_n) + dt * div(q_1/T_n+S_i*w_i1) = 0
+  */
+  R(0,E_the) -= volume[0]*(S_1(0) - S_n(0)) + dt*surf*Q_1 ;
+  R(1,E_the) -= volume[1]*(S_1(1) - S_n(1)) - dt*surf*Q_1 ;
+
+#undef R
+}
+
+int so52(double **x,double **u,double *f,double *va,double *s,resu_t *r,elem_t el,int dim,geom_t geom,double t)
+/* Les valeurs exploitees (s) */
+{
+  double s_l,p_l,c_s,tem,p_i,p_c,s_i,p_i1 ;
+  double lna ;
+  double rho_h2o_l,rho_h2o_i,rho_l,rho_salt,Eps1,Eps2 ;
+  int    i,j,nso ;
+  double h_s[MAX_NOEUDS],dh_s[3*MAX_NOEUDS] ;
+  double zero = 0. ;
+  double K,G,b_i,b_l,N_ii,N_ll,phi_l,phi_i,alpha_phi_i,alpha_phi_l,Epsi,phi_p;
+  double p_c0,p_c1,p_c2,p_c3;
+  double Eps,Rho,Eps_T,Eps_P;
+  double Rho_yy,Rho_zz,Eps_xx,v = 0.2;
+
+  if(el.dim < dim) return(0) ;
+
+  /*
+    Donnees
+  */
+  phi     = el.mat->pr[pm("phi")] ;
+  rho_h2o_i0  = el.mat->pr[pm("rho_h2o_i")] ;
+  rho_h2o_l0  = el.mat->pr[pm("rho_h2o_l")] ;
+  k_int   = el.mat->pr[pm("k_int")] ;
+  mu_l    = el.mat->pr[pm("mu_l")] ;
+  lam_s   = el.mat->pr[pm("lam_s")] ;
+  lam_l   = el.mat->pr[pm("lam_l")] ;
+  lam_i   = el.mat->pr[pm("lam_i")] ;
+  C_s     = el.mat->pr[pm("C_s")] ;
+  C_l     = el.mat->pr[pm("C_l")] ;
+  C_i     = el.mat->pr[pm("C_i")] ;
+  S_m     = el.mat->pr[pm("S_m")] ;
+  T_m     = el.mat->pr[pm("T_m")] ;
+  M_h2o   = el.mat->pr[pm("M_h2o")] ;
+  M_salt  = el.mat->pr[pm("M_salt")] ;
+  d0_salt = el.mat->pr[pm("D_salt")] ;
+  R       = el.mat->pr[pm("R")] ;
+  k_s     = el.mat->pr[pm("k_s")] ;
+  g_s     = el.mat->pr[pm("g_s")] ;
+  K_i     = el.mat->pr[pm("K_i")] ;
+  K_l     = el.mat->pr[pm("K_l")] ;
+  alpha_i = el.mat->pr[pm("alpha_i")] ;
+  alpha_l = el.mat->pr[pm("alpha_l")] ;
+  alpha_s = el.mat->pr[pm("alpha_s")] ;
+  p_m     = el.mat->pr[pm("p_m")] ;
+
+
+  /* initialisation */
+  nso = 23 ;
+  for(i=0;i<nso;i++)
+  for(j=0;j<23;j++)
+  r[i].v[j] = zero ;
+
+  /* fonctions d'interpolation en s */
+  fint_abs(dim,el.nn,x,s,el.dim,h_s,dh_s) ;
+
+  /* pressure */
+  p_l =  param(u,h_s,el.nn,I_p_l) ;
+ /* concentration */
+  c_s =  param(u,h_s,el.nn,I_c_s) ;
+
+  /* temperature */
+  tem   =  param(u,h_s,el.nn,I_tem) ;
+
+  /* liquid saturation */
+  lna   =  -2*c_s*V_h2o/(1-c_s*V_salt);/* activity(c_s,tem,el.mat) ; */
+  p_i1 = p_m + rho_h2o_i0*((p_l - p_m)/rho_h2o_l0 + S_m/M_h2o*(T_m - tem) + R*tem/M_h2o*lna) ;
+  p_c   = p_i1 - p_l ;
+  p_i   =  (p_c>0)?p_i1:p_m;
+  s_l   = p_c>0?courbe(p_c,el.mat->cb[0]):1 ;
+   p_c0  =  (p_c>0)?p_c:p_m;
+   p_c1  = (p_c>0)? (p_m  + rho_h2o_i0*(p_l - p_m)/rho_h2o_l0 - p_l):p_m;
+   p_c2  =  (p_c>0)?S_m/M_h2o*(T_m - tem)*rho_h2o_i0:0;
+   p_c3  = (p_c>0)? R*tem/M_h2o*lna*rho_h2o_i0:0;
+   s_i=1-s_l;
+  /* mass densities */
+   rho_h2o_i = rho_h2o_i0*(1. + (p_i - p_m)/K_i - alpha_i*(tem - T_m)) ;
+  rho_salt  = M_salt*c_s ;
+  rho_l     = rho_h2o_l0*(1. + (p_l - p_m)/K_l - alpha_l*(tem - T_m) - v_salt*rho_salt) ;
+  rho_h2o_l = rho_l - rho_salt ;
+
+    K = k_s*(1-phi*(1+3*k_s/(4*g_s)));
+    G = g_s*(1-5*phi*(4*g_s+3*k_s)/(8*g_s+9*k_s));
+    b_i  = phi*s_i*(1+3*k_s/(4*g_s));
+    b_l  = phi*s_l*(1+3*k_s/(4*g_s));
+    N_ii = (3*phi*s_i)/(4*g_s);
+    N_ll = (3*phi*s_l)/(4*g_s); 
+    alpha_phi_l = alpha_s*(b_l-phi*s_l);
+    alpha_phi_i = alpha_s*(b_i-phi*s_i); 
+    Epsi = (b_l*p_l+b_i*p_i+alpha_s*(tem-T_m))/K ;
+    phi_l = b_l*Epsi + p_l*N_ll - alpha_phi_l*(tem-T_m);
+    phi_i = b_i*Epsi + p_i*N_ii - alpha_phi_i*(tem-T_m);
+    phi_p = phi + phi_l + phi_i; 
+
+  Eps = (b_l*(p_l-p_m)+b_i*(p_i-p_m)+alpha_s*K*(tem-T_m))/K;
+  Eps1=  (b_l*(p_l-p_m)+b_i*(p_i-p_m))/K;
+  Eps2= alpha_s*K*(tem-T_m)/K;
+  Rho = (phi_p<1)? (phi_p*s_l*(p_l-p_m)+phi_p*s_i*(p_i-p_m))/(1-phi_p):0;
+  Eps_T  = (alpha_s*K*(tem-T_m))/K;
+  Eps_P  = (b_l*(p_l-p_m)+b_i*(p_i-p_m))/K;
+  Eps_xx = Eps*(1+v)/(1-v);
+  Rho_yy = 2*G*Eps_xx ;
+  Rho_zz = Rho_yy ;
+
+  /* quantites exploitees */
+  strcpy(r[0].text,"p_l") ; r[0].n = 1 ;
+  r[0].v[0] = p_l ;
+  strcpy(r[1].text,"c_cl") ; r[1].n = 1 ;
+  r[1].v[0] = c_s ;
+  strcpy(r[2].text,"Temperature") ; r[2].n = 1 ;
+  r[2].v[0] = tem ;
+  strcpy(r[3].text,"Liquid-saturation") ; r[3].n = 1 ;
+  r[3].v[0] = s_l ;
+  strcpy(r[4].text,"Flux_H2O") ; r[4].n = 1 ;
+  r[4].v[0] = W_H2O ;
+  strcpy(r[5].text,"Flux_cl") ; r[5].n = 1 ;
+  r[5].v[0] = W_SALT ;
+  strcpy(r[6].text,"p_i") ; r[6].n = 1 ;
+  r[6].v[0] = p_i ;
+  strcpy(r[7].text,"Solution density") ; r[7].n = 1 ;
+  r[7].v[0] = rho_l ;
+  strcpy(r[8].text,"Ice density") ; r[8].n = 1 ;
+  r[8].v[0] = rho_h2o_i ;
+  strcpy(r[9].text,"strain") ; r[9].n = 1 ;
+  r[9].v[0] = Eps ;
+  strcpy(r[10].text,"stress") ; r[10].n = 1 ;
+  r[10].v[0] = Rho ;
+  strcpy(r[11].text,"strain_xx") ; r[11].n = 1 ;
+  r[11].v[0] = Eps_xx ;
+  strcpy(r[12].text,"strain_temperature") ; r[12].n = 1 ;
+  r[12].v[0] = Eps_T ;
+  strcpy(r[13].text,"strain_pressure") ; r[13].n = 1 ;
+  r[13].v[0] = Eps_P ;
+  strcpy(r[14].text,"porosity") ; r[14].n = 1 ;
+  r[14].v[0] = phi_p ;
+   strcpy(r[15].text,"deformation by ice") ; r[15].n = 1 ;
+  r[15].v[0] = phi_i ;
+  strcpy(r[16].text,"deformation by liquid") ; r[16].n = 1 ;
+  r[16].v[0] = phi_l ;
+  strcpy(r[17].text,"capillarypressure") ; r[17].n = 1 ;
+  r[17].v[0] = p_c0 ;
+  strcpy(r[18].text,"capillary by density") ; r[18].n = 1 ;
+  r[18].v[0] = p_c1 ;
+  strcpy(r[19].text,"capillary by entropy") ; r[19].n = 1 ;
+  r[19].v[0] = p_c2 ;
+  strcpy(r[20].text,"capillary by salts") ; r[20].n = 1 ;
+  r[20].v[0] = p_c3 ;
+  strcpy(r[21].text,"strain by p") ; r[21].n = 1 ;
+  r[21].v[0] = Eps1 ;
+  strcpy(r[22].text,"strain by p") ; r[22].n = 1 ;
+  r[22].v[0] = Eps2 ;
+
+  return (nso) ;
+}
+
+double activity(double c_s,double tem,mate_t *mat)
+     /* activity of water lna_h2o=m_salt*M_h2o*II_salt */
+{
+#define z_cl (-1.)
+#define z_na (1.)
+#define V_na (22.47e-6)
+#define V_cl (-0.35e-6)
+
+  double lna_h2o ;
+  double b0,S0;
+  double epsi, A,I;
+  double T_m,M_h2o;
+  double c_h2o,c_cl,c_na ;
+  double V_h2o, V_salt;
+  double x_cl,x_na,y_cl,y_na;
+  double m_salt, m_na, m_cl,m_s;
+  double alpha = 1.29, a1 = alpha/(1+alpha) ;
+  double Is    = sqrt(I);
+  double lna_cl,lna_na;
+  double S_na_nacl, S_cl_nacl ;
+  double S_na, S_cl;
+  double b_na_nacl, b_cl_nacl ;
+  double b_na, b_cl;
+  double II_cl, II_na;
+
+  V_h2o  = mat->pr[pm("V_h2o")] ;
+  V_salt = mat->pr[pm("V_salt")] ;
+  T_m    = mat->pr[pm("T_m")];
+  M_h2o  = mat->pr[pm("M_h2o")];
+
+  b0        = sqrt(M_h2o);
+  b_na_nacl = 4.352/b0;
+  b_cl_nacl = 1.827/b0;
+
+  S0        = pow(M_h2o,1.29);
+  S_na_nacl = 26.448/S0;
+  S_cl_nacl = 19.245/S0;
+
+  epsi   = 0.0007*(tem-T_m)*(tem-T_m)-0.3918*(tem-T_m)+87.663;
+  A      = 1398779.816/pow(epsi*tem,1.5)/b0;
+  
+  /* concentration of water */
+  c_h2o  = (1-c_s*V_salt)/V_h2o;
+  c_cl   = c_s;
+  c_na   = c_s;
+  
+  /* molalites*M_h2o */
+  m_salt = c_s/c_h2o ;
+  m_cl   = c_cl/c_h2o ;
+  m_na   = c_na/c_h2o ;
+
+  /* ion force */
+  I      =  0.5*(z_cl*z_cl*m_cl + z_na*z_na*m_na);
+
+
+  m_s  = m_cl + m_na ;
+  x_cl = m_cl/m_s ;
+  x_na = m_na/m_s ;
+  
+  y_cl = (x_cl > 0) ? x_cl/(x_na) : 0. ;  
+  y_na = (x_na > 0) ? x_na/(x_cl) : 0. ;
+ 
+  b_cl = b_cl_nacl*y_na ; 
+  b_na = b_na_nacl*y_cl ;
+  
+  S_cl = S_cl_nacl*y_na ;  
+  S_na = S_na_nacl*y_cl ;
+
+  /* osmotic coefficent II_salt */
+  lna_cl  = A*Is/(1+b_cl*Is) - a1*S_cl*pow(I,alpha)/tem ;
+  lna_na  = A*Is/(1+b_na*Is) - a1*S_na*pow(I,alpha)/tem ;
+
+  II_cl   = -1 + lna_cl*z_cl*z_cl;
+  II_na   = -1 + lna_na*z_na*z_na;
+ 
+
+  /* activity of water */
+  lna_h2o  = m_cl*II_cl + m_na*II_na;
+
+
+  /* return(lna_h2o) ; */
+  return(0);
+#undef z_cl
+#undef z_na
+#undef V_cl
+#undef V_na
+}
+
+double dactivitydc_s(double c_s,double tem,mate_t *mat)
+{
+ 
+#define z_cl (-1.)
+#define z_na (1.)
+#define V_na (22.47e-6)
+#define V_cl (-0.35e-6)
+
+  double b0,S0;
+  double epsi, A,I;
+  double T_m,M_h2o;
+  double c_h2o,c_cl,c_na ;
+  double V_h2o, V_salt;
+  double x_cl,x_na,y_cl,y_na;
+  double m_salt, m_na, m_cl,m_s;
+  double alpha = 1.29, a1 = alpha/(1+alpha) ;
+  double Is    = sqrt(I);
+  double lna_cl,lna_na;
+  double S_na_nacl, S_cl_nacl ;
+  double S_na, S_cl;
+  double b_na_nacl, b_cl_nacl ;
+  double b_na, b_cl;
+  double II_cl, II_na;
+  double dm_clsdc_s,dm_nasdc_s;
+  double dIsdc_s, dIssdc_s;
+  double db_clsdc_s,db_nasdc_s;
+  double dS_clsdc_s,dS_nasdc_s;
+  double dlna_clsdc_s, dlna_nasdc_s;
+  double dII_clsdc_s, dII_nasdc_s;
+  double dlna_h2osdc_s;
+  double beita, dpow_IsdI;
+
+  V_h2o  = mat->pr[pm("V_h2o")] ;
+  V_salt = mat->pr[pm("V_salt")] ;
+  T_m    = mat->pr[pm("T_m")];
+  M_h2o  = mat->pr[pm("M_h2o")];
+
+  b0        = sqrt(M_h2o);
+  b_na_nacl = 4.352/b0;
+  b_cl_nacl = 1.827/b0;
+
+  S0        = pow(M_h2o,1.29);
+  S_na_nacl = 26.448/S0;
+  S_cl_nacl = 19.245/S0;
+
+  epsi   = 0.0007*(tem-T_m)*(tem-T_m)-0.3918*(tem-T_m)+87.663;
+  A      = 1398779.816/pow(epsi*tem,1.5)/b0;
+  
+  /* concentration of water */
+  c_h2o  = (1-c_s*V_salt)/V_h2o;
+  c_cl   = c_s;
+  c_na   = c_s;
+  
+  /* molalites*M_h2o */
+  m_salt = c_s/c_h2o ;
+  m_cl   = c_cl/c_h2o ;
+  m_na   = c_na/c_h2o ;
+
+  dm_clsdc_s = 1./c_h2o;
+  dm_nasdc_s = 1./c_h2o;
+
+
+  /* ion force */
+  I    =  0.5*(z_cl*z_cl*m_cl + z_na*z_na*m_na);
+  dIsdc_s  = 0.5*(z_cl*z_cl*dm_clsdc_s + z_na*z_na*dm_nasdc_s);
+  dIssdc_s = 0.5*pow(I,-0.5)*dIsdc_s;
+  beita     = alpha-1;
+  dpow_IsdI = alpha*pow(I,beita);
+
+  m_s  = m_cl + m_na ;
+  x_cl = m_cl/m_s ;
+  x_na = m_na/m_s ;
+  
+  y_cl = (x_cl > 0) ? x_cl/(x_na) : 0. ;  
+  y_na = (x_na > 0) ? x_na/(x_cl) : 0. ;
+ 
+  b_cl = b_cl_nacl*y_na ; 
+  b_na = b_na_nacl*y_cl ;
+  db_clsdc_s = 0;
+  db_nasdc_s = 0;
+  
+  S_cl = S_cl_nacl*y_na ;  
+  S_na = S_na_nacl*y_cl ;
+  dS_clsdc_s = 0;
+  dS_clsdc_s = 0;
+
+  /* osmotic coefficent II_salt */
+  lna_cl  = A*Is/(1+b_cl*Is) - a1*S_cl*pow(I,alpha)/tem ;
+  lna_na  = A*Is/(1+b_na*Is) - a1*S_na*pow(I,alpha)/tem ;
+
+  dlna_clsdc_s = A*dIssdc_s/(1+b_cl*Is) - A*Is/(1+b_cl*Is)/(1+b_cl*Is)*(db_clsdc_s*Is + b_cl*dIssdc_s) - a1*dS_clsdc_s*pow(I,alpha)/tem - a1*S_cl*dpow_IsdI*dIsdc_s/tem;
+
+  dlna_nasdc_s = A*dIssdc_s/(1+b_na*Is) - A*Is/(1+b_na*Is)/(1+b_na*Is)*(db_nasdc_s*Is + b_na*dIssdc_s) - a1*dS_nasdc_s*pow(I,alpha)/tem - a1*S_na*dpow_IsdI*dIsdc_s/tem;
+  
+  II_cl   = -1 + lna_cl*z_cl*z_cl;
+  II_na   = -1 + lna_na*z_na*z_na;
+
+  dII_clsdc_s = dlna_clsdc_s*z_cl*z_cl;
+  dII_nasdc_s = dlna_nasdc_s*z_na*z_na;
+
+  /*detrive activity of water */
+  dlna_h2osdc_s  =dm_clsdc_s*II_cl + m_cl*dII_clsdc_s + dm_nasdc_s*II_na + m_na*dII_nasdc_s;
+
+  /* return(dlna_h2osdc_s) ; */
+  return(0);
+#undef z_cl
+#undef z_na
+#undef V_cl
+#undef V_na
+ 
+}
+double dactivitydtem(double c_s,double tem,mate_t *mat)
+{
+ 
+#define z_cl (-1.)
+#define z_na (1.)
+#define V_na (22.47e-6)
+#define V_cl (-0.35e-6)
+
+
+  double b0,S0;
+  double epsi, A,I;
+  double T_m,M_h2o;
+  double c_h2o,c_cl,c_na ;
+  double V_h2o, V_salt;
+  double x_cl,x_na,y_cl,y_na;
+  double m_salt, m_na, m_cl,m_s;
+  double alpha = 1.29, a1 = alpha/(1+alpha) ;
+  double Is    = sqrt(I);
+  double lna_cl,lna_na;
+  double S_na_nacl, S_cl_nacl ;
+  double S_na, S_cl;
+  double b_na_nacl, b_cl_nacl ;
+  double b_na, b_cl;
+  double II_cl, II_na;
+  double depsisdtem,dAsdtem;
+  double dlna_clsdtem, dlna_nasdtem;
+  double dII_clsdtem, dII_nasdtem;
+  double dlna_h2osdtem;
+
+
+  V_h2o  = mat->pr[pm("V_h2o")] ;
+  V_salt = mat->pr[pm("V_salt")] ;
+  T_m    = mat->pr[pm("T_m")];
+  M_h2o  = mat->pr[pm("M_h2o")];
+
+  b0        = sqrt(M_h2o);
+  b_na_nacl = 4.352/b0;
+  b_cl_nacl = 1.827/b0;
+
+  S0        = pow(M_h2o,1.29);
+  S_na_nacl = 26.448/S0;
+  S_cl_nacl = 19.245/S0;
+
+  epsi   = 0.0007*(tem-T_m)*(tem-T_m)-0.3918*(tem-T_m)+87.663;
+  depsisdtem = 0.0014*(tem-T_m)-0.3918;
+  A      = 1398779.816/pow(epsi*tem,1.5)/b0;
+  dAsdtem = -1398779.816*1.5/pow(epsi*tem,2.5)/b0*(epsi+tem*depsisdtem);
+  
+  /* concentration of water */
+  c_h2o  = (1-c_s*V_salt)/V_h2o;
+  c_cl   = c_s;
+  c_na   = c_s;
+  
+  /* molalites*M_h2o */
+  m_salt = c_s/c_h2o ;
+  m_cl   = c_cl/c_h2o ;
+  m_na   = c_na/c_h2o ;
+
+
+  /* ion force */
+  I      =  0.5*(z_cl*z_cl*m_cl + z_na*z_na*m_na);
+
+  m_s  = m_cl + m_na ;
+  x_cl = m_cl/m_s ;
+  x_na = m_na/m_s ;
+  
+  y_cl = (x_cl > 0) ? x_cl/(x_na) : 0. ;  
+  y_na = (x_na > 0) ? x_na/(x_cl) : 0. ;
+ 
+  b_cl = b_cl_nacl*y_na ; 
+  b_na = b_na_nacl*y_cl ;
+  
+  S_cl = S_cl_nacl*y_na ;  
+  S_na = S_na_nacl*y_cl ;
+
+  /* osmotic coefficent II_salt */
+  lna_cl  = A*Is/(1+b_cl*Is) - a1*S_cl*pow(I,alpha)/tem; 
+  lna_na  = A*Is/(1+b_na*Is) - a1*S_na*pow(I,alpha)/tem ;
+
+  dlna_clsdtem = dAsdtem*Is/(1+b_cl*Is) + a1*S_cl*pow(I,alpha)/tem/tem;
+
+  dlna_nasdtem = dAsdtem*Is/(1+b_na*Is) + a1*S_na*pow(I,alpha)/tem/tem;
+  
+  II_cl   = -1 + lna_cl*z_cl*z_cl;
+  II_na   = -1 + lna_na*z_na*z_na;
+
+  dII_clsdtem = dlna_clsdtem*z_cl*z_cl;
+  dII_nasdtem = dlna_nasdtem*z_na*z_na;
+
+  /*detrive activity of water */
+  dlna_h2osdtem  = m_cl*dII_clsdtem + m_na*dII_nasdtem;
+ 
+  /* return(dlna_h2osdtem) ; */
+  return (0);
+#undef z_cl
+#undef z_na
+#undef V_cl
+#undef V_na
+ 
+}
+
+double tortuosity(double s_l,mate_t *mat)
+{
+  double phi = mat->pr[pm("phi")] ;
+  double tau_l_sat = 0.296e-3*exp(9.95*phi)/phi ;
+  /* return(tau_l_sat*courbe(p_c,mat->cb[2])) ; */
+  if(s_l > 0.) return(tau_l_sat/(s_l*(1+625*pow(1-s_l,4)))) ;
+  else return(0.) ;
+}
+
+
+#undef P_l
+#undef C_s
+#undef TEM
+
+#undef P_l1
+#undef C_s1
+#undef TEM_1
+
+#undef P_ln
+#undef C_sn
+#undef TEM_n
+
+#undef M_H2O_l
+#undef M_H2O_i
+#undef M_SALT
+#undef S
+#undef S_H2O_l
+#undef S_H2O_i
+#undef S_SALT
+#undef Rho
+#undef Eps
+#undef W_H2O
+#undef W_SALT
+#undef Q
+
+#undef M_H2O_l1
+#undef M_H2O_i1
+#undef M_SALT1
+#undef S_1
+#undef S_H2O_l1
+#undef S_H2O_i1
+#undef S_SALT1
+#undef Rho1
+#undef Eps1
+#undef W_H2O1
+#undef W_SALT1
+#undef Q_1
+
+#undef M_H2O_ln
+#undef M_H2O_in
+#undef M_SALTn
+#undef S_n
+#undef S_H2O_ln
+#undef S_H2O_in
+#undef S_SALTn
+#undef Rhon
+#undef Epsn
+#undef W_H2On
+#undef W_SALTn
+#undef Q_n
+
+#undef KD_H2O
+#undef KD_SALT
+#undef KF_SALT
+#undef KTH

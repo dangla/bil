@@ -1,0 +1,93 @@
+Geometry
+1 plan
+
+Mesh
+4 0. 0. 0.01 0.01
+0.0001
+1 100 1
+1 1 1
+
+Material
+Model = 42
+porosite = 0.14  # Porosite
+D_Cl = 2.6e-12   # Diffusion effective de Cl
+r_d = 1.         # Rapport des tortuosites des anions et des cations
+s_caoh2 = 2350.  # Contenu en CaOH2 
+s_c3ah6 = 22.5   # Contenu en C3AH6 
+s_sel = 50.      # Contenu en sel de Friedel (reference) 
+s_aloh3 = 10.    # Contenu en AlOH3 
+s_csh = 1100     # Contenu en CSH 
+alpha = 0.12     # Coefficient de l'isotherme 
+beta = 2.66      # Coefficient de l'isotherme 
+
+Fields
+10
+Type = affine Value = 25     Grad = 0. Point = 0.
+Type = affine Value = 76.9   Grad = 0. Point = 0.
+Type = affine Value = 1.     Grad = 0. Point = 0.
+Type = affine Value = -2.    Grad = 0. Point = 0.
+Type = affine Value = 570    Grad = 0. Point = 0.
+Type = affine Value = -1.    Grad = 0. Point = 0.
+Type = affine Value = 595    Grad = 0. Point = 0.
+Type = affine Value = 83     Grad = 0. Point = 0.
+Type = affine Value = -1.45042689e-3   Grad = 0. Point = 0.
+Type = affine Value = 1.     Grad = 0. Point = 0.
+
+Initialization
+8
+Region = 2 Unknown = c_cl    Field = 10
+Region = 2 Unknown = c_na    Field = 1
+Region = 2 Unknown = c_k     Field = 2
+Region = 2 Unknown = z_caoh2 Field = 3
+Region = 2 Unknown = z_sf    Field = 9
+Region = 2 Unknown = z_c3a   Field = 3
+Region = 2 Unknown = z_aloh3 Field = 4
+Region = 2 Unknown = psi     Field = 0
+
+Functions
+0
+
+Boundary Conditions
+15
+Region = 1 Unknown = c_cl    Field = 5 Function = 0
+Region = 1 Unknown = c_na    Field = 7 Function = 0
+Region = 1 Unknown = c_k     Field = 8 Function = 0
+Region = 1 Unknown = z_caoh2 Field = 6 Function = 0
+Region = 1 Unknown = z_c3a   Field = 6 Function = 0
+Region = 1 Unknown = z_aloh3 Field = 6 Function = 0
+Region = 1 Unknown = z_sf    Field = 6 Function = 0
+Region = 3 Unknown = c_cl    Field = 10 Function = 0
+Region = 3 Unknown = c_na    Field = 1 Function = 0
+Region = 3 Unknown = c_k     Field = 8 Function = 0
+Region = 3 Unknown = z_caoh2 Field = 6 Function = 0
+Region = 3 Unknown = z_c3a   Field = 6 Function = 0
+Region = 3 Unknown = z_aloh3 Field = 6 Function = 0
+Region = 3 Unknown = z_sf    Field = 6 Function = 0
+Region = 3 Unknown = psi     Field = 0 Function = 0
+
+Loads
+0
+
+Points
+0
+
+Dates
+2
+0 0.1 #2.592e+06
+
+Objective Variations
+c_cl    = 0.01
+z_caoh2 = 0.1
+z_c3a   = 0.1
+z_sf    = 0.1
+z_aloh3 = 0.1
+c_na    = 1
+c_k     = 1
+psi     = 0.1
+
+Iterative Process
+Iter = 1 Tol = 0.0001 Recom = 0 
+
+Time Steps
+Dtini = 0.1 Dtmax = 86400
+

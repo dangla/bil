@@ -1,0 +1,126 @@
+# Barriere Ouvragee soumise a une elevation de temperature
+#
+Geometry
+1 axis
+
+Mesh
+5 0.425 0.425 1.225 10 10
+0.032
+1 25 75 1
+1 1 2 2
+
+Material
+Model = m6
+gravite = 0
+phi = 0.3
+rho_l = 1000
+M_asR = 0.00346
+M_vsR = 0.00216
+k_int = 1e-20
+mu_l = 0.001
+mu_g = 1.8e-05
+p_l0 = 100000
+p_v0 = 2460
+p_a0 = 97540
+T_0 = 293
+D_av = 0.00248
+lam_s = 1.12
+lam_l = 0.6
+lam_g = 0.026
+C_s = 2.3e+06
+C_pl = 4180
+C_pv = 1800
+C_pa = 1000
+L_0 = 2.45e+06
+a = 0.003
+p_c3 = 1.e6
+Curves = tab1
+
+Material
+Model = m6
+gravite = 0
+phi = 0.05
+rho_l = 1000
+M_asR = 0.00346
+M_vsR = 0.00216
+k_int = 1e-19
+mu_l = 0.001
+mu_g = 1.8e-05
+p_l0 = 100000
+p_v0 = 2460
+p_a0 = 97540
+T_0 = 293
+D_av = 0.00248
+lam_s = 1.62
+lam_l = 0.6
+lam_g = 0.026
+C_s = 2e+06
+C_pl = 4180
+C_pv = 1800
+C_pa = 1000
+L_0 = 2.45e+06
+a = 0.003
+p_c3 = 2.e5
+Curves = tab2
+
+Fields
+6
+Type = affine Value = -7.611655e+07 Gradient = 0 Point = 0
+Type = affine Value = 4.905e+06 	  Gradient = 0 Point = 0
+Type = affine Value = 9.225595e+04  Gradient = 0 Point = 0
+Type = affine Value = 4.891671e+06  Gradient = 0 Point = 0
+Type = affine Value = 323 	        Gradient = 0 Point = 0
+Type = affine Value = -1 		        Gradient = 0 Point = 0
+
+Initialization
+6
+Region = 2 Unknown = p_l  Field = 1
+Region = 3 Unknown = p_l  Field = 2
+Region = 2 Unknown = p_a  Field = 3
+Region = 3 Unknown = p_a  Field = 4
+Region = 2 Unknown = tem  Field = 5
+Region = 3 Unknown = tem  Field = 5
+
+Functions
+1
+N = 12
+F(0)           =  0
+F(3.1536e+08)  =  1.1006064e11
+F(6.3072e+08)  =  1.978884e11
+F(9.4608e+08)  =  2.6852904e11
+F(1.26144e+09) =  3.2734368e11
+F(1.5768e+09)  =  3.7504188e11
+F(2.20752e+09) =  4.4410572e11
+F(2.83824e+09) =  4.90779e11
+F(3.78432e+09) =  5.3902908e11
+F(4.7304e+09)  =  5.71526928e11
+F(6.3072e+09)  =  6.09764328e11
+F(9.4608e+09)  =  6.61641048e11
+
+Boundary Conditions
+3
+Region = 4 Unknown = p_l Field = 2 Function = 0
+Region = 4 Unknown = p_a Field = 4 Function = 0
+Region = 4 Unknown = tem Field = 5 Function = 0
+
+Loads
+1
+Region = 1 Eq = the Type = flux Field = 6 Function = 1
+
+Points
+2
+0.825
+1.225
+
+Dates
+11 0. 3.1536e7 6.3072e7 1.26144e8 1.89216e8 2.52288e8 
+      3.1536e8 6.3072e8 1.26144e9 1.5768e9  3.1536e9 
+      
+Objective Variations
+p_l = 1.e4 p_a = 1.e4 tem = 1 
+
+Iterative Process
+Iter = 100 Tol = 1.e-6 Recom = 0 
+
+Time Steps
+Dtini = 1.e2 Dtmax = 3.1536e+07

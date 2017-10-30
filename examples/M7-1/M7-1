@@ -1,0 +1,111 @@
+Geometry
+2 plan
+
+
+Mesh
+ternay.msh
+
+
+Material
+Model = M7
+gravite = 0
+rho_s = 2300
+young = 1.4e+10
+poisson = 0.15
+phi = 0.05
+rho_l = 1000
+p_l0 = 0
+k_int = 1e-14
+mu_l = 0.001
+p_g = 0.
+b = 0.4
+N = 1e-10
+Curves = beton
+
+
+Material
+Model = M7
+gravite = 0
+rho_s = 2500
+young = 1.8e+10
+poisson = 0.15
+phi = 0.4
+rho_l = 1000
+p_l0 = 0
+k_int = 1e-11
+mu_l = 0.001
+p_g = 0
+b = 0.2
+N = 1e-10
+Curves = roche
+
+
+Fields
+1
+Type = affine Value = 0 Gradient = 0 -10000 0 Point = 0 517 0
+
+
+Initialization
+0
+
+
+Functions
+0
+
+
+Boundary Conditions
+18
+Region = 122 Unk = u_1 Field = 0 Function = 0
+Region = 123 Unk = u_1 Field = 0 Function = 0
+Region = 123 Unk = u_2 Field = 0 Function = 0
+Region = 124 Unk = u_1 Field = 0 Function = 0
+Region = 121 Unk = p_l Field = 1 Function = 0
+Region = 101 Unk = p_l Field = 1 Function = 0
+Region = 102 Unk = p_l Field = 1 Function = 0
+Region = 103 Unk = p_l Field = 1 Function = 0
+Region = 104 Unk = p_l Field = 1 Function = 0
+Region = 105 Unk = p_l Field = 1 Function = 0
+Region = 106 Unk = p_l Field = 0 Function = 0
+Region = 107 Unk = p_l Field = 0 Function = 0
+Region = 108 Unk = p_l Field = 0 Function = 0
+Region = 109 Unk = p_l Field = 0 Function = 0
+Region = 110 Unk = p_l Field = 0 Function = 0
+Region = 111 Unk = p_l Field = 0 Function = 0
+Region = 112 Unk = p_l Field = 0 Function = 0
+Region = 125 Unk = p_l Field = 0 Function = 0
+
+
+Loads
+6
+Region = 101 Equ = meca_1 Type = pressure Field = 1 Function = 0
+Region = 102 Equ = meca_1 Type = pressure Field = 1 Function = 0
+Region = 103 Equ = meca_1 Type = pressure Field = 1 Function = 0
+Region = 104 Equ = meca_1 Type = pressure Field = 1 Function = 0
+Region = 105 Equ = meca_1 Type = pressure Field = 1 Function = 0
+Region = 121 Equ = meca_1 Type = pressure Field = 1 Function = 0
+
+
+Points
+0
+
+
+Dates 
+11
+0 100 200 300 400 500 600 700 800 900 1000
+
+
+Objective Variations
+u_1 = 0.001 
+u_2 = 0.001 
+p_l = 10000 
+
+
+Iterative Variations
+Iter  = 3 
+Tol   = 0.0001 
+Recom = 0 
+
+
+Time Steps
+Dtini = 100 
+Dtmax = 100 

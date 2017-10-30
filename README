@@ -1,0 +1,82 @@
+Program
+-------
+
+Bil is a modeling platform based on finite volume/element methods. 
+
+Bil is distributed under the terms of the GNU General Public License (GnuGPL). 
+
+Bil can be downloaded from the URL 
+
+	http://perso.lcpc.fr/dangla.patrick/bil
+
+
+Building requirements
+---------------------
+
+Building Bil from source requires:
+  Make (http://www.gnu.org/software/make)
+  C and C++ compilers (http://gcc.gnu.org)
+  Fortran compiler (http://gcc.gnu.org/fortran)
+
+Building the documentation from source requires:
+  Texinfo (http://www.gnu.org/software/texinfo)
+  Doxygen (http://www.stack.nl/~dimitri/doxygen)
+
+
+List of folders
+---------------
+
+	./base      reference solution and data bases
+	./bin       binaries
+	./doc       documentations
+	./examples  examples of input data files
+	./hsl       sources from the HSL library
+	./src       sources
+	./lib       libraries
+
+
+Building and Installation
+-------------------------
+
+To build Bil and/or the documentation, use the following commands:
+
+	make      (build the binary file bil and the documentation)
+	make bin  (build the binary file only)
+	make doc  (build the documentation only)
+
+The binary file is created in the folder ./bin, the documentation (files info, ps, pdf, txt, html) is created in ./doc.
+
+To install Bil, use the following commands (this may require root permissions):
+
+	make install      (install the binary and the documentation)
+	make install-bin  (install the binary only)
+	make install-doc  (install the documentation only)
+
+By default the files are installed in PREFIX = /usr/local
+
+	bil       PREFIX/bin
+	bil.1     PREFIX/man/man1
+	bil.info  PREFIX/info
+
+PREFIX is defined in "Makefile". Unless essential it is not recommended to change the location PREFIX. If however you want another location, change the variable PREFIX in "Makefile" and  run "make" again. If you don't have root permissions use an alias instead (i.e. enter anywhere: alias bil='absolutepathtobilfolder/bin/bil-I.J').
+
+Once installation is completed, running 
+
+	make clean
+
+will delete all the local files previously created.
+
+
+Usage
+-----
+The bil program prints out the available options when run without any
+option. To run a specific job, you can enter
+
+	bil [options] myfile
+
+
+Bugs/Contact
+------------
+Please mail all bug reports and suggestions to me. I will try to give satisfaction.
+
+email :	patrick.dangla@ifsttar.fr

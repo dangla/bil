@@ -1,0 +1,52 @@
+Geometry
+1 plan
+Mesh
+3 0 0.2 0.2
+0.001
+200 1
+1 1
+Material
+51
+phi = 0.1
+rho_l = 0.998
+rho_g = 0.91
+C_sk = 2e+06
+C_pl = 4180
+C_pg = 2000
+T_0 = 273
+k_sk = 1
+k_l = 0.598
+k_g = 2.2
+L_0 = 3.34e5
+n_p = 2
+T_1 = 272.9
+T_2 = 273.
+courbe = beton
+Fields
+2
+Val = 263 Grad = 0 Point = 0
+Val = 283 Grad = 0 Point = 0
+Initialization
+1
+Reg = 1 Inc = tem Champ = 2
+Functions
+0
+Boundary Conditions
+1
+Reg = 2 Inc = tem Champ = 1 Fonc = 0
+Loads
+0
+Points
+0
+Dates
+3
+0 1800 3600
+Objective Variations
+tem = 1
+Iterative Process
+Iter = 10 Tol = 1e-08 Rec = 0
+
+
+
+Time Steps
+Dtini = 1 Dtmax = 86400 

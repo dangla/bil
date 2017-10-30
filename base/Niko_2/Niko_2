@@ -1,0 +1,61 @@
+Geometry
+2 axis
+Mesh
+Q4.msh
+Material
+Model = Niko_2
+gravite = 0           # gravity
+rho_s = 0             # masse density of the dry material
+K_m = 1.04e9          # Compression modulus of the non fractured material
+phi0_1 = 0.032        # Macroporosity
+p0_co2 = 0            # initial pressure of CO2
+k_int = 262e-15       # intrinsic permeability
+mu_co2 = 1.7857e-05   # dynamic viscosity of CO2
+sig0_11 = 0        # initial stress 11
+sig0_22 = 0        # initial stress 22
+sig0_33 = 0        # initial stress 33
+young =  1.12e+09     # Young's modulus of coal
+poisson = 0.26        # Poisson's ratio of coal
+young_3 =  1.12e+09
+poisson_3 = 0.26
+shear_3 = 4.44e8
+axis_3 = 2
+Curves = Ribolla_CO2
+Fields
+1
+Val =  1.6e7 Grad = 0 0 Point = 0 0
+Initialization
+0
+Functions
+1
+N = 2 F(0) = 0 F(10) = 1
+Boundary Conditions
+3
+Reg = 4  Unk = u_1   Field = 0 Function = 0
+Reg = 1  Unk = u_2   Field = 0 Function = 0
+Reg = 10 Unk = p_co2 Field = 1 Function = 1
+Loads
+2
+Reg = 3 Equ = meca_1 Type = pressure Champ = 1 Fonction = 1
+Reg = 2 Equ = meca_1 Type = pressure Champ = 1 Fonction = 1
+Points
+1
+0.5 0.5
+Dates
+2
+0 10
+Objective Variations
+u_1 = 1.e-4 
+u_2 = 1.e-4 
+p_co2 = 1000
+Iterative Process
+Iteration = 10
+Tolerance = 1e-06 
+Repetition = 0 
+Time Steps
+
+
+
+Time Steps
+Dtini = 1.e-3
+Dtmax = 0.5

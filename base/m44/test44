@@ -1,0 +1,49 @@
+DIME
+1 plan
+MAIL
+2 0 1
+0.1
+10
+1
+MATE
+44
+porosite = 0.1
+D_Cl = 1
+T = 1
+activite = 1
+kw_int = 1
+kg_int = 1
+klinkenberg = 1
+d_va = 1
+B_h = 1
+a = 1
+m = 1
+n = 1
+Isotherme = 1
+courbes = bidon p_c = Range{x1 = 0,x2 = 1, n = 10} s_l = Van-Genuchten(1){p0 = 1.,m = 0.2}
+CHMP
+0
+INIT
+0
+FONC
+3
+Ficher = ficinit
+COND
+0
+CHAR
+0
+POIN
+0
+TEMP
+0
+OBJE
+c_cl = 1
+c_oh = 1
+c_na = 1
+c_k = 1
+si = 1
+p_v = 1
+p_g = 1
+ALGO
+Iter = 1 Tol = 1 Rec = 0
+Dtini = 1 Dtmax = 1

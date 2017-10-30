@@ -1,0 +1,53 @@
+DIME
+1 plan
+MAIL
+4 0 0 0.1 0.1
+1.e-3
+1 100 1
+1 1 1
+MATE
+Modele = 53
+porosite = 0.384
+N_CH     = 3.0
+N_CSH    = 1.2
+T_CH     = 1.e5
+T_CSH    = 1.e5
+CHMP
+4
+Val = -16.   Grad = 0. Point = 0.
+Val = 1.     Grad = 0. Point = 0.
+Val = 0.     Grad = 0. Point = 0.
+Val = -1.    Grad = 0. Point = 0.
+INIT
+4
+Reg = 2 Inc = logc_co2  Champ = 1
+Reg = 2 Inc = psi       Champ = 0
+Reg = 2 Inc = z_csh     Champ = 2
+Reg = 2 Inc = z_chcc    Champ = 2
+FONC
+1
+N = 2 F(0) = 1. F(86400) = 0.
+COND
+2
+Reg = 1 Inc = psi       Champ = 0 Fonc = 0
+Reg = 1 Inc = logc_co2  Champ = 1 Fonc = 1
+#Reg = 3 Inc = logc_co2  Champ = 1 Fonc = 0
+#Reg = 3 Inc = psi       Champ = 0 Fonc = 0
+#Reg = 3 Inc = z_csh     Champ = 2 Fonc = 0
+#Reg = 3 Inc = z_chcc    Champ = 2 Fonc = 0
+CHAR
+0
+POIN
+1
+0.
+TEMP
+3
+0. 1.e6 2e+6 #3.1536e7
+OBJE
+logc_co2 = 0.1
+z_chcc   = 1.e-1
+z_csh    = 1.e-1
+psi      = 1.
+ALGO
+Iter = 10 Tol = 1.e-4 Recom = 0
+Dtini = 1.e-2 Dtmax = 1.e9

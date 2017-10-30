@@ -1,0 +1,56 @@
+DIME
+1 plan
+MAIL
+3 0 0 0.4
+0.001
+1 100
+1 1
+MATE
+46
+porosite = 0.384
+k_int = 5e-19
+A_1 = 150
+A_2 = 1e-2
+C_2 = 0.14e6
+N_CaOH2 = 6.1
+N_CSH  = 2.4
+T_csh = 1.8e-4
+courbes = ciment   p_c = Range[0:1.e9:4001]   s_l = Van-Genuchten[1](p0=3.7451e7,m=0.461) k_rl = Mualem_liq[2](m=0.461)
+CHMP
+5
+Val = -2.884031503126606e-15 Grad = 0. Point = 0.
+Val = 2.345989849188018e-2 Grad = 0. Point = 0.
+Val = -5.8e7 Grad = 0. Point = 0.
+Val = 3.092616927277036e-9 Grad = 0. Point = 0.
+Val = 0.016 Grad = 0. Point = 0.
+INIT
+5
+Reg = 2 Inc = c_co2  Champ = 1
+Reg = 2 Inc = c_oh   Champ = 2
+Reg = 2 Inc = p_l    Champ = 3
+Reg = 2 Inc = c_hco3 Champ = 4
+Reg = 2 Inc = psi    Champ = 0
+FONC
+0
+COND
+3
+Reg = 1 Inc = psi   Champ = 0 Fonc = 0
+Reg = 1 Inc = p_l   Champ = 3 Fonc = 0
+Reg = 1 Inc = c_co2 Champ = 5 Fonc = 0
+CHAR
+0
+POIN
+0
+TEMP
+3
+0. 60 600
+OBJE
+c_co2 = 1.e-3 
+c_oh = 1.e-3 
+p_l = 1.e4 
+c_caco3 = 1.e-3 
+c_hco3 = 1.e-3
+psi = 1.
+ALGO
+Iter = 20 Tol = 1.e-4 Recom = 0 
+Dtini = 1.e-2 Dtmax = 36000

@@ -1,0 +1,104 @@
+Units
+Length = decimeter
+Time   = second
+Mass   = kilogram
+
+
+Geometry
+Dimension = 1  axis
+
+
+Mesh
+4
+0. 0. 0.5 0.5
+1.e-2
+1 50 1
+1 1 1
+
+
+Material
+Model = ESAC
+porosity = 0.11
+N_CH     = 1.84
+N_CSH    = 5.
+N_AH3    = 1.e-6
+N_CSH2   = 0
+N_AFm    = 0
+N_AFt    = 0
+N_C3AH6  = 2.
+R_CSH2   = 0
+R_AFm    = 1.e-11
+R_AFt    = 1.e-7
+R_C3AH6  = 1.e-8
+Curves_log = Sat  r = Range{r1 = 1.e-8 , r2 = 1.e-5 , n = 1000} S_L = Expressions(1){a = 5.72 ; m = 0.444 ; V_w = 18.e-3 ; Gamma_lg = 0.072 ; RT = 2436.e2 ; r0 = a*V_w/RT*2*Gamma_lg ; S_L = (1 + (r0/r)**(1/(1-m)))**(-m)}
+a_AFt = 1.e-8
+
+
+Fields
+8
+Value = 1       Gradient = 0 0 0 Point = 0 0 0
+Value = 1       Gradient = 0 0 0 Point = 0 0 0
+Value = 0       Gradient = 0 0 0 Point = 0 0 0
+Value = -3.     Gradient = 0 0 0 Point = 0 0 0
+Value = -1.     Gradient = 0 0 0 Point = 0 0 0
+Value = 1       Gradient = 0 0 0 Point = 0 0 0
+Value = -1.52   Gradient = 0 0 0 Point = 0 0 0
+Value = -8      Gradient = 0 0 0 Point = 0 0 0
+
+
+Initialization
+5
+Region = 2 Unknown = logc_h2so4  Field = 1 Function = 1
+Region = 2 Unknown = psi         Field = 0
+Region = 2 Unknown = z_ca        Field = 2
+Region = 2 Unknown = z_al        Field = 8
+Region = 2 Unknown = logc_k      Field = 1 Function = 2
+
+
+Functions
+2
+N = 2 F(0) = -35.  F(86400) = -17.5
+N = 2 F(0) = -1.52 F(86400) = -1.52
+
+
+Boundary Conditions
+5
+Region = 3 Unknown = logc_h2so4 Field = 1 Function = 1
+Region = 3 Unknown = psi        Field = 0 Function = 0
+Region = 3 Unknown = z_ca       Field = 8 Function = 0
+Region = 3 Unknown = z_al       Field = 8 Function = 0
+Region = 3 Unknown = logc_k     Field = 1 Function = 2
+
+
+Loads
+0
+
+
+Points
+2
+0.2 0
+
+
+Dates
+16
+0. 8.64e4 8.64e5 1.728e6 2.592e6 5.256e6 7.884e6 1.0512e7 1.314e7 1.5768e7 1.8396e7 2.1024e7 2.3652e7 2.628e7 2.8908e7 3.1536e7
+
+
+Objective Variations
+logc_h2so4   = 1.e-1
+z_ca         = 1.e-1
+psi          = 1.e-1
+logc_k       = 1.e-1
+z_al         = 1.e-1
+logc_oh      = 1.e-1
+
+
+Iterative Process
+Iter = 40 
+Tol = 1.e-4
+Repetition = 2
+
+
+Time Steps
+Dtini = 100.
+Dtmax = 1.e9

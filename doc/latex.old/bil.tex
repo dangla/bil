@@ -1,0 +1,283 @@
+\documentclass[a4paper,11pt]{article}
+%\usepackage{graphicx} 
+\usepackage{verbatim} 
+\usepackage{array}    
+%\usepackage{texdraw}
+%\usepackage{array}
+ 
+\begin{document}
+\begin{center}
+\LARGE
+Manuel (succint) de r\'ef\'erence de Bil\\
+\normalsize
+Patrick Dangla\\
+%\date
+\end{center}
+
+\section{Introduction}
+Bil est un programme de calcul aux \'el\'ements et/ou volumes finis pour la r\'esolution d'\'equations de bilan issues de la m\'ecanique des milieux continus tels que bilan de masse, de quantit\'e de mouvement, de chaleur etc\ldots (d'o\`u son nom !). Bil est un programme librement distribu\'e et couvert par le copyright de la GNU General Public License (GnuGPL). Le source du code peut \^etre charg\'e \`a l'adresse 
+\begin{center}
+http://perso.lcpc.fr/dangla.patrick/
+\end{center}
+Bil est destin\'e aux \'etudiants et chercheurs d\'esirant effectuer des calculs ou d\'evelopper leurs propres mod\`eles. Il est \'ecrit en langage C et, par cons\'equent, est support\'e par tout OS poss\'edant un compilateur C. Cependant son environnement naturel dans lequel il a \'et\'e d\'evelopp\'e est Unix ou Linux.
+
+Bil est d\'evelopp\'e pour les applications de dimension quelconque (1,2 ou 3). Il est d\'ecoupl\'e de tout programme de pr\'eparation des donn\'ees et de post-traitement des r\'esultats. Il accepte cependant les fichiers de maillage produits par le logiciel libre GMSH qui peut \^etre t\'el\'echarger \`a l'adresse http://www.geuz.org/gmsh/ (version $\geq$ 1.54). Les fichiers de r\'esultats 1D produits par Bil peuvent \^etre directement exploit\'es par des traceurs de courbes comme gnuplot. En ce qui concerne les calculs 2D et 3D une option permet de fabriquer des fichiers de post-traitement exploitables par GMSH (voir les options de Bil).
+
+\section{Ex\'ecution de Bil}
+L'utilisation de Bil s'effectue en ex\'ecutant un fichier contenant les donn\'ees du probl\`eme\\[10pt]
+{\tt bil [options] mon\_fichier}\\[10pt]
+{\tt mon\_fichier} est le fichier de donn\'ees dont le format est d\'ecrit dans la section suivante. Sans option le programme ex\'ecute le fichier {\tt mon\_fichier} et produit les fichiers de r\'esultats {\tt mon\_fichier.p}\textit{i} et {\tt mon\_fichier.t}\textit{i} (voir plus loin la description de ces fichiers). Si {\tt mon\_fichier} n'existe pas Bil ouvre le fichier {\tt mon\_fichier} en mode \'ecriture, passe en mode interactif et invite l'utilisateur \`a donner les informations n\'ecessaire \`a la construction du fichier de donn\'ees. Avec l'option -h (aide) il n'est pas n\'ecessaire de donner un nom de fichier.
+
+Les options sont :
+
+\begin{tabular}{ll}
+%options & commentaires \\ \hline
+-h & aide en ligne (s'utilise sans autre argument) \\
+-r & lecture seule du fichier {\tt mon\_fichier} \\
+-i & sort le fichier des permutations inverses {\tt mon\_fichier.graph.iperm} \\
+-p & sort les fichiers de post-traitement {\tt mon\_fichier.pos}\textit{i} pour GMSH
+\end{tabular}
+
+\section{Format du fichier de donn\'ees}
+Le fichier {\tt mon\_fichier} mentionn\'e ci-dessus doit contenir les donn\'ees du probl\`eme \`a calculer. Pour des raisons de lisibilit\'e ces donn\'ees sont class\'ees par groupe. Chaque groupe est identifi\'e par un mot-cl\'e de 4 lettres. Les donn\'ees de chaque groupe doivent donc \^etre pr\'ec\'ed\'ees du mot-cl\'e correspondant. Ces mot-cl\'es permettent d'identifier la nature des donn\'ees : maillage, propri\'et\'es mat\'erielles, conditions aux limites, etc (voir table \ref{tab:t1}). L'ordre dans lequel ces mot-cl\'es doivent appara\^{\i}tre dans {\tt mon\_fichier} est impos\'e. Le fichier commence, par exemple, par le mot-cl\'e {\tt DIME} qui d\'efini la dimension du probl\`eme (1D, 2D ou 3D) et l'\'eventuelle g\'eom\'etrie suppos\'ee du probl\`eme (plane, axisym\'etrique). La liste compl\`ete et ordonn\'ee des mot-cl\'es devant figur\'es dans le fichier de donn\'ees figure dans le tableau \ref{tab:t1}. Toute ligne pr\'ec\'edant les mots-cles et commencant par un \# est consid\'er\'ee comme une ligne de commentaire. 
+
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+mot-cl\'e & nature des donn\'ees\\ \hline \hline
+{\tt DIME} & dimension et g\'eom\'etrie du probl\`eme\\ \hline
+{\tt MAIL} & d\'efinition d'un maillage\\ \hline
+{\tt MATE} & propri\'et\'es du mat\'eriau\\ \hline
+{\tt INIT} & conditions initiales\\ \hline
+{\tt FONC} & d\'efinition d'un ensemble de fonction du temps\\ \hline
+{\tt COND} & conditions aux limites\\ \hline
+{\tt CHAR} & chargement\\ \hline
+{\tt POIN} & d\'efinition d'un ensemble de points du maillage\\ \hline
+{\tt TEMP} & d\'efinition d'un ensemble de temps\\ \hline
+{\tt ALGO} & param\`etres du processus it\'eratif\\ \hline
+\end{tabular}
+\end{center}
+\caption{Mots-cl\'es}
+\label{tab:t1}
+\end{table}
+
+Ces mots-cl\'es n\'ecessitent des donn\'ees dont la nature est indiqu\'ee dans le tableau \ref{tab:t1}. Une aide en ligne renseigne sur le format des donn\'ees \`a respecter apr\`es chaque mot-cl\'e. Pour y acc\'eder il suffit de taper :
+
+{\flushleft \tt bil -h}
+
+\section{Format des fichiers de r\'esultats}
+A l'issu d'un calcul, Bil produit 2 ensembles de fichiers de r\'esultats. Dans le premier ensemble, les fichiers sont nomm\'es :
+\begin{center}
+{\tt mon\_fichier.p}\textit{i}
+\end{center}
+o\`u \textit{i} est un entier variant entre 1 et le nombre de points d\'efinis dans le mot-cl\'e {\tt POIN}. Il n'y a pas de fichiers si ce nombre est nul. Ils contiennent les r\'esultats aux points, d\'efinis dans {\tt POIN}, en fonction du temps. La premi\`ere colonne correspond aux temps de calcul. Les autres colonnes correspondent \`a des quantit\'es sp\'ecifiques au mod\`ele utilis\'e. Ce mod\`ele est d\'efini dans le mot-cl\'e {\tt MATE}.
+
+Dans le deuxi\`eme ensemble, les fichiers sont nomm\'es :
+\begin{center}
+{\tt mon\_fichier.t}\textit{i}
+\end{center}
+o\`u \textit{i} est un entier variant entre 0 et le nombre de temps d\'efinis dans le mot-cl\'e {\tt TEMP}. Ils contiennent les r\'esultats aux temps, d\'efinis dans {\tt TEMP}, en fonction des coordonn\'ees spatiales. Les premi\`eres colonnes de ces fichiers correspondent aux coordonn\'ees des points de calcul. Le contenu des autres colonnes correspondent aux m\^emes quantit\'es que celles des fichiers {\tt mon\_fichier.p}\textit{i}. Les premi\`eres lignes de ces fichiers sont des lignes de commentaires qui indiquent la nature de ces quantit\'es.
+
+\section{Tous les fichiers produits et utilis\'es par Bil}
+Bil produit, et parfois utilise lors d'un second passage, un certain nombre de fichiers. Le contenu de chaque fichier est d\'etermin\'e par son nom form\'e par celui du fichier de donn\'es suivi d'un suffixe : {\tt mon\_fichier}.\textit{suf}. Ils sont list\'es dans le tableau \ref{tab:t6}.
+
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+fichier & description sommaire du fichier\\ \hline\hline
+{\tt mon\_fichier}.t\textit{i} & r\'esultats au pas de temps \textit{i}\\ \hline
+{\tt mon\_fichier}.p\textit{i} & r\'esultats au point \textit{i}\\ \hline
+{\tt mon\_fichier}.pos\textit{i} & vue \textit{i} exploitable par GMSH\\ \hline
+{\tt mon\_fichier}.msh & maillage au format GMSH\\ \hline
+%{\tt mon\_fichier}.graph & graph du maillage\\ \hline
+{\tt mon\_fichier}.graph.iperm & permutations inverses\\ \hline
+{\tt mon\_fichier}.stk & r\'esultats de fin de calcul\\ \hline
+{\tt mon\_fichier}.rep & fichier n\'ecessaire pour une reprise\\ \hline
+\end{tabular}
+\end{center}
+\caption{Fichiers associ\'es au fichier de donn\'ees.}
+\label{tab:t6}
+\end{table}
+
+Le fichier {\tt mon\_fichier}.rep permet de poursuivre un calcul pr\'ec\'edent, issu d'un fichier {\tt mon\_precedent\_fichier}, en partant des r\'esultats de fin de calcul enregistr\'es dans {\tt mon\_precedent\_fichier}.stk. Pour cela faire une copie exacte de {\tt mon\_precedent\_fichier}.stk dans {\tt mon\_fichier}.rep puis ex\'ecuter le fichier {\tt mon\_fichier} dans lequel on aura d\'efini des nouveaux temps au del\`a du temps final pr\'ec\'edent.
+
+\section{Les mod\`eles}
+D\'efinissons ce que nous entendons par mod\`ele. Un mod\`ele est d\'efini par l'ensemble des informations suivantes :
+\begin{itemize}
+\item Le nombre d'\'equations de bilan
+\item La nature de ces \'equations
+\item Les lois de comportement associ\'ees
+\item La m\'ethode num\'erique employ\'ee (EF,VF,$\cdots$)
+\end{itemize}
+
+Quelques mod\`eles disponibles dans Bil sont indiqu\'ees sommairement dans le tableau \ref{tab:t5}
+
+
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{|c|l|}
+\hline
+mod\`ele & description sommaire\\ \hline\hline
+1 & \'Equations de Richards (VF 1D)\\ \hline
+2 & \'Ecoulement de liquide et de gaz (VF 1D)\\ \hline
+3 & \'Equation de Poisson-Boltzmann (VF 1D)\\ \hline
+7 & Poro\'elasticit\'e non satur\'e (EF 3D)\\ \hline
+10 & \'Equation de Richards (EF 3D)\\ \hline
+15 & Sols non satur\'es (EF 3D)\\ \hline
+16 & Poroplasticit\'e (Drucker-Prager) (EF 3D)\\ \hline
+\end{tabular}
+\end{center}
+\caption{Quelques mod\`eles.}
+\label{tab:t5}
+\end{table}
+
+\section{Comment d\'evelopper un nouveau mod\`ele ?}
+Il suffit de cr\'eer un nouveau fichier, {\tt m}\textit{i}.c, o\`u \textit{i} est un nombre entier, non attribu\'e, d\'esignant le num\'ero du mod\`ele \`a d\'evelopper. Pour s'aider on pourra prendre exemple sur des fichiers d\'ej\`a \'existants. Ce fichier doit contenir au moins 10 fonctions devant effectuer les t\^aches d\'efinies dans le tableau \ref{tab:t2}.
+
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+fonction & t\^ache\\ \hline\hline
+{\tt dm}\textit{i} & lire les propri\'et\'es du mat\'eriau dans le fichier de donn\'ees\\ \hline
+{\tt qm}\textit{i} & \'ecrire les propri\'et\'es du mat\'eriau dans le fichier de donn\'ees \\ \hline
+{\tt tb}\textit{i} & donner la longueur, par \'el\'ement, des tableaux \textit{f} et \textit{a}\\ \hline
+{\tt in}\textit{i} & initialiser les tableaux de calcul \textit{f} et \textit{a}\\ \hline
+{\tt ex}\textit{i} & actualiser le tableau \textit{a} (termes explicites)\\ \hline
+{\tt mx}\textit{i} & calculer la matrice \'el\'ementaire\\ \hline
+{\tt rs}\textit{i} & calculer le r\'esidu\\ \hline
+{\tt ch}\textit{i} & calculer le r\'esidu d\^u au chargement\\ \hline
+{\tt ct}\textit{i} & actualiser le tableau \textit{f} (inconnues secondaires)\\ \hline
+{\tt so}\textit{i} & calculer les quantit\'es figurant dans les fichiers de r\'esultats\\ \hline
+\end{tabular}
+\end{center}
+\caption{Fonctions d\'efinies dans les fichiers {\tt m}\textit{i}.c.}
+\label{tab:t2}
+\end{table}
+
+Pour vous aider la liste des variables et des tableaux utilis\'es dans ces fichiers {\tt m}\textit{i}.c est present\'ee dans le tableau \ref{tab:t3}.
+
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+variable & contenu\\ \hline\hline
+{\tt dim} & dimension du probl\`eme (1,2 ou 3)\\ \hline
+{\tt geom} & g\'eom\'etrie du probl\`eme (0={\tt plan} ou 1={\tt axis})\\ \hline
+{\tt neq} & nombre d'\'equations formelles du probl\`eme\\ \hline
+{\tt u\_1[n][k]} & valeur au temps $t+dt$ de l'inconnue {\tt k} au noeud {\tt n} de l'\'el\'ement\\ \hline
+{\tt u\_n[n][k]} & idem au temps $t$\\ \hline
+{\tt f\_1[l]} & valeur au temps $t+dt$ de l'inconnue secondaire {\tt l} de l'\'el\'ement\\ \hline
+{\tt f\_n[l]} & idem au temps $t$\\ \hline
+{\tt a[p]} & valeur du terme explicite {\tt p} de l'\'el\'ement\\ \hline
+{\tt k[i*neq+j]} & matrice rang\'ee ligne par ligne\\ \hline
+{\tt r[i]} & r\'esidu de la ligne {\tt i}\\ \hline
+\end{tabular}
+\end{center}
+\caption{Variables et tableaux utilis\'es dans les fichiers {\tt m}\textit{i}.c.}
+\label{tab:t3}
+\end{table}
+
+\section{Exemples de fichiers de donn\'ees}
+\subsection{Drainage d'une colonne}
+L'\'equation \`a r\'esoudre est l'\'equation de Richards. Une colonne de sable de 1 m de hauteur est initialement satur\'ee. La pression interstitielle est donn\'ee par $p_l = p_{atm} - g(x - 1)$. \`A l'instant $t=0$ on draine la colonne par la face inf\'erieure o\`u on impose la pression \`a $p_l=p_{atm}$. Le fichier de donn\'ee figure dans le tableau \ref{tab:t4}.
+
+
+\begin{table}
+\footnotesize
+\begin{center}
+\begin{tabular}{>{\tt}ll}
+donn\'ees dans le fichier & commentaires\\ \hline
+\# Exemple de calcul & lignes de\\
+\# Drainage d'une colonne & commentaires\\
+\# &\\
+DIME & dimension du pb\\
+1 plan   & pb 1D, g\'eom\'etrie plane\\
+MAIL & donn\'ees relatives au maillage\\
+3 0. 0. 1. & 3 points dont 2 confondus de coordonn\'ees 0. et 1.\\
+0.05 & la longueur du premier \'el\'ement \`a partir de 0. est 0.05\\
+1 20  & 1 element en 0. et 20 \'el\'ements entre 0. et 1.\\
+1 1  & 2 regions et 1 seul mat\'eriaux\\
+MATE & donn\'ees relatives au mat\'eriau\\
+1 & le num\'ero d'identification du mod\`ele\\
+gravite = -9.81 & la gravit\'e\\
+phi = 0.3 & la porosit\'e\\
+rho\_l = 1000 & la masse volumique du fluide\\
+k\_int = 4.4e-13 & la perm\'eabilit\'e intrins\`eque\\
+mu\_l = 0.001 & la viscosit\'e du fluide\\
+p\_g = 100000 & la pression du gaz\\
+n\_p = 101 & nombre de points des courbes $S_l(p_c)$ et $k_{rl}(p_c)$\\
+p\_c1 = 0 & entre $p_{c1}=0$\\
+p\_c2 = 15000 & et $p_{c2}=15000$\\
+courbes = tab & dans tab il y a 3 colonnes $p_c$ $S_l$ $k_{rl}$ de 101 lignes\\
+INIT & donn\'ees relatives aux conditions initiales\\
+1 & 1 condition initiale\\
+2 1 1.e5 -9.81 1. & dans la region 2 on initialise le parametre 1 par $p_l=1.\,10^5-9.81*(x-1.)$\\
+FONC & d\'efinition \'eventuelle de fonctions du temps $f(t)$\\
+0 & pas de fonctions d\'efinies (une r\'ef\'erence \`a 0 signifie $f(t)=1$)\\
+COND & donn\'ees relatives aux conditions limites\\
+1 & 1 condition \`a la limite\\
+1 1 1.e5 0. 0. 0 & dans la region 1 le param\`etre 1 vaut $p_l=10^5*f(t)$, avec $f(t)=1$\\
+CHAR & donn\'ees relatives aux chargements\\
+0 & il n'y en a pas\\
+POIN & les points o\`u on veut des r\'esultats\\
+0 & pas de points\\
+TEMP & les temps o\`u on veut des r\'esultats\\
+2 & 2 temps\\
+0. 1800000 & $t_0=0$ et $t_1=1800000$\\
+ALGO & donn\'ees relatives \`a l'algorithme\\
+20 1e-10 0 & 20 it\'erations, la tol\'erance est $10^{-10}$, pas de recommencements\\
+1 3600 1000 & pas de temps intial de 1, pas de temps max de 3600,\\
+& valeur objective : $p_l=1000$\\
+&  pour le calcul du pas de temps et de l'erreur relative\\ \hline
+\end{tabular}
+\end{center}
+\caption{Fichier de donn\'ees (drainage d'une colonne).}
+\label{tab:t4}
+\end{table}
+
+
+\begin{comment}
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+variable & contenu\\ \hline\hline
+{\tt dim} & dimension du probl\`eme (1,2 ou 3)\\ \hline
+{\tt geom} & g\'eom\'etrie du probl\`eme (0={\tt PLAN} ou 1={\tt AXIS})\\ \hline
+{\tt nno} & nombre de noeuds\\ \hline
+{\tt nel} & nombre d'\'el\'ements\\ \hline
+{\tt ngrpe} & nombre de groupe de mat\'eriaux\\ \hline
+{\tt ntemps} & nombre de temps\\ \hline
+{\tt npoints} & nombre de points\\ \hline
+{\tt u\_obj[k]} & variation objective de l'inconnue {\tt k}\\ \hline
+{\tt u\_ini[n][k]} & valeur initiale de l'inconnue {\tt k} du noeud {\tt n}\\ \hline
+{\tt n\_cl} & nombre de conditions aux limites\\ \hline
+{\tt n\_cg} & nombre de chargements\\ \hline
+{\tt n\_fn} & nombre de fonctions du temps\\ \hline
+{\tt n\_fi} & nombre de fonctions d'interpolation\\ \hline
+{\tt neq} & nombre d'\'equations formelles du probl\`eme\\ \hline
+{\tt u\_1[n][k]} & valeur au temps $t+dt$ de l'inconnue {\tt k} au noeud {\tt n}\\ \hline
+{\tt u\_n[n][k]} & idem au temps $t$\\ \hline
+{\tt f\_1[e][l]} & valeur au temps $t+dt$ de l'inconnue secondaire {\tt l} de l'\'el\'ement {\tt e}\\ \hline
+{\tt f\_n[e][l]} & idem au temps $t$\\ \hline
+{\tt a[e][p]} & valeur du terme explicite {\tt p} de l'\'el\'ement {\tt e}\\ \hline
+{\tt n\_sys} & taille du syst\`eme matriciel\\ \hline
+{\tt sys[n][k]} & position {\tt i} dans le syst\`eme de l'inconnue {\tt k} du noeud {\tt n} \\ \hline
+{\tt kd[i]} & diagonale\\ \hline
+{\tt ku[i][j]} & matrice triangulaire sup.\\ \hline
+{\tt kl[i][j]} & matrice triangulaire inf.\\ \hline
+{\tt r[i]} & r\'esidu\\ \hline
+\end{tabular}
+\end{center}
+\caption{Variables et tableaux.}
+\label{tab:t3}
+\end{table}
+\end{document}
+\end{comment}
+
+
+
+\end{document}

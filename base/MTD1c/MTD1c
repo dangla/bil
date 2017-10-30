@@ -1,0 +1,80 @@
+DIME
+1 plan
+
+MESH
+3 0. 0. 0.6
+0.001
+1 100
+1 1
+
+MATE
+Model = MTD1c
+porosite = 0.379                                                
+k_int = 1.4e-17                          
+A_1 = 6000
+D = 7e-15                                 
+R_CaOH2 = 40e-5
+N_CaOH2 = 3.9
+X_Na = 0.019
+X_K = 0.012
+frac = 0.8
+phi_r = 0.70 
+Curves = desorbCN
+Curves_log = modif-HsS-V-CN
+
+FLDS
+8
+Val = -15 		Grad = 0. 	Point = 0. 
+Val = -0.158		Grad = 0.	 Point = 0.  
+Val = -70.50000E+06 		Grad = 0.	 Point = 0.
+Val = 0.0		Grad = 0.	 Point = 0.    
+Val = 0.03		Grad = 0.	 Point = 0. 
+Val = 2.4  		Grad = 0.	 Point = 0.    
+Val = 1  		Grad = 0.	 Point = 0.
+Type = grid 		File = CN_satb
+
+INIT
+5
+Reg = 2 	Inc = logc_co2  	Champ = 1
+Reg = 2 	Inc = p_l   		  Champ = 8
+Reg = 2 	Inc = psi    		  Champ = 0
+Reg = 2 	Inc = z_si    	  Champ = 6
+Reg = 2 	Inc = z_ca 		    Champ = 7
+
+FUNC
+1
+N = 2 F(0) = 1. F(3600) = 0.16
+
+COND
+3
+Reg = 1 	Inc = psi   		  Champ = 0 	Fonc = 0
+Reg = 1 	Inc = p_l   		  Champ = 3 	Fonc = 0
+Reg = 1 	Inc = logc_co2  	Champ = 1 	Fonc = 1
+
+LOAD
+0
+
+POIN
+0
+
+DATE
+27
+0	86400	172800	259200	345600	432000	518400	604800	1209600	1814400	2419200	3024000	3628800	4233600	4838400	5443200	6048000	6652800	7257600	7862400	8467200	9072000	9676800	10281600	10886400	20736000	31536000
+
+OBJE
+logc_co2 = 0.1
+p_l      = 1.e5 
+z_ca     = 0.1
+psi      = 1.
+c_na     = 1e-1
+c_k      = 1e-1
+z_si     = 1e-1
+
+ITER
+Iter        = 20
+Tol         = 1.e-3
+Repetitions = 0
+
+TIME
+Dtini = 10
+Dtmax = 36000

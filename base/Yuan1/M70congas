@@ -1,0 +1,73 @@
+GEOM
+1 plan
+
+MESH
+4
+0 0 0.15 0.15
+5.e-3
+1 1 1
+1 1 1
+
+MATE
+Model = M70congas
+porosite = 0.3
+N_CH     = 3.7
+T_CH     = 2.e5
+P_H2S     = 0
+Curves_log = csh3p S_CH = Range{x0 = 1.e-20 , x1 = 1 , n = 1001} x_csh = CSH3Poles(1){y_Tob = 1.8 , y_Jen = 0.9}
+
+FLDS
+8
+Value = -9     Gradient = 0. 0 0 Point = 0. 0 0
+Value = 1.     Gradient = 0. 0 0 Point = 0. 0 0
+Value = 0.01   Gradient = 0. 0 0 Point = 0. 0 0
+Value = -3.    Gradient = 0. 0 0 Point = 0. 0 0
+Value = -1.    Gradient = 0. 0 0 Point = 0. 0 0
+Value = 3.5    Gradient = 0. 0 0 Point = 0. 0 0
+Value = 0      Gradient = 0. 0 0 Point = 0. 0 0
+Value = -7.1e-9     Gradient = 0. 0 0 Point = 0. 0 0
+
+INIT
+6
+Region = 2 Unknown = logc_h2sf  Field = 1
+Region = 2 Unknown = psi        Field = 0
+Region = 2 Unknown = z_si       Field = 6
+Region = 2 Unknown = z_ca       Field = 2
+Region = 2 Unknown = c_k        Field = 7
+Region = 2 Unknown = c_cl       Field = 7
+
+FUNC
+3
+N = 2 F(0) = 1. F(864) = 0.5
+N = 2 F(0) = 1. F(86400) = -1.
+N = 3 F(0) = 0  F(1.e5) = 0.5e5 F(1000.e5) = 999.5e5 #F(t) = t + F(t0) - t0
+
+COND
+1
+Region = 3 Unknown = psi            Field = 0 Function = 0
+
+LOAD
+1
+Region = 3 Equation = carbone  Type = flux  Field = 8 Function = 3
+
+POIN
+3
+0.148 0.149 0.15
+
+DATE
+2
+0. 1
+
+OBJE
+logc_h2sf   = 0.1
+z_ca    = 1.e-1
+psi     = 1.e-1
+z_si     = 1.e-1
+c_k     = 1.e-2
+c_cl     = 1.e-2
+
+ITER
+Iter = 40 Tol = 1.e-4 Recom = 0
+
+TIME
+Dtini = 1. Dtmax = 1.e9

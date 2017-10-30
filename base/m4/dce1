@@ -1,0 +1,41 @@
+DIME
+		                 1 plan
+MAIL
+		                 3 0 1e-09 1e-09
+	                                 1e-11
+		                                 100 1
+	                                 1 1
+MATE
+		                 3 
+						 sigma = -0.2
+					 e = 1.6e-19
+					 v = 2
+					 epsilon = 7.0832e-10
+				 k_B = 1.38e-23
+				 T_0 = 300
+					 n_0 = 0
+					 n_1 = 6.022e26
+				 ne = 100
+CHMP
+				 1
+						 V = 1. G = 0. P = 0.
+INIT
+				 0
+FONC
+				 0
+COND
+				 0
+CHAR
+				 1
+						 R = 2 E = eq_PB T = force C = 1 F = 0
+POIN
+				 1
+						 0.
+TEMP
+				 3
+						 0. 0.1 4.
+OBJE
+			      	 psi = 1.
+ALGO
+			       	 Iter = 1000 Tol = 1.e-10 Rec = 0
+	         Dtini = 0.01 Dtmax = 0.01

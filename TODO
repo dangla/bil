@@ -1,0 +1,114 @@
+Request(17/08/2017)  - Refine some models:
+                       DWS1  -> WeDS ; MTD1b -> CCBM ; Yuan3d -> SA2C
+
+Request(16/05/2017)  - Build a model for constraints on some unknowns and handled with Lagrange multipliers.
+
+Request(19/01/2017)  - Lexing and parsing the inputs.
+
+Request(05/10/2016)  - Introduce a relaxation factor in ObVal_t
+Done(01/02/2017)
+
+Request(08/10/2015)  - Build a database providing with saturation indices of minerals: "SaturationIndexOfMinerals.[c,h]"
+
+
+Request(07/10/2015)  - Set up an under-relaxation technique in iteration process (see Bethke Geomechanical Reaction Modeling, 1996, page 72).
+
+
+Request(10/09/2015)  - Use a Syntax-Directed Translation to parse the input data file.
+
+
+Request(23/04/2015)  - Handle exception mechanisms.
+Done(08/05/2015)
+  
+Request(23/04/2015)  - Find a mechanism for affecting a field to material propery.
+
+
+Request(23/04/2015)  - Read some general properties of the model in the input data file, e.g. redefine the names of unknowns and the names of equations. To do so we have to add a new keyword as MODEL. Do this job in SetModelProp.
+
+
+Request(--/--/2014)  - Introduce periodic boundary conditons.
+Done(01/12/2014)
+
+
+Request(23/04/2015)  - Suppress in Material_t : unsigned int neq, char **eqn, char **inc, int nc et curve_t *cb.
+
+
+OK(01/06/2014)  - Introduce a pointer in Element_t to a shape function different from the interpolation functions and declare it as IntFct_t.
+
+OK(01/01/2014)  - Create a new object "CurvesFile".
+
+OK(01/05/2014)  - Rewrite the output files by taking into account that there may be more than one model in the input data.
+
+OK(--/--/----)  - Effectuer 2 passages pour scanner le fichier de donnees. Le premier passage pour definir les dimensions exactes des zones de memoire qui doivent etre allouer aux differentes structures et les sauvegarder dans un fichier specifique (suffixe .mry ?). Le deuxieme passage pour effectuer l'allocation de memoire proprement dite a l'aide des dimensions precedentes et initialiser la structure de donnees.
+
+  - Introduire un repertoire de bases de donnees sur des materiaux courants (db_water.h, etc..)
+
+  - Creer une fonction clNB(), basee sur chNB(), pour prendre en compte les CL au niveau du fichier modele. Ceci permettra d'interpreter comme on veut les donnees lues dans COND.
+
+  - Use the GNU Scientific Library (GSL) at http://www.gnu.org/software/gsl
+
+  - Introduire le choix d'un systeme d'unite.
+
+  - Definir une nouvelle structure de donnees basee sur gmsh.
+
+Given up  - Definir un mot-cle INTF pour les fonctions d'interpolation.
+
+  - ajouter un arg, "char *line", dans les fonctions de lecture des mots-cle "mot_cle" et lire le mot-cle par un fgets.
+
+  - creer une structure "pasdt" contenant t_1,t_n,ipas,jpas et sauvegarder jpas dans la fichiers de sortie.
+
+OK(--/--/----)  - Donnees en langue anglaise.
+
+Given up  - Introduire dans la structure "inte_t" des fonctions de forme differentes des fonctions d'interpolation (utile pour la methode des VF).
+
+OK(01/12/2011)  - Rajouter un tableau de valeurs initiales (v0) en plus des tableaux de valeurs explicites et implicites.
+    
+OK(27/11/2011)  - Coder les modeles par une chaine de caractere et non par un nombre entier.
+
+OK(21/09/2010)	- Reserver la memoire des courbes lors de la lecture, i.e. dans "lit_courbe".
+
+OK(21/01/2009)	- Modifier la fonction chsurf de facon a prendre en compte explicitement la fonction d interpolation en argument.
+
+OK(1/11/2008)	- Modifier les fonctions tbNB de la facon suivante :
+		  int tbNB(elem_t *el,inte_t *fi,int *n_fi,int dim)
+		  {
+		    calculer les fonctions d'interpolation de l'element si besoin et initialiser le pointeur el.fi.
+		    calculer el.nvi et el.nve.
+		    retourne le nb de fonctions d'interpolation creees.
+		  }
+		  Appel a tbNB dans la fonction "interpolation".
+		  Suppression de tbNB dans "memoire_solution".
+
+OK(21/11/2007)	- Amelioration de la procedure de continuite des equations et des inconnues aux noeuds pour rendre l'assemblage de la matrice globale independant de la numerotation locale des equations et des inconnues (ie au niveau du modele). Introduction du nom des equations dans la structure "node_t", d'un pointeur d'equations aux noeuds dans la structure "elem_t". Modification de la fonction assemblage pour tenir compte de la continuite des "Equations" et des "Inconnues". Modification des fonctions assemLDUSKL et assemHBSLU pour tenir compte du pointeur "lige".
+		
+OK(31/08/2007)	- Imprimer en premiere ligne des fichiers de resultats la version utilisee, la date d'execution.
+
+OK(12/12/2006)	- ajouter un pointeur sur char dans la structure mate_t de nom method pour indiquer le type de methode utilise (EF ou VF) et lire ce champ dans la fonction dm pour un traitement ulterieur.
+
+OK(12/12/2006)	- tester les calculs avec modeles a nb et nature d'inconnues heterogenes.
+
+OK(05/12/2005)	- creer une structure "options" pour les options de la ligne de commande : debug, etc...
+
+OK(06/11/2005)	- Definir les types de fonctions "dm_t","qm_t","tb_t",etc.. dans defs.h et faire les remplacements necessaires dans mod.c,mod.h,mI.h.
+
+OK(21/09/2005)	- Definir une structure matrice "typedef struct matrice mtrx_t" et faire les remplacements necessaires.
+
+OK(12/09/2005)	- Definir un "typedef enum {PLAN,AXIS} geom_t ;" et remplacer la declaration "int geom ;" par "geom_t geom ;" partout ou cela intervient.
+
+OK(18/08/2005)	- ameliorer la lisibilite du fichier de donnees en adoptant systematiquement la presentation sous la forme MOT = VAL dans CHMP,FONC,ALGO.
+
+OK(17/08/2005)	- modifier l'entree des donnees, dans INIT et CHAR, par la lecture de mot-cle relatifs aux parametres.
+
+OK(17/08/2005)	- actualiser l'aide en ligne.
+
+OK(16/08/2005)	- supprimer tous les entiers "neq". reflechir a la gestion des modeles a nombre d'equation different.
+
+OK(12/08/2005) 	- mettre des short unsigned dans les structures pour dim,neq,nn,np et faire les modif corespondantes. Incorporer "neq","eqn","inc" dans la structure mate_t, introduire la structure noeud.
+
+OK(05/02/2005) 	- creer une structure pour les courbes du jdd "crbe_t" et l'inserer dans "mate_t".
+
+OK(26/01/2005) 	- creer les donnees de champ (mot-cle CHMP).
+)
+OK(20/01/2005) 	- prendre en compte la nouvelle structure de cl.
+
+OK(13/01/2005) 	- modifier la fonction chsurf afin de prendre en compte la nouvelle structure de cg.

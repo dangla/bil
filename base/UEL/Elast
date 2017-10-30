@@ -1,0 +1,42 @@
+DIME
+2 plane
+MESH
+Q4.msh
+MATE
+Model = Elast
+gravite = 0           # gravity
+rho_s = 0             # masse density
+sig0_11 = 0        # initial stress 11
+sig0_22 = 0        # initial stress 22
+sig0_33 = 0        # initial stress 33
+young   = 1        # Young's modulus
+poisson = 0.49        # Poisson's ratio
+FLDS
+1
+Val =  1. Grad = 0 0 Point = 0 0
+INIT
+0
+FUNC
+0
+COND
+3
+Reg = 4  Unk = u_1   Field = 0 Function = 0
+Reg = 3  Unk = u_2   Field = 1 Function = 0
+Reg = 1  Unk = u_2   Field = 0 Function = 0
+LOAD
+0
+POIN
+0
+DATE
+2
+0 1
+OBJE
+u_1 = 1.e-4 
+u_2 = 1.e-4 
+ITER
+Iteration = 10
+Tolerance = 1e-06 
+Repetition = 0 
+TIME
+Dtini = 1.
+Dtmax = 0.5

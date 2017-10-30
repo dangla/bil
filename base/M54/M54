@@ -1,0 +1,57 @@
+DIME
+1 axis
+MAIL
+4 0 0 0.0375 0.0375
+1.e-3 
+1 50 1
+1 1 1
+MATE
+Model = M54
+porosite = 0.4
+N_CH     = 5.2
+T_CH     = 2.e5
+courbes_log = csh4p q_CH = Range{x0 = 1.e-20 , x1 = 1 , n = 1001} x = CSH4Poles(1){y_Tob1 = 2.4 , y_Tob2 = 1.8 , y_Jen = 0.9}
+CHMP
+6
+Val = -16.   Grad = 0. Point = 0.
+Val = 1.     Grad = 0. Point = 0.
+Val = 0.     Grad = 0. Point = 0.
+Val = -1.    Grad = 0. Point = 0.
+Val = -2.    Grad = 0. Point = 0.
+Val = 3.51   Grad = 0. Point = 0.
+INIT
+4
+Reg = 2 Inc = logc_co2  Champ = 1
+Reg = 2 Inc = psi       Champ = 0
+Reg = 2 Inc = z_si      Champ = 6
+Reg = 2 Inc = z_ca      Champ = 2
+FONC
+1
+N = 2 F(0) = 1. F(86400) = 0.0813
+COND
+8
+Reg = 3 Inc = psi      Champ = 0 Fonc = 0
+Reg = 3 Inc = logc_co2 Champ = 1 Fonc = 1
+Reg = 3 Inc = z_ca     Champ = 5 Fonc = 0
+Reg = 1 Inc = psi      Champ = 0 Fonc = 0
+Reg = 1 Inc = z_si     Champ = 6 Fonc = 0
+Reg = 1 Inc = z_ca     Champ = 2 Fonc = 0
+Reg = 2 Inc = c_k      Champ = 0 Fonc = 0
+Reg = 1 Inc = logc_co2 Champ = 1 Fonc = 0
+CHAR
+0
+POIN
+1
+0.
+TEMP
+5
+0. 864000 1209600 2246400 2678400
+OBJE
+logc_co2 = 0.1
+z_ca     = 1.e-1
+z_si     = 1.e-1
+psi      = 1.
+c_k      = 0.01
+ALGO
+Iter = 10 Tol = 1.e-4 Recom = 0
+Dtini = 1.e-2 Dtmax = 1.e9

@@ -1,0 +1,84 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "TemperatureDependenceOfLog10EquilibriumConstant.h"
+
+
+/* To build this exec file 
+ * define TEST to 1 and 
+ * execute the command:
+ * gcc -o TemperatureDependenceOfLog10EquilibriumConstant TemperatureDependenceOfLog10EquilibriumConstant.c -lm 
+ */
+#define TEST 0
+
+
+#if TEST
+
+int main(int argc, char** argv)
+{
+  if(argc < 7) {
+    printf("Please enter 6 doubles") ;
+    return(0) ;
+  }
+  
+  {
+#define T0     (293.)
+#define K(T,a)   ((a) + (b)*((T)) + (c)*(1/(T)) + (d)*log10((T)) + (e)*(1/((T)*(T))))
+#define K_293(T,a)  ((a) + (b)*((T) - (T0)) + (c)*(1/(T) - 1/(T0)) + (d)*log10((T)/(T0)) + (e)*(1/((T)*(T)) - 1/((T0)*(T0))))
+    char** r = argv+1 ;
+    
+    double T = strtod(*r,r) ;
+    double a = strtod(*r+1,r) ;
+    double b = strtod(*r+1,r) ;
+    double c = strtod(*r+1,r) ;
+    double d = strtod(*r+1,r) ;
+    double e = strtod(*r+1,r) ;
+    
+    printf("\n") ;
+    printf("k(T,a)  = a  + b*(T) + c/(T) + d*log10(T) + e/((T)*(T))\n") ;
+    printf("kk(T,a0) = a0 + (k(T,a) - k(T0,a))\n") ;
+    printf("Then a0 = k(T0,a) = a + k(T0,0)\n") ;
+    printf("\n") ;
+    printf("T0  = %e\n",T0) ;
+    printf("\n") ;
+    printf("T  = %e\n",T) ;
+    printf("a or a0  = %e\n",a) ;
+    printf("b  = %e\n",b) ;
+    printf("c  = %e\n",c) ;
+    printf("d  = %e\n",d) ;
+    printf("e  = %e\n",e) ;
+    printf("\n") ;
+    
+    printf("\n") ;
+    printf("if a was given: a = % g\n",a) ;
+    {
+      double a0 = K(T0,a) ;
+      
+      printf("a0 = % g\n",a0) ;
+      
+      printf("\n") ;
+      printf("k(T)    = % g\n",K(T,a)) ;
+      printf("kk(T)   = % g\n",K_293(T,a0)) ;
+    }
+    
+    printf("\n") ;
+    printf("if a0 was given: a0 = % g\n",a) ;
+    {
+      double a0 = a ;
+      
+      a = a0 - K(T0,0) ;
+      printf("a = % g\n",a) ;
+      
+      printf("\n") ;
+      printf("k(T)    = % g\n",K(T,a)) ;
+      printf("kk(T)   = % g\n",K_293(T,a0)) ;
+    }
+#undef K
+#undef K0
+#undef T0
+  }
+  
+  return(0) ;
+}
+
+#endif

@@ -1,0 +1,44 @@
+# Electrostatique
+Geometry
+2 axis
+Mesh
+manip.msh
+Material	Argile e_r = 10
+21
+permittivite = 88.54e-12
+Material	Polycarbonate e_r = 2.92
+21
+permittivite = 25.853e-12
+Material	Eau e_r = 80
+21
+permittivite = 7.0832e-10
+Fields
+1
+Val = 20 Grad = 0. 0. Point = 0. 0.
+Initialization
+0
+Functions
+1
+N = 2 F(0) = 0 F(2) = 2
+Boundary Conditions
+4
+Reg = 5  Inc = pot Champ = 0 Fonc = 1
+Reg = 10 Inc = pot Champ = 0 Fonc = 1
+Reg = 17 Inc = pot Champ = 0 Fonc = 1
+Reg = 15 Inc = pot Champ = 1 Fonc = 1
+Loads
+0
+Points
+0
+Dates
+3
+0 1 2
+Objective Variations
+pot = 0.1
+Iterative Process
+Iter = 10 Tol = 1.e-4 Rec = 0
+
+
+
+Time Steps
+Dtini = 1 Dtmax = 1

@@ -1,0 +1,75 @@
+# Diffusion dans une colonne
+Geometry
+1 plan
+Mesh
+4 0 0 10. 10.
+0.02
+1 500 1
+1 1 1
+Material
+32
+gravite = 0
+rho = 1000
+w_f = 0.3
+eps_f = 0.395
+eps_m = 0.395
+K_f = 2.1052e-5
+K_m = 0.5263e-5
+K_a = 0
+mu = 1.
+p_g = 0
+p_f0 = -1.e4
+p_m0 = -1.e4
+S_s = 0.e-9
+D_sf = 0.e-9
+D_sm = 0.e-9
+Lambda_sf = 1.3e-2
+Lambda_sm = 0.3e-2
+alpha_s = 0.
+fmobile_f = 0.6
+fmobile_m = 0.6
+beta_sf = 1.e-5
+beta_sm = 1.e-5
+Courbes = fracture
+Courbes = fracture
+Courbes = interface
+Fields
+2
+Val = 0   Grad = -1.   Point = 10.
+Val = 1.  Grad = 0     Point = 0
+Initialization
+2
+Reg = 2 Inc = p_f Champ = 1
+Reg = 2 Inc = p_m Champ = 1
+Functions
+1
+N = 3 F(0) = 1 F(1200) = 1 F(1200.1) = 0
+Boundary Conditions
+6
+Reg = 2 Inc = p_f Champ = 1 Fonc = 0
+Reg = 2 Inc = p_m Champ = 1 Fonc = 0
+Reg = 1 Inc = c_m Champ = 2 Fonc = 1
+Reg = 1 Inc = c_f Champ = 2 Fonc = 1
+Reg = 3 Inc = c_m Champ = 0 Fonc = 0
+Reg = 3 Inc = c_f Champ = 0 Fonc = 0
+Loads
+0
+Points
+3
+0.1 0.2 0.3
+Dates
+3
+0 3600 18000
+Objective Variations
+p_f = 1.e4
+p_m = 1.e4
+c_f = 1.e-2
+c_m = 1.e-2
+Iterative Process
+Iter = 10 Tol = 1.e-4 Rec = 0
+
+
+
+Time Steps
+Dtini = 1.e-3
+Dtmax = 86400

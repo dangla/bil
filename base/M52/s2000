@@ -1,0 +1,71 @@
+DIME
+1 plan
+
+MESH
+4 0 0 0.2 0.2
+0.0002
+1 100 1
+1 1 1
+
+MATE
+Model = M52
+phi  = 0.2
+k_int  = 5.e-21
+C_s = 2e+06
+lam_s = 1.
+k_s = 3.18e10
+g_s = 1.91e10
+alpha_s = 54.e-6
+Curves_log = cement_log p_c = Range{x1 = 10.,x2 = 1.e8,n = 1001} s_l = Van-Genuchten(1){p0 = 0.7e6,m = 0.4} k_rl = Mualem_liq(2){m = 0.4}
+
+FLDS
+8
+Val = 1     Grad = 0 Point = 0
+Val = 273   Grad = 0 Point = 0
+Val = 503.7 Grad = 0 Point = 0
+Val = 1.e5  Grad = 0 Point = 0
+Val = 20.   Grad = 0 Point = 0
+Val = 30.   Grad = 0 Point = 0
+Val = 8.    Grad = 0 Point = 0
+Val = 2000. Grad = 0 Point = 0
+
+INIT
+3
+Reg = 2 Inc = tem  Champ = 2
+Reg = 2 Inc = c_s  Champ = 8
+Reg = 2 Inc = p_l  Champ = 4
+
+FUNC
+2
+N = 2 F(0) = 273 F(3600) = 253
+N = 1 F(0) = 283
+
+COND
+3
+Reg = 1 Inc = tem  Champ = 1 Fonc = 1
+Reg = 1 Inc = c_s  Champ = 8 Fonc = 0
+Reg = 1 Inc = p_l  Champ = 4 Fonc = 0
+
+LOAD
+0
+
+POIN
+0
+
+DATE
+5
+0 1200 3600 14400 86400
+
+OBJE
+p_l  = 1.e5
+c_s  = 20.
+tem  = 1.
+
+ITER
+Iter = 20
+Tol = 1.e-4
+Rep = 0
+
+TIME
+Dtini = 1.e-2
+Dtmax = 864000

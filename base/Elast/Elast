@@ -1,0 +1,95 @@
+Geometry
+2 axis
+
+
+Mesh
+cylinder.msh
+
+
+Material # Layer 1 (stiff)
+Modele = Elast
+gravity = 0           # gravity
+rho_s = 0             # masse density
+sig0_11 = -1e6        # initial stress 11
+sig0_22 = -1e6        # initial stress 22
+sig0_33 = -1e6        # initial stress 33
+young =  10.e+09       # Young's modulus
+poisson = 0.26        # Poisson's ratio
+
+
+Material # Layer 2 (soft)
+Modele = Elast
+gravity = 0           # gravity
+rho_s = 0             # masse density
+sig0_11 = -1e6        # initial stress 11
+sig0_22 = -1e6        # initial stress 22
+sig0_33 = -1e6        # initial stress 33
+young =  1.e+09       # Young's modulus
+poisson = 0.26        # Poisson's ratio
+
+
+Material # Layer 3 (stiff)
+Modele = Elast
+gravity = 0           # gravity
+rho_s = 0             # masse density
+sig0_11 = -1e6        # initial stress 11
+sig0_22 = -1e6        # initial stress 22
+sig0_33 = -1e6        # initial stress 33
+young =  10.e+09       # Young's modulus
+poisson = 0.26        # Poisson's ratio
+
+
+Fields
+1
+Value = 1e6   Gradient = 0 0 0 Point = 0 0 0
+
+
+Initialization
+0
+
+
+Functions
+1
+N = 3  F(0) = 1  F(1) = 10 F(2) = 0.1
+
+
+Boundary Conditions
+1
+Region = 80 Unknown = u_2   Field = 0 Function = 0
+
+
+Loads
+7
+Region = 10 Equation = meca_1 Type = pressure Field = 1 Function = 1
+Region = 20 Equation = meca_1 Type = pressure Field = 1 Function = 1
+Region = 30 Equation = meca_1 Type = pressure Field = 1 Function = 1
+Region = 50 Equation = meca_1 Type = pressure Field = 1 Function = 0
+Region = 60 Equation = meca_1 Type = pressure Field = 1 Function = 0
+Region = 70 Equation = meca_1 Type = pressure Field = 1 Function = 0
+Region = 80 Equation = meca_1 Type = pressure Field = 1 Function = 0
+
+
+Points
+0
+
+
+Dates
+3
+0 1 2
+
+
+Objective Variations
+u_1   = 1.e-4
+u_2   = 1.e-4
+
+
+Iterative Process
+Iterations  = 3
+Tolerance   = 0.0001 
+Repetitions = 0 
+
+
+Time Steps
+Dtini = 1
+Dtmax = 100000
+

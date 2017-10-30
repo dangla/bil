@@ -1,0 +1,68 @@
+DIME
+1 plan
+MAIL
+3 0. 0. 0.5
+0.01
+1 50
+1 1
+MATE
+Model = MTD_1
+porosite = 0.379                                                
+k_int = 10e-20                          
+A_1 = 6000
+D = 7e-15                                 
+R_CaOH2 = 30e-5                                               
+N_CaOH2 = 3.9                                                     
+N_Si  = 2.7                                                       
+X_K = 0.1
+X_Na = 0.2
+Curves = CN_courbe
+Curves_log = CSH4p q_CH = Range{x0 = 1e-20 , x1 = 1 , n = 1001} x = CSH4Poles(1){y_Tob1 = 2.4 , y_Tob2 = 1.8 , y_Jen = 0.9}
+CHMP
+8
+Val = -14.54 		Grad = 0. 	Point = 0. 
+Val = -0.158		Grad = 0.	 Point = 0.  
+Val = -70.50000E+06 		Grad = 0.	 Point = 0.                                              
+Val = 0.1  		Grad = 0.	 Point = 0.    
+Val = 0.1  		Grad = 0.	 Point = 0. 
+Val = 2.7  		Grad = 0.	 Point = 0.    
+Val = 0.01  		Grad = 0.	 Point = 0.
+Type = grid 		File = CN_sat
+INIT
+8
+Reg = 2 	Inc = logc_co2  	Champ = 1
+Reg = 2		Inc = c_oh   		Champ = 2
+Reg = 2 	Inc = p_l   		Champ = 8
+Reg = 2 	Inc = psi    		Champ = 0
+Reg = 2 	Inc = c_na  		Champ = 4
+Reg = 2 	Inc = c_k    		Champ = 5
+Reg = 2 	Inc = n_si_s    	Champ = 6
+Reg = 2 	Inc = c_caco3 		Champ = 7
+FONC
+1
+N = 2 F(0) = 1. F(3600) = 0.165
+COND
+3
+Reg = 1 	Inc = psi   		Champ = 0 	Fonc = 0
+Reg = 1 	Inc = p_l   		Champ = 3 	Fonc = 0
+Reg = 1 	Inc = logc_co2  	Champ = 1 	Fonc = 1
+CHAR
+0
+POIN
+1
+0.01
+TEMP
+11
+0	86400	172800	259200	345600	432000	518400	604800	1209600	1814400	2419200
+OBJE
+logc_co2 = 0.1
+c_oh = 1e-1
+p_l = 1.e5 
+c_caco3 = 1
+psi = 1.
+c_na = 1e-1
+c_k = 1e-1
+n_si_s = 1e-1
+ALGO
+Iter = 20 Tol = 1.e-3 Recom = 0
+Dtini = 10 Dtmax = 36000

@@ -1,0 +1,638 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <ctype.h>
+#include "model.h"
+#include "FEM.h"
+
+#define TITLE   "Elasticity"
+#define AUTHORS " "
+
+#include "PredefinedMethods.h"
+
+
+/* Nb of equations */
+#define NEQ     (dim)
+/* Nb of (im/ex)plicit terms and constant terms */
+#define NVI     (12)
+#define NVE     (0)
+#define NV0     (0)
+
+/* Equation index */
+#define E_mec   (0)
+
+/* Unknown index */
+#define U_u     (0)
+
+/* We define some names for secondary unknowns */
+#define SIG     (vim + 0)
+#define F_MASS  (vim + 9)
+
+
+/* Functions */
+static int    pm(const char*) ;
+static void   GetProperties(Element_t*) ;
+static int    Cijkl(FEM_t*,double*) ;
+
+static double* ComputeVariables(Element_t*,double**,double*,double,int) ;
+static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
+
+
+/* Parameters */
+static double  gravity,young,poisson ;
+static double  rho_s ;
+static double  sig0_11,sig0_22,sig0_33 ;
+static double* macrogradient ;
+static double  macrostrain[9] ;
+
+#define GetProperty(a)   (Element_GetProperty(el)[pm(a)])
+
+#define ItIsPeriodic  (Geometry_IsPeriodic(Element_GetGeometry(el)))
+
+
+#define NbOfVariables  (24)
+
+#define I_EPS          (3)
+#define I_SIG          (12)
+#define I_Fmass        (21)
+
+
+int pm(const char *s)
+{
+       if(!strcmp(s,"gravite")) return(0) ;
+  else if(!strcmp(s,"poisson")) return(1) ;
+  else if(!strcmp(s,"rho_s"))   return(2) ;
+  else if(!strcmp(s,"sig0_11")) return(3) ;
+  else if(!strcmp(s,"sig0_22")) return(4) ;
+  else if(!strcmp(s,"sig0_33")) return(5) ;
+  else if(!strcmp(s,"young"))   return(6) ;
+  else if(!strncmp(s,"macro-gradient_",15)) {
+    int i = (strlen(s) > 15) ? s[15] - '1' : 0 ;
+    int j = (strlen(s) > 16) ? s[16] - '1' : 0 ;
+    
+    return(7 + 3*i + j) ;
+  } else return(-1) ;
+}
+
+
+void GetProperties(Element_t *el)
+{
+  gravity = GetProperty("gravite") ;
+  young   = GetProperty("young") ;
+  poisson = GetProperty("poisson") ;
+  rho_s   = GetProperty("rho_s") ;
+  sig0_11 = GetProperty("sig0_11") ;
+  sig0_22 = GetProperty("sig0_22") ;
+  sig0_33 = GetProperty("sig0_33") ;
+  macrogradient = &GetProperty("macro-gradient_11") ;
+  {
+    double *grd = macrogradient ;
+    int i ;
+    
+    for(i = 0 ; i < 3 ; i++) {
+      int j ;
+      
+      for(j = 0 ; j < 3 ; j++) {
+        macrostrain[3*i + j] = 0.5*(grd[3*i + j] + grd[3*j + i]) ;
+      }
+    }
+  }
+}
+
+
+
+int SetModelProp(Model_t* model)
+/** Set the model properties */
+{
+  int dim = Model_GetDimension(model) ;
+  int i ;
+  
+  /** Number of equations to be solved */
+  Model_GetNbOfEquations(model) = NEQ ;
+  
+  /** Names of these equations */
+  for(i = 0 ; i < dim ; i++) {
+    char name_eqn[7] ;
+    sprintf(name_eqn,"meca_%d",i + 1) ;
+    Model_CopyNameOfEquation(model,E_mec + i,name_eqn) ;
+  }
+  
+  /** Names of the main unknowns */
+  for(i = 0 ; i < dim ; i++) {
+    char name_unk[4] ;
+    sprintf(name_unk,"u_%d",i + 1) ;
+    Model_CopyNameOfUnknown(model,U_u + i,name_unk) ;
+  }
+  
+  Model_GetNbOfVariables(model) = NbOfVariables ;
+  Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
+  
+  return(0) ;
+}
+
+
+
+int ReadMatProp(Material_t *mat,DataFile_t *datafile)
+/** Read the material properties in the stream file ficd */
+{
+  int NbOfProp = 16 ;
+  int i ;
+
+  /* Par defaut tout a 0 */
+  for(i = 0 ; i < NbOfProp ; i++) Material_GetProperty(mat)[i] = 0. ;
+  { /* initialisation automatique */
+    Material_GetProperty(mat)[pm("young")]   = 0.8e9 ;
+    Material_GetProperty(mat)[pm("poisson")] = 0.25 ;
+  }
+
+  Material_ScanProperties(mat,datafile,pm) ;
+
+  return(NbOfProp) ;
+}
+
+
+
+int PrintModelChar(Model_t *model,FILE *ficd)
+/** Print the model characteristics */
+{
+  printf(TITLE) ;
+  
+  if(!ficd) return(0) ;
+  
+  printf("\n") ;
+  printf("The set of equations is:\n") ;
+  printf("\t- Mechanical Equilibrium     (meca_[1,2,3])\n") ;
+  
+  printf("\n") ;
+  printf("The primary unknowns are:\n") ;
+  printf("\t- Displacements              (u_[1,2,3]) \n") ;
+  
+  printf("\n") ;
+  printf("Example of input data\n") ;
+
+  fprintf(ficd,"gravite = 0       # gravity\n") ;
+  fprintf(ficd,"rho_s = 0         # masse density of the dry material\n") ;
+  fprintf(ficd,"sig0_11 = 0       # initial stress 11\n") ;
+  fprintf(ficd,"sig0_22 = 0       # initial stress 22\n") ;
+  fprintf(ficd,"sig0_33 = 0       # initial stress 33\n") ;
+  fprintf(ficd,"young = 2713e6    # Young's modulus of coal\n") ;
+  fprintf(ficd,"poisson = 0.339   # Poisson's ratio of coal\n") ;
+  fprintf(ficd,"macro-strain_11 = 1   # For periodic BC\n") ;
+  
+  return(0) ;
+}
+
+
+
+int DefineElementProp(Element_t *el,IntFcts_t *intfcts)
+/** Define some properties attached to each element */
+{
+  IntFct_t *intfct = Element_GetIntFct(el) ;
+  int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
+  
+  /** Define the length of tables */
+  Element_GetNbOfImplicitTerms(el) = NVI*NbOfIntPoints ;
+  Element_GetNbOfExplicitTerms(el) = NVE*NbOfIntPoints ;
+  Element_GetNbOfConstantTerms(el) = NV0*NbOfIntPoints ;
+  
+  return(0) ;
+}
+
+
+
+int  ComputeLoads(Element_t *el,double t,double dt,Load_t *cg,double *r)
+/** Compute the residu (r) due to loads */
+{
+  int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
+  IntFct_t *fi = Element_GetIntFct(el) ;
+  int nn = Element_GetNbOfNodes(el) ;
+  FEM_t *fem = FEM_GetInstance(el) ;
+  
+  {
+    double *r1 = FEM_ComputeSurfaceLoadResidu(fem,fi,cg,t,dt) ;
+    
+    {
+      int    i ;
+      
+      for(i = 0 ; i < NEQ*nn ; i++) r[i] = r1[i] ;
+    }
+  }
+  
+  return(0) ;
+}
+
+
+
+int ComputeInitialState(Element_t *el)
+/** Compute the initial state i.e. 
+ *  the constant terms,
+ *  the explicit terms,
+ *  the implicit terms.
+ */ 
+{
+  double *vim = Element_GetImplicitTerm(el) ;
+  double *vex = Element_GetExplicitTerm(el) ;
+  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
+  int nn = IntFct_GetNbOfNodes(intfct) ;
+  int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
+  FEM_t *fem = FEM_GetInstance(el) ;
+  double dmu,lame ;
+  int    p ;
+  
+  /* We skip if the element is a submanifold */
+  if(Element_IsSubmanifold(el)) return(0) ;
+
+  /*
+    Input Data
+  */
+  GetProperties(el) ;
+
+  dmu     = young/(1 + poisson) ;
+  lame    = dmu*poisson/(1 - 2*poisson) ;
+    
+  /* Loop on integration points */
+  for(p = 0 ; p < NbOfIntPoints ; p++ , vim += NVI , vex += NVE) {
+    /* interpolation functions */
+    double *h  = IntFct_GetFunctionAtPoint(intfct,p) ;
+    double *dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
+    
+    /* Strains */
+    double *eps =  FEM_ComputeCurrentLinearStrainTensor(fem,h,dh,nn,U_u) ;
+    double tre  = eps[0] + eps[4] + eps[8] ;
+    
+    /* Stresses */
+    double sig[9] ;
+    int    i ;
+    
+    if(ItIsPeriodic) {
+      for(i = 0 ; i < 9 ; i++) {
+        eps[i] += macrostrain[i] ;
+      }
+      
+      tre += macrostrain[0] + macrostrain[4] + macrostrain[8] ;
+    }
+    
+    for(i = 0 ; i < 9 ; i++) sig[i] = dmu*eps[i] ;
+    
+    sig[0] += sig0_11 + lame*tre ;
+    sig[4] += sig0_22 + lame*tre ;
+    sig[8] += sig0_33 + lame*tre ;
+    
+    {
+      /* storage in vim */
+      for(i = 0 ; i < 9 ; i++) SIG[i]    = sig[i] ;
+      
+      for(i = 0 ; i < 3 ; i++) F_MASS[i] = 0. ;
+      
+      F_MASS[dim-1] = (rho_s)*gravity ;
+    }
+  }
+  
+  return(0) ;
+}
+
+
+
+
+int  ComputeExplicitTerms(Element_t *el,double t)
+/** Compute the explicit terms */
+{
+  return(0) ;
+}
+
+
+
+
+int  ComputeImplicitTerms(Element_t *el,double t,double dt)
+/** Compute the implicit terms */
+{
+  double *vim = Element_GetImplicitTerm(el) ;
+  double *vex = Element_GetExplicitTerm(el) ;
+  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
+  int nn = IntFct_GetNbOfNodes(intfct) ;
+  int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
+  FEM_t *fem = FEM_GetInstance(el) ;
+  double dmu,lame ;
+  int    p ;
+  
+  /* We skip if the element is a submanifold */
+  if(Element_IsSubmanifold(el)) return(0) ;
+
+  /*
+    Input data
+  */
+  GetProperties(el) ;
+
+  dmu     = young/(1 + poisson) ;
+  lame    = dmu*poisson/(1 - 2*poisson) ;
+    
+  /* Loop on integration points */
+  for(p = 0 ; p < NbOfIntPoints ; p++ , vim += NVI , vex += NVE) {
+    /* interpolation functions */
+    double *h  = IntFct_GetFunctionAtPoint(intfct,p) ;
+    double *dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
+    
+    /* Strains */
+    double *eps =  FEM_ComputeCurrentLinearStrainTensor(fem,h,dh,nn,U_u) ;
+    double tre  = eps[0] + eps[4] + eps[8] ;
+    
+    /* Stresses */
+    double sig[9] ;
+    int    i ;
+    
+    if(ItIsPeriodic) {
+      for(i = 0 ; i < 9 ; i++) {
+        eps[i] += macrostrain[i] ;
+      }
+      
+      tre += macrostrain[0] + macrostrain[4] + macrostrain[8] ;
+    }
+    
+    for(i = 0 ; i < 9 ; i++) sig[i] = dmu*eps[i] ;
+    
+    sig[0] += sig0_11 + lame*tre ;
+    sig[4] += sig0_22 + lame*tre ;
+    sig[8] += sig0_33 + lame*tre ;
+    
+    {
+      /* storage in vim */
+      for(i = 0 ; i < 9 ; i++) SIG[i]    = sig[i] ;
+      
+      for(i = 0 ; i < 3 ; i++) F_MASS[i] = 0. ;
+      
+      F_MASS[dim-1] = (rho_s)*gravity ;
+    }
+  }
+
+  return(0) ;
+}
+
+
+
+
+int  ComputeMatrix(Element_t *el,double t,double dt,double *k)
+/** Compute the matrix (k) */
+{
+#define K(i,j)    (k[(i)*ndof + (j)])
+  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  int nn = Element_GetNbOfNodes(el) ;
+  int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
+  int ndof = nn*NEQ ;
+  FEM_t *fem = FEM_GetInstance(el) ;
+  int    i ;
+  double c[IntFct_MaxNbOfIntPoints*100] ;
+  double zero = 0. ;
+
+  /* Initialisation */
+  for(i = 0 ; i < ndof*ndof ; i++) k[i] = zero ;
+
+  /* We skip if the element is a submanifold */
+  if(Element_IsSubmanifold(el)) return(0) ;
+  
+  /*
+  ** Elastic Matrix
+  */
+  {
+    int dec = Cijkl(fem,c) ;
+    double *kp = FEM_ComputeElasticMatrix(fem,intfct,c,dec) ;
+    
+    for(i = 0 ; i < ndof*ndof ; i++) {
+      k[i] = kp[i] ;
+    }
+  }
+
+  return(0) ;
+#undef K
+}
+
+
+
+
+int  ComputeResidu(Element_t *el,double t,double dt,double *r)
+/** Comput the residu (r) */
+{
+#define R(n,i)    (r[(n)*NEQ+(i)])
+  double *vim_1 = Element_GetCurrentImplicitTerm(el) ;
+  int nn = Element_GetNbOfNodes(el) ;
+  int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
+  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  FEM_t *fem = FEM_GetInstance(el) ;
+  int    i ;
+  double *vim = vim_1 ;
+  double zero = 0. ;
+
+  /* Initialisation */
+  for(i = 0 ; i < nn*NEQ ; i++) r[i] = zero ;
+
+  if(Element_IsSubmanifold(el)) return(0) ;
+
+  /* 1. Mechanics */
+  /* 1.1 Stresses */
+  {
+    double *rw = FEM_ComputeStrainWorkResidu(fem,intfct,SIG,NVI) ;
+    
+    for(i = 0 ; i < nn ; i++) {
+      int j ;
+      for(j = 0 ; j < dim ; j++) R(i,E_mec + j) -= rw[i*dim + j] ;
+    }
+  }
+  
+  /* 1.2 Body forces */
+  {
+    double *rbf = FEM_ComputeBodyForceResidu(fem,intfct,F_MASS + dim - 1,NVI) ;
+    
+    for(i = 0 ; i < nn ; i++) R(i,E_mec + dim - 1) -= -rbf[i] ;
+  }
+  
+  return(0) ;
+
+#undef R
+}
+
+
+
+
+int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
+/** Compute the outputs (r) */
+{
+  int NbOfOutputs = 2 ;
+  double *vim = Element_GetImplicitTerm(el) ;
+  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  int np = IntFct_GetNbOfPoints(intfct) ;
+  int nn = IntFct_GetNbOfNodes(intfct) ;
+  int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
+  FEM_t *fem = FEM_GetInstance(el) ;
+
+  if(Element_IsSubmanifold(el)) return(0) ;
+  
+  /*
+    Input data
+  */
+  /* GetProperties(el) ; */
+  macrogradient = &GetProperty("macro-gradient_11") ;
+
+  {
+    /* Interpolation functions at s */
+    double *h_s = FEM_ComputeIsoShapeFctInActualSpace(fem,s) ;
+    
+    /* coefficient  */
+    double u[3] = {0,0,0} ;
+    double sig[9] = {0,0,0,0,0,0,0,0,0} ;
+    int    i,p ;
+    
+    for(i = 0 ; i < dim ; i++) {
+      u[i] = FEM_ComputeCurrentUnknown(fem,h_s,nn,U_u + i) ;
+    }
+    
+    if(ItIsPeriodic) {
+      for(i = 0 ; i < dim ; i++) {
+        int j ;
+        
+        for(j = 0 ; j < dim ; j++) {
+          u[i] += macrogradient[3*i + j]*s[j] ;
+        }
+      }
+    }
+      
+    /* Averaging */
+    for(p = 0 ; p < np ; p++ , vim += NVI) {
+      for(i = 0 ; i < 9 ; i++) sig[i] += SIG[i]/np ;
+    }
+      
+    i = 0 ;
+    Result_Store(r + i++,u,"displacements",3) ;
+    Result_Store(r + i++,sig,"Stress_tensor",9) ;
+      
+    if(i != NbOfOutputs) arret("ComputeOutputs") ;
+  }
+
+  return(NbOfOutputs) ;
+}
+
+
+int Cijkl(FEM_t *fem,double *c)
+/*
+**  Elastic matrix (c), return the shift (dec)
+*/
+{
+#define C1(i,j,k,l)  (c1[(((i)*3+(j))*3+(k))*3+(l)])
+  Element_t *el = FEM_GetElement(fem) ;
+  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  int np = IntFct_GetNbOfPoints(intfct) ;
+  double dmu,lame,mu ;
+  int    dec = 81 ;
+  int    p ;
+  
+  /*
+    Donnees
+  */
+  young   = GetProperty("young") ;
+  poisson = GetProperty("poisson") ;
+  
+  dmu     = young/(1 + poisson) ;
+  mu      = dmu/2 ;
+  lame    = dmu*poisson/(1 - 2*poisson) ;
+   
+  for(p = 0 ; p < np ; p++) {
+    int    i,j ;
+    double *c1 = c + p*dec ;
+    
+    /* initialisation */
+    for(i = 0 ; i < dec ; i++) c1[i] = 0. ;
+      
+    /* Mechanics */
+    /* derivative of sig with respect to eps */
+    for(i = 0 ; i < 3 ; i++) for(j = 0 ; j < 3 ; j++) {
+      C1(i,i,j,j) += lame ;
+      C1(i,j,i,j) += mu ;
+      C1(i,j,j,i) += mu ;
+    }
+
+  }
+  
+  return(dec) ;
+  
+#undef C1
+}
+
+
+
+
+
+double* ComputeVariables(Element_t* el,double** u,double* f_n,double dt,int p)
+{
+  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  FEM_t *fem = FEM_GetInstance(el) ;
+  Model_t* model = Element_GetModel(el) ;
+  double* x = Model_GetVariable(model,p) ;
+  
+  {
+    int    i ;
+    
+    /* Primary Variables */
+    for(i = 0 ; i < 3 ; i++) {
+      x[U_u + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_u + i) ;
+    }
+    
+    {
+      /* Strains */
+      double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_u) ;
+  
+    
+      for(i = 0 ; i < 9 ; i++) {
+        x[I_EPS + i] = eps[i] ;
+      }
+      
+      if(ItIsPeriodic) {
+        for(i = 0 ; i < 9 ; i++) {
+          eps[i] += macrostrain[i] ;
+        }
+      }
+      
+      FEM_FreeBufferFrom(fem,eps) ;
+    }
+  }
+  
+  /* Needed variables to compute secondary components */
+    
+  ComputeSecondaryVariables(el,dt,x) ;
+  return(x) ;
+}
+
+
+
+void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
+{
+  /* Strains */
+  double* eps =  x + I_EPS ;
+  double  tre = eps[0] + eps[4] + eps[8] ;
+    
+
+  /* Backup stresses */
+  {
+    double dmu   = young/(1 + poisson) ;
+    double lame  = dmu*poisson/(1 - 2*poisson) ;
+    double* sig  = x + I_SIG ;
+    int    i ;
+    
+    for(i = 0 ; i < 9 ; i++) sig[i] = dmu*eps[i] ;
+    
+    sig[0] += sig0_11 + lame*tre ;
+    sig[4] += sig0_22 + lame*tre ;
+    sig[8] += sig0_33 + lame*tre ;
+  }
+  
+  /* Backup body forces */
+  {
+    int dim = Element_GetDimensionOfSpace(el) ;
+    double* fmass = x + I_Fmass ;
+    int    i ;
+      
+    for(i = 0 ; i < 3 ; i++) fmass[i] = 0. ;
+      
+    fmass[dim-1] = (rho_s)*gravity ;
+  }
+}

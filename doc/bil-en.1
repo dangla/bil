@@ -1,0 +1,213 @@
+.\"    Copyright (C) 2002 Patrick Dangla
+.\"
+.\"    This file is part of the program BIL.
+.\"
+.\"    This program is free software; you can redistribute it and/or modify
+.\"    it under the terms of the GNU General Public License as published by
+.\"    the Free Software Foundation; either version 2 of the License, or
+.\"    (at your option) any later version.
+.\"
+.\"    This program is distributed in the hope that it will be useful,
+.\"    but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"    GNU General Public License for more details.
+.\"
+.\"    You should have received a copy of the GNU General Public License
+.\"    along with this program; if not, write to the Free Software
+.\"    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.\"
+.\"    $Id: bil.1,v 1.1 2004/07/01 22:23:11 dangla Exp $
+.\"
+.TH Bil 1 "21 Sept 2004" "Bil 2.0" "Bil Manual Pages"
+.UC 4
+
+
+
+.SH NAME
+Bil \- modeling platform based on finite element/volume methods
+
+
+
+.SH SYNOPSIS
+.B bil [option(s)] [file]
+
+
+
+.SH DESCRIPTION
+\fIBil\fR is a modeling platform based on finite element/volume methods 
+dedicated to coupled problems involved in environmental engineering, 
+geomechanical engineering, material sciences, etc..
+
+.PP
+
+Without \fIoption\fR \fIBil\fR compute the solution of a problem 
+described in \fIfile\fR.
+
+.PP
+
+\fIBil\fR is developped for 1D, 2D and 3D problems. It doesn't include 
+a mesh generator and post-processing treatment of outputs. However it 
+can read mesh files 
+created by the open-source free software \fIGmsh\fR downloadable at 
+http://www.geuz.org/gmsh/.
+The output files created by \fIBil\fR for 1D problems can be used easily 
+by some plotting programs as \fIGnuplot\fR. But as a general rule, 
+post-processing options create output files which can be used by 
+\fIGmsh\fR for post-processing treatments.
+
+
+
+.SH COMPUTATION OPTIONS
+
+.TP 4
+.B \-graph \fIfmt\fR
+print the graph in \fIfile\fR\fB.graph\fR in the format \fIfmt\fR. Available formats are:
+.RS
+\fBmetis\fR: for METIS (if installed)
+.RE
+.RS
+\fBhsl_mc40\fR: for HSL_MC40
+.RE
+
+.TP 4
+.B \-iperm
+print the inverse permutation of nodes in \fIfile\fR\fB.graph.iperm\fR by HSL_MC40.
+
+.TP 4
+.B \-eordering \fImeth\fR
+print the inverse permutation of elements in file \fIfile\fR\fB.graph.iperm\fR 
+by the method \fImeth\fR. Available methods are:
+.RS
+\fBhsl_mc43\fR
+.RE
+
+.TP 4
+.B \-nordering \fImeth\fR
+print the inverse permutation of nodes in file \fIfile\fR\fB.graph.iperm\fR 
+by the method \fImeth\fR. Available methods are:
+.RS
+\fBhsl_mc40\fR (same as -iperm)
+.RE
+
+.TP 4
+.B \-solver \fImethod\fR
+use a solver defined by \fImethod\fR. Available methods are:
+.RS
+\fBcrout\fR: CROUT method (default).
+.RE
+.RS
+\fBslu\fR  : SuperLU (if installed).
+.RE
+
+
+
+.SH POST-PROCESSING OPTIONS
+
+.TP 4
+.B \-post \fIfmt\fR
+generate the post-processing files \fIfile\fR\fB.pos\fR* in the format \fIfmt\fR. Available formats are: 
+.RS
+\fBGmshParsed\fR: for GMSH parsed file format.
+.RE
+.RS
+\fBGmshASCII\fR : for GMSH ASCII file format.
+.RE
+
+
+
+.SH OTHER OPTIONS
+
+.TP 4
+.B \-readonly
+parse \fIfile\fR, then exit. 
+
+.TP 4
+.B \-debug \fIinput\fR
+show data structure for \fIinput\fR. Available inputs are:
+.RS
+\fBgeom\fR: geometry
+.RE
+.RS
+\fBmesh\fR: mesh
+.RE
+.RS
+\fBmate\fR: materials
+.RE
+.RS
+\fBfield\fR: fields
+.RE
+.RS
+\fBinit\fR: initialization
+.RE
+.RS
+\fBfunc\fR: functions
+.RE
+.RS
+\fBbcond\fR: boundary conditions
+.RE
+.RS
+\fBload\fR: loads
+.RE
+.RS
+\fBpoin\fR: points
+.RE
+.RS
+\fBobval\fR: objective variations
+.RE
+.RS
+\fBiter\fR: iterative process
+.RE
+.RS
+\fBtime\fR: time steps
+.RE
+.RS
+\fBall\fR: all the dataset above
+.RE
+.RS
+\fBinter\fR: interpolation functions
+.RE
+.RS
+\fBcontinuity\fR: equations and unknowns at nodes
+.RE
+.RS
+\fBmatrix\fR: the matrix
+.RE
+.RS
+\fBresidu\fR: the residu
+.RE
+
+
+.TP 4
+.B \-help
+online help.
+
+.TP 4
+.B \-info
+display general informations.
+
+.TP 4
+.B \-model
+display the available models.
+
+.TP 4
+.B \-model \fImymodel\fR
+display an example of material properties for the model \fImymodel\fR.
+
+.TP 4
+.B \-modules
+display the available modules.
+
+
+
+.SH AUTHOR
+Patrick Dangla (patrick.dangla@ifsttar.fr).
+
+
+
+.SH SEE ALSO
+The full documentation for Bil is maintained as a Texinfo manual. If the
+\fBinfo\fR and \fBbil\fR are properly installed at your site, the command
+.IP
+.B info bil
+.PP
+should give you access to the complete manual.

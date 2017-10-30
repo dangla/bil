@@ -1,0 +1,73 @@
+# sechage anisotherme d'une eprouvette de beton tres peu permeable
+# (DEA Franz Heukamp)
+#
+Geometry
+1 plan
+Mesh
+4 0. 0. 0.1 0.1
+0.001
+1 100 1
+1 1 1
+Material
+6
+gravite = 0
+phi = 0.3
+rho_l = 1000
+M_asR = 0.00346
+M_vsR = 0.00216
+k_int = 1.e-20
+mu_l = 0.001
+mu_g = 1.8e-05
+p_l0 = 100000
+p_v0 = 2460
+p_a0 = 97540
+T_0 = 293
+D_av = 0.248e-4
+lam_s = 1.12
+lam_l = 0.6
+lam_g = 0.026
+C_s = 2.3e+06
+C_pl = 4180
+C_pv = 1800
+C_pa = 1000
+L_0 = 2.45e+06
+a = 0.003
+p_c3 = 1.e6
+courbes = beton
+Fields
+5
+Val = -2.2e+07 Grad = 0 Point = 0
+Val = 0.979e+05 Grad = 0 Point = 0
+Val = 293 Grad = 0 Point = 0
+Val = -9.4e+07 Grad = 0 Point = 0
+Val = 0.9877e+05 Grad = 0 Point = 0
+Initialization
+3
+Reg = 2 Inc = p_l Champ = 1
+Reg = 2 Inc = p_a Champ = 2
+Reg = 2 Inc = tem Champ = 3
+Functions
+0
+Boundary Conditions
+3
+Reg = 1 Inc = p_l Champ = 4 Fonction = 0
+Reg = 1 Inc = p_a Champ = 5 Fonction = 0
+Reg = 1 Inc = tem Champ = 3 Fonction = 0
+Loads
+0
+Points
+0
+Dates
+3
+0 3600 86400 # 2592000 3.1536e7
+Objective Variations
+p_l = 1.e5 
+p_a = 1.e4 
+tem = 1 
+Iterative Process
+Iter = 10 Tol = 1.e-4 Rec = 0 
+
+
+
+Time Steps
+Dtini = 1. Dtmax = 3.1536e+07 

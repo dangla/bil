@@ -1,0 +1,88 @@
+# modele poroplastique parfait, permeabilite constante
+#
+
+Geometry
+2 plan
+
+Mesh
+galerie.msh
+
+Material
+Model = m16
+gravite = 0
+rho_s = 2350
+young = 5.8e+09
+poisson = 0.3
+porosite = 0.15
+rho_l = 1000
+p_l0 = 4.7e+06
+k_l = 2e+09
+k_int = 1e-19
+mu_l = 0.001
+b = 0.8
+N = 4.e-11
+cohesion = 1e+06
+frottement = 25
+dilatance = 25
+beta = 0.8
+sig0_11 = 4
+sig0_22 = 5
+sig0_33 = 4
+a_int = 0
+
+Fields
+5
+Type = affine Value = 4.7e6 	  Gradient = 0. 0. 0. Point = 0. 0. 0. 
+Type = affine Value = 11.e6 	  Gradient = 0. 0. 0. Point = 0. 0. 0.
+Type = affine Value = 15.4e6 	  Gradient = 0. 0. 0. Point = 0. 0. 0.
+Type = affine Value = -11.e6 	  Gradient = 0. 0. 0. Point = 0. 0. 0.
+Type = affine Value = -15.4e6 	Gradient = 0. 0. 0. Point = 0. 0. 0.
+
+Initialization
+4
+Region = 100 Unknown = p_l Field = 1
+Region = 200 Unknown = p_l Field = 1
+Region = 300 Unknown = p_l Field = 1
+Region = 400 Unknown = p_l Field = 1
+
+Functions
+1
+N = 2 F(0) = 1. F(1.5e6) = 0.
+
+Boundary Conditions
+8
+Region = 10 Unknown = u_2 Field = 0 Function = 0
+Region = 11 Unknown = u_2 Field = 0 Function = 0
+Region = 40 Unknown = u_1 Field = 0 Function = 0
+Region = 41 Unknown = u_1 Field = 0 Function = 0
+Region = 20 Unknown = p_l Field = 1 Function = 0
+Region = 30 Unknown = p_l Field = 1 Function = 0
+Region = 50 Unknown = p_l Field = 1 Function = 1
+Region = 51 Unknown = p_l Field = 1 Function = 1
+
+Loads
+6
+Region = 20 Equation = meca_1 Type = pression Field = 2 Function = 0
+Region = 30 Equation = meca_1 Type = pression Field = 3 Function = 0
+Region = 50 Equation = meca_1 Type = sig_11   Field = 4 Function = 1
+Region = 50 Equation = meca_1 Type = sig_22   Field = 5 Function = 1
+Region = 51 Equation = meca_1 Type = sig_11   Field = 4 Function = 1
+Region = 51 Equation = meca_1 Type = sig_22   Field = 5 Function = 1
+
+Points
+0
+
+Dates
+2
+0. 1.5e6
+
+Objective Variations
+u_1 = 1.e-3 
+u_2 = 1.e-3 
+p_l = 1.e5
+
+Iterative Process
+Iter = 100 Tol = 1.e-4 Recom = 5 
+
+Time Steps
+Dtini = 1.e3 Dtmax = 1.e8 

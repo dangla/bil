@@ -1,0 +1,123 @@
+Lecture de toto0
+Passage dans DIME
+Passage dans MAIL
+Passage dans MATE
+Passage dans CHMP
+Passage dans INIT
+Passage dans FONC
+Passage dans COND
+Passage dans CHAR
+Passage dans POIN
+Passage dans TEMP
+Passage dans OBJE
+Passage dans ALGO
+Calcul
+Pas 0  t = 1.000000e-02 (dt = 1.00e-02)
+debug(0)
+-----
+
+residu :
+n = 100
+res 0 : 0.000000e+00
+res 1 : 0.000000e+00
+res 2 : 0.000000e+00
+res 3 : 0.000000e+00
+res 4 : 0.000000e+00
+res 5 : 0.000000e+00
+res 6 : 0.000000e+00
+res 7 : 0.000000e+00
+res 8 : 0.000000e+00
+res 9 : 0.000000e+00
+res 10 : 0.000000e+00
+res 11 : 0.000000e+00
+res 12 : 0.000000e+00
+res 13 : 0.000000e+00
+res 14 : 0.000000e+00
+res 15 : 0.000000e+00
+res 16 : 0.000000e+00
+res 17 : 0.000000e+00
+res 18 : 0.000000e+00
+res 19 : 0.000000e+00
+res 20 : 0.000000e+00
+res 21 : 0.000000e+00
+res 22 : 0.000000e+00
+res 23 : 0.000000e+00
+res 24 : 0.000000e+00
+res 25 : 0.000000e+00
+res 26 : 0.000000e+00
+res 27 : 0.000000e+00
+res 28 : 0.000000e+00
+res 29 : 0.000000e+00
+res 30 : 0.000000e+00
+res 31 : 0.000000e+00
+res 32 : 0.000000e+00
+res 33 : 0.000000e+00
+res 34 : 0.000000e+00
+res 35 : 0.000000e+00
+res 36 : 0.000000e+00
+res 37 : 0.000000e+00
+res 38 : 0.000000e+00
+res 39 : 0.000000e+00
+res 40 : 0.000000e+00
+res 41 : 0.000000e+00
+res 42 : 0.000000e+00
+res 43 : 0.000000e+00
+res 44 : 0.000000e+00
+res 45 : 0.000000e+00
+res 46 : 0.000000e+00
+res 47 : 0.000000e+00
+res 48 : 0.000000e+00
+res 49 : 0.000000e+00
+res 50 : 0.000000e+00
+res 51 : 0.000000e+00
+res 52 : 0.000000e+00
+res 53 : 0.000000e+00
+res 54 : 0.000000e+00
+res 55 : 0.000000e+00
+res 56 : 0.000000e+00
+res 57 : 0.000000e+00
+res 58 : 0.000000e+00
+res 59 : 0.000000e+00
+res 60 : 0.000000e+00
+res 61 : 0.000000e+00
+res 62 : 0.000000e+00
+res 63 : 0.000000e+00
+res 64 : 0.000000e+00
+res 65 : 0.000000e+00
+res 66 : 0.000000e+00
+res 67 : 0.000000e+00
+res 68 : 0.000000e+00
+res 69 : 0.000000e+00
+res 70 : 0.000000e+00
+res 71 : 0.000000e+00
+res 72 : 0.000000e+00
+res 73 : 0.000000e+00
+res 74 : 0.000000e+00
+res 75 : 0.000000e+00
+res 76 : 0.000000e+00
+res 77 : 0.000000e+00
+res 78 : 0.000000e+00
+res 79 : 0.000000e+00
+res 80 : 0.000000e+00
+res 81 : 0.000000e+00
+res 82 : 0.000000e+00
+res 83 : 0.000000e+00
+res 84 : 0.000000e+00
+res 85 : 0.000000e+00
+res 86 : 0.000000e+00
+res 87 : 0.000000e+00
+res 88 : 0.000000e+00
+res 89 : 0.000000e+00
+res 90 : 0.000000e+00
+res 91 : 0.000000e+00
+res 92 : 0.000000e+00
+res 93 : 0.000000e+00
+res 94 : 0.000000e+00
+res 95 : 0.000000e+00
+res 96 : 0.000000e+00
+res 97 : 0.000000e+00
+res 98 : 0.000000e+00
+res 99 : -8.730900e-04
+  Erreur = 2.00e-02 (1 iterations)
+Le fichier toto0.stk a ete remplace
+temps CPU = 0.03 secondes

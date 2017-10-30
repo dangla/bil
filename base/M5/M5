@@ -1,0 +1,65 @@
+# sechage isotherme d'une eprouvette de beton tres peu permeable
+#
+Geometry
+1 plan
+
+Mesh
+4 0. 0. 0.1 0.1
+0.001
+1 100 1
+1 1 1
+
+Material
+Model = M5
+gravite = 0
+phi = 0.3
+kl_int = 1.e-20
+kg_int = 1.e-18
+p_c3 = 1.e6
+Curves = beton   p_c = Range{x1 = 0,x2 = 2.e8,n = 401} s_l = Van-Genuchten(1){p0 = 37547939.5,m = 0.461169} kl = Mualem_liq(2){m = 0.461169} kg = Mualem_gas(2){m = 0.461169}
+
+Fields
+3
+Value = -2.2e+07       Gradient = 0 Point = 0
+Value = 1.e+05         Gradient = 0 Point = 0
+Value = -9.4e+07       Gradient = 0 Point = 0
+
+Initialization
+2
+Region = 2 Unknown = p_l Field = 1
+Region = 2 Unknown = p_g Field = 2
+
+Functions
+0
+
+Boundary Conditions
+2
+Region = 1 Unknown = p_l Field = 3 Function = 0
+Region = 1 Unknown = p_g Field = 2 Function = 0
+
+Loads
+0
+
+Points
+0
+
+Dates 
+3
+0 864000 2592000
+
+Objective Variations
+p_l = 1.e5
+p_g = 1.e5
+
+Iterative Process
+Iter = 10
+Tol = 1.e-4 
+Rep = 0 
+
+Time Steps
+
+
+
+Time Steps
+Dtini = 1 
+Dtmax = 3.1536e+07 
