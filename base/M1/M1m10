@@ -1,0 +1,54 @@
+# Drainage d'une colonne de billes
+# 
+DIME
+1 plan
+MAIL
+4 0. 0. 0.1 0.2
+0.001
+1 50 50
+1 1 2
+MATE
+Model = M1
+gravite = -9.81  # La gravite
+phi = 0.38       # La porosite
+rho_l = 1000     # La masse volumique du fluide
+k_int = 8.9e-12  # La permeabilite intrinseque
+mu_l = 0.001     # La viscosite du fluide
+p_g = 1.e5       # La pression du gaz
+Curves = billes # Le nom du fichier p_c S_l k_rl
+MATE
+10
+gravite = -9.81
+phi = 0.38
+rho_l = 1000
+k_int = 8.9e-12
+mu_l = 0.001
+p_g = 100000 
+courbes = billes
+CHMP
+1
+Type = affine Val = 1.e5 Grad = -3400 0 0 Point = 0 0 0
+INIT
+2
+Reg = 2 Inc = p_l Champ = 1
+Reg = 3 Inc = p_l Champ = 1
+FONC
+0
+COND
+1
+Reg = 1 Inc = p_l Champ = 1 Fonction = 0
+CHAR
+0
+POIN
+0
+TEMP
+3
+0 120 300
+OBJE
+p_l = 10
+ALGO
+Iter = 10 
+Tol = 1e-8 
+Recom = 0
+Dtini = 0.01 
+Dtmax = 1000 

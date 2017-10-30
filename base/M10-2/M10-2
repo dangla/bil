@@ -1,0 +1,58 @@
+# Drainage d'une colonne de billes
+#
+Geometry
+2 plan
+
+Mesh
+M10-2.msh
+
+Material
+Model = M10
+gravite = -9.81
+phi = 0.38
+rho_l = 1000
+k_int = 8.9e-12
+mu_l = 0.001
+p_g = 100000
+Curves = billes
+
+Fields
+1
+Val = 1.e5 Grad = 0 -3400 Poin = 0 0
+
+Initialization
+1
+Reg = 10 Inc = p_l Champ = 1
+
+Functions
+0
+
+Boundary Conditions
+1
+Reg = 1 Inc = p_l Champ = 1 Fonc = 0
+
+Loads
+0
+
+Points
+0
+
+Dates
+3
+0 120 300
+
+Objective Variations
+p_l = 10
+
+Iterative Process
+Iter = 10 
+Tol = 1.e-10 
+Recom = 0
+
+Time Steps
+
+
+
+Time Steps
+Dtini = 0.01 
+Dtmax = 1000 

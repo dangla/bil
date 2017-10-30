@@ -1,0 +1,77 @@
+DIME
+1 plan
+MAIL
+3 0 0 0.4
+0.001
+1 100
+1 1
+MATE
+41
+porosite = 0.384
+K_henry = 1.
+K_ca = 3.890451449942805e-9
+K_co3 = 4.570881896148751e3
+K_eau = 1.e-14
+k_int = 5e-19
+mu_l = 1.e-3
+D_co2 = 0.5e-3
+V_h2o = 18.e-3
+V_oh = 18.e-3
+V_h = 0
+V_ca = 0
+V_h2co3 = 50.e-3
+V_hco3 = 50.e-3
+V_co3 = 50.e-3
+A_1 = 150
+K_1 = 2.187761623949552e-8
+A_2 = 1e-2
+K_2 = 6.456542290346550e-6
+C_2 = 0.14e6
+N_CaOH2 = 6.1
+n_csh0  = 2.4
+porositef = 0.4
+dv_caoh2 = 0.004
+dv_csh = 0.039
+T = 1.8e-4
+D_ca = 8e-8
+D_oh = 100e-8
+D_h = 93.1e-8
+D_h2co3 = 7.2e-8
+D_hco3 = 11.8e-8
+D_co3 = 9.55e-8
+courbes = ciment
+CHMP
+5
+Val = 2.884031503126606e-15 Grad = 0. Point = 0.
+Val = 2.345989849188018e-2 Grad = 0. Point = 0.
+Val = -5.8e7 Grad = 0. Point = 0.
+Val = 3.092616927277036e-9 Grad = 0. Point = 0.
+Val = 0.016 Grad = 0. Point = 0.
+INIT
+4
+Reg = 2 Inc = c_co2  Champ = 1
+Reg = 2 Inc = c_oh   Champ = 2
+Reg = 2 Inc = p_l    Champ = 3
+Reg = 2 Inc = c_hco3 Champ = 4
+FONC
+0
+COND
+2
+Reg = 1 Inc = c_co2 Champ = 5 Fonc = 0
+Reg = 1 Inc = p_l   Champ = 3 Fonc = 0
+CHAR
+0
+POIN
+0
+TEMP
+3
+0. 60 600
+OBJE
+c_co2 = 1.e-3 
+c_oh = 1.e-3 
+p_l = 1.e4 
+c_caco3 = 1.e-3 
+c_hco3 = 1.e-3
+ALGO
+Iter = 20 Tol = 1.e-6 Recom = 0 
+Dtini = 1.e-6 Dtmax = 36000

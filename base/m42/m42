@@ -1,0 +1,80 @@
+Geometry
+1 plan
+Mesh
+3 0. 0. 0.05 
+2.e-4
+1 250 
+1 1 
+Material
+42
+porosite = 0.121
+D_Cl =  2.6e-12 
+r_d = 1.
+s_caoh2 = 1640.
+s_c3ah6 = 8.43
+s_sel = 50.
+s_aloh3 = 10.
+s_csh = 635.
+alpha =  0.12 
+beta = 2.66
+Fields
+14
+Val = 1.e-5	Grad = 0.0	Point = 0.0
+Val = 1.	Grad = 0.0	Point = 0.0
+Val = 1.	Grad = 0.0	Point = 0.0
+Val = -2.	Grad = 0.0	Point = 0.0
+Val = 120.	Grad = 0.0	Point = 0.0
+Val = 229.47	Grad = 0.0	Point = 0.0
+Val = -2.	Grad = 0.0	Point = 0.0
+Val = 523.2	Grad = 0.0	Point = 0.0
+Val = -0.9983273682110610000	Grad = 0.0	Point = 0.0
+Val = -0.9999982818780170000	Grad = 0.0	Point = 0.0
+Val = -0.9999997619464690000	Grad = 0.0	Point = 0.0
+Val = 620.	Grad = 0.0	Point = 0.0
+Val = 3.2	Grad = 0.0	Point = 0.0
+Val = -0.9999989764585470000	Grad = 0.0	Point = 0.0
+Initialization
+8
+Reg = 2 Inc = c_cl    Champ = 1
+Reg = 2 Inc = z_caoh2 Champ = 2
+Reg = 2 Inc = z_c3a   Champ = 3
+Reg = 2 Inc = z_sf    Champ = 4
+Reg = 2 Inc = c_na    Champ = 5
+Reg = 2 Inc = c_k     Champ = 6
+Reg = 2 Inc = z_aloh3 Champ = 7
+Reg = 2 Inc = psi     Champ = 0
+Functions
+0
+Boundary Conditions
+7
+Reg = 1 Inc = c_cl    Champ = 8  Fonc = 0
+Reg = 1 Inc = z_caoh2 Champ = 9  Fonc = 0
+Reg = 1 Inc = z_c3a   Champ = 10 Fonc = 0
+Reg = 1 Inc = z_sf    Champ = 11 Fonc = 0
+Reg = 1 Inc = c_na    Champ = 12 Fonc = 0
+Reg = 1 Inc = c_k     Champ = 13 Fonc = 0
+Reg = 1 Inc = psi     Champ = 0  Fonc = 0
+Loads
+0
+Points
+1
+2.e-4
+Dates
+3
+0. 86400. 8294400.
+Objective Variations
+c_cl    = 10.
+z_caoh2 = 0.1
+z_c3a   = 0.1
+z_sf    = 0.1
+c_na    = 10.
+c_k     = 10.
+z_aloh3 = 0.1
+psi     = 1.e3
+Iterative Process
+Iter = 20 Tol = 1.e-6 Rec = 0
+
+
+
+Time Steps
+Dtini = 1.e-1 Dtmax = 1.e6

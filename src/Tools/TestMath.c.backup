@@ -1,0 +1,78 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include "Math.h"
+
+int main(void)
+{
+  { /* Test degree 3 */
+    double x1 = 3.2e-2 ;
+    double x2 = 19.e-8 ;
+    double x3 = -4.e-3 ;
+    double a = 1. ;
+    double b = - (x1 + x2 + x3) ;
+    double c = x1*x2 + x1*x3 + x2*x3 ;
+    double d = - (x1*x2*x3) ;
+    double x[4],y[4] ;
+    double tol = 1.e-15 ;
+    int i,m ;
+    
+    x[0] = a ; x[1] = b ; x[2] = c ; x[3] = d ;
+  
+    for(i = 0 ; i < 4 ; i++)  y[i] = x[i] ;
+    
+    printf("Polynomial Equation of Degree 3\n") ;
+    printf("Exact roots: %e , %e , %e\n",x1,x2,x3) ;
+    
+    m = Math_ComputePolynomialEquationRoots(x,3) ;
+    
+    printf("Nb of real roots found: %d\n",m) ;
+    
+    for(i = 0 ; i < m ; i++) {
+      double z = x[i] ;
+      double f = ((a*z + b)*z + c)*z + d ;
+      printf("Analytical solution x(%d) = %e and f = %e\n",i,z,f) ;
+      z = Math_PolishPolynomialEquationRoot(y,3,z,fabs(z)*tol,10) ;
+      f = ((a*z + b)*z + c)*z + d ;
+      printf("Polished solution   x(%d) = %e and f = %e\n",i,z,f) ;
+    }
+  }
+  
+  { /* Test degree 4 */
+    double x1 = 8.666e18 ;
+    double x2 = 1.014e0 ;
+    double x3 = 0 ;
+    double x4 = -2.456e12 ;
+    double a = 1. ;
+    double b = - (x1 + x2 + x3 + x4) ;
+    double c = x1*x2 + x1*x3 + x1*x4 + x2*x3 + x2*x4 + x3*x4 ;
+    double d = - (x1*x2*x3 + x1*x2*x4 + x1*x3*x4 + x2*x3*x4) ;
+    double e = x1*x2*x3*x4 ;
+    double x[5],y[5] ;
+    double tol = 1.e-10 ;
+    int i,m ;
+    
+    x[0] = a ; x[1] = b ; x[2] = c ; x[3] = d ; x[4] = e ;
+  
+    for(i = 0 ; i < 5 ; i++)  y[i] = x[i] ;
+    
+    printf("Polynomial Equation of Degree 4\n") ;
+    printf("Exact roots: %e , %e , %e, %e\n",x1,x2,x3,x4) ;
+    
+    m = Math_ComputePolynomialEquationRoots(x,4) ;
+    
+    printf("Nb of real roots found: %d\n",m) ;
+  
+    for(i = 0 ; i < m ; i++) {
+      double z = x[i] ;
+      double f = (((a*z + b)*z + c)*z + d)*z + e ;
+      printf("Analytical solution x(%d) = %e and f = %e\n",i,z,f) ;
+      z = Math_PolishPolynomialEquationRoot(y,4,z,fabs(z)*tol,10) ;
+      f = (((a*z + b)*z + c)*z + d)*z + e ;
+      printf("Polished solution   x(%d) = %e and f = %e\n",i,z,f) ;
+    }
+  }
+  
+  return(0) ;
+}

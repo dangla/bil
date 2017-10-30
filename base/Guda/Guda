@@ -1,0 +1,70 @@
+Geometry
+1 Plan
+
+
+Mesh
+4 
+0 0 0.1 0.1
+1.e-3
+1 20 1
+1 1 1
+
+
+Material
+Model = Guda
+porosity = 0.3
+pH = 13
+N_CH = 2000
+N_C3AH6 = 1000
+a_AFt = 1.e-8
+Curves_log = Sat  r = Range{r1 = 1.e-9 , r2 = 1.e-6 , n = 1000} S_L = Expressions(1){a = 5.72 ; m = 0.444 ; V_w = 18.e-6; Gamma_lg = 0.072 ; RT = 2436 ; S_L = (1 + (a*V_w/RT*2*Gamma_lg/r)**(1/(1-m)))**(-m)}
+
+
+Fields
+2
+Type = affine   Value = -2    Gradient = 0 0 0    Point = 0 0 0
+Type = affine   Value = 1    Gradient = 0 0 0    Point = 0 0 0
+
+
+Initialization
+1
+Region = 2  Unknown = logc_so4   Field = 1
+
+
+Functions
+1
+N = 2  F(0) = -2  F(86400) = 6
+
+
+Boundary Conditions
+1
+Region = 3  Unknown = logc_so4   Field = 2   Function = 1
+
+
+Loads
+0
+
+
+Points
+1
+0.0995
+
+
+Dates
+4
+0  86400  2.592e6  3.1536e7
+
+
+Objective Variations
+logc_so4 = 0.5
+
+
+Iterative Process
+Iterations = 10
+Tolerance = 1.e-8
+Repetitions = 0
+
+
+Time Steps
+Dtini = 10
+Dtmax = 1.e6

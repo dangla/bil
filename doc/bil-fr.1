@@ -1,0 +1,66 @@
+.\" $Id: bil.1,v 1.1 2004/07/01 22:23:11 dangla Exp $
+.TH Bil 1 "21 Sept 2004" "Bil 1.1" "Bil Manual Pages"
+.UC 4
+.\" ********************************************************************
+.SH NAME
+Bil \- un programme d'éléments et/ou volumes finis
+.\" ********************************************************************
+.SH SYNOPSIS
+.B bil
+[\fIoption\fR] [\fIfile\fR]
+.\" ********************************************************************
+.SH DESCRIPTION
+\fIBil\fR est un programme de calcul par éléments/volumes finis pour la
+résolution d'équations aux dérivées partielles issues de la mécanique des 
+milieux continus tels que bilans de masse, de quantité de mouvement, de 
+chaleur etc...
+.PP
+Sans \fIoption\fR \fIBil\fR éxecute le fichier \fIfile\fR décrivant le problème.
+.PP
+\fIBil\fR est développe pour les applications de dimension quelconque
+(1,2 ou 3). Il est découplé de tout programme de préparation des données
+et de post-traitement des résultats. Il accepte cependant les fichiers
+de maillage produit par le logiciel libre \fIGmsh\fR qui peut être 
+téléchargé a l'adresse http://www.geuz.org/gmsh/ (version >= 1.54).
+Les fichiers de résultats 1D produits par \fIBil\fR peuvent être 
+directement exploités par des traceurs de courbes comme \fIGnuplot\fR.
+Par ailleurs une option permet de fabriquer des fichiers de post-traitement 
+exploitables par \fIGmsh\fR (voir les options de \fIBil\fR).
+.\" ********************************************************************
+.SH OPTIONS
+.TP 4
+.B \-h
+aide en ligne (sans autre argument).
+.TP 4
+.B \-r
+lecture seule du fichier \fIfile\fR. 
+.TP 4
+.B \-d \fImot-clé\fR
+imprime les données relatives a \fImot-clé\fR.
+.TP 4
+.B \-i
+sort le fichier \fIfile\fR\fB.graph.iperm\fR par HSL_MC40.
+.TP 4
+.B \-info
+informations générales.
+.TP 4
+.B \-m
+affiche les modèles disponibles.
+.TP 4
+.B \-m \fIJ\f
+affiche un exemple de données relatif au modèle \fIJ\f.
+.TP 4
+.B \-s \fIméthode\fR
+utilise une méthode de résolution du système linéaire.
+.RS
+\fIméthode\fR = \fBcrout\fR : méthode de CROUT (defaut).
+.RE
+.RS
+\fIméthode\fR = \fBslu\fR   : méthode proposée par SuperLU.
+.RE
+.TP 4
+.B \-p
+sort les fichiers \fIfile\fR\fB.pos\fR* pour \fIGmsh\fR.
+.\" ********************************************************************
+.SH AUTHOR
+Patrick Dangla (dangla@lcpc.fr).

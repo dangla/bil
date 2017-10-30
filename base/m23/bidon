@@ -1,0 +1,1039 @@
+Lecture de toto
+Passage dans DIME
+Passage dans MAIL
+Passage dans MATE
+Passage dans MATE
+
+debug(0)
+-----
+
+positions des inconnues et equations aux noeuds des elements
+el(0): 1 noeuds
+	 6 inconnues
+	 no(0): p_l(0) c_o2(1) psi(2) psi_m(3) c_feoh2(4) c_fe(5)
+	 6 equations
+	 no(0): E_h(0) E_o2(1) E_i(2) E_m(3) E_fe(4) E_feoh2_l(5)
+el(1): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(4) psi(2) c_o2(1) c_cat(6) c_ani(7) c_fe(5)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(4) E_i(2) E_o2(1) E_cat(6) E_ani(7) E_feoh2_l(5)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(2): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(3): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(4): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(5): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(6): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(7): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(8): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(9): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(10): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(11): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(12): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(13): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(14): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(15): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(16): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(17): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(18): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(19): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(20): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(21): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(22): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(23): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(24): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(25): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(26): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(27): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(28): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(29): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(30): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(31): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(32): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(33): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(34): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(35): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(36): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(37): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(38): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(39): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(40): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(41): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(42): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(43): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(44): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(45): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(46): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(47): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(48): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(49): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(50): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(51): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(52): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(53): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(54): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(55): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(56): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(57): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(58): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(59): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(60): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(61): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(62): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(63): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(64): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(65): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(66): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(67): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(68): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(69): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(70): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(71): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(72): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(73): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(74): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(75): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(76): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(77): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(78): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(79): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(80): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(81): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(82): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(83): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(84): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(85): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(86): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(87): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(88): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(89): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(90): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(91): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(92): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(93): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(94): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(95): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(96): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(97): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(98): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(99): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(100): 2 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 no(1): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+	 no(1): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+el(101): 1 noeuds
+	 7 inconnues
+	 no(0): p_l(0) c_feoh2(1) psi(2) c_o2(3) c_cat(4) c_ani(5) c_fe(6)
+	 7 equations
+	 no(0): E_h(0) E_fe(1) E_i(2) E_o2(3) E_cat(4) E_ani(5) E_feoh2_l(6)
+equations et inconnues aux noeuds :
+no(0):
+	 0 inconnues :
+	 0 equations :
+no(1):
+	 8 inconnues : p_l c_o2 psi psi_m c_feoh2 c_fe c_cat c_ani
+	 8 equations : E_h E_o2 E_i E_m E_fe E_feoh2_l E_cat E_ani
+no(2):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(3):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(4):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(5):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(6):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(7):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(8):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(9):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(10):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(11):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(12):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(13):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(14):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(15):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(16):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(17):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(18):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(19):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(20):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(21):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(22):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(23):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(24):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(25):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(26):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(27):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(28):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(29):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(30):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(31):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(32):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(33):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(34):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(35):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(36):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(37):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(38):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(39):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(40):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(41):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(42):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(43):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(44):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(45):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(46):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(47):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(48):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(49):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(50):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(51):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(52):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(53):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(54):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(55):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(56):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(57):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(58):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(59):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(60):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(61):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(62):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(63):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(64):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(65):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(66):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(67):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(68):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(69):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(70):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(71):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(72):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(73):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(74):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(75):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(76):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(77):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(78):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(79):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(80):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(81):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(82):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(83):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(84):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(85):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(86):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(87):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(88):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(89):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(90):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(91):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(92):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(93):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(94):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(95):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(96):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(97):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(98):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(99):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(100):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(101):
+	 7 inconnues : p_l c_feoh2 psi c_o2 c_cat c_ani c_fe
+	 7 equations : E_h E_fe E_i E_o2 E_cat E_ani E_feoh2_l
+no(102):
+	 0 inconnues :
+	 0 equations :
+Passage dans CHMP
+Passage dans INIT
+Passage dans FONC
+Passage dans COND
+Passage dans CHAR
+Passage dans POIN
+Passage dans TEMP
+Passage dans OBJE
+Passage dans ALGO

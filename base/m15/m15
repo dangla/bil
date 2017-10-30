@@ -1,0 +1,52 @@
+DIME
+2 axis
+MAIL
+carre.msh
+MATE
+15
+gravite = 0
+rho_s = 2000
+kappa = 0.004
+lambda = 0.037
+mu = 1.e8
+M = 1.2
+p_co = 18000
+sig0 = -1000
+phi = 0.25
+rho_l = 1000
+p_l0 = 0
+k_int = 1e-20
+mu_l = 0.001
+p_g = 0
+n_p = 101
+p_c1 = 10.e3
+p_c2 = 210.e3
+courbes = sterrebeek
+CHMP
+2
+Val = -0.e3 Grad = 0 0 Point = 0 0
+Val =  1.e3 Grad = 0 0 Point = 0 0
+INIT
+0
+FONC
+1
+N = 3 F(1) = 1 F(256) = 256 F(512) = 1
+COND
+3
+Reg = 4 Inc = u_1 Champ = 0 Fonction = 0
+Reg = 1 Inc = u_2 Champ = 0 Fonction = 0
+Reg = 10 Inc = p_l Champ = 1 Fonction = 0
+CHAR
+2
+Reg = 3 Equ = meca_1 Type = pression Champ = 2 Fonction = 1
+Reg = 2 Equ = meca_1 Type = pression Champ = 2 Fonction = 1
+POIN
+1
+0.5 0.5
+TEMP
+3
+1 256 512 
+OBJE
+u_1 = 1.e-4 u_2 = 1.e-4 p_l = 1000
+ALGO
+Iter = 100 Tol = 1e-06 Rec = 0 Dtini = 0.5 Dtmax = 0.5

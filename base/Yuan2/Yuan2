@@ -1,0 +1,81 @@
+DIME
+1 plan
+
+MESH
+5
+0 0 0.9 1. 1.
+5.e-3
+1 90 40 1
+1 1 1 1
+
+MATE
+Model = Yuan2
+porosite = 0.3
+N_CH     = 5.2
+T_CH     = 2.e3
+surface  = 15
+Curves_log = csh3p q_CH = Range{x0 = 1.e-20 , x1 = 1 , n = 1001} x_csh = CSH3Poles(1){y_Tob = 1.8 , y_Jen = 0.9}
+
+FLDS
+7
+Value = -31.5   Gradient = 0. 0 0 Point = 0. 0 0
+Value = 1.      Gradient = 0. 0 0 Point = 0. 0 0
+Value = 0.      Gradient = 0. 0 0 Point = 0. 0 0
+Value = -3.     Gradient = 0. 0 0 Point = 0. 0 0
+Value = -1.     Gradient = 0. 0 0 Point = 0. 0 0
+Value = 5       Gradient = 0. 0 0 Point = 0. 0 0
+Value = 0.      Gradient = 0. 0 0 Point = 0. 0 0
+
+INIT
+12
+Region = 2 Unknown = logc_h2so4  Field = 1
+Region = 2 Unknown = psi         Field = 0
+Region = 2 Unknown = z_si        Field = 6
+Region = 2 Unknown = z_ca        Field = 2
+Region = 2 Unknown = c_k         Field = 7
+Region = 2 Unknown = c_cl        Field = 7
+Region = 3 Unknown = logc_h2so4  Field = 1
+Region = 3 Unknown = psi         Field = 0
+Region = 3 Unknown = z_si        Field = 6
+Region = 3 Unknown = z_ca        Field = 2
+Region = 3 Unknown = c_k         Field = 7
+Region = 3 Unknown = c_cl        Field = 7
+
+FUNC
+2
+N = 2 F(0) = 1. F(86400) = 0.2559
+N = 2 F(0) = 1. F(86400) = -1.
+
+COND
+4
+Region = 4 Unknown = psi        Field = 0 Function = 0
+Region = 4 Unknown = logc_h2so4 Field = 1 Function = 1
+Region = 4 Unknown = c_k        Field = 3 Function = 0
+Region = 4 Unknown = c_cl       Field = 3 Function = 0
+
+LOAD
+0
+
+POIN
+0
+
+DATE
+3
+0. 10368000 2.899408e+07
+
+OBJE
+logc_h2so4   = 0.1
+z_ca         = 1.e-1
+psi          = 1.e-1
+z_si         = 1.e-1
+c_k          = 1.e-2
+c_cl         = 1.e-2
+
+ITER
+Iter = 40 
+Tol = 1.e-4 
+Recom = 0
+
+TIME
+Dtini = 1.e-2 
+Dtmax = 1.e9

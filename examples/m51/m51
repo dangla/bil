@@ -1,0 +1,63 @@
+# Gel d'un poreux avec changement liquide-glace
+#
+Geometry
+1 plan
+
+Mesh
+3 0 0.2 0.2
+0.001
+200 1
+1 1
+
+Material
+Model = m51
+phi = 0.1
+rho_l = 0.998
+rho_g = 0.91
+C_sk = 2e+06
+C_pl = 4180
+C_pg = 2000
+T_0 = 273
+k_sk = 1
+k_l = 0.598
+k_g = 2.2
+L_0 = 3.34e5
+n_p = 2
+T_1 = 272.9
+T_2 = 273.
+Curve = beton
+
+Fields
+2
+Type = affine Value = 263 Gradient = 0 Point = 0
+Type = affine Value = 283 Gradient = 0 Point = 0
+
+Initialization
+1
+Region = 1 Unknown = tem Field = 2
+
+Functions
+0
+
+Boundary Conditions
+1
+Region = 2 Unknown = tem Field = 1 Function = 0
+
+Loads
+0
+
+Points
+0
+
+Dates
+11
+0 3600 7200 10800 14400 18000 21600 25200 28800 32400 36000
+
+Objective Variations
+tem = 1 
+
+Iterative Process
+Iter = 10 Tol = 1e-08 Recom = 0 
+
+Time Steps
+Dtini = 1 Dtmax = 86400

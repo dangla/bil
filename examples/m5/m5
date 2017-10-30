@@ -1,0 +1,80 @@
+# Barriere Ouvragee soumise a un sechage
+#
+Geometry
+1 axis
+
+Mesh
+5 0.425 0.425 1.225 10 10
+0.032
+1 25 75 1
+1 1 2 2
+
+Material
+Model = m5
+gravite = 0
+phi = 0.3
+k_int = 1e-20
+p_l0 = 100000
+p_v0 = 2460
+p_a0 = 97540
+p_c3 = 1.e6
+Curves = tab1a p_c = Range{p1 = 0 , p2 = 2.e8, n = 401}  s_l = Expressions(1){s_l = (1 + (p_c/1.5e6)**(1.06383))**(-0.06)}  k_l = Expressions(1){k_l = (1 + (p_c/3.e6)**(2.))**(-0.5)}  k_g = Expressions(2){k_g = (1 - s_l)*(1 - s_l)*(1  - (s_l)**(5./3.))}
+
+
+Material
+Model = m5
+gravite = 0
+phi = 0.05
+k_int = 1e-19
+p_l0 = 100000
+p_v0 = 2460
+p_a0 = 97540
+p_c3 = 2.e5
+Curves = tab2a p_c = Range{p1 = 0 , p2 = 1.e7, n = 201}  s_l = Expressions(1){s_l = (1 + (p_c/10.e6)**(1.7))**(-0.4117)}  k_l = Expressions(1){k_l = (1 + (p_c/10.e6)**(2.))**(-1.)}  k_g = Expressions(2){k_g = (1 - s_l)*(1 - s_l)*(1  - (s_l)**(5./3.))}
+
+Fields
+4
+Type = affine Value = -7.611655e+07 Gradient = 0 Point = 0
+Type = affine Value = 4.905e+06 	  Gradient = 0 Point = 0
+Type = affine Value = 9.225595e+04  Gradient = 0 Point = 0
+Type = affine Value = 4.891671e+06  Gradient = 0 Point = 0
+
+Initialization
+4
+Region = 2 Unknown = p_l Field = 1
+Region = 3 Unknown = p_l Field = 2
+Region = 2 Unknown = p_a Field = 3
+Region = 3 Unknown = p_a Field = 4
+
+Functions
+0
+
+Boundary Conditions
+2
+Region = 4 Unknown = p_l Field = 2 Function = 0
+Region = 4 Unknown = p_a Field = 4 Function = 0
+
+Loads
+0
+
+Points
+2
+0.825
+1.225
+
+Dates
+11 0. 3.1536e7 6.3072e7 1.26144e8 1.89216e8 2.52288e8 
+      3.1536e8 6.3072e8 1.26144e9 1.5768e9  3.1536e9
+      
+Objective Variations
+p_l = 1.e4 
+p_a = 1.e4
+
+Iterative Process
+Iter = 100 
+Tol = 1.e-6 
+Recom = 0 
+
+Time Steps
+Dtini = 1.e2 
+Dtmax = 3.1536e+07 

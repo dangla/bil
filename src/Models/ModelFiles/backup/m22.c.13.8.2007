@@ -1,0 +1,1151 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include "../defs.h"
+#include "../lib.h"
+/* Macros */
+#define NEQ      (6)
+#define NVI      (18)
+#define NVE      (29)
+
+#define E_h      (0)
+#define E_o      (1)
+#define E_i      (2)
+#define E_o2     (3)
+#define E_cat    (4)
+#define E_ani    (5)
+
+#define I_p_l    (0)
+#define I_c_oh   (1)
+#define I_psi    (2)
+#define I_c_o2   (3)
+#define I_c_cat  (4)
+#define I_c_ani  (5)
+
+#define P_l(n)      (u[(n)][I_p_l])
+#define C_OH(n)     (u[(n)][I_c_oh])
+#define PSI(n)      (u[(n)][I_psi])
+#define C_O2(n)     (u[(n)][I_c_o2])
+#define C_cat(n)    (u[(n)][I_c_cat])
+#define C_ani(n)    (u[(n)][I_c_ani])
+
+#define P_l1(n)     (u_1[(n)][I_p_l])
+#define C_OH1(n)    (u_1[(n)][I_c_oh])
+#define PSI1(n)     (u_1[(n)][I_psi])
+#define C_O21(n)    (u_1[(n)][I_c_o2])
+#define C_cat1(n)   (u_1[(n)][I_c_cat])
+#define C_ani1(n)   (u_1[(n)][I_c_ani])
+
+#define P_ln(n)     (u_n[(n)][I_p_l])
+#define C_OHn(n)    (u_n[(n)][I_c_oh])
+#define PSIn(n)     (u_n[(n)][I_psi])
+#define C_O2n(n)    (u_n[(n)][I_c_o2])
+#define C_catn(n)   (u_n[(n)][I_c_cat])
+#define C_anin(n)   (u_n[(n)][I_c_ani])
+
+#define N_H(n)      (f[(n)])
+#define N_O(n)      (f[(2+n)])
+#define N_Fe(n)     (f[(4+n)])
+#define N_O2(n)     (f[(6+n)])
+#define N_cat(n)    (f[(8+n)])
+#define N_ani(n)    (f[(10+n)])
+#define W_H         (f[12])
+#define W_O         (f[13])
+#define W_q         (f[14])
+#define W_O2        (f[15])
+#define W_cat       (f[16])
+#define W_ani       (f[17])
+
+#define N_H1(n)     (f_1[(n)])
+#define N_O1(n)     (f_1[(2+n)])
+#define N_Fe1(n)    (f_1[(4+n)])
+#define N_O21(n)    (f_1[(6+n)])
+#define N_cat1(n)   (f_1[(8+n)])
+#define N_ani1(n)   (f_1[(10+n)])
+#define W_H1        (f_1[12])
+#define W_O1        (f_1[13])
+#define W_q1        (f_1[14])
+#define W_O21       (f_1[15])
+#define W_cat1      (f_1[16])
+#define W_ani1      (f_1[17])
+
+#define N_Hn(n)     (f_n[(n)])
+#define N_On(n)     (f_n[(2+n)])
+#define N_Fen(n)    (f_n[(4+n)])
+#define N_O2n(n)    (f_n[(6+n)])
+#define N_catn(n)   (f_n[(8+n)])
+#define N_anin(n)   (f_n[(10+n)])
+#define W_Hn        (f_n[12])
+#define W_On        (f_n[13])
+#define W_qn        (f_n[14])
+#define W_O2n       (f_n[15])
+#define W_catn      (f_n[16])
+#define W_anin      (f_n[17])
+
+#define KD_H2O      (va[(0)])
+#define KD_H        (va[(1)])
+#define KD_OH       (va[(2)])
+#define KD_Fe       (va[(3)])
+#define KD_FeOH2    (va[(4)])
+#define KD_O2       (va[(5)])
+#define KD_cat      (va[(6)])
+#define KD_ani      (va[(7)])
+#define KF_OH       (va[(8)])
+#define KF_H        (va[(9)])
+#define KF_Fe       (va[(10)])
+#define KF_FeOH2    (va[(11)])
+#define KF_O2_l     (va[(12)])
+#define KF_O2_g     (va[(13)])
+#define KF_cat      (va[(14)])
+#define KF_ani      (va[(15)])
+#define KE_H        (va[(16)])
+#define KE_OH       (va[(17)])
+#define KE_Fe       (va[(18)])
+#define KE_cat      (va[(19)])
+#define KE_ani      (va[(20)])
+#define DC_HSDC_OH      (va[(21)])
+#define DC_FeSDC_OH     (va[(22)])
+#define DC_FeSDC_cat    (va[(23)])
+#define DC_FeSDC_ani    (va[(24)])
+#define DC_FeOH2SDC_OH  (va[(25)])
+#define DC_FeOH2SDC_cat (va[(26)])
+#define DC_FeOH2SDC_ani (va[(27)])
+#define KE_H2O      (va[(28)])
+
+/* Fonctions */
+static int    pm(char *s) ;
+static double tortuosite_l(double,double) ;
+static double tortuosite_g(double,double) ;
+/* Parametres */
+static double phi,c_h2o,k_int,mu_l,k_eau,k_feoh2,k_far,d0_oh,d0_h,d0_o2_l,d0_o2_g,d0_fe,d0_feoh2,d0_cat,d0_ani,k_hen,RT_0,p_g=0 ;
+static const double M_h = 1,M_o = 16,M_fe = 55.85,M_cat = 40,M_ani = 40 ;
+static const double M_h2o = 18,M_o2 = 32,M_oh = 17,M_feoh2 = 89.85 ;
+
+int pm(char *s)
+{
+if(strcmp(s,"phi") == 0) return (0) ;
+else if(strcmp(s,"c_h2o") == 0) return (1) ;
+else if(strcmp(s,"k_int") == 0) return (2) ;
+else if(strcmp(s,"mu_l") == 0) return (3) ;
+else if(strcmp(s,"RT_0") == 0) return (4) ;
+else if(strcmp(s,"K_eau") == 0) return (5) ;
+else if(strcmp(s,"K_Fe(OH)2") == 0) return (6) ;
+else if(strcmp(s,"K_Far") == 0) return (7) ;
+else if(strcmp(s,"D_oh") == 0) return (8) ;
+else if(strcmp(s,"D_h") == 0) return (9) ;
+else if(strcmp(s,"D_o2_l") == 0) return (10) ;
+else if(strcmp(s,"D_o2_g") == 0) return (11) ;
+else if(strcmp(s,"D_fe") == 0) return (12) ;
+else if(strcmp(s,"D_feoh2") == 0) return (13) ;
+else if(strcmp(s,"D_cat") == 0) return (14) ;
+else if(strcmp(s,"D_ani") == 0) return (15) ;
+else if(strcmp(s,"K_Hen") == 0) return (16) ;
+else if(strcmp(s,"courbes") == 0) return (17) ;
+else
+{ printf("donnee \"%s\" non connue (pm22)\n",s) ; exit(0) ; }
+}
+
+int dm22(int dim,mate_t *mat,FILE *ficd)
+/* Lecture des donnees materiaux dans le fichier ficd */
+{
+  int n_donnees = 18 ;
+
+  mat->neq = NEQ ;
+  strcpy(mat->eqn[E_h],"E_h") ;
+  strcpy(mat->eqn[E_o],"E_o") ;
+  strcpy(mat->eqn[E_i],"E_i") ;
+  strcpy(mat->eqn[E_o2],"E_o2") ;
+  strcpy(mat->eqn[E_cat],"E_cat") ;
+  strcpy(mat->eqn[E_ani],"E_ani") ;
+  strcpy(mat->inc[I_p_l],"p_l") ;
+  strcpy(mat->inc[I_c_oh],"c_oh") ;
+  strcpy(mat->inc[I_psi],"psi") ;
+  strcpy(mat->inc[I_c_o2],"c_o2") ;
+  strcpy(mat->inc[I_c_cat],"c_cat") ;
+  strcpy(mat->inc[I_c_ani],"c_ani") ;
+
+  dmat(mat,ficd,pm,n_donnees) ;
+  
+  return(mat->n) ;
+}
+
+int qm22(int dim,FILE *ficd)
+/* Saisie des donnees materiaux */
+{
+  double v ;
+  char   nom[80] ;
+  
+  printf("\
+Transport ionique dans un milieu poreux non sature\n\
+Le systeme est forme des 6 equations et 6 inconnues :\n\
+\t 1. Conservation de la mase O2 (C_O2) \n\
+\t 2. Conservation de la mase H  (p_l)  \n\
+\t 3. Conservation de la mase O' = O - 2O2 - 0.5H (C_OH) \n\
+\t 4. Conservation de la charge Q = 2Fe++ + H+ - OH- + K+ - A- (PSI) \n\
+\t 5. Conservation de la masse cations K+ (C_cat) \n\
+\t 6. Conservation de la masse anions  A- (C_ani)\n") ;
+  
+  printf("porosite : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"phi = %g\n",v) ;
+  
+  printf("concentration molaire de l\'eau : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"c_h2o = %g\n",v) ;
+  
+  printf("permeabilite intrinseque : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"k_int = %g\n",v) ;
+  
+  printf("viscosite du liquide : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"mu_l = %g\n",v) ;
+  
+  printf("constante des gaz parfaits foi la temperature (RT_0) : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"RT_0 = %g\n",v) ;
+  
+  printf("constante d\'equilibre pour l\'eau : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"K_eau = %g\n",v) ;
+  
+  printf("constante d\'equilibre pour Fe(OH)2 : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"K_Fe(OH)2 = %g\n",v) ;
+  
+  printf("constante de Faraday : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"K_Far = %g\n",v) ;
+  
+  printf("constante de Henry pour O2 : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"K_Hen = %g\n",v) ;
+  
+  printf("coefficient de diffusion de OH- dans la solution : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"D_oh = %g\n",v) ;
+  
+  printf("coefficient de diffusion de H+ dans la solution : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"D_h = %g\n",v) ;
+  
+  printf("coefficient de diffusion de O2 dans la solution : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"D_o2_l = %g\n",v) ;
+  
+  printf("coefficient de diffusion de O2 gazeux : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"D_o2_g = %g\n",v) ;
+  
+  printf("coefficient de diffusion de Fe2+ dans la solution : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"D_fe = %g\n",v) ;
+  
+  printf("coefficient de diffusion de Fe(OH)2 dans la solution : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"D_feoh2 = %g\n",v) ;
+  
+  printf("coefficient de diffusion des cations Na+ et K+ dans la solution : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"D_cat = %g\n",v) ;
+  
+  printf("coefficient de diffusion des anions HCO3 et Cl- dans la solution : ") ; scanf("%lf",&v) ;
+  fprintf(ficd,"D_cat = %g\n",v) ;
+  
+  printf("nom du fichier ou sont rangees p_c,S_l,k_rl,k_rg : ") ;  scanf("%s",nom) ;
+  fprintf(ficd,"courbes = %s\n",nom) ;
+  
+  return(NEQ) ;
+}
+
+void tb22(elem_t el,int dim,geom_t geom,int *nv)
+{
+  nv[0] = NVI ;
+  nv[1] = NVE ;
+}
+
+void ch22(double **x,double **u_1,double **u_n,double *f_1,double *f_n,double *va,double *r,elem_t el,int dim,geom_t geom,double dt,double t,char_t cg)
+/* Residu du aux chargements (r) */
+{
+  int    i ;
+
+  chsurf(x,r,dim,geom,dt,t,cg,el) ;
+  for(i=0;i<NEQ*el.nn;i++) r[i] = -r[i] ;
+}
+
+void in22(double **x,double **u,double *f,double *va,elem_t el,int dim,geom_t geom)
+/* Initialise les variables du systeme (f,va) */ 
+{
+  double p_lij,pc,sl,sg,k_l;
+  double c_h,c_oh,c_fe,c_feoh2,c_o2_l,c_cat,c_ani,c_o2_g ;
+  double grd_p_l,grd_h,grd_oh,grd_fe,grd_feoh2,grd_o2,grd_cat,grd_ani,grd_E ;
+  double w_h2o ;
+  double dx,tau_l,tau_g ;
+  int    i ;
+  double un = 1.,deux = 2. ;
+
+  if(el.dim < dim) return ;
+
+  /* Donnees */
+  phi     = el.mat->pr[pm("phi")] ;
+  c_h2o   = el.mat->pr[pm("c_h2o")] ;
+  k_int   = el.mat->pr[pm("k_int")] ;
+  mu_l    = el.mat->pr[pm("mu_l")] ;
+  k_eau   = el.mat->pr[pm("K_eau")] ;
+  k_feoh2 = el.mat->pr[pm("K_Fe(OH)2")] ;
+  k_far   = el.mat->pr[pm("K_Far")] ;
+  d0_oh   = el.mat->pr[pm("D_oh")] ;
+  d0_h    = el.mat->pr[pm("D_h")] ;
+  d0_o2_l = el.mat->pr[pm("D_o2_l")] ;
+  d0_o2_g = el.mat->pr[pm("D_o2_g")] ;
+  d0_fe   = el.mat->pr[pm("D_fe")] ;
+  d0_feoh2= el.mat->pr[pm("D_feoh2")] ;
+  d0_cat  = el.mat->pr[pm("D_cat")] ;
+  d0_ani  = el.mat->pr[pm("D_ani")] ;
+  RT_0    = el.mat->pr[pm("RT_0")] ;
+  k_hen   = el.mat->pr[pm("K_Hen")]*RT_0 ;
+
+  
+  /* Contenus massiques */
+  for(i=0;i<2;i++) {
+    pc       = p_g - P_l(i) ;
+    sl       = courbe(pc,el.mat->cb[0]) ;
+    sg       = un - sl ; 
+    
+    c_oh     = C_OH(i) ;
+    c_o2_l   = C_O2(i) ;
+    c_cat    = C_cat(i) ;
+    c_ani    = C_ani(i) ;
+    c_o2_g   = c_o2_l/k_hen ;
+    c_h      = k_eau/c_oh ;
+    c_fe     = (c_ani + c_oh - c_h - c_cat)*0.5 ;
+    c_feoh2  = (c_fe*c_oh*c_oh)/k_feoh2 ;
+
+    N_H(i)    = phi*sl*(2*c_h2o + c_h + c_oh + 2*c_feoh2) ;
+    N_O2(i)   = phi*(sl*c_o2_l + sg*c_o2_g) ;
+    N_O(i)    = phi*sl*(0.5*c_oh - 0.5*c_h + c_feoh2) ;
+    N_Fe(i)   = phi*sl*(c_fe + c_feoh2) ;
+    N_cat(i)  = phi*sl*c_cat ;
+    N_ani(i)  = phi*sl*c_ani ;
+    //M_tot(i)  = M_O*(2*N_O2(i) + phi*sl*(c_h2o + c_oh + 2*c_feoh2))
+    //          + M_H*phi*sl*(2*c_h2o + c_h + c_oh + 2*c_feoh2)
+    //          + M_Fe*N_Fe(i) + M_cat*N_cat(i) + M_ani*N_ani(i) ;
+  }
+  /* tortuosites */
+  tau_l = tortuosite_l(phi,sl) ;
+  tau_g = tortuosite_g(phi,sg) ;
+  /* Coefficient de transfert */
+  p_lij = (P_l(0)+P_l(1))/deux ;
+  pc    = p_g - p_lij ;
+  sl    = courbe(pc,el.mat->cb[0]) ;
+  k_l   = k_int/mu_l*courbe(pc,el.mat->cb[1]) ;
+ 
+  /* concentrations */
+  c_oh    = (C_OH(0) + C_OH(1))/deux ;
+  c_o2_l  = (C_O2(0) + C_O2(1))/deux ;
+  c_cat   = (C_cat(0) + C_cat(1))/deux ;
+  c_ani   = (C_ani(0) + C_ani(1))/deux ;
+  c_h     = k_eau/c_oh ;
+  c_fe    = (c_oh + c_ani - c_h - c_cat)*0.5 ;
+  c_feoh2 = (c_fe*c_oh*c_oh)/k_feoh2 ;
+  /* derivees */
+  DC_HSDC_OH      = -k_eau/(c_oh*c_oh) ;
+  DC_FeSDC_OH     = 0.5 - 0.5*DC_HSDC_OH ;
+  DC_FeSDC_cat    = -0.5 ;
+  DC_FeSDC_ani    =  0.5 ;
+  DC_FeOH2SDC_OH  = (2*c_oh*c_fe + DC_FeSDC_OH*c_oh*c_oh)/k_feoh2 ;
+  DC_FeOH2SDC_cat = DC_FeSDC_cat*c_oh*c_oh/k_feoh2 ;
+  DC_FeOH2SDC_ani = DC_FeSDC_ani*c_oh*c_oh/k_feoh2 ;
+  /* coefficients de transfert */
+  KD_H2O   = c_h2o*k_l ;
+  KD_H     = c_h*k_l ;
+  KD_OH    = c_oh*k_l ;
+  KD_Fe    = c_fe*k_l ;
+  KD_FeOH2 = c_feoh2*k_l ;
+  KD_O2    = c_o2_l*k_l ;
+  KD_cat   = c_cat*k_l ;
+  KD_ani   = c_ani*k_l ;
+  KF_OH    = phi*sl*tau_l*d0_oh ;
+  KF_H     = phi*sl*tau_l*d0_h ;
+  KF_Fe    = phi*sl*tau_l*d0_fe ;
+  KF_FeOH2 = phi*sl*tau_l*d0_feoh2 ;
+  KF_O2_l  = phi*sl*tau_l*d0_o2_l ;
+  KF_O2_g  = phi*sg*tau_g*d0_o2_g ;
+  KF_cat   = phi*sl*tau_l*d0_cat ;
+  KF_ani   = phi*sl*tau_l*d0_ani ;
+  KE_H     = c_h*k_far/RT_0*KF_H ;
+  KE_OH    = - c_oh*k_far/RT_0*KF_OH ;
+  KE_Fe    = 2.*c_fe*k_far/RT_0*KF_Fe ;
+  KE_cat   = c_cat*k_far/RT_0*KF_cat ;
+  KE_ani   = - c_ani*k_far/RT_0*KF_ani ;
+  KE_H2O   = (M_oh*KE_OH + M_h*KE_H + M_fe*KE_Fe + M_cat*KE_cat + M_ani*KE_ani)/M_h2o ;
+
+  /* Flux */
+  dx      = x[1][0] - x[0][0] ;
+  
+  grd_p_l   = (P_l(1) - P_l(0))/dx ;
+  grd_oh    = (C_OH(1) - C_OH(0))/dx ;
+  grd_o2    = (C_O2(1) - C_O2(0))/dx ;
+  grd_cat   = (C_cat(1) - C_cat(0))/dx ;
+  grd_ani   = (C_ani(1) - C_ani(0))/dx ;
+  grd_h     = DC_HSDC_OH*grd_oh ;
+  grd_fe    = DC_FeSDC_OH*grd_oh + DC_FeSDC_cat*grd_cat + DC_FeSDC_ani*grd_ani ;
+  grd_feoh2 = DC_FeOH2SDC_OH*grd_oh + DC_FeOH2SDC_cat*grd_cat + DC_FeOH2SDC_ani*grd_ani ;
+  grd_E     = (PSI(1) - PSI(0))/dx ;
+
+  w_h2o  = - KD_H2O*grd_p_l
+         + M_o2/M_h2o*KF_O2_l*grd_o2
+         + M_h/M_h2o*KF_H*grd_h + M_oh/M_h2o*KF_OH*grd_oh
+         + M_fe/M_h2o*KF_Fe*grd_fe + M_feoh2/M_h2o*KF_FeOH2*grd_feoh2
+         + M_cat/M_h2o*KF_cat*grd_cat + M_ani/M_h2o*KF_ani*grd_ani
+         + KE_H2O*grd_E ;
+
+  W_H    = 2*w_h2o - (KD_H + KD_OH + 2*KD_FeOH2)*grd_p_l 
+         - KF_H*grd_h - KF_OH*grd_oh - 2*KF_FeOH2*grd_feoh2 
+         - (KE_H + KE_OH)*grd_E ;
+  W_O2   = - KD_O2*grd_p_l - (KF_O2_l + KF_O2_g/k_hen)*grd_o2 ;
+  W_O    = - (0.5*KD_OH - 0.5*KD_H + KD_FeOH2)*grd_p_l 
+         - 0.5*KF_OH*grd_oh + 0.5*KF_H*grd_h - KF_FeOH2*grd_feoh2
+         - 0.5*(KE_OH - KE_H)*grd_E ;
+  W_cat  = - KD_cat*grd_p_l - KF_cat*grd_cat - KE_cat*grd_E ;
+  W_ani  = - KD_ani*grd_p_l - KF_ani*grd_ani - KE_ani*grd_E ;
+  W_q    = - KF_H*grd_h + KF_OH*grd_oh - 2*KF_Fe*grd_fe - KF_cat*grd_cat + KF_ani*grd_ani
+         -   (KE_H - KE_OH + 2*KE_Fe + KE_cat - KE_ani)*grd_E ;
+
+} 
+
+int ex22(double **x,double **u,double *f,double *va,elem_t el,int dim,geom_t geom,double t) 
+/* Termes explicites (va)  */
+{
+  double p_lij,pc,sl,k_l,tau_l,tau_g,sg ;
+  double c_h,c_oh,c_fe,c_feoh2,c_o2_l,c_cat,c_ani ;
+  double un = 1.,deux = 2. ;
+
+  if(el.dim < dim) return(0) ;
+
+  /* Donnees */
+  phi     = el.mat->pr[pm("phi")] ;
+  c_h2o   = el.mat->pr[pm("c_h2o")] ;
+  k_int   = el.mat->pr[pm("k_int")] ;
+  mu_l    = el.mat->pr[pm("mu_l")] ;
+  k_eau   = el.mat->pr[pm("K_eau")] ;
+  k_feoh2 = el.mat->pr[pm("K_Fe(OH)2")] ;
+  k_far   = el.mat->pr[pm("K_Far")] ;
+  d0_oh   = el.mat->pr[pm("D_oh")] ;
+  d0_h    = el.mat->pr[pm("D_h")] ;
+  d0_o2_l = el.mat->pr[pm("D_o2_l")] ;
+  d0_o2_g = el.mat->pr[pm("D_o2_g")] ;
+  d0_fe   = el.mat->pr[pm("D_fe")] ;
+  d0_feoh2= el.mat->pr[pm("D_feoh2")] ;
+  d0_cat  = el.mat->pr[pm("D_cat")] ;
+  d0_ani  = el.mat->pr[pm("D_ani")] ;
+  RT_0    = el.mat->pr[pm("RT_0")] ;
+  k_hen   = el.mat->pr[pm("K_Hen")]*RT_0 ;
+
+ /* Coefficient de transfert */
+  p_lij = (P_l(0)+P_l(1))/deux ;
+  pc    = p_g - p_lij ;
+  sl    = courbe(pc,el.mat->cb[0]) ;
+  sg    = un - sl ; 
+  k_l   = k_int/mu_l*courbe(pc,el.mat->cb[1]) ;
+
+  c_oh    = (C_OH(0) + C_OH(1))/deux ;
+  c_o2_l  = (C_O2(0) + C_O2(1))/deux ;
+  c_cat   = (C_cat(0) + C_cat(1))/deux ;
+  c_ani   = (C_ani(0) + C_ani(1))/deux ;
+  c_h     = k_eau/c_oh ;
+  c_fe    = (c_oh + c_ani - c_h - c_cat)*0.5 ;
+  c_feoh2 = (c_fe*c_oh*c_oh)/k_feoh2 ;
+
+  if(c_oh < 0. || c_fe < 0. || c_cat < 0. || c_ani < 0. || c_o2_l < 0.) {
+    printf("\n\
+    c_oh    = %e\n\
+    c_fe    = %e\n\
+    c_cat   = %e\n\
+    c_ani   = %e\n\
+    c_o2    = %e\n",c_oh,c_fe,c_cat,c_ani,c_o2_l) ;
+    return(1) ;
+  }
+
+  /* derivees */
+  DC_HSDC_OH      = -k_eau/(c_oh*c_oh) ;
+  DC_FeSDC_OH     = 0.5 - 0.5*DC_HSDC_OH ;
+  DC_FeSDC_cat    = -0.5 ;
+  DC_FeSDC_ani    =  0.5 ;
+  DC_FeOH2SDC_OH  = (2*c_oh*c_fe + DC_FeSDC_OH*c_oh*c_oh)/k_feoh2 ;
+  DC_FeOH2SDC_cat = DC_FeSDC_cat*c_oh*c_oh/k_feoh2 ;
+  DC_FeOH2SDC_ani = DC_FeSDC_ani*c_oh*c_oh/k_feoh2 ;
+
+  /* tortuosites */
+  tau_l = tortuosite_l(phi,sl) ;
+  tau_g = tortuosite_g(phi,sg) ;
+
+  /* coefficients de transfert */
+  KD_H2O   = c_h2o*k_l ;
+  KD_H     = c_h*k_l ;
+  KD_OH    = c_oh*k_l ;
+  KD_Fe    = c_fe*k_l ;
+  KD_FeOH2 = c_feoh2*k_l ;
+  KD_O2    = c_o2_l*k_l ;
+  KD_cat   = c_cat*k_l ;
+  KD_ani   = c_ani*k_l ;
+  KF_OH    = phi*sl*tau_l*d0_oh ;
+  KF_H     = phi*sl*tau_l*d0_h ;
+  KF_Fe    = phi*sl*tau_l*d0_fe ;
+  KF_FeOH2 = phi*sl*tau_l*d0_feoh2 ;
+  KF_O2_l  = phi*sl*tau_l*d0_o2_l ;
+  KF_O2_g  = phi*sg*tau_g*d0_o2_g ;
+  KF_cat   = phi*sl*tau_l*d0_cat ;
+  KF_ani   = phi*sl*tau_l*d0_ani ;
+  KE_H     = c_h*k_far/RT_0*KF_H ;
+  KE_OH    = - c_oh*k_far/RT_0*KF_OH ;
+  KE_Fe    = 2.*c_fe*k_far/RT_0*KF_Fe ;
+  KE_cat   = c_cat*k_far/RT_0*KF_cat ;
+  KE_ani   = - c_ani*k_far/RT_0*KF_ani ;
+  KE_H2O   = (M_oh*KE_OH + M_h*KE_H + M_fe*KE_Fe + M_cat*KE_cat + M_ani*KE_ani)/M_h2o ;
+  return(0) ;
+}
+
+int ct22(double **x,double **u_1,double **u_n,double *f_1,double *f_n,double *va,elem_t el,int dim,geom_t geom,double dt,double t)
+/* Les variables donnees par la loi de comportement (f_1) */
+{
+  double pc,sl,sg;
+  double c_h,c_oh,c_fe,c_feoh2,c_o2_l,c_cat,c_ani,c_o2_g ;
+  double grd_p_l,grd_h,grd_oh,grd_fe,grd_feoh2,grd_o2,grd_cat,grd_ani,grd_E ;
+  double w_h2o ;
+  double dx ;
+  int    i ;
+  
+  if(el.dim < dim) return(0) ;
+
+  /* Donnees */
+  phi     = el.mat->pr[pm("phi")] ;
+  c_h2o   = el.mat->pr[pm("c_h2o")] ;
+  k_eau   = el.mat->pr[pm("K_eau")] ;
+  k_feoh2 = el.mat->pr[pm("K_Fe(OH)2")] ;
+  RT_0    = el.mat->pr[pm("RT_0")] ;
+  k_hen   = el.mat->pr[pm("K_Hen")]*RT_0 ;
+  /* Contenus massiques */
+  for(i=0;i<2;i++) {
+    /* pression */
+    pc       = p_g - P_l1(i) ;
+    /* saturation */
+    sl       = courbe(pc,el.mat->cb[0]) ;
+    sg       = 1. - sl ;
+    /* concentrations */
+    c_oh     = C_OH1(i) ;
+    c_o2_l   = C_O21(i) ;
+    c_cat    = C_cat1(i) ;
+    c_ani    = C_ani1(i) ;
+    c_o2_g   = c_o2_l/k_hen ;
+    c_h      = k_eau/c_oh ;
+    c_fe     = (c_ani + c_oh - c_h - c_cat)*0.5 ;
+    c_feoh2  = (c_fe*c_oh*c_oh)/k_feoh2 ;
+    /* contenus molaires */
+    N_H1(i)    = phi*sl*(2*c_h2o + c_h + c_oh + 2*c_feoh2) ;
+    N_O21(i)   = phi*(sl*c_o2_l + sg*c_o2_g) ;
+    N_O1(i)    = phi*sl*(0.5*c_oh - 0.5*c_h + c_feoh2) ;
+    N_Fe1(i)   = phi*sl*(c_fe + c_feoh2) ;
+    N_cat1(i)  = phi*sl*c_cat ; 
+    N_ani1(i)  = phi*sl*c_ani ; 
+  }
+  /* Flux */
+  dx        = x[1][0] - x[0][0] ;
+  
+  grd_p_l   = (P_l1(1) - P_l1(0))/dx ;
+  grd_oh    = (C_OH1(1) - C_OH1(0))/dx ;
+  grd_o2    = (C_O21(1) - C_O21(0))/dx ;
+  grd_cat   = (C_cat1(1) - C_cat1(0))/dx ;
+  grd_ani   = (C_ani1(1) - C_ani1(0))/dx ;
+  grd_h     = DC_HSDC_OH*grd_oh ;
+  grd_fe    = DC_FeSDC_OH*grd_oh + DC_FeSDC_cat*grd_cat + DC_FeSDC_ani*grd_ani ;
+  grd_feoh2 = DC_FeOH2SDC_OH*grd_oh + DC_FeOH2SDC_cat*grd_cat + DC_FeOH2SDC_ani*grd_ani ;
+  grd_E     = (PSI1(1) - PSI1(0))/dx ;
+
+  w_h2o  = - KD_H2O*grd_p_l 
+         + M_o2/M_h2o*KF_O2_l*grd_o2
+         + M_h/M_h2o*KF_H*grd_h + M_oh/M_h2o*KF_OH*grd_oh
+         + M_fe/M_h2o*KF_Fe*grd_fe + M_feoh2/M_h2o*KF_FeOH2*grd_feoh2
+         + M_cat/M_h2o*KF_cat*grd_cat + M_ani/M_h2o*KF_ani*grd_ani
+         + KE_H2O*grd_E ;
+
+  W_H1    = 2*w_h2o - (KD_H + KD_OH + 2*KD_FeOH2)*grd_p_l 
+          - KF_H*grd_h - KF_OH*grd_oh - 2*KF_FeOH2*grd_feoh2 
+          - (KE_H + KE_OH)*grd_E ;
+  W_O21   = - KD_O2*grd_p_l - (KF_O2_l + KF_O2_g/k_hen)*grd_o2 ;
+  W_O1    = - (0.5*KD_OH - 0.5*KD_H + KD_FeOH2)*grd_p_l 
+          - 0.5*KF_OH*grd_oh + 0.5*KF_H*grd_h - KF_FeOH2*grd_feoh2
+          - 0.5*(KE_OH - KE_H)*grd_E ;
+  W_cat1  = - KD_cat*grd_p_l - KF_cat*grd_cat - KE_cat*grd_E ;
+  W_ani1  = - KD_ani*grd_p_l - KF_ani*grd_ani - KE_ani*grd_E ;
+  W_q1    = - KF_H*grd_h + KF_OH*grd_oh - 2*KF_Fe*grd_fe - KF_cat*grd_cat + KF_ani*grd_ani
+          -   (KE_H - KE_OH + 2*KE_Fe + KE_cat - KE_ani)*grd_E ;
+  return(0) ;
+} 
+
+
+int mx22(double **x,double **u_1,double **u_n,double *f_1,double *f_n,double *va,double *k,elem_t el,int dim,geom_t geom,double dt,double t)
+/* Matrice (k) */
+{
+  #define K(i,j)    (k[(i)*2*NEQ+(j)])
+  double pc,sl,dslsdpc,sg;
+  double c_h,c_oh,c_fe,c_feoh2,c_o2_l,c_cat,c_ani,c_o2_g ;
+  double dc_hsdc_oh ;
+  double dc_fesdc_oh,dc_fesdc_cat,dc_fesdc_ani ;
+  double dc_feoh2sdc_oh,dc_feoh2sdc_cat,dc_feoh2sdc_ani ;
+  double trd_h2o,trd_h,trd_oh,trd_fe,trd_feoh2,trd_o2,trd_cat,trd_ani,trf_oh,trf_h,trf_fe,trf_feoh2,trf_o2,trf_o2_l,trf_o2_g,trf_cat,trf_ani,tre_h,tre_oh,tre_fe,tre_cat,tre_ani,tre_h2o ;
+  double dx ,xm ;
+  double volume[2],surf ;
+  int    i ;
+  double zero = 0.,un = 1.,deux = 2. ;
+
+  /* initialisation */
+  for(i=0;i<4*NEQ*NEQ;i++) k[i] = zero ;
+  
+  if(el.dim < dim) return(0) ;
+
+  /* Donnees */
+  phi     = el.mat->pr[pm("phi")] ;
+  c_h2o   = el.mat->pr[pm("c_h2o")] ;
+  k_eau   = el.mat->pr[pm("K_eau")] ;
+  k_feoh2 = el.mat->pr[pm("K_Fe(OH)2")] ;
+  RT_0    = el.mat->pr[pm("RT_0")] ;
+  k_hen   = el.mat->pr[pm("K_Hen")]*RT_0 ;
+
+  /* CALCUL DE volume ET DE surf */
+  dx = x[1][0] - x[0][0] ;
+  xm = (x[1][0] + x[0][0])/deux ;
+  for(i=0;i<2;i++) {
+  volume[i] = fabs(dx)/deux ;
+  if(geom == 1) volume[i] *= M_PI*(x[i][0] + xm) ;
+  }
+  if(geom == 1) surf = deux*M_PI*xm ; else surf = un ;
+
+ /* termes d'accumulation */
+  for(i=0;i<2;i++) {
+    pc       = - P_l1(i) ;
+    sl       = courbe(pc,el.mat->cb[0]) ;
+    sg       = un - sl ;
+    dslsdpc  = dcourbe(pc,el.mat->cb[0]) ;
+    /* concentrations */
+    c_oh     = C_OH1(i) ;
+    c_h      = k_eau/c_oh ;
+    c_o2_l   = C_O21(i) ;
+    c_cat    = C_cat1(i) ;
+    c_ani    = C_ani1(i) ;
+    c_o2_g   = c_o2_l/k_hen ;
+    c_fe     = (c_ani + c_oh - c_h - c_cat)*0.5 ;
+    c_feoh2  = (c_fe*c_oh*c_oh)/k_feoh2 ;
+    /* derivees */
+    dc_hsdc_oh      = -k_eau/(c_oh*c_oh) ;
+    dc_fesdc_oh     = 0.5 - 0.5*dc_hsdc_oh ;
+    dc_fesdc_cat    = -0.5 ;
+    dc_fesdc_ani    =  0.5 ;
+    dc_feoh2sdc_oh  = (2*c_oh*c_fe + dc_fesdc_oh*c_oh*c_oh)/k_feoh2 ;
+    dc_feoh2sdc_cat = dc_fesdc_cat*c_oh*c_oh/k_feoh2 ;
+    dc_feoh2sdc_ani = dc_fesdc_ani*c_oh*c_oh/k_feoh2 ;
+    /*
+    CONSERVATION DE L'ELEMENT H = 2*H2O+(OH-)+(H+)+2*Fe(OH)2   : (m_h1 - m_hn) + dt * div(w_h1) = 0
+    */
+    K(E_h+i*NEQ,I_p_l+i*NEQ)       += volume[i]*phi*(2*c_h2o + c_h + c_oh + 2*c_feoh2)*(-dslsdpc) ;
+    K(E_h+i*NEQ,I_c_oh+i*NEQ)      += volume[i]*phi*sl*(dc_hsdc_oh + 1. + 2*dc_feoh2sdc_oh) ;
+    K(E_h+i*NEQ,I_c_cat+i*NEQ)     += volume[i]*phi*sl*(2*dc_feoh2sdc_cat) ;
+    K(E_h+i*NEQ,I_c_ani+i*NEQ)     += volume[i]*phi*sl*(2*dc_feoh2sdc_ani) ;
+    /*
+    CONSERVATION DE L'ELEMENT O' = 0.5*(OH-)-0.5*(H+)+Fe(OH)2  :  (m_o1 - m_on) + dt * div(w_o1) = 0
+    */
+    K(E_o+i*NEQ,I_p_l+i*NEQ)       += volume[i]*phi*(0.5*c_oh - 0.5*c_h + c_feoh2)*(-dslsdpc) ;
+    K(E_o+i*NEQ,I_c_oh+i*NEQ)      += volume[i]*phi*sl*(0.5 - 0.5*dc_hsdc_oh + dc_feoh2sdc_oh) ;
+    K(E_o+i*NEQ,I_c_cat+i*NEQ)     += volume[i]*phi*sl*(dc_feoh2sdc_cat) ;
+    K(E_o+i*NEQ,I_c_ani+i*NEQ)     += volume[i]*phi*sl*(dc_feoh2sdc_ani) ;
+    /*
+    CONSERVATION DE LA CHARGE Q = (H+) - (OH-) + 2(Fe2+) + (K+) - (A-)   :  0 + dt * div(i) = 0
+    */
+
+    /*
+    CONSERVATION DE L'OXYGENE    :  (m_o21 - m_o2n) + dt * div(w_o21) = 0
+    */
+    K(E_o2+i*NEQ,I_p_l+i*NEQ)      += volume[i]*phi*(c_o2_l - c_o2_g)*(-dslsdpc) ;
+    K(E_o2+i*NEQ,I_c_o2+i*NEQ)     += volume[i]*phi*(sl + sg/k_hen) ;
+    /*
+    CONSERVATION DES CATIONS    :  (m_cat1 - m_catn) + dt * div(w_cat1) = 0
+    */
+    K(E_cat+i*NEQ,I_p_l+i*NEQ)     += volume[i]*phi*c_cat*(-dslsdpc) ;
+    K(E_cat+i*NEQ,I_c_cat+i*NEQ)   += volume[i]*phi*sl ;
+    /*
+    CONSERVATION DES ANIONS    :  (m_ani1 - m_anin) + dt * div(w_ani1) = 0
+    */
+    K(E_ani+i*NEQ,I_p_l+i*NEQ)     += volume[i]*phi*c_ani*(-dslsdpc) ;
+    K(E_ani+i*NEQ,I_c_ani+i*NEQ)   += volume[i]*phi*sl ;
+  }
+ /*
+ termes d'ecoulement
+ */
+    trd_h2o   = dt*surf/dx*KD_H2O ;
+    trd_h     = dt*surf/dx*KD_H ;
+    trd_oh    = dt*surf/dx*KD_OH ;
+    trd_fe    = dt*surf/dx*KD_Fe ;
+    trd_feoh2 = dt*surf/dx*KD_FeOH2 ;
+    trd_o2    = dt*surf/dx*KD_O2 ;
+    trd_cat   = dt*surf/dx*KD_cat ;
+    trd_ani   = dt*surf/dx*KD_ani ;
+    trf_oh    = dt*surf/dx*KF_OH ;
+    trf_h     = dt*surf/dx*KF_H ;
+    trf_fe    = dt*surf/dx*KF_Fe ;
+    trf_feoh2 = dt*surf/dx*KF_FeOH2 ;
+    trf_o2_l  = dt*surf/dx*KF_O2_l ;
+    trf_o2_g  = dt*surf/dx*KF_O2_g/k_hen ;
+    trf_cat   = dt*surf/dx*KF_cat ;
+    trf_ani   = dt*surf/dx*KF_ani ;
+    tre_h     = dt*surf/dx*KE_H ;
+    tre_oh    = dt*surf/dx*KE_OH ;
+    tre_fe    = dt*surf/dx*KE_Fe ;
+    tre_cat   = dt*surf/dx*KE_cat ;
+    tre_ani   = dt*surf/dx*KE_ani ;
+    tre_h2o   = dt*surf/dx*KE_H2O ;
+
+    trf_o2    = trf_o2_l + trf_o2_g ;
+    /*
+    CONSERVATION DE L'ELEMENT H = 2*H2O+(OH-)+(H+)+2*Fe(OH)2
+    */
+    K(E_h,I_p_l)              += + 2*trd_h2o + trd_h + trd_oh + 2*trd_feoh2 ;
+    K(E_h,I_p_l+NEQ)          += - 2*trd_h2o - trd_h - trd_oh - 2*trd_feoh2 ;
+    K(E_h+NEQ,I_p_l)          += - 2*trd_h2o - trd_h - trd_oh - 2*trd_feoh2 ;
+    K(E_h+NEQ,I_p_l+NEQ)      += + 2*trd_h2o + trd_h + trd_oh + 2*trd_feoh2 ;
+
+    K(E_h,I_c_oh)             += + trf_oh 
+                                 + trf_h*DC_HSDC_OH 
+                                 + 2*trf_feoh2*DC_FeOH2SDC_OH
+                                 - 2*M_oh/M_h2o*trf_oh 
+                                 - 2*M_h/M_h2o*trf_h*DC_HSDC_OH 
+                                 - 2*M_feoh2/M_h2o*trf_feoh2*DC_FeOH2SDC_OH 
+                                 - 2*M_fe/M_h2o*trf_fe*DC_FeSDC_OH ;
+    K(E_h,I_c_oh+NEQ)         += - trf_oh 
+                                 - trf_h*DC_HSDC_OH 
+                                 - 2*trf_feoh2*DC_FeOH2SDC_OH
+                                 + 2*M_oh/M_h2o*trf_oh 
+                                 + 2*M_h/M_h2o*trf_h*DC_HSDC_OH 
+                                 + 2*M_feoh2/M_h2o*trf_feoh2*DC_FeOH2SDC_OH 
+                                 + 2*M_fe/M_h2o*trf_fe*DC_FeSDC_OH ;
+    K(E_h+NEQ,I_c_oh)         += - trf_oh 
+                                 - trf_h*DC_HSDC_OH 
+                                 - 2*trf_feoh2*DC_FeOH2SDC_OH
+                                 + 2*M_oh/M_h2o*trf_oh 
+                                 + 2*M_h/M_h2o*trf_h*DC_HSDC_OH 
+                                 + 2*M_feoh2/M_h2o*trf_feoh2*DC_FeOH2SDC_OH 
+                                 + 2*M_fe/M_h2o*trf_fe*DC_FeSDC_OH ;
+    K(E_h+NEQ,I_c_oh+NEQ)     += + trf_oh 
+                                 + trf_h*DC_HSDC_OH 
+                                 + 2*trf_feoh2*DC_FeOH2SDC_OH
+                                 - 2*M_oh/M_h2o*trf_oh 
+                                 - 2*M_h/M_h2o*trf_h*DC_HSDC_OH 
+                                 - 2*M_feoh2/M_h2o*trf_feoh2*DC_FeOH2SDC_OH 
+                                 - 2*M_fe/M_h2o*trf_fe*DC_FeSDC_OH ;
+
+    K(E_h,I_c_o2)             += - 2*M_o2/M_h2o*trf_o2_l ;
+    K(E_h,I_c_o2+NEQ)         += + 2*M_o2/M_h2o*trf_o2_l ;
+    K(E_h+NEQ,I_c_o2)         += + 2*M_o2/M_h2o*trf_o2_l ;
+    K(E_h+NEQ,I_c_o2+NEQ)     += - 2*M_o2/M_h2o*trf_o2_l ;
+
+    K(E_h,I_psi)              += + tre_h + tre_oh - 2*tre_h2o ;
+    K(E_h,I_psi+NEQ)          += - tre_h - tre_oh + 2*tre_h2o ;
+    K(E_h+NEQ,I_psi)          += - tre_h - tre_oh + 2*tre_h2o ;
+    K(E_h+NEQ,I_psi+NEQ)      += + tre_h + tre_oh - 2*tre_h2o ;
+
+    K(E_h,I_c_cat)            += + 2*trf_feoh2*DC_FeOH2SDC_cat
+                                 - 2*M_fe/M_h2o*trf_fe*DC_FeSDC_cat
+                                 - 2*M_feoh2/M_h2o*trf_feoh2*DC_FeOH2SDC_cat
+                                 - 2*M_cat/M_h2o*trf_cat ;
+    K(E_h,I_c_cat+NEQ)        += - 2*trf_feoh2*DC_FeOH2SDC_cat
+                                 + 2*M_fe/M_h2o*trf_fe*DC_FeSDC_cat
+                                 + 2*M_feoh2/M_h2o*trf_feoh2*DC_FeOH2SDC_cat
+                                 + 2*M_cat/M_h2o*trf_cat ;
+    K(E_h+NEQ,I_c_cat)        += - 2*trf_feoh2*DC_FeOH2SDC_cat
+                                 + 2*M_fe/M_h2o*trf_fe*DC_FeSDC_cat
+                                 + 2*M_feoh2/M_h2o*trf_feoh2*DC_FeOH2SDC_cat
+                                 + 2*M_cat/M_h2o*trf_cat ;
+    K(E_h+NEQ,I_c_cat+NEQ)    += + 2*trf_feoh2*DC_FeOH2SDC_cat
+                                 - 2*M_fe/M_h2o*trf_fe*DC_FeSDC_cat
+                                 - 2*M_feoh2/M_h2o*trf_feoh2*DC_FeOH2SDC_cat
+                                 - 2*M_cat/M_h2o*trf_cat ;
+
+    K(E_h,I_c_ani)            += + 2*trf_feoh2*DC_FeOH2SDC_ani
+                                 - 2*M_fe/M_h2o*trf_fe*DC_FeSDC_ani
+                                 - 2*M_feoh2/M_h2o*trf_feoh2*DC_FeOH2SDC_ani
+                                 - 2*M_ani/M_h2o*trf_ani ;
+    K(E_h,I_c_ani+NEQ)        += - 2*trf_feoh2*DC_FeOH2SDC_ani
+                                 + 2*M_fe/M_h2o*trf_fe*DC_FeSDC_ani
+                                 + 2*M_feoh2/M_h2o*trf_feoh2*DC_FeOH2SDC_ani
+                                 + 2*M_ani/M_h2o*trf_ani ;
+    K(E_h+NEQ,I_c_ani)        += - 2*trf_feoh2*DC_FeOH2SDC_ani
+                                 + 2*M_fe/M_h2o*trf_fe*DC_FeSDC_ani
+                                 + 2*M_feoh2/M_h2o*trf_feoh2*DC_FeOH2SDC_ani
+                                 + 2*M_ani/M_h2o*trf_ani ;
+    K(E_h+NEQ,I_c_ani+NEQ)    += + 2*trf_feoh2*DC_FeOH2SDC_ani
+                                 - 2*M_fe/M_h2o*trf_fe*DC_FeSDC_ani
+                                 - 2*M_feoh2/M_h2o*trf_feoh2*DC_FeOH2SDC_ani
+                                 - 2*M_ani/M_h2o*trf_ani ;
+    /*
+    CONSERVATION DE L'ELEMENT O' = 0.5*(OH-)-0.5*(H+)+Fe(OH)2
+    */
+    K(E_o,I_p_l)              += + 0.5*trd_oh - 0.5*trd_h + trd_feoh2 ;
+    K(E_o,I_p_l+NEQ)          += - 0.5*trd_oh + 0.5*trd_h - trd_feoh2 ;
+    K(E_o+NEQ,I_p_l)          += - 0.5*trd_oh + 0.5*trd_h - trd_feoh2 ;
+    K(E_o+NEQ,I_p_l+NEQ)      += + 0.5*trd_oh - 0.5*trd_h + trd_feoh2 ;
+
+    K(E_o,I_c_oh)             += + 0.5*trf_oh - 0.5*trf_h*DC_HSDC_OH + trf_feoh2*DC_FeOH2SDC_OH ;
+    K(E_o,I_c_oh+NEQ)         += - 0.5*trf_oh + 0.5*trf_h*DC_HSDC_OH - trf_feoh2*DC_FeOH2SDC_OH ;
+    K(E_o+NEQ,I_c_oh)         += - 0.5*trf_oh + 0.5*trf_h*DC_HSDC_OH - trf_feoh2*DC_FeOH2SDC_OH ;
+    K(E_o+NEQ,I_c_oh+NEQ)     += + 0.5*trf_oh - 0.5*trf_h*DC_HSDC_OH + trf_feoh2*DC_FeOH2SDC_OH ;
+
+    K(E_o,I_psi)              += + 0.5*tre_oh - 0.5*tre_h ;
+    K(E_o,I_psi+NEQ)          += - 0.5*tre_oh + 0.5*tre_h ;
+    K(E_o+NEQ,I_psi)          += - 0.5*tre_oh + 0.5*tre_h ;
+    K(E_o+NEQ,I_psi+NEQ)      += + 0.5*tre_oh - 0.5*tre_h ;
+
+    K(E_o,I_c_cat)            += + trf_feoh2*DC_FeOH2SDC_cat ;
+    K(E_o,I_c_cat+NEQ)        += - trf_feoh2*DC_FeOH2SDC_cat ;
+    K(E_o+NEQ,I_c_cat)        += - trf_feoh2*DC_FeOH2SDC_cat ;
+    K(E_o+NEQ,I_c_cat+NEQ)    += + trf_feoh2*DC_FeOH2SDC_cat ;
+
+    K(E_o,I_c_ani)            += + trf_feoh2*DC_FeOH2SDC_ani ;
+    K(E_o,I_c_ani+NEQ)        += - trf_feoh2*DC_FeOH2SDC_ani ;
+    K(E_o+NEQ,I_c_ani)        += - trf_feoh2*DC_FeOH2SDC_ani ;
+    K(E_o+NEQ,I_c_ani+NEQ)    += + trf_feoh2*DC_FeOH2SDC_ani ; 
+    /*
+    CONSERVATION DE LA CHARGE    :  0 + dt * div(i) = 0
+    i = j_h - j_oh + 2j_fe + j_cat - j_ani
+    */
+    K(E_i,I_c_oh)             += + (trf_h*DC_HSDC_OH - trf_oh + 2*trf_fe*DC_FeSDC_OH) ;
+    K(E_i,I_c_oh+NEQ)         += - (trf_h*DC_HSDC_OH - trf_oh + 2*trf_fe*DC_FeSDC_OH) ;
+    K(E_i+NEQ,I_c_oh)         += - (trf_h*DC_HSDC_OH - trf_oh + 2*trf_fe*DC_FeSDC_OH) ;
+    K(E_i+NEQ,I_c_oh+NEQ)     += + (trf_h*DC_HSDC_OH - trf_oh + 2*trf_fe*DC_FeSDC_OH) ;
+
+    K(E_i,I_c_cat)            += + (2*trf_fe*DC_FeSDC_cat + trf_cat) ;
+    K(E_i,I_c_cat+NEQ)        += - (2*trf_fe*DC_FeSDC_cat + trf_cat) ;
+    K(E_i+NEQ,I_c_cat)        += - (2*trf_fe*DC_FeSDC_cat + trf_cat) ;
+    K(E_i+NEQ,I_c_cat+NEQ)    += + (2*trf_fe*DC_FeSDC_cat + trf_cat) ;
+
+    K(E_i,I_c_ani)            += + (2*trf_fe*DC_FeSDC_ani - trf_ani) ;
+    K(E_i,I_c_ani+NEQ)        += - (2*trf_fe*DC_FeSDC_ani - trf_ani) ;
+    K(E_i+NEQ,I_c_ani)        += - (2*trf_fe*DC_FeSDC_ani - trf_ani) ;
+    K(E_i+NEQ,I_c_ani+NEQ)    += + (2*trf_fe*DC_FeSDC_ani - trf_ani) ;
+
+    K(E_i,I_psi)              += + (tre_h - tre_oh + 2*tre_fe + tre_cat - tre_ani) ;
+    K(E_i,I_psi+NEQ)          += - (tre_h - tre_oh + 2*tre_fe + tre_cat - tre_ani) ;
+    K(E_i+NEQ,I_psi)          += - (tre_h - tre_oh + 2*tre_fe + tre_cat - tre_ani) ;
+    K(E_i+NEQ,I_psi+NEQ)      += + (tre_h - tre_oh + 2*tre_fe + tre_cat - tre_ani) ;
+    /*
+    CONSERVATION DE L'OXYGENE O2
+    */
+    K(E_o2,I_p_l)             += + trd_o2 ;
+    K(E_o2,I_p_l+NEQ)         += - trd_o2 ;
+    K(E_o2+NEQ,I_p_l)         += - trd_o2 ;
+    K(E_o2+NEQ,I_p_l+NEQ)     += + trd_o2 ;
+
+    K(E_o2,I_c_o2)            += + trf_o2 ;
+    K(E_o2,I_c_o2+NEQ)        += - trf_o2 ;
+    K(E_o2+NEQ,I_c_o2)        += - trf_o2 ;
+    K(E_o2+NEQ,I_c_o2+NEQ)    += + trf_o2 ;
+    /*
+    CONSERVATION DES CATIONS K+ 
+    */
+    K(E_cat,I_p_l)            += + trd_cat ;
+    K(E_cat,I_p_l+NEQ)        += - trd_cat ;
+    K(E_cat+NEQ,I_p_l)        += - trd_cat ;
+    K(E_cat+NEQ,I_p_l+NEQ)    += + trd_cat ;
+
+    K(E_cat,I_psi)            += + tre_cat ;
+    K(E_cat,I_psi+NEQ)        += - tre_cat ;
+    K(E_cat+NEQ,I_psi)        += - tre_cat ;
+    K(E_cat+NEQ,I_psi+NEQ)    += + tre_cat ;
+
+    K(E_cat,I_c_cat)          += + trf_cat ;
+    K(E_cat,I_c_cat+NEQ)      += - trf_cat ;
+    K(E_cat+NEQ,I_c_cat)      += - trf_cat ;
+    K(E_cat+NEQ,I_c_cat+NEQ)  += + trf_cat ;
+    /*
+    CONSERVATION DES ANIONS A-
+    */
+    K(E_ani,I_p_l)            += + trd_ani ;
+    K(E_ani,I_p_l+NEQ)        += - trd_ani ;
+    K(E_ani+NEQ,I_p_l)        += - trd_ani ;
+    K(E_ani+NEQ,I_p_l+NEQ)    += + trd_ani ;
+
+    K(E_ani,I_psi)            += + tre_ani ;
+    K(E_ani,I_psi+NEQ)        += - tre_ani ;
+    K(E_ani+NEQ,I_psi)        += - tre_ani ;
+    K(E_ani+NEQ,I_psi+NEQ)    += + tre_ani ;
+
+    K(E_ani,I_c_ani)          += + trf_ani ;
+    K(E_ani,I_c_ani+NEQ)      += - trf_ani ;
+    K(E_ani+NEQ,I_c_ani)      += - trf_ani ;
+    K(E_ani+NEQ,I_c_ani+NEQ)  += + trf_ani ;
+
+    return(0) ;
+
+#undef K
+}
+
+void rs22(double **x,double **u_1,double **u_n,double *f_1,double *f_n,double *va,double *r,elem_t el,int dim,geom_t geom,double dt,double t)
+/* Residu (r) */
+{
+  #define R(n,i)    (r[(n)*NEQ+(i)])
+  double dx ,xm ;
+  double volume[2],surf ;
+  int    i ;
+  double zero = 0.,un = 1.,deux = 2. ;
+  
+  /* initialisation */
+  for(i=0;i<el.nn*NEQ;i++) r[i] = zero ;
+  
+  if(el.dim < dim) return ;
+
+  /* CALCUL DE volume ET DE surf */
+  dx = x[1][0] - x[0][0] ;
+  xm = (x[1][0] + x[0][0])/deux ;
+  for(i=0;i<2;i++) {
+    volume[i] = fabs(dx)/deux ;
+    if(geom == 1) volume[i] *= M_PI*(x[i][0] + xm) ;
+    }
+  if(geom == 1) surf = deux*M_PI*xm ; else surf = un ;
+  /* CONSERVATION DE L'ELEMENT H = 2*H2O+(OH-)+(H+)+2*Fe(OH)2 */
+  R(0,E_h)    -= volume[0]*(N_H1(0) - N_Hn(0)) + dt*surf*W_H1 ;
+  R(1,E_h)    -= volume[1]*(N_H1(1) - N_Hn(1)) - dt*surf*W_H1 ;
+  /* CONSERVATION DE L'ELEMENT O' = 0.5*(OH-)-0.5*(H+)+Fe(OH)2 */
+  R(0,E_o)    -= volume[0]*(N_O1(0) - N_On(0)) + dt*surf*W_O1 ;
+  R(1,E_o)    -= volume[1]*(N_O1(1) - N_On(1)) - dt*surf*W_O1 ;
+  /* CONSERVATION DE LA CHARGE */
+  R(0,E_i)    -= + dt*surf*W_q1 ;
+  R(1,E_i)    -= - dt*surf*W_q1 ;
+  /* CONSERVATION DE L'OXYGENE O2 */
+  R(0,E_o2)   -= volume[0]*(N_O21(0) - N_O2n(0)) + dt*surf*W_O21 ;
+  R(1,E_o2)   -= volume[1]*(N_O21(1) - N_O2n(1)) - dt*surf*W_O21 ;
+  /* CONSERVATION DES CATIONS K+  */
+  R(0,E_cat)  -= volume[0]*(N_cat1(0) - N_catn(0)) + dt*surf*W_cat1 ;
+  R(1,E_cat)  -= volume[1]*(N_cat1(1) - N_catn(1)) - dt*surf*W_cat1 ;
+  /* CONSERVATION DES ANIONS A-   */
+  R(0,E_ani)  -= volume[0]*(N_ani1(0) - N_anin(0)) + dt*surf*W_ani1 ;
+  R(1,E_ani)  -= volume[1]*(N_ani1(1) - N_anin(1)) - dt*surf*W_ani1 ;
+
+#undef R
+}
+
+int so22(double **x,double **u,double *f,double *va,double *s,resu_t *r,elem_t el,int dim,geom_t geom,double t)
+/* Les valeurs exploitees (s) */
+{
+  double pl,pc,sl,psi ;
+  double c_h,c_oh,c_fe,c_feoh2,c_o2_l,c_cat,c_ani,r_elec;
+  double grd_p_l,grd_h,grd_oh,grd_fe,grd_feoh2,grd_o2,grd_cat,grd_ani,grd_E ;
+  double w_h2o,w_h,w_oh,w_fe,w_feoh2,w_o2,w_cat,w_ani,i_ionic,i_ohmic ;
+  double dx ;
+  int    i,j,nso ;
+  double h_s[MAX_NOEUDS],dh_s[3*MAX_NOEUDS] ;
+  double zero = 0. ;
+
+  if(el.dim < dim) return(0) ;
+
+/* Donnees */
+  phi     = el.mat->pr[pm("phi")] ;
+  c_h2o   = el.mat->pr[pm("c_h2o")] ;
+  k_eau   = el.mat->pr[pm("K_eau")] ;
+  k_feoh2 = el.mat->pr[pm("K_Fe(OH)2")] ;
+  k_far   = el.mat->pr[pm("K_Far")] ;
+  RT_0    = el.mat->pr[pm("RT_0")] ;
+  k_hen   = el.mat->pr[pm("K_Hen")]*RT_0 ;
+
+  /* initialisation */
+  nso = 21 ;
+  for(i=0;i<nso;i++) for(j=0;j<9;j++) r[i].v[j] = zero ;
+
+  /* fonctions d'interpolation en s */
+  fint_abs(dim,el.nn,x,s,el.dim,h_s,dh_s) ;
+
+  /* pression */
+  pl = param(u,h_s,el.nn,I_p_l) ;
+  pc = p_g - pl ;
+  /* saturation */
+  //sl  = fx(pc,p_c1,p_c2,tab,n_p) ;
+  sl  = courbe(pc,el.mat->cb[0]) ;
+  /* concentrations */
+  c_oh    = param(u,h_s,el.nn,I_c_oh) ;
+  c_o2_l  = param(u,h_s,el.nn,I_c_o2) ;
+  c_cat   = param(u,h_s,el.nn,I_c_cat) ;
+  c_ani   = param(u,h_s,el.nn,I_c_ani) ;
+  c_h     = k_eau/c_oh ;
+  c_fe    = (c_ani + c_oh - c_h - c_cat)*0.5 ;
+  c_feoh2 = c_fe*c_oh*c_oh/k_feoh2 ;
+  /* resistivite electrique */
+  r_elec  = 1./k_far/(KE_H + 4.* KE_Fe + KE_cat - KE_OH - KE_ani) ;
+  /* potentiel electrique */
+  psi     = param(u,h_s,el.nn,I_psi) ;
+
+  /* flux */
+  dx        = x[1][0] - x[0][0] ;
+  
+  grd_p_l   = (P_l(1) - P_l(0))/dx ;
+  grd_oh    = (C_OH(1) - C_OH(0))/dx ;
+  grd_o2    = (C_O2(1) - C_O2(0))/dx ;
+  grd_cat   = (C_cat(1) - C_cat(0))/dx ;
+  grd_ani   = (C_ani(1) - C_ani(0))/dx ;
+  grd_h     = DC_HSDC_OH*grd_oh ;
+  grd_fe    = DC_FeSDC_OH*grd_oh + DC_FeSDC_cat*grd_cat + DC_FeSDC_ani*grd_ani ;
+  grd_feoh2 = DC_FeOH2SDC_OH*grd_oh + DC_FeOH2SDC_cat*grd_cat + DC_FeOH2SDC_ani*grd_ani ;
+  grd_E     = (PSI(1) - PSI(0))/dx ;
+
+  w_h2o     = - KD_H2O*grd_p_l
+            + M_o2/M_h2o*KF_O2_l*grd_o2
+            + M_h/M_h2o*KF_H*grd_h + M_oh/M_h2o*KF_OH*grd_oh
+            + M_fe/M_h2o*KF_Fe*grd_fe + M_feoh2/M_h2o*KF_FeOH2*grd_feoh2
+            + M_cat/M_h2o*KF_cat*grd_cat + M_ani/M_h2o*KF_ani*grd_ani
+            + KE_H2O*grd_E ;
+  w_h       = - KD_H*grd_p_l - KF_H*grd_h - KE_H*grd_E ;
+  w_oh      = - KD_OH*grd_p_l - KF_OH*grd_oh - KE_OH*grd_E;
+  w_fe      = - KD_Fe*grd_p_l - KF_Fe*grd_fe - KE_Fe*grd_E ;
+  w_feoh2   = - KD_FeOH2*grd_p_l - KF_FeOH2*grd_feoh2 ;
+  w_o2      = - KD_O2*grd_p_l - (KF_O2_l + KF_O2_g/k_hen)*grd_o2 ;
+  w_cat     = - KD_cat*grd_p_l - KF_cat*grd_cat - KE_cat*grd_E ;
+  w_ani     = - KD_ani*grd_p_l - KF_ani*grd_ani - KE_ani*grd_E ;
+  i_ionic   = k_far*(2.*w_fe + w_h + w_cat - w_oh - w_ani) ;
+  i_ohmic   = - grd_E/r_elec ;
+
+  /* quantites exploitees */
+  strcpy(r[0].text,"pression_liquide") ; r[0].n = 1 ;
+  r[0].v[0] = pl ;
+  strcpy(r[1].text,"saturation") ; r[1].n = 1 ;
+  r[1].v[0] = sl ;
+  strcpy(r[2].text,"molarite_O2") ; r[2].n = 1 ;
+  r[2].v[0] = c_o2_l ;
+  strcpy(r[3].text,"molarite_H+") ; r[3].n = 1 ;
+  r[3].v[0] = c_h ;
+  strcpy(r[4].text,"molarite_OH-") ; r[4].n = 1 ;
+  r[4].v[0] = c_oh ;
+  strcpy(r[5].text,"molarite_Fe2+") ; r[5].n = 1 ;
+  r[5].v[0] = c_fe ;
+  strcpy(r[6].text,"molarite_Fe(OH)2") ; r[6].n = 1 ;
+  r[6].v[0] = c_feoh2 ;
+  strcpy(r[7].text,"molarite_cations") ; r[7].n = 1 ;
+  r[7].v[0] = c_cat ;
+  strcpy(r[8].text,"molarite_anions") ; r[8].n = 1 ;
+  r[8].v[0] = c_ani ;
+  strcpy(r[9].text,"potentiel_electrique") ; r[9].n = 1 ;
+  r[9].v[0] = psi ;
+
+  strcpy(r[10].text,"flux_H2O") ; r[10].n = 3 ;
+  r[10].v[0] = w_h2o ;
+  strcpy(r[11].text,"flux_H+") ; r[11].n = 3 ;
+  r[11].v[0] = w_h ;
+  strcpy(r[12].text,"flux_OH-") ; r[12].n = 3 ;
+  r[12].v[0] = w_oh ;
+  strcpy(r[13].text,"flux_Fe2+") ; r[13].n = 3 ;
+  r[13].v[0] = w_fe ;
+  strcpy(r[14].text,"flux_Fe(OH)2") ; r[14].n = 3 ;
+  r[14].v[0] = w_feoh2 ;
+  strcpy(r[15].text,"flux_O2") ; r[15].n = 3 ;
+  r[15].v[0] = w_o2 ;
+  strcpy(r[16].text,"flux_cations") ; r[16].n = 3 ;
+  r[16].v[0] = w_cat ;
+  strcpy(r[17].text,"flux_anions") ; r[17].n = 3 ;
+  r[17].v[0] = w_ani ;
+  strcpy(r[18].text,"courant_ionique") ; r[18].n = 3 ;
+  r[18].v[0] = i_ionic ;
+  strcpy(r[19].text,"courant_ohmique") ; r[19].n = 3 ;
+  r[19].v[0] = i_ohmic ;
+  strcpy(r[20].text,"resistivite_electrique") ; r[20].n = 1 ;
+  r[20].v[0] = r_elec ;
+return (nso) ;
+}
+
+double tortuosite_l(double phi,double sl)
+{
+  return(0.296e-3*exp(9.95*phi)/(phi*sl*(1+625*pow(1-sl,4)))) ;
+}
+
+double tortuosite_g(double phi,double sg)
+{
+  return(pow(phi,0.33)*pow(sg,2.33)) ;
+}
+
+
+
+
+
+ 
+#undef P_l
+#undef C_OH
+#undef PSI
+#undef C_O2
+#undef C_cat
+#undef C_ani
+
+#undef P_l1
+#undef C_OH1
+#undef PSI1
+#undef C_O21
+#undef C_cat1
+#undef C_ani1
+
+#undef P_ln
+#undef C_OHn
+#undef PSIn
+#undef C_O2n
+#undef C_catn
+#undef C_anin
+
+#undef N_H2O
+#undef N_H
+#undef N_Fe
+#undef N_O2
+#undef N_cat
+#undef N_ani
+#undef W_H2O
+#undef W_H
+#undef W_Fe
+#undef W_O2
+#undef W_cat
+#undef W_ani
+
+#undef N_H2O1
+#undef N_H1
+#undef N_Fe1
+#undef N_O21
+#undef N_cat1
+#undef N_ani1
+#undef W_H2O1
+#undef W_H1
+#undef W_Fe1
+#undef W_O21
+#undef W_cat1
+#undef W_ani1
+
+#undef N_H2On
+#undef N_Hn
+#undef N_Fen
+#undef N_O2n
+#undef N_catn
+#undef N_anin
+#undef W_H2On
+#undef W_Hn
+#undef W_Fen
+#undef W_O2n
+#undef W_catn
+#undef W_anin
+
+#undef KD_H2O
+#undef KD_H
+#undef KD_OH
+#undef KD_Fe
+#undef KD_FeOH2
+#undef KD_O2
+#undef KD_cat
+#undef KD_ani
+#undef KF_OH
+#undef KF_H
+#undef KF_Fe
+#undef KF_FeOH2
+#undef KF_O2_l
+#undef KF_O2_g
+#undef KF_cat
+#undef KF_ani
+#undef KE_H
+#undef KE_OH
+#undef KE_Fe
+#undef KE_cat
+#undef KE_ani
+#undef DC_HSDC_OH
+#undef DC_FeSDC_OH
+#undef DC_FeSDC_cat
+#undef DC_FeSDC_ani
+#undef DC_FeOH2SDC_OH
+#undef DC_FeOH2SDC_cat
+#undef DC_FeOH2SDC_ani
+#undef KE_H20
+
+
+
+

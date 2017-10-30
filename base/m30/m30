@@ -1,0 +1,58 @@
+Geometry
+1 plan
+Mesh
+4 0 0 0.2 0.2
+0.002
+1 100 1
+1 1 1
+Material
+30
+gravite = -9.81
+rho = 1000
+w_f = 0.05
+eps_f = 0.5
+eps_m = 0.5
+K_f = 2.36e-11
+K_m = 1.24e-14
+K_a = 1.416e-12
+mu = 1.e-3
+p_g = 0
+p_f0 = -1.e4
+p_m0 = -1.e4
+S_s = 1.02e-9
+Courbes_log = fracture_log
+Courbes_log = matrice_log
+Courbes_log = interface_log
+Fields
+2
+Val = -1.e4    Grad = 0 Point = 0
+Val = -1.e0    Grad = 0 Point = 0
+Initialization
+2
+Reg = 2 Inc = p_f Champ = 1
+Reg = 2 Inc = p_m Champ = 1
+Functions
+0
+Boundary Conditions
+3
+Reg = 3 Inc = p_f Champ = 1 Fonc = 0
+Reg = 3 Inc = p_m Champ = 1 Fonc = 0
+Reg = 1 Inc = p_f Champ = 2 Fonc = 0
+Loads
+0
+Points
+0
+Dates
+3
+0 3600 7200
+Objective Variations
+p_f = 1.e4
+p_m = 1.e4
+Iterative Process
+Iter = 20 Tol = 1.e-4 Rec = 2
+
+
+
+Time Steps
+Dtini = 1.
+Dtmax = 86400

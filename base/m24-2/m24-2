@@ -1,0 +1,86 @@
+Geometry
+2 plan
+Mesh
+fissure.msh
+Material
+Modele = 24
+phi = 0.28
+c_h2o = 5.55e4
+k_int = 3.e-21
+mu_l = 0.001
+RT_0 = 2479
+K_eau = 1e-8
+K_Fe(OH)2 = 3.1429e-2
+K_Far = 96485
+K_Hen = 1.25e-5
+D_oh = 5.24e-9
+D_h = 9.32e-9
+D_o2_l = 2.51e-9
+D_o2_g = 1.e-7
+D_fe = 0.72e-9
+D_feoh2 = 0.72e-9
+D_cat = 1.33e-9
+D_ani = 1.18e-9
+courbes = beton
+Fields
+7
+Val = 1.e5   Grad = 0 0 Point = 0 0
+Val = 0      Grad = 0 0 Point = 0 0
+Val = 0.     Grad = 0 0 Point = 0 0
+Val = 0.25   Grad = 0 0 Point = 0 0
+Val = 100.   Grad = 0 0 Point = 0 0
+Val = 100.   Grad = 0 0 Point = 0 0
+Val = 0.     Grad = 0 0 Point = 0 0 
+Initialization
+6
+Reg = 100 Inc = p_l   Champ = 1
+Reg = 100 Inc = c_fe  Champ = 2
+Reg = 100 Inc = psi   Champ = 3
+Reg = 100 Inc = c_o2  Champ = 4
+Reg = 100 Inc = c_cat Champ = 5
+Reg = 100 Inc = c_ani Champ = 6
+Functions
+1
+N = 2 F(0) = 1. F(1.e5) = 0.
+Boundary Conditions
+19
+Reg = 4   Inc = p_l    Champ = 1  Fonc = 0
+Reg = 4   Inc = c_fe   Champ = 2  Fonc = 0
+Reg = 4   Inc = psi    Champ = 3  Fonc = 0
+Reg = 4   Inc = c_o2   Champ = 4  Fonc = 0
+Reg = 4   Inc = c_cat  Champ = 5  Fonc = 0
+Reg = 4   Inc = c_ani  Champ = 6  Fonc = 0
+Reg = 3   Inc = p_l    Champ = 1  Fonc = 0
+Reg = 3   Inc = c_fe   Champ = 2  Fonc = 0
+Reg = 3   Inc = psi    Champ = 3  Fonc = 0
+Reg = 3   Inc = c_o2   Champ = 4  Fonc = 0
+Reg = 3   Inc = c_cat  Champ = 5  Fonc = 0
+Reg = 3   Inc = c_ani  Champ = 6  Fonc = 0
+Reg = 2   Inc = p_l    Champ = 1  Fonc = 0
+Reg = 2   Inc = c_fe   Champ = 2  Fonc = 0
+Reg = 2   Inc = psi    Champ = 3  Fonc = 0
+Reg = 2   Inc = c_o2   Champ = 4  Fonc = 0
+Reg = 2   Inc = c_cat  Champ = 5  Fonc = 0
+Reg = 2   Inc = c_ani  Champ = 6  Fonc = 0
+Reg = 6   Inc = c_o2   Champ = 4  Fonc = 1
+Loads
+0
+Points
+0
+Dates
+3
+0 1.e5 1.e7
+Objective Variations
+p_l = 1.e6
+c_fe = 1.e-2
+c_o2 = 1.e-2
+c_cat = 1.e2
+c_ani = 1.e2
+psi = 1.e-6
+Iterative Process
+Tol = 1.e-3 Iter = 20 Rec = 0
+
+
+
+Time Steps
+Dtini = 1.e0 Dtmax = 1e7

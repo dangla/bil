@@ -1,0 +1,373 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include "Common.h"
+
+#define MODELINDEX  23
+#define TITLE "Corrosion en surface a l\'oxygene (1D)"
+#define AUTHORS "Dridi"
+
+#include "OldMethods.h"
+
+/* Macros */
+#define NEQ      (6)
+
+#define E_mass   (0)
+#define E_q      (2)
+#define E_o2     (1)
+#define E_m      (3)
+#define E_fe     (4)
+#define E_feoh2_l (5)
+
+#define I_p_l    (0)
+#define I_psi    (2)
+#define I_c_o2   (1)
+#define I_psi_m  (3)
+#define I_c_fe   (5)
+#define I_c_feoh2 (4)
+
+/* Masses molaires (unite arbitraire = M_h) */
+#define M_fe       (55.85)
+#define M_o2       (32.)
+
+/* constantes physiques */
+#define FARADAY    (9.64846e4) /* cste de Faraday (C/mole) */
+
+#define P_l      (u[(0)][I_p_l])
+#define PSI      (u[(0)][I_psi])
+#define C_O2     (u[(0)][I_c_o2])
+#define PSI_m    (u[(0)][I_psi_m])
+
+#define P_l1     (u_1[(0)][I_p_l])
+#define PSI1     (u_1[(0)][I_psi])
+#define C_O21    (u_1[(0)][I_c_o2])
+#define PSI_m1   (u_1[(0)][I_psi_m])
+
+#define V_a      (f[0])
+#define V_c      (f[1])
+
+#define V_a1     (f_1[0])
+#define V_c1     (f_1[1])
+
+
+/* Fonctions */
+static int    pm(const char *s) ;
+/* Parametres */
+static double i0_a,i0_c,tafel_a,tafel_c,phi,c0_o2,p_g=0. ;
+
+/* Macros pour les fonctions saturation */
+#define SATURATION(a,b)   courbe(a,b)
+#define DSATURATION(a,b)  dcourbe(a,b)
+
+int pm(const char *s)
+{
+  if(strcmp(s,"i_a") == 0) return (0) ;
+  else if(strcmp(s,"i_c") == 0) return (1) ;
+  else if(strcmp(s,"tafel_a") == 0) return (2) ;
+  else if(strcmp(s,"tafel_c") == 0) return (3) ;
+  else if(strcmp(s,"phi") == 0) return (4) ;
+  else if(strcmp(s,"c_o2") == 0) return (5) ;
+  else if(strcmp(s,"courbes") == 0) return (6) ;
+  else
+    { printf("donnee \"%s\" non connue (pm23)\n",s) ; exit(0) ; }
+}
+
+int dm23(int dim,mate_t *mat,FILE *ficd)
+/* Lecture des donnees materiaux dans le fichier ficd */
+{
+  int n_donnees = 7 ;
+
+  if(dim > 1) {
+      arret("Ce modele n\'est pas prevu en dimension > 1 (dm23)") ;
+  }
+
+  mat->neq = NEQ ;
+  strcpy(mat->eqn[E_mass]   ,"E_mass") ;
+  strcpy(mat->eqn[E_q]      ,"E_q") ;
+  strcpy(mat->eqn[E_o2]     ,"E_o2") ;
+  strcpy(mat->eqn[E_m]      ,"E_m") ;
+  strcpy(mat->eqn[E_fe]     ,"E_fe") ;
+  strcpy(mat->eqn[E_feoh2_l],"E_feoh2_l") ;
+
+  strcpy(mat->inc[I_p_l]    ,"p_l") ;
+  strcpy(mat->inc[I_psi]    ,"psi") ;
+  strcpy(mat->inc[I_c_o2]   ,"c_o2") ;
+  strcpy(mat->inc[I_psi_m]  ,"psi_m") ;
+  strcpy(mat->inc[I_c_fe]   ,"c_fe") ;
+  strcpy(mat->inc[I_c_feoh2],"c_feoh2") ;
+
+  dmat(mat,ficd,pm,n_donnees) ;
+  
+  return(mat->n) ;
+}
+
+int qm23(int dim,FILE *ficd)
+/* Saisie des donnees materiaux */
+{
+  
+  printf(TITLE) ;
+  
+  if(!ficd) return(NEQ) ;
+
+  printf("\n\n\
+Le systeme est forme de 5 CL portant sur :\n\
+\t- 1. Le flux de masse totale (p_l)\n\
+\t- 2. Le flux cathodique ou consommation de O2 (c_o2)\n\
+\t- 3. Le flux anodique ou production de Fe (c_fe)\n\
+\t- 4. Le courant (psi)\n\
+\t- 5. Egalite des courants anodique et cathodique (psi_m)\n") ;
+  
+  printf("\n\
+Exemple de donnees :\n\n") ;
+  
+  fprintf(ficd,"i_a = 1.e-6       # Constante cinetique de la reaction anodique\n") ;
+  fprintf(ficd,"i_c = 2.5e-6      # Constante cinetique de la reaction cathodique\n") ;
+  fprintf(ficd,"tafel_a = 60.e-3  # Coefficient de Tafel anodique\n") ;
+  fprintf(ficd,"tafel_c = 160.e-3 # Coefficient de Tafel cathodique\n") ;
+  fprintf(ficd,"c_o2 = 0.25       # Concentration en oxygene de reference\n") ;
+  fprintf(ficd,"courbes = my_file # Nom du fichier : p_c S_l\n") ;
+  fprintf(ficd,"phi = 0.28        # La porosite\n") ;
+  
+  return(NEQ) ;
+}
+
+void tb23(elem_t *el,inte_t *fi,unsigned int *n_fi,int dim)
+{
+  el->n_vi = 2 ;
+  el->n_ve = 0 ;
+}
+
+void ch23(double **x,double **u_1,double **u_n,double *f_1,double *f_n,double *va,double *r,elem_t el,int dim,geom_t geom,double dt,double t,char_t cg)
+/* Residu du aux chargements (r) */
+{
+}
+
+void in23(double **x,double **u,double *f,double *va,elem_t el,int dim,geom_t geom)
+/* Initialise les variables du systeme (f,va) */ 
+{
+  double pc,sl ;
+
+  if(el.dim != dim - 1) return ;
+
+  /*  Donnees  */
+  i0_a    = el.mat->pr[pm("i_a")] ;
+  i0_c    = el.mat->pr[pm("i_c")] ;
+  tafel_a = el.mat->pr[pm("tafel_a")] ;
+  tafel_c = el.mat->pr[pm("tafel_c")] ;
+  phi     = el.mat->pr[pm("phi")] ;
+  c0_o2   = el.mat->pr[pm("c_o2")] ;
+  /* saturation */
+  pc      = p_g - P_l ;
+  sl      = SATURATION(pc,el.mat->cb[0]) ;
+  /* concentrations */
+  /* vitesses des reactions partielles */
+  V_a  = i0_a*phi*sl*exp((PSI_m - PSI)/tafel_a) ;
+  V_c  = i0_c*C_O2/c0_o2*phi*sl*exp(-(PSI_m - PSI)/tafel_c) ;
+}  
+
+int ex23(double **x,double **u,double *f,double *va,elem_t el,int dim,geom_t geom,double t) 
+/* Termes explicites (va)  */
+{
+  return(0) ;
+}
+
+int ct23(double **x,double **u_1,double **u_n,double *f_1,double *f_n,double *va,elem_t el,int dim,geom_t geom,double dt,double t)
+/* Les variables donnees par la loi de comportement (f_1) */
+{
+  double pc,sl ;
+  
+  if(el.dim != dim - 1) return(0) ;
+  
+  /*  Donnees  */
+  i0_a    = el.mat->pr[pm("i_a")] ;
+  i0_c    = el.mat->pr[pm("i_c")] ;
+  tafel_a = el.mat->pr[pm("tafel_a")] ;
+  tafel_c = el.mat->pr[pm("tafel_c")] ;
+  phi     = el.mat->pr[pm("phi")] ;
+  c0_o2   = el.mat->pr[pm("c_o2")] ;
+  /* saturation */
+  pc      = p_g - P_l1 ;
+  sl      = SATURATION(pc,el.mat->cb[0]) ;
+  /* concentrations */
+  if(C_O21 < 0.) {
+    printf("\n\
+    C_O2    = %e\n",C_O21) ;
+    return(-1) ;
+  }
+  /* vitesses des reactions partielles */
+  V_a1  = i0_a*phi*sl*exp((PSI_m1 - PSI1)/tafel_a) ;
+  V_c1  = i0_c*C_O21/c0_o2*phi*sl*exp(-(PSI_m1 - PSI1)/tafel_c) ;
+  return(0) ;
+}
+
+
+int mx23(double **x,double **u_1,double **u_n,double *f_1,double *f_n,double *va,double *k,elem_t el,int dim,geom_t geom,double dt,double t)
+/* Matrice (k) */
+{
+
+  double pc,dslsdpc;
+  int    i ;
+  double zero = 0.,un = 1.,deux = 2. ;
+  double xm,surf ;
+  double dvasdpl,dvcsdpl,dvasdpsi,dvasdpsim,dvcsdpsi,dvcsdpsim,dvcsdco2 ;
+
+  #define K(i,j)    (k[(i)*NEQ+(j)])
+
+  /* Donnees */
+  i0_a    = el.mat->pr[pm("i_a")] ;
+  i0_c    = el.mat->pr[pm("i_c")] ;
+  tafel_a = el.mat->pr[pm("tafel_a")] ;
+  tafel_c = el.mat->pr[pm("tafel_c")] ;
+  phi     = el.mat->pr[pm("phi")] ;
+  c0_o2   = el.mat->pr[pm("c_o2")] ;
+  
+  /* initialisation */
+  for(i=0;i<NEQ*NEQ;i++) k[i] = zero ;
+  
+  if(el.dim != dim - 1) return(0) ;
+  
+  /* CALCUL DE surf */
+  xm = x[0][0] ;
+  if(geom == AXIS) surf = deux*M_PI*xm ; else surf = un ;
+  
+  /* saturation */
+  pc       = p_g - P_l1 ;
+  /* concentrations */
+  
+  /* derivees */
+  dslsdpc   = DSATURATION(pc,el.mat->cb[0]) ;
+  dvasdpl   = -i0_a*phi*dslsdpc*exp((PSI_m1 - PSI1)/tafel_a) ;
+  dvasdpsi  = -V_a1/tafel_a ;
+  dvasdpsim = V_a1/tafel_a ;
+  
+  dvcsdpl   = -i0_c*C_O21/c0_o2*phi*dslsdpc*exp(-(PSI_m1 - PSI1)/tafel_c) ;
+  dvcsdpsi  = V_c1/tafel_c ;
+  dvcsdco2  = V_c1/C_O21 ;
+  dvcsdpsim = -V_c1/tafel_c ;    
+  
+  /* masse totale */
+  K(E_mass,I_p_l)   = dt*surf*(- M_fe*dvasdpl) ;
+  K(E_mass,I_psi)   = dt*surf*(- M_fe*dvasdpsi) ;
+  K(E_mass,I_psi_m) = dt*surf*(- M_fe*dvasdpsim) ;
+  
+  /* courant */
+  K(E_q,I_p_l)      = dt*surf*2*(dvcsdpl - dvasdpl) ;
+  K(E_q,I_psi)      = dt*surf*2*(dvcsdpsi - dvasdpsi) ;
+  K(E_q,I_c_o2)     = dt*surf*2*dvcsdco2 ;
+  K(E_q,I_psi_m)    = dt*surf*2*(dvcsdpsim - dvasdpsim) ;
+  
+  /* O2 */
+  K(E_o2,I_p_l)     = 0.5*dt*surf*dvcsdpl ;
+  K(E_o2,I_psi)     = 0.5*dt*surf*dvcsdpsi ;
+  K(E_o2,I_c_o2)    = 0.5*dt*surf*dvcsdco2 ;
+  K(E_o2,I_psi_m)   = 0.5*dt*surf*dvcsdpsim ;
+  
+  /* Fe = Fe2+ + Fe(OH)2 */
+  K(E_fe,I_p_l)     = - dt*surf*dvasdpl ;
+  K(E_fe,I_psi)     = - dt*surf*dvasdpsi ;
+  K(E_fe,I_psi_m)   = - dt*surf*dvasdpsim ;
+  
+  /* metal */
+  K(E_m,I_p_l)      = dt*surf*2*(dvcsdpl - dvasdpl) ;
+  K(E_m,I_psi)      = dt*surf*2*(dvcsdpsi - dvasdpsi) ;
+  K(E_m,I_c_o2)     = dt*surf*2*dvcsdco2 ;
+  K(E_m,I_psi_m)    = dt*surf*2*(dvcsdpsim - dvasdpsim) ;
+  return(0) ;
+  
+#undef K
+}
+
+void rs23(double **x,double **u_1,double **u_n,double *f_1,double *f_n,double *va,double *r,elem_t el,int dim,geom_t geom,double dt,double t)
+/* Residu (r) */
+{
+  double xm,surf ;
+  int    i ;
+  double zero = 0.,un = 1.,deux = 2. ;
+  
+  /* initialisation */
+  for(i=0;i<NEQ;i++) r[i] = zero ;
+
+  if(el.dim != dim - 1) return ;
+
+  /* CALCUL DE surf */
+  xm = x[0][0] ;
+  if(geom == AXIS) surf = deux*M_PI*xm ; else surf = un ;
+  /*
+  CONDITION SUR le flux de masse : W.n = M_fe*W_Fe.n
+  */
+  r[E_mass] -= dt*surf*M_fe*(-V_a1) ;
+  /*
+  CONDITION SUR i : i.n = 2(V_c - V_a)
+  */
+  r[E_q]   -= dt*surf*2*(V_c1 - V_a1) ;
+  /*
+  CONDITION SUR O2 : W_O2.n = 0.5*V_c
+  */
+  r[E_o2]   -= dt*surf*(0.5*V_c1) ;
+  /*
+  CONDITION SUR Fe = Fe2+ + Fe(OH)2 : W_Fe.n = -V_a
+  */
+  r[E_fe]  -=  dt*surf*(-V_a1) ;
+  /*
+  CONDITION SUR PSI_M : 2(Vc - V_a) = 0
+  */
+  r[E_m]    -= dt*surf*2*(V_c1 - V_a1) ;
+}
+
+int so23(double **x,double **u,double *f,double *va,double *s,resu_t *r,elem_t el,int dim,geom_t geom,double t)
+/* Les valeurs exploitees (s) */
+{
+  double v_a,v_c,pc,pl,sl ;
+  double c_o2,psi,psi_m ;
+  int    i,j,nso ;
+  double h_s[MAX_NOEUDS],dh_s[3*MAX_NOEUDS] ;
+  double zero = 0. ;
+  
+  if(el.dim != dim - 1) return(0) ;
+
+  /* Donnees */
+  i0_a    = el.mat->pr[pm("i_a")] ;
+  i0_c    = el.mat->pr[pm("i_c")] ;
+  tafel_a = el.mat->pr[pm("tafel_a")] ;
+  tafel_c = el.mat->pr[pm("tafel_c")] ;
+  phi     = el.mat->pr[pm("phi")] ;
+  c0_o2   = el.mat->pr[pm("c_o2")] ;
+
+  /* initialisation */
+  nso = 7 ;
+  for(i=0;i<nso;i++) for(j=0;j<9;j++) r[i].v[j] = zero ;
+
+  /* fonctions d'interpolation en s */
+  fint_abs(dim,el.nn,x,s,el.dim,h_s,dh_s) ;
+
+  /* pression */
+  pl      = param(u,h_s,el.nn,I_p_l) ;
+  pc      = p_g - pl ;
+  /* concentrations */
+  c_o2    = param(u,h_s,el.nn,I_c_o2) ;
+  /* potentiel electrique */
+  psi     = param(u,h_s,el.nn,I_psi) ;
+  psi_m   = param(u,h_s,el.nn,I_psi_m) ;  
+  /* vitesses des reactions partielles */
+  sl      = SATURATION(pc,el.mat->cb[0]) ;
+  v_a     = i0_a*phi*sl*exp((psi_m - psi)/tafel_a) ;
+  v_c     = i0_c*c_o2/c0_o2*phi*sl*exp(-(psi_m - psi)/tafel_c) ;
+
+  /* quantites exploitees par element */ 
+  strcpy(r[0].text,"pression_liquide") ; r[0].n = 1 ;
+  r[0].v[0] = pl ;
+  strcpy(r[1].text,"molarite_O2") ; r[1].n = 1 ;
+  r[1].v[0] = c_o2 ;
+  strcpy(r[2].text,"potentiel_electrique du beton") ; r[2].n = 1 ;
+  r[2].v[0] = psi ;
+  strcpy(r[3].text,"potentiel_electrique du metal") ; r[3].n = 1 ;
+  r[3].v[0] = psi_m ;
+  strcpy(r[4].text,"vitesse anodique") ; r[4].n = 1 ;
+  r[4].v[0] = v_a ;
+  strcpy(r[5].text,"vitesse cathodique") ; r[5].n = 1 ;
+  r[5].v[0] = v_c ;
+  strcpy(r[6].text,"saturation_surfacique") ; r[6].n = 1 ;
+  r[6].v[0] = sl ;
+  return(nso) ;
+}

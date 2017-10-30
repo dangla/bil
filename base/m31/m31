@@ -1,0 +1,70 @@
+# Diffusion dans une colonne
+Geometry
+1 plan
+Mesh
+4 0 0 0.2 0.2
+0.0002
+1 100 1
+1 1 1
+Material
+31
+gravite = -9.81
+rho = 1000
+w_f = 0.62
+eps_f = 0.395
+eps_m = 0.395
+K_f = 2.36e-11
+K_m = 1.24e-14
+K_a = 1.416e-12
+mu = 1.e-3
+p_g = 0
+p_f0 = -1.e4
+p_m0 = -1.e4
+S_s = 1.02e-9
+D_sf = 1.e-9
+D_sm = 1.e-9
+Lambda_sf = 1.3e-2
+Lambda_sm = 1.3e-2
+alpha_s = 4.17e-5
+Courbes_log = fracture_log
+Courbes_log = matrice_log
+Courbes_log = interface_log
+Fields
+3
+Val = -1.e3    Grad = 0 Point = 0
+Val =  1.e1    Grad = 0 Point = 0
+Val =  1.e0    Grad = 0 Point = 0
+Initialization
+2
+Reg = 2 Inc = p_f Champ = 1
+Reg = 2 Inc = p_m Champ = 1
+Functions
+1
+N = 3 F(0) = 1 F(1200) = 1 F(1201) = 0
+Boundary Conditions
+5
+Reg = 3 Inc = p_f Champ = 1 Fonc = 0
+Reg = 3 Inc = p_m Champ = 1 Fonc = 0
+Reg = 1 Inc = p_f Champ = 2 Fonc = 0
+Reg = 1 Inc = c_f Champ = 3 Fonc = 1
+Reg = 3 Inc = c_f Champ = 0 Fonc = 0
+Loads
+0
+Points
+0
+Dates
+3
+0 1200 3600
+Objective Variations
+p_f = 1.e4
+p_m = 1.e4
+c_f = 1.e-2
+c_m = 1.e-2
+Iterative Process
+Iter = 10 Tol = 1.e-4 Rec = 0
+
+
+
+Time Steps
+Dtini = 1
+Dtmax = 86400

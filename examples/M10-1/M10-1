@@ -1,0 +1,69 @@
+# Ecoulement non sature dans un versant incline
+# (P. Dangla & T. Esclaffer)
+#
+
+Geometry
+2 plan
+
+
+Mesh
+versant.msh
+
+
+Material
+Model = M10
+gravite = -10
+phi = 0.3
+rho_l = 1000
+k_int = 1e-10
+mu_l = 0.001
+p_g = 100000
+Curves = sable   p_c = Range{p1 = 0 , p2 = 1.e5, n = 101}  s_l = Expressions(1){s_l = (1 + (3.2e-4*p_c)**(1.9))**(-0.5)}  k_l = Expressions(2){k_l = sqrt(s_l)*(1 - (1 - s_l*s_l)**(0.5))**(2)}
+
+
+Fields
+2
+Type = affine Value = 1.e5 Gradient = 0 -1.e4 Point = 0 1
+Type = affine Value = 1.e5 Gradient = 0 -1.e4 Point = 0 0.5
+
+
+Initialization
+1
+Region = 10 Unknown = p_l Field = 1
+
+
+Functions
+0
+
+
+Boundary Conditions
+1
+Region = 1 Unknown = p_l Field = 2 Function = 0
+
+
+Loads
+0
+
+
+Points
+0
+
+
+Dates
+6
+0 3600 7200 14400 36000 86400
+
+
+Objective Variations
+p_l = 1.e4
+
+
+Iterative Process
+Iter = 20 
+Tol = 1.e-4 
+Recom = 0  
+
+
+Time Steps
+Dtini = 1 
+Dtmax = 86400 

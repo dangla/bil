@@ -1,0 +1,59 @@
+Geometry
+1 plan
+Mesh
+3 0. 0. 0.05 
+2.e-4
+1 250 
+1 1 
+Material
+43
+porosite = 0.121
+D_Cl =  2.6e-12 
+r_d = 1.
+s_c3aeq = 8.43
+s_csh = 635.
+alpha =  0.12 
+beta = 2.66
+Fields
+8
+Val = 0.    Grad = 0. Point = 0.
+Val = 230.  Grad = 0. Point = 0.
+Val = 120.  Grad = 0. Point = 0.
+Val = 0.    Grad = 0. Point = 0.
+Val = 523.2 Grad = 0. Point = 0.
+Val = 0.    Grad = 0. Point = 0.
+Val = 623.2 Grad = 0. Point = 0.
+Val = 0.    Grad = 0. Point = 0.
+Initialization
+4
+Reg = 2 Inc = c_cl Champ = 1
+Reg = 2 Inc = c_k  Champ = 2
+Reg = 2 Inc = c_na Champ = 3
+Reg = 2 Inc = psi  Champ = 4
+Functions
+0
+Boundary Conditions
+4
+Reg = 1 Inc = c_cl Champ = 5 Fonc = 0
+Reg = 1 Inc = c_k  Champ = 6 Fonc = 0
+Reg = 1 Inc = c_na Champ = 7 Fonc = 0
+Reg = 1 Inc = psi  Champ = 8 Fonc = 0
+Loads
+0
+Points
+0
+Dates
+3
+0. 2592000. 8294400.
+Objective Variations
+c_cl = 10.
+c_k  = 10.
+c_na = 10.
+psi  = 1.e3
+Iterative Process
+Iter = 10 Tol = 1.e-6 Rec = 0
+
+
+
+Time Steps
+Dtini = 1.e-1 Dtmax = 1.e6

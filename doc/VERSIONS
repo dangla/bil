@@ -1,0 +1,115 @@
+News in 2.3: Use of C++ compiler. Programmation is now extended to 
+C++ language. Hence the use of .cpp and .hpp files is allowed. 
+A new object "Exception.h" has been created to handle exception mechanisms 
+such as interruption, floating point error.
+In such occuring event the program handles the event, saves outputs and exits 
+in a clean way.
+Introduction of the curve builder "Expressions", based on the evaluation of 
+mathematical expressions obtained from AnaGram (www.parsifalsoft.com). 
+In this version a shared library, libbil.so, from the genuine sources of Bil
+is created and installed in the machine. Linkage with other possible external 
+libraries is possible. A new extension of input file ".conti" has been introduced 
+so that we can load the solution from a previous calculation and continue this 
+calculation while going through the initialization stage (see documention).
+
+News in 2.2: WARNING, the outputs of FVM_ComputeIsotropicConductionMatrix()
+and FVM_ComputeMassAndIsotropicConductionMatrix() have been modified see 
+examples in models using these methods. New objects have been introduced: 
+Views,  TextFile, CurvesFile, MatrixStorageFormat. Introduction of the curve 
+builder "Evaluate", based on the evaluation of mathematical expressions 
+obtained from Snippets (www.brokersys.com/snippets/). 
+Some bugs fixed, e.g. those in "Buffer_FreeFrom". Extended field delimiters
+in curves files. Some new models.
+
+News in 2.1: A class-like structure Buffer_t has been introduced as
+a circular buffer. It can be used in any functions to compute vectors or 
+tables of any type. Numerical Methods, such as FEM or FVM, have been 
+implemented in files such as FEM.[c,h] and FVM.[c,h]. These methods are
+viewed as object with class-like structures FEM_t and FVM_t.
+In these files methods have been implemented such as 
+FEM_ComputeMassMatrix and can be used directly in models provided that header
+has been included. The folders "Common" and "Main" have been created. 
+We moved the main files in "Main" and files of common use, like "Buffer.c", 
+in "Common". DataBases have been created which can be used in model files.
+The matrix storage format have been implemented in a separate file 
+"MatrixStorageFormat.h".
+
+News in 2.0: The code has been rebuilt to an object-oriented programming 
+code. However the code is still implemented in C language. Class-like 
+structures have been introduced and implemented in separated files. 
+Each class-like structure has attributes and pointers to functions 
+(see e.g. structure Model_t). Moreover some improvements have been 
+introduced. The file names of models (in the folder "ModelFiles") can be 
+chosen abitrarily. The class-like structures "NodeSol_t" and 
+"ElementSol_t" are two linked lists which contained the nodal and 
+elemental solutions. A new pointer to "double" type in "ElementSol_t" 
+can be used to store constant terms.
+
+Nouveautes dans 1.8: creation d'une structure "modl_t" contenant les 
+methodes (taches elementaires) i.e. des pointeurs sur fonctions.
+
+Nouveautes dans 1.7: option "base" ajoute dans le Makefile. Qqs nouveaux
+modeles. Option "Relative" possible dans OBJE, donnee apres la valeur.
+Chargement automatique des modeles, il n'est plus besoin de modifier le
+fichier "xmod.c". Les fonctions "dm,qm,tb,ch,in,ex,ct,mx,rs,so" sont 
+renommees "dmNB,qmNB,tbNB,chNB,inNB,exNB,ctNB,mxNB,rsNB,soNB". 
+Les titres des modeles ainsi que des exemples de donnees sont geres 
+par les fonctions "qm1, qm2 ...". Options nouvelles de la ligne de 
+commande. "bil -m" affiche les titres des modeles. "bil -m I" affiche
+un exemple de donnees du modele I. Possiblite d'avoir des elements
+d'ordres multiples (1 pour chaque inconnue). Cette possibilite est geree
+par les tableaux "el.pin" et "el.peq". Une valeur negative associee
+a un noeud et une inconnue n'est pas prise en compte comme inconnue globale. 
+Possibilite de creer de nouvelles fonctions d'interpolation au niveau des 
+modeles dans "tb1, tb2, ..." avec la fonction "creer_interpolation(...)".
+Possibilite de definir des champs aux points d'intersection d'une grille 
+dans l'espace avec l'option "Type = grille" dans CHMP (l'option 
+Type = affine restant par defaut).
+
+Nouveautes dans 1.6: bug corrige dans "sauvep". Les fichiers "mod.c" 
+et "mod.h" sont renommes "xmod.c" et "xmod.h". Le specificateur de 
+type "void" est remplace par "int" pour les fonctions "ex1(), ex2() ..."
+definies dans "m1.c, m2.c ..." et pour l'identificateur de type "ex_t" 
+defini dans "defs.h". On utilise ce retour dans les fonctions 
+"explicite()" et "algorithme()" definies dans "calc.c". Compatibilite
+avec le format de maillage version 2.0 de GMSH.
+
+Nouveautes dans 1.5: definition des types de fonctions "dm_t, "qm_t", 
+"tb_t", etc... Reorganisation du fichier "mod.c" par l'introduction de 
+tableaux de pointeurs de fonctions pour simplifier l'introduction de 
+nouveaux modeles. Possibilite de charger la librairie de SuperLU (voir
+le fichier "make.inc"). Creation de l'option de la ligne de commande
+"-m slu" qui permet d'utiliser la methode de resolution proposee par
+SuperLU a condition d'avoir construit, auparavant, le fichier des
+permutations inverses a l'aide d'un programme adapte comme Metis.
+
+Nouveautes dans 1.4: reorganisation et creations des fichiers : calc.c, 
+lecdo.c, postt.c, renum.c. Suppression des variables statiques. Creation 
+d'une structure de donnees "dnns_t", d'une structure pour la matrice
+"mtrx_t", d'une structure pour la solution "sltn_t", d'une structure pour 
+la renumerotation "nume_t". Amelioration de certaines fonctions de lib.c. 
+Suppresion de rssurf (pris en charge par rsmass).
+
+Nouveautes dans 1.3: nouveaux modeles inclus. Qqs ameliorations apportees 
+dans le calcul de dt (fonction pasdt). Apport de nouvelles info dans
+les structures mate_t, elem_t: en particulier neq,eqn,inc dans mate_t. 
+Creation de la structure node_t et suppression du pointeur no_x. Cette
+version permet de prendre en compte des modeles reposant sur un nombre 
+d'equations et sur des natures d'inconnues pouvant varier d'une region 
+a l'autre. Cette version realise la continuite des equations en fonction
+de nouvelles informations contenues dans les modeles comme le nombre
+d'equations et les noms (predefinis) de chaque equation et inconnue
+associee. En consequence la structure du fichier a ete (legerement) 
+modifiee pour prendre en compte ces informations, notamment dans les
+mots-cles INIT,COND,CHAR,ALGO (voir l'aide en ligne). Pour plus de clarte 
+les donnees relatives aux variations objectives des parametres ont ete 
+deplacees du mot-cle ALGO dans le nouveau mot-cle OBJE.
+ 
+Nouveautes dans 1.2: creation d'un repertoire exemples. Simplication de la 
+gestion des elements de surface (suppression de SURF). Creation de champs 
+(mot-cles CHMP). Gestion des interruptions dans le calcul de la matrice.
+
+Nouveautes dans 1.1: creation des pages info et de la doc sous differents 
+formats (ps,pdf,txt). Creation des repertoires bin et lib. Amelioration 
+de la procedure d'installation. Simplification du jeu de donnees par la 
+definition des regions de maillage.

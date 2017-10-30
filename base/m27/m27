@@ -1,0 +1,60 @@
+# Sechage d'un bicouche platre-bentheimer
+Geometry
+1 plan
+Mesh
+4
+0. 0. 0.025 0.05
+2.5e-4
+1 100 100
+1 1 2
+Material #Platre
+Modele = 27
+porosite = -4    # Porosite
+D_Cl = 1.5e-11   # Diffusion effective de Cl
+r_d = 1          # Rapport des tortuosites des anions et des cations
+k_int = 5.e-17   #
+Courbes_log = platre_log p_c = Range{x1 = 1.e2 , x2 = 1.e9 , n = 1001} s_l = Van-Genuchten(1){p0 = 2.048e5 , m = 0.4897959} k_rl = Mualem_liq(2){m = 0.4897959} tau_l = Pow(2){lam = 1.9}
+Material #bentheimer
+Modele = 27
+porosite = -4    # Porosite
+D_Cl = 8.e-11    # Diffusion effective de Cl
+r_d = 1          # Rapport des tortuosites des anions et des cations
+k_int = 5.5e-13  #
+Courbes_log = bentheimer_log p_c = Range{x1 = 1.e2 , x2 = 1.e9 , n = 1001} s_l = Van-Genuchten(1){p0 = 6.94e3 , m = 0.86111111} k_rl = Mualem_liq(2){m = 0.86111111} tau_l = Pow(2){lam = 0.45}
+Fields
+4
+Type = affine Val = 4000.       Grad = 0 Poin = 0
+Type = affine Val = 0.8318458   Grad = 0 Poin = 0
+Type = affine Val = -3526.9793  Grad = 0 Poin = 0
+Type = grid   File = por1
+Initialization
+4
+Reg = 2 Inc = c_cl Champ = 1
+Reg = 2 Inc = h_r  Champ = 2
+Reg = 3 Inc = c_cl Champ = 1
+Reg = 3 Inc = h_r  Champ = 2
+Functions
+2
+Fichier = porosite
+Fichier = flux4000
+Boundary Conditions
+0
+Loads
+1
+Reg = 1 Equ = liq Type = flux Champ = 3 Func = 2
+Points
+0
+Dates
+9
+0. 22531.68 37552.68 90126.72 127679.4 180253.1 270379.8 540759.2 729140.4
+Objective Variations
+h_r  = 0.1
+c_cl = 1.e6
+Iterative Process
+Iter = 10 Tol = 1.e-4 Restart = 0
+Time Steps
+
+
+
+Time Steps
+Dtini = 1.e-1  Dtmax = 3600.

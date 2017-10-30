@@ -1,0 +1,67 @@
+# Model TFE
+# Experience PTT (Pressure Transmission Test)
+#
+Geometry
+1 plan
+Mesh
+4 0. 0. 0.02 0.02
+0.0002
+1 100 1
+1 1 1
+Material
+4
+h = 10.e-10
+v = 2
+young = 1.e9
+poisson = 0.
+phi = 0.3
+M_e = 18.e-3
+V_e = 18.e-6
+p_e0 = 1.31e7
+p_s0 = 0.19e7
+M_s = 111.e-3
+V_s = 25.e-6
+R = 8.315
+k_ee = 4.e-18
+k_ss = 6.e-18
+omega = 0.4
+T_0 = 300
+n_p = 401
+p_s1 = 0
+p_s2 = 1.9956e7
+courbes = ca10
+Fields
+4
+Val = 1.31e+07 Grad = 0 Point = 0
+Val = 0.19e+07 Grad = 0 Point = 0
+Val = 1.313e+07 Grad = 0 Point = 0
+Val = 0.187e+07 Grad = 0 Point = 0
+Initialization
+2
+Reg = 2 Inc = p_e Champ = 1
+Reg = 2 Inc = p_s Champ = 2
+Functions
+0
+Boundary Conditions
+3
+Reg = 3 Inc = p_e Champ = 3 Fonction = 0
+Reg = 3 Inc = p_s Champ = 4 Fonction = 0
+Reg = 1 Inc = u_x Champ = 0 Fonction = 0
+Loads
+0
+Points
+2
+0.0001 0.0199
+Dates
+3
+0. 864000 1800000.
+Objective Variations
+p_e = 1.e5 
+p_s = 1.e5 
+u_x = 1.e-3
+Iterative Process
+Iter = 20 Tol = 1e-05 Rec = 0 
+
+
+Time Steps
+Dtini = 1 Dtmax = 86400 

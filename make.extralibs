@@ -1,0 +1,28 @@
+#
+SHELL = /bin/sh
+
+# Do you use libraries BLAS and SuperLU (YES/NO) ?
+BLAS_USE := NO
+SLU_USE  := NO
+
+# if YES, where are these libraries ?
+# Change if needed.
+SLU_DIR  := ${HOME}/Documents/Softwares/superLU/SuperLU_3.0
+SLU_LIB  := ${SLU_DIR}/superlu_linux.a
+BLAS_DIR := ${SLU_DIR}
+BLAS_LIB := ${BLAS_DIR}/blas_linux.a
+
+BIL_EXTRALIBS := 
+
+ifeq (${SLU_USE},YES)
+  BIL_EXTRALIBS += ${SLU_LIB}
+endif
+
+ifeq (${BLAS_USE},YES)
+  BIL_EXTRALIBS += ${BLAS_LIB}
+endif
+
+
+# Library UEL
+#BIL_EXTRALIBS += /home/dangla/Documents/Softwares/bil/Projects/IoannisStefanou/libUEL505_32_2.so
+#BIL_EXTRALIBS += -luel
