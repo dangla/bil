@@ -32,3 +32,9 @@
 *.exe
 *.out
 *.app
+
+# Specific headers
+BilInfo.h
+BilLib.h
+BilPath.h
+BilVersion.h

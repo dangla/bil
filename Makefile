@@ -23,7 +23,7 @@ BIL_PATCH_VERSION := ${word 3,${subst ., ,${BIL_VERSION}}}
 
 
 # Extension for exec files
-EXEEXT :=
+EXEEXT := .exe
 
 
 # Executable
