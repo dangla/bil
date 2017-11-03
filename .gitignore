@@ -1,40 +1,33 @@
-# Prerequisites
-*.d
-
 # Compiled object files
 *.o
-*.ko
-*.obj
-*.elf
 
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Complied static libraries
-*.lib
+# Compiled static libraries
 *.a
-*.la
-*.lo
 
 # Shared objects (inc. Windows DLLs)
 *.dll
 *.so
 *.so.*
-*.dylib
 
 # Executables
 *.exe
-*.out
-*.app
 
 # Specific headers
 BilInfo.h
 BilLib.h
 BilPath.h
 BilVersion.h
+
+# Database
+*.db
+
+# Specific folders
+doc/edition-1.6/
+doc/bil-en.html/
+doc/oxygen/html/
+
+# Specific files
+doc/oxygen/Doxyfile
+doc/bil-en.pdf
+doc/bil-en.ps
+doc/bil-en.txt
