@@ -111,13 +111,13 @@ install-bin: install-lib${LIBBILEXT}
 	@echo "\nInstalling "${BIL_EXE}" in "${BINDIR}
 	mkdir -p ${BINDIR}
 	cp -f ${BIL_BINDIR}/${BIL_EXE} ${BINDIR}
-	ln -sf ${BINDIR}/${BIL_EXE} ${BINDIR}/bil${EXEEXT}
+	ln -sf ${BINDIR}/${BIL_EXE} ${BINDIR}/bil
 	chmod 555 ${BINDIR}/${BIL_EXE}
-	chmod 555 ${BINDIR}/bil${EXEEXT}
+	chmod 555 ${BINDIR}/bil
 	@echo "\nChecking shared libraries required by Bil"
-	ldd ${BINDIR}/bil${EXEEXT}
+	ldd ${BINDIR}/bil
 #@echo "\nChecking the shared library required by Bil (objdump)"
-#objdump -p ${BINDIR}/bil${EXEEXT}
+#objdump -p ${BINDIR}/bil
 
 install-libso:
 	@echo "\nInstalling the library libbil-${BIL_VERSION}.so in "${LIBDIR}

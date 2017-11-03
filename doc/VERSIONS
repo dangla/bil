@@ -1,3 +1,8 @@
+News in 2.4: Two new database interfaces: "HardenedCementChemistry.h" and
+"CementSolutionDiffusion.h" to be used for cement-based materials. 
+New models now use these interfaces. The references used to implemente some
+databases are now copied in the folder "src/Models/DataBases/References".
+
 News in 2.3: Use of C++ compiler. Programmation is now extended to 
 C++ language. Hence the use of .cpp and .hpp files is allowed. 
 A new object "Exception.h" has been created to handle exception mechanisms 
