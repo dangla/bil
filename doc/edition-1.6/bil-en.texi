@@ -96,9 +96,9 @@ Bil is a modeling platform based on finite element/volume methods dedicated to c
 * Output files::
 * Other files::
 * Models::
-* How to develop a new model ?::
+* How to develop a new model?::
 * Examples::
-* Versions::
+* Version history::
 * License::
 
 @ignore
@@ -147,15 +147,15 @@ Models
 
 * Definition of a model::
 * Examples of existing models::
-* How to develop a new model ?::
+* How to develop a new model?::
 
 Examples of input data file
 
 * m1::
 
-Versions
+Version history
 
-* Versions::
+* Version history::
 
 @end detailmenu
 @end ignore
@@ -317,7 +317,7 @@ The files @file{my_file.cont} and @file{my_file.conti} allow to continue a previ
 @c Models
 @c =========================================================================
 
-@node Models, How to develop a new model ?, Other files, Top
+@node Models, How to develop a new model?, Other files, Top
 @chapter Models
 
 Mostly the concept of model refers to the constitutive equations or complementary laws that are needed to mathematically end up with a well-posed problem. However we need more informations, here, regarding the numerical methods that are used to handle complex problems and geometries. These methods will be implemented in a single file whose basename will identify the code name of the model. The concept of model will then be extended to fit with the set of informations pertaining to:
@@ -337,11 +337,11 @@ A short description of the available models can be displayed by typing:
 @sp 1
 
 @c =========================================================================
-@c How to develop a new model ?
+@c How to develop a new model?
 @c =========================================================================
 
-@node How to develop a new model ?, Examples, Models, Top
-@chapter How to develop a new model ?
+@node How to develop a new model?, Examples, Models, Top
+@chapter How to develop a new model?
 
 To tell Bil to account for a new model, you just need to create a new file, e.g. @file{my_model.c}, in the folder @file{ModelFiles} and add the basename of this file, namely @file{my_model}, to the list of the available models found in @file{ListOfModels.inc}. This model will be taken into account automatically the next time binary files will be created.
 
@@ -371,7 +371,7 @@ To help you in creating this new file, it is recommended to learn from already e
 @c Examples
 @c =========================================================================
 
-@node Examples, Versions, How to develop a new model ?, Top
+@node Examples, Version history, How to develop a new model?, Top
 @chapter Examples
 
 @menu
@@ -494,22 +494,24 @@ This problem is governed by the Richards' equation. A 1 meter high sand column i
 @sp 1
 
 @c =========================================================================
-@c Versions
+@c Version history
 @c =========================================================================
                                                                                 
-@node Versions, License, Examples, Top
-@chapter Versions
+@node Version history, License, Examples, Top
+@chapter Version history
 
-@verbatiminclude ../VERSIONS
+@verbatiminclude ../../CHANGELOG
                                                             
 
 @c =========================================================================
 @c License
 @c =========================================================================
 
-@node  License, , Versions, Top
+@node  License, , Version history, Top
 @appendix License
 
-@include license.texi
+@verbatiminclude ../../LICENSE
+
+@c @include license.texi
 
 @bye

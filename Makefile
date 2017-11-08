@@ -16,7 +16,8 @@ BIL_PATH := ${shell pwd}
 
 # Bil version
 BIL_VERSION_FILE  := BilVersion.h
-BIL_VERSION       := ${word 2,${subst /bil-, ,${BIL_PATH}}}
+# BIL_VERSION       := ${word 2,${subst /bil-, ,${BIL_PATH}}}
+BIL_VERSION       := ${shell cat ${BIL_PATH}/VERSION}
 BIL_MAJOR_VERSION := ${word 1,${subst ., ,${BIL_VERSION}}}
 BIL_MINOR_VERSION := ${word 2,${subst ., ,${BIL_VERSION}}}
 BIL_PATCH_VERSION := ${word 3,${subst ., ,${BIL_VERSION}}}
