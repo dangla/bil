@@ -18,6 +18,7 @@ extern int       (Curves_ReadCurves)(Curves_t*,const char*) ;
 //extern int       (Curves_WriteCurves2)(char*) ;
 extern int       (Curves_Append)(Curves_t*,Curve_t*) ;
 extern int       (Curves_FindCurveIndex)(Curves_t*,const char*) ;
+extern Curve_t*  (Curves_FindCurve)(Curves_t*,const char*) ;
 //#define Curves_WriteCurves Curves_WriteCurves2
 
 

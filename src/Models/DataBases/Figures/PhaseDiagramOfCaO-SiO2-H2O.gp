@@ -106,8 +106,6 @@ set logscale y
 set format y "10^{%T}"
 set yrange[1.e-6:1.e1]
 set ytics mirror
-set key default
-set key bottom left reverse Left spacing 1.5 samplen 2
 
 
 
@@ -115,7 +113,9 @@ set key bottom left reverse Left spacing 1.5 samplen 2
 
 
 # Legends
-set key left at 1.e-5,8 reverse Left spacing 1.5 samplen 2
+set key default
+set key bottom left reverse Left spacing 1.5 samplen 2
+#set key left at 1.e-5,8 reverse Left spacing 1.5 samplen 2
 #set key left at 1.e-5,1.35 reverse Left spacing 1.5 samplen 1
 
 
@@ -124,10 +124,10 @@ set output 'PhaseDiagramOfCaO-SiO2-H2O.eps'
 
 
 plot \
-     FITSSH1(x)     w l lw 4 lt -1 notitle \
-    ,FITSSH_TOB(x)  w l lw 1 lt 2  notitle \
-    ,FITSSH_JEN(x)  w l lw 1 lt 3  notitle \
-    ,FITSSH_SH(x)   w l lw 1 lt 4  notitle \
+     FITSSH_SH(x)   w l lw 2 lt 4  title 'Tobermorite' \
+    ,FITSSH_TOB(x)  w l lw 2 lt 2  title 'Silica' \
+    ,FITSSH_JEN(x)  w l lw 2 lt 3  title 'Jennite' \
+    ,FITSSH1(x)     w l lw 3 lt 1  title 'C-S-H' \
 
 
 exit

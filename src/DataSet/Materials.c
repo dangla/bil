@@ -445,20 +445,3 @@ Material_t* (Material_Create)(int n_mat)
   
   return(material) ;
 }
-
-
-
-Curve_t* Material_FindCurve(Material_t* mat,const char* label)
-{
-  Curves_t* curves = Material_GetCurves(mat) ;
-  int i = Curves_FindCurveIndex(curves,label) ;
-  Curve_t* curve ;
-    
-  if(i < 0) {
-    curve = NULL ;
-  } else {
-    curve = Curves_GetCurve(curves) + i ;
-  }
-  
-  return(curve) ;
-}

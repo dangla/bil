@@ -12,6 +12,9 @@
 # Executables
 *.exe
 
+# Figures (encapsulated postscript)
+*.eps
+
 # Specific headers
 BilInfo.h
 BilLib.h

@@ -40,7 +40,6 @@ extern void (Material_ScanProperties)(Material_t*,DataFile_t*,Model_ComputePrope
 extern void (Material_ScanProperties1)(Material_t*,FILE*,Model_ComputePropertyIndex_t*,int) ;
 //extern void (Material_ScanProperties2)(Material_t*,FILE*,int (*)(const char*),int,int) ;
 extern void (Material_ScanProperties2)(Material_t*,FILE*,Model_ComputePropertyIndex_t*,int,int) ;
-extern Curve_t* (Material_FindCurve)(Material_t*,const char*) ;
 
 
 #define Material_MaxLengthOfKeyWord            (30)
@@ -60,6 +59,7 @@ extern Curve_t* (Material_FindCurve)(Material_t*,const char*) ;
 #define Material_GetCodeNameOfModel(MAT)  ((MAT)->codenameofmodel)
 
 
+/* Material properties */
 #define Material_GetNbOfCurves(MAT) \
         Curves_GetNbOfCurves(Material_GetCurves(MAT))
 
@@ -78,6 +78,18 @@ extern Curve_t* (Material_FindCurve)(Material_t*,const char*) ;
 #define Material_GetFunction(MAT) \
         Functions_GetFunction(Material_GetFunctions(MAT))
 
+#define Material_GetDimension(MAT) \
+        Geometry_GetDimension(Model_GetGeometry(Material_GetModel(MAT)))
+
+#define Material_FindCurve(MAT,S) \
+        Curves_FindCurve(Material_GetCurves(MAT),S)
+
+/*
+** #define Material_ReadProperties(MAT,datafile) \
+*          Model_GetReadMaterialProperties(Material_GetModel(MAT))(MAT,datafile)
+*/
+
+/* Equations/unknowns */
 #define Material_GetNbOfEquations(MAT) \
         Model_GetNbOfEquations(Material_GetModel(MAT))
 
@@ -86,15 +98,7 @@ extern Curve_t* (Material_FindCurve)(Material_t*,const char*) ;
 
 #define Material_GetNameOfUnknown(MAT) \
         Model_GetNameOfUnknown(Material_GetModel(MAT))
-
-#define Material_GetDimension(MAT) \
-        Geometry_GetDimension(Model_GetGeometry(Material_GetModel(MAT)))
-
-/*
-** #define Material_ReadProperties(MAT,datafile) \
-*          Model_GetReadMaterialProperties(Material_GetModel(MAT))(MAT,datafile)
-*/
-
+        
 #define Material_CopyNameOfEquation(MAT,index,name) \
         (strcpy(Material_GetNameOfEquation(MAT)[index],name))
 

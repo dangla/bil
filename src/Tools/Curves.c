@@ -103,6 +103,23 @@ int    Curves_FindCurveIndex(Curves_t* curves,const char* yname)
 }
 
 
+
+Curve_t* Curves_FindCurve(Curves_t* curves,const char* label)
+{
+  int i = Curves_FindCurveIndex(curves,label) ;
+  Curve_t* curve ;
+    
+  if(i < 0) {
+    curve = NULL ;
+  } else {
+    curve = Curves_GetCurve(curves) + i ;
+  }
+  
+  return(curve) ;
+}
+
+
+
 Curve_t* Curve_Create(unsigned int n_points)
 {
   Curve_t* curve   = (Curve_t*) malloc(sizeof(Curve_t)) ;
