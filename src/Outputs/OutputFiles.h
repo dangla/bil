@@ -6,14 +6,11 @@
 
 /* vacuous declarations and typedef names */
 struct OutputFiles_s ; typedef struct OutputFiles_s OutputFiles_t ;
-/*     1. OutputFiles_t attributes */
-struct OutputFile_s  ; typedef struct OutputFile_s  OutputFile_t ;
 
 
 
 /* Declaration of Macros, Methods and Structures */
 
-/* 1. OutputFiles_t */
 #include "DataSet.h"
 
 extern OutputFiles_t*   (OutputFiles_Create)(char*,int,int) ;
@@ -59,19 +56,7 @@ extern void    (OutputFiles_BackupSolutionAtPoint)(OutputFiles_t*,DataSet_t*,dou
 
 
 
-/* 2. OutputFile_t */
-
-extern char    (OutputFile_TypeOfCurrentFile) ;
-
-#define OutputFile_GetTextFile(outputfile)            ((outputfile)->textfile)
-
-
-#define OutputFile_IsPointType      (OutputFile_TypeOfCurrentFile == 'p')
-#define OutputFile_IsTimeType       (OutputFile_TypeOfCurrentFile == 't')
-
-
-
-
+#include "OutputFile.h"
 
 /* complete the structure types by using the typedef */
 struct OutputFiles_s {            /* Output files */
@@ -89,9 +74,5 @@ struct OutputFiles_s {            /* Output files */
   char* line ;                    /* Pointer to text lines */
 } ;
 
-
-struct OutputFile_s {             /* Output file */
-  TextFile_t* textfile ;          /* The file */
-} ;
 
 #endif

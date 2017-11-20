@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 /* Choose the numerical method */
 #include "FVM.h"

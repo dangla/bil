@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 #define MODELINDEX  5
 #define TITLE   "Sechage isotherme"

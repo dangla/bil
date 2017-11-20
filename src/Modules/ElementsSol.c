@@ -302,18 +302,11 @@ void ElementsSol_Copy(ElementsSol_t* elementssol_dest,ElementsSol_t* elementssol
 
 
 
+/* Intern functions */
 
 void   (ElementSol_Initialize)(ElementSol_t* elementsol)
 {
   ElementSol_GetImplicitGenericData(elementsol) = GenericData_New() ;
   ElementSol_GetExplicitGenericData(elementsol) = GenericData_New() ;
   ElementSol_GetConstantGenericData(elementsol) = GenericData_New() ;
-}
-
-
-
-ElementSol_t* (ElementSol_GetDeepElementSol)(ElementSol_t* elementsol,unsigned int depth)
-{
-  while(depth--) elementsol = ElementSol_GetPreviousElementSol(elementsol) ;
-  return(elementsol) ;
 }

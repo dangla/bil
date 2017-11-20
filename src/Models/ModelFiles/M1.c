@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "Common.h"
+#include "CommonModel.h"
 #include "FVM.h"
 
 #define TITLE "Richards Equation (1D)"

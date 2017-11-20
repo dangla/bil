@@ -3,7 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 #define MODELINDEX  7
 #define TITLE   "Poroelasticite non sature"

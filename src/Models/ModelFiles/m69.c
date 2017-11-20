@@ -3,7 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 #define MODELINDEX  69
 #define TITLE   "Nano Double Porosity model (2011)"

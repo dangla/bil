@@ -15,6 +15,10 @@
 # Figures (encapsulated postscript)
 *.eps
 
+# Old C source files (specific to bil)
+*.cold
+*.hold
+
 # Specific headers
 BilInfo.h
 BilLib.h

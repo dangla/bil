@@ -1,5 +1,5 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef COMMONMODEL_H
+#define COMMONMODEL_H
 
 #include "Models.h"
 #include "Message.h"

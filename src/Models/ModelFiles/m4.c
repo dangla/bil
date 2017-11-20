@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 #define MODELINDEX  4
 #define TITLE "Poromecanique des argiles gonflantes (Total)"

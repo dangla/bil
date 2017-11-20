@@ -12,7 +12,7 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 #define MODELINDEX  44
 #define TITLE "Chlorures dans les betons non satures"

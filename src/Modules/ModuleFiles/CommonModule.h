@@ -1,5 +1,5 @@
-#ifndef MODULE_H
-#define MODULE_H
+#ifndef COMMONMODULE_H
+#define COMMONMODULE_H
 
 #include "Modules.h"
 

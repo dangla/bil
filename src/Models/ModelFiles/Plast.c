@@ -4,7 +4,7 @@
 #include <ctype.h>
 #include <math.h>
 #include "Context.h"
-#include "Common.h"
+#include "CommonModel.h"
 #include "FEM.h"
 
 #define TITLE "Plasticity with hardening (2017)"
