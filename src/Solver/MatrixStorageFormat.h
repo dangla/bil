@@ -45,6 +45,7 @@ extern void NCformat_PrintMatrix(NCformat_t*,unsigned int,const char*) ;
 #endif
 
 
+
 /** Macros for LDUSKLformat ------------------------------------------*/
 #define LDUSKLformat_GetNbOfNonZeroValues(a)         ((a)->nnz)
 #define LDUSKLformat_GetNonZeroValue(a)              ((a)->d)
@@ -98,6 +99,7 @@ extern void NCformat_PrintMatrix(NCformat_t*,unsigned int,const char*) ;
 */
 
 
+
 /** Macros for SuperMatrix -------------------------------------------*/
 #define SuperMatrix_GetNbOfRows(a)                     ((a)->nrow)
 #define SuperMatrix_GetNbOfColumns(a)                  ((a)->ncol)
@@ -105,6 +107,7 @@ extern void NCformat_PrintMatrix(NCformat_t*,unsigned int,const char*) ;
 #define SuperMatrix_GetStorageType(a)                  ((a)->Stype)
 #define SuperMatrix_GetDataType(a)                     ((a)->Dtype)
 #define SuperMatrix_GetMatrixType(a)                   ((a)->Mtype)
+
 
 
 /* complete the structure types by using the typedef */
@@ -117,6 +120,8 @@ struct LDUSKLformat_s {       /* LDU Skyline storage format */
   double** u ;                /* pointer to strictly upper triangular matrix values */
 } ;
 
+
+
 /* Skyline format */
 struct SKLformat_s {          /* Skyline storage format */
   unsigned int    nnz ;       /* nb of non zero values */
@@ -127,6 +132,8 @@ struct SKLformat_s {          /* Skyline storage format */
   unsigned int* rowptr ;      /* Index of element in l which starts a row */
 } ;
 
+
+
 /* Compressed row storage format
  * If a_ij = nzval[k] then colind[k] = j and rowptr[i] <= k < rowptr[i + 1] */
 struct CRSformat_s {
@@ -136,6 +143,8 @@ struct CRSformat_s {
   unsigned int* rowptr ;      /* Index of element in nzval which starts a row */
 } ;
 
+
+
 /* Compressed column storage format (known as Harwell-Boeing sparse matrix format)
  * If a_ij = nzval[k] then rowind[k] = i and colptr[j] <= k < colptr[j + 1] */
 struct CCSformat_s {
@@ -144,6 +153,8 @@ struct CCSformat_s {
   unsigned int* rowind ;      /* Row indices of the non zeros */
   unsigned int* colptr ;      /* Index of element in nzval which starts a column */
 } ;
+
+
 
 /* Copy of the SuperMatrix struc as defined in SuperLU */
 #ifdef SLU_DIR
