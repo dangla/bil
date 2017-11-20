@@ -9,9 +9,9 @@ struct FEM_s     ; typedef struct FEM_s     FEM_t ;
 
 
 #include "Mesh.h"
-#include "Elements.h"
-#include "IntFcts.h"
-#include "Loads.h"
+#include "Element.h"
+#include "IntFct.h"
+#include "Load.h"
 
 /* Extern Functions */
 

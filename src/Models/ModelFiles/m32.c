@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 #define MODELINDEX  32
 #define TITLE "Ecoulement a double permeabilite MIM"

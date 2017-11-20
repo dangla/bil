@@ -3,7 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 /* The Finite Element Method */
 #include "FEM.h"

@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 /* Units */
 #include "InternationalSystemOfUnits.h"

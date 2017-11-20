@@ -119,14 +119,6 @@ void NodesSol_Copy(NodesSol_t* nodessol_dest,NodesSol_t* nodessol_src)
 
 
 
-NodeSol_t* (NodeSol_GetDeepNodeSol)(NodeSol_t* nodesol,unsigned int depth)
-{
-  while(depth--) nodesol = NodeSol_GetPreviousNodeSol(nodesol) ;
-  return(nodesol) ;
-}
-
-
-
 /* Not used from here */
 #if 0
 NodesSol_t* (NodesSol_Create1)(Mesh_t* mesh)

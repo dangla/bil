@@ -6,7 +6,7 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 #define MODELINDEX  27
 #define TITLE "Sechage isotherme avec sels (Nov. 2008)"

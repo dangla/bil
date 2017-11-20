@@ -5,7 +5,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "Context.h"
-#include "module.h"
+#include "CommonModule.h"
 
 
 #define AUTHORS  "Dangla"

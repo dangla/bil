@@ -4,7 +4,7 @@
 #include <math.h>
 #include <ctype.h>
 #include <float.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 #define MODELINDEX  28
 #define TITLE "Cristallisation de sels (Jan. 2009)"

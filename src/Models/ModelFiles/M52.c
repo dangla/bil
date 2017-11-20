@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 /* Choose the numerical method */
 #include "FVM.h"

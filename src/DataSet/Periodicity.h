@@ -1,0 +1,25 @@
+#ifndef PERIODICITY_H
+#define PERIODICITY_H
+
+/* vacuous declarations and typedef names */
+
+/* class-like structures */
+struct Periodicity_s         ; typedef struct Periodicity_s        Periodicity_t ;
+
+
+
+#define Periodicity_GetMasterRegion(P)         ((P)->masterreg)
+#define Periodicity_GetSlaveRegion(P)          ((P)->slavereg)
+#define Periodicity_GetPeriodVector(P)         ((P)->vector)
+
+
+
+struct Periodicity_s {              /* Periodicity */
+  int     masterreg ;               /* Master region index */
+  int     slavereg ;                /* Slave region index */
+  double* vector ;                  /* Period vector */
+} ;
+
+
+
+#endif

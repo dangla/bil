@@ -8,9 +8,8 @@
 struct FVM_s     ; typedef struct FVM_s     FVM_t ;
 
 
-#include "Elements.h"
-#include "Loads.h"
-#include "Models.h"
+#include "Element.h"
+#include "Load.h"
 
 /*  Typedef names of Methods */
 typedef void     FVM_ComputeFluxes_t(FVM_t*,double*,double*,int,int) ;

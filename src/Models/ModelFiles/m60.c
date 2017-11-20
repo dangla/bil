@@ -3,7 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
-#include "Common.h"
+#include "CommonModel.h"
 
 #define MODELINDEX  60
 #define TITLE   "Poroelasticity with surface adsorption"

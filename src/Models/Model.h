@@ -24,7 +24,7 @@ typedef int    Model_SetModelProp_t(Model_t*) ;
 typedef int    Model_ComputePropertyIndex_t(const char*) ;
 typedef int    Model_PrintModelProp_t(Model_t*,FILE*) ;
 
-#include "Elements.h"
+#include "Element.h"
 
 typedef int    Model_ComputeInitialState_t(Element_t*,double) ;
 typedef int    Model_ComputeExplicitTerms_t(Element_t*,double) ;
@@ -37,15 +37,15 @@ typedef void   Model_ComputeSecondaryVariables_t(Element_t*,double,double*) ;
 
 typedef int    Model_DefineElementProperties_t(Element_t*,IntFcts_t*) ;
 
-#include "Loads.h"
+#include "Load.h"
 
 typedef int    Model_ComputeLoads_t(Element_t*,double,double,Load_t*,double*) ;
 
-#include "Results.h"
+#include "Result.h"
 
 typedef int    Model_ComputeOutputs_t(Element_t*,double,double*,Result_t*) ;
 
-#include "Materials.h"
+#include "Material.h"
 #include "DataFile.h"
 
 typedef int    Model_ReadMaterialProperties_t(Material_t*,DataFile_t*) ;
@@ -53,7 +53,6 @@ typedef int    Model_ReadMaterialProperties_t(Material_t*,DataFile_t*) ;
 
 
 /* 2. Model_t */
-#include "Elements.h"
 #include "Geometry.h"
 #include "DataFile.h"
 
@@ -172,7 +171,8 @@ extern Model_t*  (Model_Initialize)(Model_t*,const char*,Geometry_t*,DataFile_t*
 
 
 
-#include "ObVals.h"
+#include "ObVal.h"
+
 
 struct Model_s {              /* model */
   Model_SetModelProp_t*             setmodelprop ;

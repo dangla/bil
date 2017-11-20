@@ -121,7 +121,7 @@ work_9:
 
 work_10:
 	for file in ${ALLFILES}; do (\
-	sed 's/^#include "model.h/#include "Common.h/g' $$file > $$file.bak && \
+	sed 's/^#include "Common.h/#include "CommonModel.h/g' $$file > $$file.bak && \
 	mv $$file.bak $$file \
 	); done
 
