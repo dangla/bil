@@ -228,6 +228,7 @@ void PrintUsage(char* path)
   Message_Direct("                       \"degre\" = 1  : normal (default)\n") ;
   Message_Direct("                       \"degre\" = 2  : extra\n") ;
   */
+  Message_Direct("  -level \"I\"           Define the screen output level \"I\".\n") ;
   
   Message_Direct("  -model               Display the available models.\n") ;
   
@@ -252,6 +253,7 @@ void PrintUsage(char* path)
   #endif
   
   Message_Direct("  -readonly            Read \"file\" only.\n") ;
+  Message_Direct("  -with \"mod\"          Use the module \"mod\".\n") ;
 }
 
 
