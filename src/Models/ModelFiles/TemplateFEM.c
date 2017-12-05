@@ -20,9 +20,9 @@
 #define NEQ   (2)     /* Here let's consider an example with 2 equations */
 
 /* Nb of terms per point */
-#define NVI   (9)     /*  9 implicit terms per point */
+#define NVI   (14)    /*  14 implicit terms per point */
 #define NVE   (2)     /*  2 explicit terms per point */
-#define NV0   (2)     /*  2 constant terms per point */
+#define NV0   (10)    /*  10 constant terms per point */
 
 
 /* Indices of equations */
@@ -43,11 +43,12 @@
 
 
 /* We define some names for implicit terms (vi must be used as pointer below) */
-#define N_1           (vi[0])
-#define N_2           (vi[1])
-#define W_1           (vi + 2) /* must be a 3D vector */
-#define W_2           (vi + 5) /* must be a 3D vector */
-#define PHI           (vi[8])
+#define N_1           (vi)[0]
+#define W_1           (vi + 1) /* this is a 3D vector */
+
+#define SIG           (vi + 4) /* this a 3D tensor */
+
+#define PHI           (vi + 13)[0]
 
 
 /* We define some names for explicit terms (ve must be used as pointer below) */
@@ -56,8 +57,9 @@
 
 
 /* We define some names for constant terms (v0 must be used as pointer below) */
-#define PR_1          (v0[0])
-#define PR_2          (v0[1])
+#define SIG0          (v0 + 0)
+
+#define PR_2          (v0 + 9)[0]
 
 
 /* Material Properties 
@@ -84,7 +86,7 @@ static void    ComputeSecondaryVariables(Element_t*,double,double,double*) ;
 static double coef1 ;
 static double coef2 ;
 static double coef3 ;
-
+static double* sig0 ;
 
 
 /* Locally defined intern variables  */
@@ -107,7 +109,13 @@ int pm(const char* s)
   if(strcmp(s,"prop1") == 0)        return (0) ;
   else if(strcmp(s,"prop2") == 0)   return (1) ;
   else if(strcmp(s,"prop3") == 0)   return (2) ;
-  else return(-1) ;
+  else if(!strcmp(s,"sig0"))        return (3) ;
+  else if(!strncmp(s,"sig0_",5)) {
+     int i = (strlen(s) > 5) ? s[5] - '1' : 0 ;
+     int j = (strlen(s) > 6) ? s[6] - '1' : 0 ;
+
+     return(3 + 3*i + j) ;
+  } else return(-1) ;
 }
 
 
@@ -116,6 +124,7 @@ void GetProperties(Element_t* el)
   coef1  = GetProperty("prop1") ;
   coef2  = GetProperty("prop2") ;
   coef3  = GetProperty("prop3") ;
+  sig0   = &GetProperty("sig0") ;
 }
 
 
@@ -281,13 +290,12 @@ int ComputeInitialState(Element_t* el,double t)
     {
       double* vi  = vi0 + p*NVI ;
       int    i ;
-    
-      for(i = 0 ; i < 9 ; i++) {
-        /* ... */
-      }
       
-      for(i = 0 ; i < 9 ; i++) {
-        /* ... */
+      /* How to account for partial initialization? */
+      if(DataFile_ContextIsPartialInitialization(datafile)) {
+        for(i = 0 ; i < 9 ; i++) SIG0[i] = SIG[i] ;
+      } else {
+        for(i = 0 ; i < 9 ; i++) SIG0[i] = sig0[i] ;
       }
 
       /* ... */
