@@ -10,7 +10,6 @@ typedef struct CementSolutionDiffusion_s     CementSolutionDiffusion_t ;
 
 
 extern CementSolutionDiffusion_t* (CementSolutionDiffusion_Create)(void) ;
-extern CementSolutionDiffusion_t* (CementSolutionDiffusion_GetInstance)(void) ;
 extern void   (CementSolutionDiffusion_ComputeFluxes)(CementSolutionDiffusion_t*) ;
 
 
@@ -24,29 +23,43 @@ extern void   (CementSolutionDiffusion_ComputeFluxes)(CementSolutionDiffusion_t*
 
 
 /* Accessors (Getters) */
-#define CementSolutionDiffusion_GetTemperature(csc) \
-      ((csc)->temperature)
+#define CementSolutionDiffusion_GetTemperature(CSD) \
+      ((CSD)->temperature)
 
-#define CementSolutionDiffusion_GetDiffusionCoefficient(csd) \
-      ((csd)->diffusioncoefficient)
+#define CementSolutionDiffusion_GetDiffusionCoefficient(CSD) \
+      ((CSD)->diffusioncoefficient)
       
-#define CementSolutionDiffusion_GetGradient(csd) \
-      ((csd)->gradient)
+#define CementSolutionDiffusion_GetGradient(CSD) \
+      ((CSD)->gradient)
       
-#define CementSolutionDiffusion_GetPotential(csd) \
-      ((csd)->potential)
+#define CementSolutionDiffusion_GetPotential(CSD) \
+      ((CSD)->potential)
       
-#define CementSolutionDiffusion_GetPointerToPotentials(csd) \
-      ((csd)->pointertopotentials)
+#define CementSolutionDiffusion_GetPointerToPotentials(CSD) \
+      ((CSD)->pointertopotentials)
       
-#define CementSolutionDiffusion_GetFlux(csd) \
-      ((csd)->flux)
+#define CementSolutionDiffusion_GetFlux(CSD) \
+      ((CSD)->flux)
       
-#define CementSolutionDiffusion_GetElementFlux(csd) \
-      ((csd)->elementflux)
+#define CementSolutionDiffusion_GetElementFlux(CSD) \
+      ((CSD)->elementflux)
       
-#define CementSolutionDiffusion_GetIonCurrent(csd) \
-      ((csd)->ioncurrent)
+#define CementSolutionDiffusion_GetIonCurrent(CSD) \
+      ((CSD)->ioncurrent)
+
+
+
+
+/* Macros for the room temperature
+ * -------------------------------*/
+#define CementSolutionDiffusion_GetRoomTemperature(CSD) \
+        Temperature_GetRoomValue(CementSolutionDiffusion_GetTemperature(CSD))
+        
+
+#define CementSolutionDiffusion_SetRoomTemperature(CSD,T) \
+        Temperature_SetRoomTemperature(CementSolutionDiffusion_GetTemperature(CSD),T)
+
+
 
 
 
@@ -59,8 +72,8 @@ extern void   (CementSolutionDiffusion_ComputeFluxes)(CementSolutionDiffusion_t*
 #define CementSolutionDiffusion_NbOfSpecies \
         CementSolutionChemistry_NbOfSpecies
 
-#define CementSolutionDiffusion_GetDiffusionCoefficientOf(csd,CPD) \
-       (CementSolutionDiffusion_GetDiffusionCoefficient(csd)[CementSolutionChemistry_GetIndexOf(CPD)])
+#define CementSolutionDiffusion_GetDiffusionCoefficientOf(CSD,CPD) \
+        (CementSolutionDiffusion_GetDiffusionCoefficient(CSD)[CementSolutionChemistry_GetIndexOf(CPD)])
        
 
 /* Synomyms */
@@ -71,15 +84,15 @@ extern void   (CementSolutionDiffusion_ComputeFluxes)(CementSolutionDiffusion_t*
 
 /* Macros for the potentials
  * -------------------------*/
-#define CementSolutionDiffusion_GetPotentialAtPoint(csd,i) \
-       (CementSolutionDiffusion_GetPointerToPotentials(csd)[i])
+#define CementSolutionDiffusion_GetPotentialAtPoint(CSD,i) \
+        (CementSolutionDiffusion_GetPointerToPotentials(CSD)[i])
 
 
 
 /* Macros for the concentration fluxes
  * -----------------------------------*/
-#define CementSolutionDiffusion_GetFluxOf(csd,CPD) \
-       (CementSolutionDiffusion_GetFlux(csd)[CementSolutionChemistry_GetIndexOf(CPD)])
+#define CementSolutionDiffusion_GetFluxOf(CSD,CPD) \
+        (CementSolutionDiffusion_GetFlux(CSD)[CementSolutionChemistry_GetIndexOf(CPD)])
 
 
 
@@ -88,14 +101,15 @@ extern void   (CementSolutionDiffusion_ComputeFluxes)(CementSolutionDiffusion_t*
 #define CementSolutionDiffusion_NbOfElementFluxes \
         CementSolutionChemistry_NbOfElementConcentrations
 
-#define CementSolutionDiffusion_GetElementFluxOf(csd,A) \
-       (CementSolutionDiffusion_GetElementFlux(csd)[CementSolutionChemistry_E_##A])
+#define CementSolutionDiffusion_GetElementFluxOf(CSD,A) \
+        (CementSolutionDiffusion_GetElementFlux(CSD)[CementSolutionChemistry_E_##A])
        
 
 
+#include "Temperature.h"
 
 struct CementSolutionDiffusion_s {
-  double  temperature ;
+  Temperature_t* temperature ;
   double* diffusioncoefficient ;
   double* gradient ;
   double* potential ;

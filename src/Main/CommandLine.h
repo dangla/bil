@@ -7,20 +7,13 @@
 struct CommandLine_s  ; typedef struct CommandLine_s  CommandLine_t ;
 
 
-extern void              (CommandLine_Initialize)(int,char**) ;
-extern CommandLine_t*    (CommandLine_GetInstance)(void) ;
+extern CommandLine_t*    (CommandLine_Create)(int,char**) ;
+extern void              (CommandLine_Delete)(CommandLine_t**) ;
 
 
 #define CommandLine_GetNbOfArg(cmd)            ((cmd)->argc)
 #define CommandLine_GetArg(cmd)                ((cmd)->argv)
 
-
-
-#define CommandLine_NbOfArg \
-        CommandLine_GetNbOfArg(CommandLine_GetInstance())
-        
-#define CommandLine_Arg \
-        CommandLine_GetArg(CommandLine_GetInstance())
 
 
 struct CommandLine_s {        /* Command line */

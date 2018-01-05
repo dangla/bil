@@ -14,9 +14,12 @@ extern Dates_t*  Dates_Create(DataFile_t*) ;
 #define Dates_GetDate(DATES)            ((DATES)->date)
 
 
+
+#include "Date.h"
+
 struct Dates_s {
   unsigned int n_dates ;      /* nb of dates */
-  double* date ;              /* date */
+  Date_t* date ;              /* date */
 } ;
 
 #endif

@@ -4,10 +4,6 @@
 #include "View.h"
 
 
-static int       nbofinstances = 0 ;
-static Result_t* resultinstances = NULL ;
-
-
 
 
 Result_t* Result_Create(int n)
@@ -57,22 +53,6 @@ void Result_Delete(Result_t** result)
   
   free(Result_GetValue(*result)) ;
   free(*result) ;
-}
-
-
-
-Result_t* Result_GetInstances(int n)
-{
-  if(!resultinstances) {
-    resultinstances = Result_Create(n) ;
-    nbofinstances = n ;
-  }
-  
-  if(n > nbofinstances) {
-    arret("Result_GetInstances") ;
-  }
-  
-  return(resultinstances) ;
 }
 
 

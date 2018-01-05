@@ -10,12 +10,13 @@
 
 /* Global functions */
 static void   Options_SetDefault(Options_t*) ;
-static void   Options_SetFromContext(Options_t*) ;
+static void   Options_Initialize(Options_t*) ;
 
 
-Options_t*  Options_Create(void)
+
+Options_t*  (Options_Create)(Context_t* ctx)
 {
-  Options_t *options = (Options_t*) malloc(sizeof(Options_t)) ;
+  Options_t* options = (Options_t*) malloc(sizeof(Options_t)) ;
   
   if(!options) arret("Options_Create(1)") ;
 
@@ -34,33 +35,46 @@ Options_t*  Options_Create(void)
   
   Options_SetDefault(options) ;
   
-  
-  Options_SetFromContext(options) ;
+  if(ctx) {
+    Options_GetContext(options) = ctx ;
+    Options_Initialize(options) ;
+  }
   
   return(options) ;
 }
 
 
+
+void Options_Delete(Options_t** options)
+{
+  Context_Delete(&(Options_GetContext(*options))) ;
+  free(Options_GetPrintData(*options)) ;
+  free(*options) ;
+}
+
+
+
 /* Local functions */
 
-void Options_SetDefault(Options_t *options)
+void Options_SetDefault(Options_t* options)
 /* Set default options */
 {
-  char  *modulenames[NB_MODULES] = {MODULENAMES} ;
-  char  *defaultmodule = modulenames[0] ;
+  const char*  modulenames[NB_MODULES] = {MODULENAMES} ;
+  const char*  defaultmodule = modulenames[0] ;
   
   strcpy(Options_GetPrintData(options),"\0") ;
   strcpy(Options_GetResolutionMethod(options),"crout") ;
   strcpy(Options_GetPrintLevel(options),"1") ;
   strcpy(Options_GetModule(options),defaultmodule) ;
-  Options_GetInputFileName(options) = NULL ;
+  Options_GetContext(options) = NULL ;
 }
 
 
-void Options_SetFromContext(Options_t *options)
+
+void Options_Initialize(Options_t* options)
 /* Set options from the command line arguments */
 {
-  Context_t *ctx = Context_GetInstance() ;
+  Context_t* ctx = Options_GetContext(options) ;
   
   if(Context_GetSolver(ctx)) {
     Options_GetResolutionMethod(options) = ((char**) Context_GetSolver(ctx))[1] ;
@@ -90,16 +104,8 @@ void Options_SetFromContext(Options_t *options)
     Options_GetModule(options) = ((char**) Context_GetUseModule(ctx))[1] ;
   }
   
-  if(Context_GetInputFileName(ctx)) {
-    Options_GetInputFileName(options) = ((char**) Context_GetInputFileName(ctx))[0] ;
-  }
-  
   if(Context_GetPostProcessing(ctx)) {
     Options_GetPostProcessingMethod(options) = ((char**) Context_GetPostProcessing(ctx))[1] ;
   }
-  
-  if(!Options_GetInputFileName(options)) {
-    Message_FatalError("Missing file name") ;
-  }
-  
+
 }

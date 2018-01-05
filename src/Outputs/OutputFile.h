@@ -14,7 +14,7 @@ struct OutputFile_s  ; typedef struct OutputFile_s  OutputFile_t ;
 extern char    (OutputFile_TypeOfCurrentFile) ;
 
 
-#define OutputFile_GetTextFile(outputfile)            ((outputfile)->textfile)
+#define OutputFile_GetTextFile(OF)            ((OF)->textfile)
 
 
 #define OutputFile_IsPointType      (OutputFile_TypeOfCurrentFile == 'p')

@@ -148,6 +148,14 @@ OutputFiles_t*   (OutputFiles_Create)(char* filename,int n_dates,int n_points)
   }
   
   
+  /* Results */
+  {
+    Results_t* results = Results_Create(OutputFiles_MaxNbOfViews) ;
+    
+    OutputFiles_GetResults(outputfiles) = results ;
+  }
+  
+  
   /* Text line */
   {
     char* line = (char*) malloc(OutputFiles_MaxLengthOfTextLine*sizeof(char)) ;
@@ -178,6 +186,8 @@ void   (OutputFiles_Delete)(OutputFiles_t** outputfiles)
     
   OutputFile_Delete(&(OutputFiles_GetDateOutputFile(*outputfiles)),n_dates) ;
   OutputFile_Delete(&(OutputFiles_GetPointOutputFile(*outputfiles)),n_points) ;
+  
+  Results_Delete(&(OutputFiles_GetResults(*outputfiles))) ;
   
   free(*outputfiles) ;
 }
@@ -264,6 +274,7 @@ void (OutputFiles_PostProcessForGmshASCIIFileFormat)(OutputFiles_t* outputfiles,
     OutputFiles_PostProcessForGmshASCIIFileFormatVersion2_2(outputfiles,dataset) ;
   }
 }
+
 
 
 void (OutputFiles_PostProcessForGmshASCIIFileFormatVersion2_2)(OutputFiles_t* outputfiles,DataSet_t* dataset)
@@ -582,6 +593,7 @@ void (OutputFiles_PostProcessForGmshASCIIFileFormatVersion2_2)(OutputFiles_t* ou
 }
 
 
+
 void (OutputFiles_PostProcessForGmshParsedFileFormat)(OutputFiles_t* outputfiles,DataSet_t* dataset)
 {
   double version = 0 ;
@@ -620,6 +632,7 @@ void (OutputFiles_PostProcessForGmshParsedFileFormat)(OutputFiles_t* outputfiles
     OutputFiles_PostProcessForGmshParsedFileFormatVersion2(outputfiles,dataset) ;
   }
 }
+
 
 
 void (OutputFiles_PostProcessForGmshParsedFileFormatVersion2)(OutputFiles_t* outputfiles,DataSet_t* dataset)
@@ -888,7 +901,7 @@ void (OutputFiles_BackupSolutionAtTime)(OutputFiles_t* outputfiles,DataSet_t* da
   //TextFile_t* datefile = OutputFile_GetTextFile(outputfile) ;
   //TextFile_t* datefile = OutputFiles_GetDateFile(outputfiles) ; 
   
-  Result_t* r_s = Result_GetInstances(OutputFiles_MaxNbOfViews) ;
+  Result_t* r_s = Results_GetResult(OutputFiles_GetResults(outputfiles)) ;
   
   /* Open the date file for writing */
   TextFile_t* textfile = OutputFile_GetTextFile(outputfile + idate1) ; 
@@ -1001,6 +1014,7 @@ void (OutputFiles_BackupSolutionAtTime)(OutputFiles_t* outputfiles,DataSet_t* da
 }
 
 
+
 void (OutputFiles_BackupSolutionAtPoint)(OutputFiles_t* outputfiles,DataSet_t* dataset,double t,double t_0)
 /* Backup solutions at given points in the approriate output files */
 {
@@ -1013,7 +1027,7 @@ void (OutputFiles_BackupSolutionAtPoint)(OutputFiles_t* outputfiles,DataSet_t* d
   //TextFile_t* pointfile = OutputFile_GetTextFile(outputfile) ;
   //TextFile_t* pointfile = OutputFiles_GetPointFile(outputfiles) ;
   
-  Result_t* r_s = Result_GetInstances(OutputFiles_MaxNbOfViews) ;
+  Result_t* r_s = Results_GetResult(OutputFiles_GetResults(outputfiles)) ;
   int    p ;
   
   OutputFile_TypeOfCurrentFile = 'p' ;
@@ -1114,6 +1128,7 @@ void (OutputFiles_BackupSolutionAtPoint)(OutputFiles_t* outputfiles,DataSet_t* d
     TextFile_CleanTheStream(textfile) ;
   }
 }
+
 
 
 Views_t* (OutputFiles_CreateGlobalViews)(OutputFiles_t* outputfiles,Models_t* usedmodels,TextFile_t* textfile)

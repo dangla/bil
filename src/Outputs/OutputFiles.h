@@ -22,8 +22,8 @@ extern void    (OutputFiles_BackupSolutionAtPoint)(OutputFiles_t*,DataSet_t*,dou
 
 
 /* Function-like macros */
-#define OutputFiles_ReadLineFromCurrentFilePosition(outputfiles,textfile) \
-        TextFile_ReadLineFromCurrentFilePosition(textfile,OutputFiles_GetTextLine(outputfiles),OutputFiles_MaxLengthOfTextLine)
+#define OutputFiles_ReadLineFromCurrentFilePosition(OFS,textfile) \
+        TextFile_ReadLineFromCurrentFilePosition(textfile,OutputFiles_GetTextLine(OFS),OutputFiles_MaxLengthOfTextLine)
 
 
 #include "Views.h"
@@ -40,23 +40,25 @@ extern void    (OutputFiles_BackupSolutionAtPoint)(OutputFiles_t*,DataSet_t*,dou
 #define OutputFiles_RecordNumberLength     (14)
 
 
-#define OutputFiles_GetDataFileName(outputfiles)            ((outputfiles)->filename)
-#define OutputFiles_GetNbOfDateFiles(outputfiles)           ((outputfiles)->n_dates)
-#define OutputFiles_GetNbOfPointFiles(outputfiles)          ((outputfiles)->n_points)
-//#define OutputFiles_GetDateFile1(outputfiles)                ((outputfiles)->datefile)
-//#define OutputFiles_GetPointFile1(outputfiles)               ((outputfiles)->pointfile)
-#define OutputFiles_GetTextLine(outputfiles)                ((outputfiles)->line)
-#define OutputFiles_GetDateOutputFile(outputfiles)          ((outputfiles)->dateoutputfile)
-#define OutputFiles_GetPointOutputFile(outputfiles)         ((outputfiles)->pointoutputfile)
+#define OutputFiles_GetDataFileName(OFS)            ((OFS)->filename)
+#define OutputFiles_GetNbOfDateFiles(OFS)           ((OFS)->n_dates)
+#define OutputFiles_GetNbOfPointFiles(OFS)          ((OFS)->n_points)
+//#define OutputFiles_GetDateFile1(OFS)                ((OFS)->datefile)
+//#define OutputFiles_GetPointFile1(OFS)               ((OFS)->pointfile)
+#define OutputFiles_GetTextLine(OFS)                ((OFS)->line)
+#define OutputFiles_GetDateOutputFile(OFS)          ((OFS)->dateoutputfile)
+#define OutputFiles_GetPointOutputFile(OFS)         ((OFS)->pointoutputfile)
+#define OutputFiles_GetResults(OFS)                 ((OFS)->results)
 
-//#define OutputFiles_GetDateFile(outputfiles)                ((outputfiles)->datefile)
-//#define OutputFiles_GetDateFile(outputfiles)                (OutputFile_GetTextFile(OutputFiles_GetDateOutputFile(outputfiles)))
-//#define OutputFiles_GetPointFile(outputfiles)               ((outputfiles)->pointfile))
-//#define OutputFiles_GetPointFile(outputfiles)                (OutputFile_GetTextFile(OutputFiles_GetPointOutputFile(outputfiles)))
+//#define OutputFiles_GetDateFile(OFS)                ((OFS)->datefile)
+//#define OutputFiles_GetDateFile(OFS)                (OutputFile_GetTextFile(OutputFiles_GetDateOutputFile(OFS)))
+//#define OutputFiles_GetPointFile(OFS)               ((OFS)->pointfile))
+//#define OutputFiles_GetPointFile(OFS)                (OutputFile_GetTextFile(OutputFiles_GetPointOutputFile(OFS)))
 
 
 
 #include "OutputFile.h"
+#include "Results.h"
 
 /* complete the structure types by using the typedef */
 struct OutputFiles_s {            /* Output files */
@@ -71,6 +73,7 @@ struct OutputFiles_s {            /* Output files */
   //TextFile_t* pointfile ;         /* The point files */
   OutputFile_t* dateoutputfile ;  /* The date output files */
   OutputFile_t* pointoutputfile ; /* The point output files */
+  Results_t*    results ;         /* Allocated space for the results */
   char* line ;                    /* Pointer to text lines */
 } ;
 

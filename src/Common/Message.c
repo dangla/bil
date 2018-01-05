@@ -9,12 +9,37 @@
 
 #include "Message.h"
 
+//static Message_t* instancemsg = NULL ;
 static Message_t msg1, *msg = &msg1 ;
 static char launchdate[26] ;
 static time_t now1, *now = &now1 ;
 
 
 /* Extern functions */
+/*
+Message_t*  (Message_GetInstance)(void)
+{
+  if(!instancemsg) {
+    instancemsg = Message_Create() ;
+  }
+  
+  return(instancemsg) ;
+}
+
+
+
+Message_t*  (Message_Create)(void)
+{
+  Message_t* message = (Message_t*) malloc(sizeof(Message_t)) ;
+  
+  if(!message) {
+    arret("Message_Create") ;
+  }
+  
+  return(message) ;
+}
+*/
+
 
 
 void (Message_Initialize)(void)
@@ -29,6 +54,7 @@ void (Message_Initialize)(void)
   Message_GetLaunchDate(msg) = launchdate ;
   strcpy(launchdate,ctime(now)) ;
 }
+
 
 
 void (Message_FatalError0)(const char *fmt, ...)
@@ -49,6 +75,7 @@ void (Message_FatalError0)(const char *fmt, ...)
   
   exit(EXIT_SUCCESS) ;
 }
+
 
 
 void (Message_RuntimeError0)(const char *fmt, ...)

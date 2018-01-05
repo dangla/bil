@@ -21,7 +21,7 @@ day = 86400.*sec
 # ------------------
 R   = 8.314 * J / mol / K
 T   = 293. * K
-RT  = R * T * J / mol
+RT  = R * T
 V_w = 18. * cm3 / mol
 gamma = 0.072 * J / m2
 

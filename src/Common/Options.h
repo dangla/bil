@@ -7,34 +7,40 @@
 struct Options_s      ; typedef struct Options_s      Options_t ;
 
 
-extern Options_t*  Options_Create(void) ;
+#include "Context.h"
+
+extern Options_t*  (Options_Create)(Context_t*) ;
+extern void        (Options_Delete)(Options_t**) ;
 
 
 #define Options_MaxLengthOfKeyWord               (30)
 
-#define Options_GetPrintData(options)              ((options)->debug)
-#define Options_GetResolutionMethod(options)       ((options)->method)
-#define Options_GetPrintLevel(options)             ((options)->level)
-#define Options_GetModule(options)                 ((options)->module)
-#define Options_GetGraphMethod(options)            ((options)->graph)
-#define Options_GetInputFileName(options)          ((options)->inputfile)
-#define Options_GetElementOrderingMethod(options)  ((options)->eordering)
-#define Options_GetNodalOrderingMethod(options)    ((options)->nordering)
-#define Options_GetPostProcessingMethod(options)   ((options)->postprocess)
+#define Options_GetPrintData(OPT)              ((OPT)->debug)
+#define Options_GetResolutionMethod(OPT)       ((OPT)->method)
+#define Options_GetPrintLevel(OPT)             ((OPT)->level)
+#define Options_GetModule(OPT)                 ((OPT)->module)
+#define Options_GetGraphMethod(OPT)            ((OPT)->graph)
+#define Options_GetElementOrderingMethod(OPT)  ((OPT)->eordering)
+#define Options_GetNodalOrderingMethod(OPT)    ((OPT)->nordering)
+#define Options_GetPostProcessingMethod(OPT)   ((OPT)->postprocess)
+#define Options_GetContext(OPT)                ((OPT)->context)
 
-#define Options_GetDebug(options)                (Options_GetPrintData(options))
+
+
+#define Options_GetDebug(OPT) \
+        Options_GetPrintData(OPT)
 
 
 struct Options_s {            /* options */
-  char   *debug ;             /* data to be printed */
-  char   *method ;            /* resolution method */
-  char   *level ;             /* print level */
-  char   *module ;            /* module */
-  char   *graph ;             /* Graph method */
-  char   *inputfile ;         /* Input data file */
-  char   *eordering ;         /* Element ordering method */
-  char   *nordering ;         /* Nodal ordering method */
-  char   *postprocess ;       /* Post-processing method */
+  char*   debug ;             /* data to be printed */
+  char*   method ;            /* resolution method */
+  char*   level ;             /* print level */
+  char*   module ;            /* module */
+  char*   graph ;             /* Graph method */
+  char*   eordering ;         /* Element ordering method */
+  char*   nordering ;         /* Nodal ordering method */
+  char*   postprocess ;       /* Post-processing method */
+  Context_t* context ;
 } ;
 
 

@@ -4,11 +4,6 @@
 
 
 
-static Temperature_t* instancetemperature = NULL ;
-static Temperature_t* (Temperature_Create)(void) ;
-
-
-
 Temperature_t* (Temperature_Create)(void)
 {
   Temperature_t* temperature = (Temperature_t*) malloc(sizeof(Temperature_t)) ;
@@ -20,15 +15,4 @@ Temperature_t* (Temperature_Create)(void)
   }
   
   return(temperature) ;
-}
-
-
-
-Temperature_t* Temperature_GetInstance(void)
-{
-  if(!instancetemperature) {
-    instancetemperature = Temperature_Create() ;
-  }
-  
-  return(instancetemperature) ;
 }

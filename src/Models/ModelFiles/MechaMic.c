@@ -232,7 +232,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       char* p = strstr(method," ") ;
       char* cellname = p + strspn(p," ") ;
       int verb = Message_SetVerbosity(4) ;
-      Options_t* options = Options_Create() ;
+      Options_t* options = Options_Create(NULL) ;
       
       dataset = DataSet_Create(cellname,options) ;
       
@@ -1242,7 +1242,7 @@ void ComputeMicrostructure(DataSet_t* jdd,double t,double dt,Solutions_t* sols_n
     //int verb = Message_SetVerbosity(0) ;
     int verb = Message_SetVerbosity(4) ;
     Dates_t*   dates  = DataSet_GetDates(jdd) ;
-    double*    date   = Dates_GetDate(dates) ;
+    Date_t*    date   = Dates_GetDate(dates) ;
     TimeStep_t*  timestep  = DataSet_GetTimeStep(jdd) ;
     double dtini = TimeStep_GetInitialTimeStep(timestep) ;
     double t_n = Solutions_GetTime(sols_n) ;
@@ -1256,8 +1256,8 @@ void ComputeMicrostructure(DataSet_t* jdd,double t,double dt,Solutions_t* sols_n
         arret("ComputeMicrostructure: t_n = %e ; t - dt = %e",t_n,t-dt) ;
       }
       
-      date[0] = t_n ;
-      date[1] = t ;
+      Date_GetTime(date) = t_n ;
+      Date_GetTime(date + 1) = t ;
     
       Message_Direct("\n") ;
       Message_Direct("Start a microstructure calculation") ;

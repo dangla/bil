@@ -732,7 +732,7 @@ double* MicrostructureElasticTensor(char* cellname,double* c)
 {
 #define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
   int verb = Message_SetVerbosity(0) ;
-  Options_t* options = Options_Create() ;
+  Options_t* options = Options_Create(NULL) ;
   DataSet_t* jdd = DataSet_Create(cellname,options) ;
   
   {

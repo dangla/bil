@@ -584,10 +584,12 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
   }
 
   {
-    HardenedCementChemistry_SetTemperature(TEMPERATURE) ;
-    
     if(!csd) csd = CementSolutionDiffusion_Create() ;
     if(!hcc) hcc = HardenedCementChemistry_Create() ;
+    
+    HardenedCementChemistry_SetRoomTemperature(hcc,TEMPERATURE) ;
+    
+    CementSolutionDiffusion_SetRoomTemperature(csd,TEMPERATURE) ;
   
     {
       {

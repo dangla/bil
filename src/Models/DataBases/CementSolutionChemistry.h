@@ -11,27 +11,11 @@ typedef struct CementSolutionChemistry_s     CementSolutionChemistry_t ;
 
 extern CementSolutionChemistry_t* (CementSolutionChemistry_Create)(const int) ;
 
-
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O)          (CementSolutionChemistry_t*) ;
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O)      (CementSolutionChemistry_t*) ;
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O)      (CementSolutionChemistry_t*) ;
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O)(CementSolutionChemistry_t*) ;
 extern void   (CementSolutionChemistry_PrintChemicalConstants)(CementSolutionChemistry_t*) ;
-
-
-/* Synomyms */
-#define CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O \
-        CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O
-        
-#define CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2 \
-        CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O
-        
-#define CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3 \
-        CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O
-        
-#define CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3 \
-        CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O
-
 
 extern double (CementSolutionChemistry_SolveElectroneutrality)         (CementSolutionChemistry_t*) ;
 extern double (CementSolutionChemistry_SolveExplicitElectroneutrality) (CementSolutionChemistry_t*) ;
@@ -46,35 +30,47 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
 
 
 
-#define CementSolutionChemistry_GetTemperature(csc) \
-        ((csc)->temperature)
+#define CementSolutionChemistry_GetTemperature(CSC) \
+        ((CSC)->temperature)
         
-#define CementSolutionChemistry_GetPrimaryVariable(csc) \
-        ((csc)->primaryvariable)
+#define CementSolutionChemistry_GetPrimaryVariable(CSC) \
+        ((CSC)->primaryvariable)
 
-#define CementSolutionChemistry_GetConcentration(csc) \
-        ((csc)->concentration)
+#define CementSolutionChemistry_GetConcentration(CSC) \
+        ((CSC)->concentration)
 
-#define CementSolutionChemistry_GetLogConcentration(csc) \
-       ((csc)->logconcentration)
+#define CementSolutionChemistry_GetLogConcentration(CSC) \
+       ((CSC)->logconcentration)
 
-#define CementSolutionChemistry_GetActivity(csc) \
-        ((csc)->activity)
+#define CementSolutionChemistry_GetActivity(CSC) \
+        ((CSC)->activity)
 
-#define CementSolutionChemistry_GetLogActivity(csc) \
-       ((csc)->logactivity)
+#define CementSolutionChemistry_GetLogActivity(CSC) \
+       ((CSC)->logactivity)
 
-#define CementSolutionChemistry_GetElementConcentration(csc) \
-        ((csc)->elementconcentration)
+#define CementSolutionChemistry_GetElementConcentration(CSC) \
+        ((CSC)->elementconcentration)
 
-#define CementSolutionChemistry_GetOtherVariable(csc) \
-        ((csc)->othervariable)
+#define CementSolutionChemistry_GetOtherVariable(CSC) \
+        ((CSC)->othervariable)
 
-#define CementSolutionChemistry_GetLog10Keq(csc) \
-        ((csc)->log10equilibriumconstant)
+#define CementSolutionChemistry_GetLog10Keq(CSC) \
+        ((CSC)->log10equilibriumconstant)
 
-#define CementSolutionChemistry_GetElectricPotential(csc) \
-        ((csc)->electricpotential)
+#define CementSolutionChemistry_GetElectricPotential(CSC) \
+        ((CSC)->electricpotential)
+
+
+
+
+/* Macros for the room temperature
+ * -------------------------------*/
+#define CementSolutionChemistry_GetRoomTemperature(CSC) \
+        Temperature_GetRoomValue(CementSolutionChemistry_GetTemperature(CSC))
+        
+
+#define CementSolutionChemistry_SetRoomTemperature(CSC,T) \
+        Temperature_SetRoomTemperature(CementSolutionChemistry_GetTemperature(CSC),T)
 
 
 
@@ -83,10 +79,13 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
  
 #define CementSolutionChemistry_NbOfPrimaryVariables  (8)
 
-
+/* Different primary variables may be used */
 #define CementSolutionChemistry_LogQ_CH      (0)
+#define CementSolutionChemistry_LogA_Ca      (0) // not used yet
 #define CementSolutionChemistry_LogQ_SH      (1)
+#define CementSolutionChemistry_LogA_H4SiO4  (1) // not used yet
 #define CementSolutionChemistry_LogQ_AH3     (2)
+#define CementSolutionChemistry_LogA_AlO4H4  (2) // not used yet
 
 #define CementSolutionChemistry_LogA_Na      (3)
 #define CementSolutionChemistry_LogA_K       (4)
@@ -101,8 +100,8 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
 #define CementSolutionChemistry_LogC_H2SO4   (7)
 
 /* Input */
-#define CementSolutionChemistry_GetInput(csc,U) \
-       (CementSolutionChemistry_GetPrimaryVariable(csc)[CementSolutionChemistry_##U])
+#define CementSolutionChemistry_GetInput(CSC,U) \
+       (CementSolutionChemistry_GetPrimaryVariable(CSC)[CementSolutionChemistry_##U])
 
        
        
@@ -260,20 +259,20 @@ enum CementSolutionChemistry_e {
 #define CementSolutionChemistry_A_AlO4H4      (30)
 
 
-#define CementSolutionChemistry_GetConcentrationOf(csc,CPD) \
-       (CementSolutionChemistry_GetConcentration(csc)[CementSolutionChemistry_GetIndexOf(CPD)])
+#define CementSolutionChemistry_GetConcentrationOf(CSC,CPD) \
+       (CementSolutionChemistry_GetConcentration(CSC)[CementSolutionChemistry_GetIndexOf(CPD)])
 
        
-#define CementSolutionChemistry_GetLogConcentrationOf(csc,CPD) \
-       (CementSolutionChemistry_GetLogConcentration(csc)[CementSolutionChemistry_GetIndexOf(CPD)])
+#define CementSolutionChemistry_GetLogConcentrationOf(CSC,CPD) \
+       (CementSolutionChemistry_GetLogConcentration(CSC)[CementSolutionChemistry_GetIndexOf(CPD)])
 
 
-#define CementSolutionChemistry_GetActivityOf(csc,CPD) \
-       (CementSolutionChemistry_GetActivity(csc)[CementSolutionChemistry_GetIndexOf(CPD)])
+#define CementSolutionChemistry_GetActivityOf(CSC,CPD) \
+       (CementSolutionChemistry_GetActivity(CSC)[CementSolutionChemistry_GetIndexOf(CPD)])
 
        
-#define CementSolutionChemistry_GetLogActivityOf(csc,CPD) \
-       (CementSolutionChemistry_GetLogActivity(csc)[CementSolutionChemistry_GetIndexOf(CPD)])
+#define CementSolutionChemistry_GetLogActivityOf(CSC,CPD) \
+       (CementSolutionChemistry_GetLogActivity(CSC)[CementSolutionChemistry_GetIndexOf(CPD)])
 
 
 
@@ -282,18 +281,18 @@ enum CementSolutionChemistry_e {
 #define CementSolutionChemistry_NbOfOtherVariables       (3)
 
 /* 1. Liquid mass density */
-#define CementSolutionChemistry_GetLiquidMassDensity(csc) \
-       (CementSolutionChemistry_GetOtherVariable(csc)[0])
+#define CementSolutionChemistry_GetLiquidMassDensity(CSC) \
+       (CementSolutionChemistry_GetOtherVariable(CSC)[0])
 
 
 /* 2. Charge density */
-#define CementSolutionChemistry_GetChargeDensity(csc) \
-       (CementSolutionChemistry_GetOtherVariable(csc)[1])
+#define CementSolutionChemistry_GetChargeDensity(CSC) \
+       (CementSolutionChemistry_GetOtherVariable(CSC)[1])
 
 
 /* 3. Ionic strength */
-#define CementSolutionChemistry_GetIonicStrength(csc) \
-       (CementSolutionChemistry_GetOtherVariable(csc)[2])
+#define CementSolutionChemistry_GetIonicStrength(CSC) \
+       (CementSolutionChemistry_GetOtherVariable(CSC)[2])
 
 
 
@@ -310,8 +309,8 @@ enum CementSolutionChemistry_e {
 #define CementSolutionChemistry_E_Al          (6)
 #define CementSolutionChemistry_E_Cl          (7)
 
-#define CementSolutionChemistry_GetElementConcentrationOf(csc,A) \
-       (CementSolutionChemistry_GetElementConcentration(csc)[CementSolutionChemistry_E_##A])
+#define CementSolutionChemistry_GetElementConcentrationOf(CSC,A) \
+       (CementSolutionChemistry_GetElementConcentration(CSC)[CementSolutionChemistry_E_##A])
 
 
 
@@ -322,20 +321,20 @@ enum CementSolutionChemistry_e {
 /* Macros for ion charges
  * ----------------------*/
 /* Ion charges */
-#define CementSolutionChemistry_IonCharge(csc,CPD) \
-       (CementSolutionChemistry_GetChargeVariable(csc)[CementSolutionChemistry_GetIndexOf(CPD)])
+#define CementSolutionChemistry_IonCharge(CSC,CPD) \
+       (CementSolutionChemistry_GetChargeVariable(CSC)[CementSolutionChemistry_GetIndexOf(CPD)])
        
 /* Charge density */
-#define CementSolutionChemistry_ChargeDensity(csc) \
-       (CementSolutionChemistry_GetChargeVariable(csc)[CementSolutionChemistry_CHARGE])
+#define CementSolutionChemistry_ChargeDensity(CSC) \
+       (CementSolutionChemistry_GetChargeVariable(CSC)[CementSolutionChemistry_CHARGE])
        
 /* Ionic strength */
-#define CementSolutionChemistry_IonicStrength(csc) \
-       (CementSolutionChemistry_GetChargeVariable(csc)[CementSolutionChemistry_IoSth])
+#define CementSolutionChemistry_IonicStrength(CSC) \
+       (CementSolutionChemistry_GetChargeVariable(CSC)[CementSolutionChemistry_IoSth])
        
 /* Element charges */
-#define CementSolutionChemistry_ElementCharge(csc,A) \
-       (CementSolutionChemistry_GetChargeVariable(csc)[CementSolutionChemistry_E_##A])
+#define CementSolutionChemistry_ElementCharge(CSC,A) \
+       (CementSolutionChemistry_GetChargeVariable(CSC)[CementSolutionChemistry_E_##A])
 
 
 #define CementSolutionChemistry_NbOfChargeVariables   (40)
@@ -347,21 +346,22 @@ enum CementSolutionChemistry_e {
 
 /* Macros for equilibrium constants (same indices as A_CPD)
  * -------------------------------------------------------*/
-#define CementSolutionChemistry_GetLog10EquilibriumConstant(csc,CPD) \
-       (CementSolutionChemistry_GetLog10Keq(csc)[CementSolutionChemistry_GetIndexOf(CPD)])
+#define CementSolutionChemistry_GetLog10EquilibriumConstant(CSC,CPD) \
+       (CementSolutionChemistry_GetLog10Keq(CSC)[CementSolutionChemistry_GetIndexOf(CPD)])
 
 
 
 
 /* Macro for the resolution of the system
  * --------------------------------------*/
-#define CementSolutionChemistry_ComputeSystem(csc,SYS) \
-       (CementSolutionChemistry_ComputeSystem_##SYS(csc))
+#define CementSolutionChemistry_ComputeSystem(CSC,SYS) \
+       (CementSolutionChemistry_ComputeSystem_##SYS(CSC))
 
 
+#include "Temperature.h"
 
 struct CementSolutionChemistry_s {
-  double temperature ;
+  Temperature_t* temperature ;
 //  int nbofprimaryvariables ;
 //  int nbofvariables ;
   double* primaryvariable ;

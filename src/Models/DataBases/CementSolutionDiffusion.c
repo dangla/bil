@@ -11,7 +11,6 @@
 
 
 
-static CementSolutionDiffusion_t* instancecsd = NULL ;
 
 static void  (CementSolutionDiffusion_AllocateMemory)     (CementSolutionDiffusion_t*) ;
 static void  (CementSolutionDiffusion_Initialize)         (CementSolutionDiffusion_t*) ;
@@ -30,9 +29,6 @@ CementSolutionDiffusion_t* CementSolutionDiffusion_Create(void)
     /* Memory allocation */
     CementSolutionDiffusion_AllocateMemory(csd) ;
   
-    /* Initialize the temperature */
-    CementSolutionDiffusion_GetTemperature(csd) = Temperature_RoomValue ;
-  
     /* Initialize concentrations to zero and other related variables */
     CementSolutionDiffusion_Initialize(csd) ;
   }
@@ -42,26 +38,25 @@ CementSolutionDiffusion_t* CementSolutionDiffusion_Create(void)
 
 
 
-CementSolutionDiffusion_t* CementSolutionDiffusion_GetInstance(void)
-{
-  if(!instancecsd) {
-    instancecsd = CementSolutionDiffusion_Create() ;
-  }
-  
-  return(instancecsd) ;
-}
-
-
-
 void CementSolutionDiffusion_AllocateMemory(CementSolutionDiffusion_t* csd)
 {
+  
+  
+  /* Allocation of space for the temperature */
+  {
+    Temperature_t* temp = Temperature_Create() ;
+    
+    if(!temp) arret("CementSolutionDiffusion_AllocateMemory(1)") ;
+    
+    CementSolutionDiffusion_GetTemperature(csd) = temp ;
+  }
   
   /* Allocation of space for the diffusion coefficients */
   {
     size_t sz = CementSolutionDiffusion_NbOfSpecies*sizeof(double) ;
     double* d = (double*) malloc(sz) ;
     
-    if(!d) arret("CementSolutionDiffusion_Create(10)") ;
+    if(!d) arret("CementSolutionDiffusion_AllocateMemory(10)") ;
     
     CementSolutionDiffusion_GetDiffusionCoefficient(csd) = d ;
   }
@@ -72,7 +67,7 @@ void CementSolutionDiffusion_AllocateMemory(CementSolutionDiffusion_t* csd)
     size_t sz = CementSolutionDiffusion_NbOfSpecies*sizeof(double) ;
     double* grd = (double*) malloc(sz) ;
     
-    if(!grd) arret("CementSolutionDiffusion_Create(11)") ;
+    if(!grd) arret("CementSolutionDiffusion_AllocateMemory(11)") ;
     
     CementSolutionDiffusion_GetGradient(csd) = grd ;
   }
@@ -84,7 +79,7 @@ void CementSolutionDiffusion_AllocateMemory(CementSolutionDiffusion_t* csd)
     size_t sz = n*CementSolutionDiffusion_NbOfSpecies*sizeof(double) ;
     double* pot = (double*) malloc(sz) ;
     
-    if(!pot) arret("CementSolutionDiffusion_Create(11)") ;
+    if(!pot) arret("CementSolutionDiffusion_AllocateMemory(11)") ;
     
     CementSolutionDiffusion_GetPotential(csd) = pot ;
   }
@@ -96,7 +91,7 @@ void CementSolutionDiffusion_AllocateMemory(CementSolutionDiffusion_t* csd)
     size_t sz = n*sizeof(double*) ;
     double** ppot = (double**) malloc(sz) ;
     
-    if(!ppot) arret("CementSolutionDiffusion_Create(11)") ;
+    if(!ppot) arret("CementSolutionDiffusion_AllocateMemory(11)") ;
     
     CementSolutionDiffusion_GetPointerToPotentials(csd) = ppot ;
     
@@ -116,7 +111,7 @@ void CementSolutionDiffusion_AllocateMemory(CementSolutionDiffusion_t* csd)
     size_t sz = CementSolutionDiffusion_NbOfSpecies*sizeof(double) ;
     double* flx = (double*) malloc(sz) ;
     
-    if(!flx) arret("CementSolutionDiffusion_Create(11)") ;
+    if(!flx) arret("CementSolutionDiffusion_AllocateMemory(11)") ;
     
     CementSolutionDiffusion_GetFlux(csd) = flx ;
   }
@@ -127,7 +122,7 @@ void CementSolutionDiffusion_AllocateMemory(CementSolutionDiffusion_t* csd)
     size_t sz = CementSolutionDiffusion_NbOfElementFluxes*sizeof(double) ;
     double* efx = (double*) malloc(sz) ;
     
-    if(!efx) arret("CementSolutionDiffusion_Create(6)") ;
+    if(!efx) arret("CementSolutionDiffusion_AllocateMemory(6)") ;
     
     CementSolutionDiffusion_GetElementFlux(csd) = efx ;
   }
@@ -150,7 +145,7 @@ void CementSolutionDiffusion_Initialize(CementSolutionDiffusion_t* csd)
   {
     int     n = CementSolutionDiffusion_NbOfSpecies ;
     double* v = CementSolutionDiffusion_GetDiffusionCoefficient(csd) ;
-    double TK = CementSolutionDiffusion_GetTemperature(csd) ;
+    double TK = CementSolutionDiffusion_GetRoomTemperature(csd) ;
   
     for(int i = 0 ; i < n ; i++) {
       v[i] = 0. ;
@@ -310,7 +305,7 @@ void CementSolutionDiffusion_UpdateElementFluxes(CementSolutionDiffusion_t* csd)
   double w_cahso4   = Flux(CaHSO4) ;
 
   
-  /* Concentration as element: C, Ca, Si ... */
+  /* Fluxes as element: C, Ca, Si ... */
   /* Compounds type I */
   double w_ca_l    = w_ca + w_caoh + w_caoh2 ;
   double w_si_l    = w_h2sio4 + w_h3sio4 + w_h4sio4 ;

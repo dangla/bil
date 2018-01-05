@@ -21,7 +21,7 @@
 #define Liter dm3
 #define cm3   (cm*cm*cm)
 #define MPa   (1.e6*InternationalSystemOfUnits_OnePascal)
-#define GPa   (1.e3*MPa)
+#define GPa   (1.e9*InternationalSystemOfUnits_OnePascal)
 #define mol   InternationalSystemOfUnits_OneMole
 #define sec   InternationalSystemOfUnits_OneSecond
 
@@ -67,9 +67,6 @@ CementSolutionChemistry_t* CementSolutionChemistry_Create(const int n)
     /* Memory allocation */
     CementSolutionChemistry_AllocateMemory(csci) ;
   
-    /* Initialize the temperature */
-    CementSolutionChemistry_GetTemperature(csci) = Temperature_RoomValue ;
-  
     /* Initialize the equilibrium constants */
     CementSolutionChemistry_UpdateChemicalConstants(csci) ;
   
@@ -85,6 +82,16 @@ CementSolutionChemistry_t* CementSolutionChemistry_Create(const int n)
 
 void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
 {
+  
+  
+  /* Allocation of space for the temperature */
+  {
+    Temperature_t* temp = Temperature_Create() ;
+    
+    if(!temp) arret("CementSolutionChemistry_AllocateMemory(1)") ;
+    
+    CementSolutionChemistry_GetTemperature(csc) = temp ;
+  }
   
   
   /* Allocation of space for the primary variables */
@@ -270,7 +277,7 @@ void CementSolutionChemistry_InitializeValence(double* z)
 
 void CementSolutionChemistry_UpdateChemicalConstants(CementSolutionChemistry_t* csc)
 {
-  double T = CementSolutionChemistry_GetTemperature(csc) ;
+  double T = CementSolutionChemistry_GetRoomTemperature(csc) ;
   
   #define LogKr(R) Log10EquilibriumConstantOfHomogeneousReactionInWater(R,T)
   double logk_h2o      = LogKr(H2O__H_OH) ;
@@ -363,7 +370,7 @@ void CementSolutionChemistry_UpdateChemicalConstants(CementSolutionChemistry_t* 
 
 void CementSolutionChemistry_PrintChemicalConstants(CementSolutionChemistry_t* csc)
 {
-  double T = CementSolutionChemistry_GetTemperature(csc) ;
+  double T = CementSolutionChemistry_GetRoomTemperature(csc) ;
   
   Log10EquilibriumConstantOfHomogeneousReactionInWater_Print(T) ;
   
@@ -1622,7 +1629,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_1(CementSolutionChe
 void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_1(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O-SO3 */
-  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3(csc) ;
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(csc) ;
   
   /* Supplement with Al2O3 */
   double s_ah3    = Input(S_AH3) ;
