@@ -15,24 +15,54 @@
 #include "Models.h"
 #include "Bil.h"
 #include "Exception.h"
+#include "BilVersion.h"
+#include "BilInfo.h"
 
 
 
-static void   (Bil_Initialize)(int,char**) ;
-static void   (Bil_CLI)(void) ;
+static void   (Bil_PrintUsage)(char*) ;
+static void   (Bil_PrintInfo)(void) ;
+static void   (Bil_CLI)(Bil_t*) ;
 
 
 
-int Bil_Main(int argc,char** argv)
+Bil_t*    (Bil_Create)(int argc,char** argv)
+{
+  Bil_t* bil = (Bil_t*) malloc(sizeof(Bil_t)) ;
+  
+  if(!bil) {
+    arret("Bil_Create") ;
+  }
+  
+  {
+    Context_t* ctx = Context_Create(argc,argv) ;
+    
+    Bil_GetContext(bil) = ctx ;
+  }
+  
+  return(bil) ;
+}
+
+
+
+void Bil_Delete(Bil_t** bil)
+{
+  Context_Delete(&(Bil_GetContext(*bil))) ;
+  free(*bil) ;
+}
+
+
+
+int Bil_Main(Bil_t* bil)
 {
   
-  Bil_Initialize(argc,argv) ;
+  Message_Initialize() ;
   
   {
     int val = Exception_SaveEnvironment ;
     
     if(!val) {
-      Bil_CLI() ;
+      Bil_CLI(bil) ;
     } else {
       Message_Direct("An exception occurs with value %d\n",val) ;
     }
@@ -45,27 +75,78 @@ int Bil_Main(int argc,char** argv)
 
 
 
-void Bil_Initialize(int argc,char** argv)
-{
-  Message_Initialize() ;
-  CommandLine_Initialize(argc,argv) ;
-}
 
+/* 
+ * Intern functions 
+ */
 
-void Bil_CLI(void)
+void Bil_CLI(Bil_t* bil)
 /** Command-line interface */
 {
-  Options_t* options = Options_Create() ;
-  char* filename = Context_InputFileName ;
+  Context_t* ctx = Bil_GetContext(bil) ;
 
   Message_Info("Started on %s",Message_LaunchDate()) ;
   
-  if(Context_IsReadOnly) {
+  if(Context_GetPrintUsage(ctx)) {
+    char** argv = (char**) Context_GetPrintUsage(ctx) ;
+    
+    Bil_PrintUsage(argv[0]) ;
+    return ;
+  }
+  
+  if(Context_GetPrintInfo(ctx)) {
+    Bil_PrintInfo() ;
+    return ;
+  }
+  
+  if(Context_GetHelpOnline(ctx)) {
+    Help_HelpOnline() ;
+    return ;
+  }
+  
+  if(Context_GetPrintModel(ctx)) {
+    char** argv = (char**) Context_GetPrintModel(ctx) ;
+    
+    /* The standard requires that argv[argc] be a null pointer */
+    if(argv[1]) {
+      if(!strncmp(argv[1],"all",strlen(argv[1]))) {
+        Models_Print(NULL,stdout) ;
+      } else {
+        char* codename = argv[1] ;
+        Models_Print(codename,stdout) ;
+      }
+    } else {
+      Models_Print(NULL,NULL) ;
+    }
+    return ;
+  }
+  
+  if(Context_GetPrintModule(ctx)) {
+    char** argv = (char**) Context_GetPrintModule(ctx) ;
+    
+    /* The standard requires that argv[argc] be a null pointer */
+    if(argv[1]) {
+      if(!strncmp(argv[1],"all",strlen(argv[1]))) {
+        Modules_Print(NULL) ;
+      } else {
+        char* codename = argv[1] ;
+        Modules_Print(codename) ;
+      }
+    } else Modules_Print(NULL) ;
+    return ;
+  }
+  
+  if(Context_GetReadOnly(ctx)) {
+    char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
+    Options_t* options = Context_GetOptions(ctx) ;
+    
     DataSet_Create(filename,options) ;
     return ;
   }
   
-  if(Context_IsGraph) {
+  if(Context_GetGraph(ctx)) {
+    char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
+    Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* jdd =  DataSet_Create(filename,options) ;
     Mesh_t* mesh = DataSet_GetMesh(jdd) ;
     char* method = Options_GetGraphMethod(options) ;
@@ -75,7 +156,9 @@ void Bil_CLI(void)
     return ;
   }
   
-  if(Context_IsInversePermutation) {
+  if(Context_GetInversePermutation(ctx)) {
+    char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
+    Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* jdd =  DataSet_Create(filename,options) ;
     Mesh_t* mesh = DataSet_GetMesh(jdd) ;
     char method[] = "hsl" ;
@@ -85,7 +168,9 @@ void Bil_CLI(void)
     return ;
   }
   
-  if(Context_IsNodalOrdering) {
+  if(Context_GetNodalOrdering(ctx)) {
+    char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
+    Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* jdd =  DataSet_Create(filename,options) ;
     Mesh_t* mesh = DataSet_GetMesh(jdd) ;
     char* method = Options_GetNodalOrderingMethod(options) ;
@@ -95,7 +180,9 @@ void Bil_CLI(void)
     return ;
   }
   
-  if(Context_IsElementOrdering) {
+  if(Context_GetElementOrdering(ctx)) {
+    char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
+    Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* jdd =  DataSet_Create(filename,options) ;
     Mesh_t* mesh = DataSet_GetMesh(jdd) ;
     char* method = Options_GetElementOrderingMethod(options) ;
@@ -105,7 +192,9 @@ void Bil_CLI(void)
     return ;
   }
   
-  if(Context_IsPostProcessing) {
+  if(Context_GetPostProcessing(ctx)) {
+    char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
+    Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* jdd =  DataSet_Create(filename,options) ;
     int n_dates = Dates_GetNbOfDates(DataSet_GetDates(jdd)) ;
     int n_points = Points_GetNbOfPoints(DataSet_GetPoints(jdd)) ;
@@ -130,31 +219,29 @@ void Bil_CLI(void)
     return ;
   }
   
-  if(Context_IsMiscellaneous) {
-    double temp = atof(((char**) Context_IsMiscellaneous)[1]) ;
-    
-    HardenedCementChemistry_SetTemperature(temp) ;
+  if(Context_GetMiscellaneous(ctx)) {
+    double temp = atof(((char**) Context_GetMiscellaneous(ctx))[1]) ;
     
     {
-      HardenedCementChemistry_t* hcc = HardenedCementChemistry_GetInstance() ;
-      
+      HardenedCementChemistry_t* hcc = HardenedCementChemistry_Create() ;
+    
+      HardenedCementChemistry_SetRoomTemperature(hcc,temp) ;
       HardenedCementChemistry_PrintChemicalConstants(hcc) ;
     }
     
     {
       CementSolutionChemistry_t* csc = CementSolutionChemistry_Create(1) ;
       
-      CementSolutionChemistry_GetTemperature(csc) = temp ;
+      CementSolutionChemistry_GetRoomTemperature(csc) = temp ;
       CementSolutionChemistry_PrintChemicalConstants(csc) ;
     }
     
-    
-    //OutputFiles_t* of = OutputFiles_Create(filename,4,2) ;
-    //OutputFiles_Delete(&of) ;
     return ;
   }
   
   if(1) {
+    char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
+    Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* jdd =  DataSet_Create(filename,options) ;
     char* codename = Options_GetModule(options) ;
     Modules_t* modules = DataSet_GetModules(jdd) ;
@@ -168,4 +255,124 @@ void Bil_CLI(void)
   }
   
   return ;
+}
+
+
+
+
+void Bil_PrintUsage(char* path)
+{
+  Message_Direct("Usage: %s [options] file\n",path) ;
+  Message_Direct("\n") ;
+  Message_Direct("Options:\n") ;
+  
+  Message_Direct("  -debug \"input\"       Display the data structure of \"input\".\n") ;
+  #if 0
+  Message_Direct("                       Available inputs are:\n") ;
+  Message_Direct("                       - geom   : geometry\n") ;
+  Message_Direct("                       - mesh   : mesh\n") ;
+  Message_Direct("                       - mate   : materials\n") ;
+  Message_Direct("                       - field  : fields\n") ;
+  Message_Direct("                       - init   : initialization\n") ;
+  Message_Direct("                       - func   : time functions\n") ;
+  Message_Direct("                       - bcond  : boundary conditions\n") ;
+  Message_Direct("                       - load   : loads\n") ;
+  Message_Direct("                       - poin   : points\n") ;
+  Message_Direct("                       - obval  : objective variations\n") ;
+  Message_Direct("                       - iter   : iterative process\n") ;
+  Message_Direct("                       - time   : time steps\n") ;
+  Message_Direct("                       - all    : all the dataset above\n") ;
+  Message_Direct("                       - inter  : interpolation functions\n") ;
+  Message_Direct("                       - continuity: equations and unknowns at nodes\n") ;
+  Message_Direct("                       - matrix : the matrix\n") ;
+  Message_Direct("                       - residu : the residu\n") ;
+  #endif
+  
+  Message_Direct("  -graph \"fmt\"         Print the graph in \"file.graph\"\n") ;
+  Message_Direct("                       in the format \"fmt\".\n") ;
+  #if 0
+  Message_Direct("                       Available formats are:\n") ;
+  Message_Direct("                       - metis: for METIS (if installed),\n") ;
+  Message_Direct("                       - hsl_mc40: for HSL_MC40,\n") ;
+  #endif
+  
+  Message_Direct("  -help                Online help.\n") ;
+  Message_Direct("  -info                Display general informations.\n") ;
+  
+  Message_Direct("  -iperm               Print the inverse permutation of nodes \n") ;
+  Message_Direct("                       in \"file.graph.iperm\" by \"HSL_MC40\".\n") ;
+  
+  Message_Direct("  -eordering \"meth\"    Print the inverse permutation of elements\n") ;
+  Message_Direct("                       in \"file.graph.iperm\" by the method \"meth\".\n") ;
+  #if 0
+  Message_Direct("                       Available methods are:\n") ;
+  Message_Direct("                       - hsl_mc43\n") ;
+  #endif
+  
+  Message_Direct("  -nordering \"meth\"    Print the inverse permutation of nodes \n") ;
+  Message_Direct("                       in \"file.graph.iperm\" by the method \"meth\".\n") ;
+  #if 0
+  Message_Direct("                       Available methods are:\n") ;
+  Message_Direct("                       - hsl_mc40 (same as -iperm)\n") ;
+  #endif
+  
+  /*
+  Message_Direct("  -verbosity \"degre\"   Define the verbosity level:\n") ;
+  Message_Direct("                       \"degre\" = 0  : nothing\n") ;
+  Message_Direct("                       \"degre\" = 1  : normal (default)\n") ;
+  Message_Direct("                       \"degre\" = 2  : extra\n") ;
+  */
+  Message_Direct("  -level \"I\"           Define the screen output level \"I\".\n") ;
+  
+  Message_Direct("  -model               Display the available models.\n") ;
+  
+  Message_Direct("  -model \"mymodel\"     Display an example of material properties\n") ;
+  Message_Direct("                       for the model \"mymodel\".\n") ;
+  
+  Message_Direct("  -modules             Display the available modules.\n") ;
+  
+  Message_Direct("  -solver \"meth\"       Use a solver defined by the method \"meth\".\n") ;
+  #if 0
+  Message_Direct("                       Available methods are:\n") ;
+  Message_Direct("                       - crout : CROUT method (default),\n") ;
+  Message_Direct("                       - slu   : SuperLU (if installed).\n") ;
+  #endif
+  
+  Message_Direct("  -post \"fmt\"          Generates the post-processing files \n") ;
+  Message_Direct("                       \"file.posI\" in the format \"fmt\".\n") ;
+  #if 0
+  Message_Direct("                       Available formats are:\n") ;
+  Message_Direct("                       - GmshParsed: for GMSH parsed file format.\n") ;
+  Message_Direct("                       - GmshASCII: for GMSH ASCII file format.\n") ;
+  #endif
+  
+  Message_Direct("  -readonly            Read \"file\" only.\n") ;
+  Message_Direct("  -with \"mod\"          Use the module \"mod\".\n") ;
+}
+
+
+
+void Bil_PrintInfo(void)
+{
+  char bil_progname[]  = BIL_PROGNAME ;
+  char bil_copyright[] = BIL_COPYRIGHT ;
+  char bil_version[]   = "Version        : " BIL_VERSION ;
+  char bil_license[]   = "License        : " BIL_SHORT_LICENSE ;
+  char bil_os[]        = "Build OS       : " BIL_OS ;
+  char bil_date[]      = "Build date     : " BIL_DATE ;
+  char bil_host[]      = "Build host     : " BIL_HOST ;
+  char bil_packager[]  = "Packager       : " BIL_PACKAGER ;
+  char bil_url[]       = "Web site       : " BIL_URL ;
+  char bil_email[]     = "Contact        : " BIL_EMAIL ;
+  
+  Message_Direct("%s\n", bil_progname) ;
+  Message_Direct("%s\n", bil_copyright) ;
+  Message_Direct("%s\n", bil_version) ;
+  Message_Direct("%s\n", bil_license) ;
+  Message_Direct("%s\n", bil_os) ;
+  Message_Direct("%s\n", bil_date) ;
+  Message_Direct("%s\n", bil_host) ;
+  Message_Direct("%s\n", bil_packager) ;
+  Message_Direct("%s\n", bil_url) ;
+  Message_Direct("%s\n", bil_email) ;
 }

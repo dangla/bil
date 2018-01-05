@@ -287,8 +287,6 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
   const char*  line  = CurvesFile_GetCurrentPositionInTheCommandLine(curvesfile) ;
   char*  xmodel = models[0] ;
   char*  xlabel = labels[0] ;
-  //char*  ymodel = models[1] ;
-  //char*  ylabel = labels[1] ;
   int    acol ;
   int    ycol ;
 
@@ -333,12 +331,9 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
     
   /* We initialize for the first next columns */
   ycol    = 2 ;
-  //ylabel  = labels[ycol - 1] ;
-  //ymodel  = models[ycol - 1] ;
   
   /* Read the key-word of the curve */
   while(sscanf(line," %s = %[^(](%d)",YLABEL,YMODEL,&acol) == 3) {
-    //char* alabel = labels[acol - 1] ;
     
 #define PasteColumn(a,...) \
         CurvesFile_PasteYaxisColumn(curvesfile,YLABEL,#a,acol,a,__VA_ARGS__)
@@ -631,8 +626,6 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
     if(ycol > CurvesFile_MaxNbOfCurves) {
       arret("CurvesFile_WriteCurves: too many curves") ;
     }
-    //ylabel  = labels[ycol - 1] ;
-    //ymodel  = models[ycol - 1] ;
     
 #undef PasteColumn
   }

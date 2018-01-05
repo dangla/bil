@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "Help.h"
-#include "CommandLine.h"
 #include "Message.h"
 #include "DataFile.h"
 #include "Geometry.h"
@@ -51,11 +50,8 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   DATAFILE    = DataFile_Create(filename) ;
   
   if(DataFile_DoesNotExist(DATAFILE)) {
-    CommandLine_t* cmd = CommandLine_GetInstance() ;
-    char** argv = CommandLine_GetArg(cmd) ;
-    
     Help_WriteData(filename) ;
-    Message_Info("To start the computation, type %s %s\n",argv[0],filename) ;
+    Message_Info("To start the computation, type bil %s\n",filename) ;
     exit(EXIT_SUCCESS) ;
   }
 
@@ -97,15 +93,16 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   if(!strcmp(debug,"numbering")) DataSet_PrintData(jdd,debug) ;
   
   POINTS      = Points_Create(DATAFILE,MESH) ;
-  if(!strcmp(debug,"poin")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"points")) DataSet_PrintData(jdd,debug) ;
   
   DATES       = Dates_Create(DATAFILE) ;
-  if(!strcmp(debug,"time")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"dates")) DataSet_PrintData(jdd,debug) ;
   
   OBVALS      = ObVals_Create(DATAFILE,MESH,MATERIALS) ;
   if(!strcmp(debug,"obval")) DataSet_PrintData(jdd,debug) ;
   
   TIMESTEP    = TimeStep_Create(DATAFILE,OBVALS) ;
+  if(!strcmp(debug,"time")) DataSet_PrintData(jdd,debug) ;
   
   ITERPROCESS = IterProcess_Create(DATAFILE,OBVALS) ;
   if(!strcmp(debug,"iter")) DataSet_PrintData(jdd,debug) ;
@@ -163,7 +160,6 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
 #define N_POINTS      Points_GetNbOfPoints(POINTS)
 
 #define N_DATES       Dates_GetNbOfDates(DATES)
-#define DATE          Dates_GetDate(DATES)
 
 #define N_OBJ         ObVals_GetNbOfObVals(OBVALS)
 #define OBJ           ObVals_GetObVal(OBVALS)
@@ -682,7 +678,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
   }
 
 
-  if(!strcmp(mot,"poin") || !strcmp(mot,"all")) {
+  if(!strcmp(mot,"points") || !strcmp(mot,"all")) {
     int n_points = N_POINTS ;
     Point_t* point = Points_GetPoint(POINTS) ;
     int i ;
@@ -705,6 +701,26 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       fprintf(stdout,"(%e,%e,%e) ",x,y,z) ;
       
       fprintf(stdout,"in region %d\n",reg) ;
+    }
+  }
+
+
+  if(!strcmp(mot,"dates") || !strcmp(mot,"all")) {
+    int n_dates = N_DATES ;
+    Date_t* date = Dates_GetDate(DATES) ;
+    int i ;
+    
+    fprintf(stdout,"\n") ;
+    fprintf(stdout,"Dates:\n") ;
+    
+    fprintf(stdout,"\t Nb of dates = %d\n",n_dates) ;
+    
+    for(i = 0 ; i < n_dates ; i++) {
+      double t = Date_GetTime(date + i) ;
+      
+      fprintf(stdout,"\t Date(%d): ",i) ;
+      
+      fprintf(stdout,"%e\n",t) ;
     }
   }
 

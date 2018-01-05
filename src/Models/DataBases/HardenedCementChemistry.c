@@ -14,10 +14,6 @@
 #define DEBUG  0
 
 
-//static double temperature = 293 ;
-
-static HardenedCementChemistry_t* instancehcc = NULL ;
-
 
 static void (HardenedCementChemistry_AllocateMemory)(HardenedCementChemistry_t*) ;
 
@@ -34,11 +30,6 @@ HardenedCementChemistry_t* HardenedCementChemistry_Create(void)
   
   
   HardenedCementChemistry_AllocateMemory(hcc) ;
-  
-  
-  {
-    HardenedCementChemistry_GetTemperature(hcc) = Temperature_RoomValue ;
-  }
   
   
   /* Initialize the constants */
@@ -83,17 +74,6 @@ HardenedCementChemistry_t* HardenedCementChemistry_Create(void)
   }
   
   return(hcc) ;
-}
-
-
-
-HardenedCementChemistry_t* HardenedCementChemistry_GetInstance(void)
-{
-  if(!instancehcc) {
-    instancehcc = HardenedCementChemistry_Create() ;
-  }
-  
-  return(instancehcc) ;
 }
 
 
@@ -172,7 +152,6 @@ void HardenedCementChemistry_AllocateMemory(HardenedCementChemistry_t* hcc)
     CementSolutionChemistry_t* csc = CementSolutionChemistry_Create(1) ;
     
     HardenedCementChemistry_GetCementSolutionChemistry(hcc) = csc ;
-    //HardenedCementChemistry_GetDefaultCementSolutionChemistry(hcc) = csc ;
   }
   
   
@@ -198,7 +177,7 @@ void HardenedCementChemistry_AllocateMemory(HardenedCementChemistry_t* hcc)
 
 void HardenedCementChemistry_UpdateChemicalConstants(HardenedCementChemistry_t* hcc)
 {
-  double T = HardenedCementChemistry_GetTemperature(hcc) ;
+  double T = HardenedCementChemistry_GetRoomTemperature(hcc) ;
   
   /* Some solubility product constants */
   #define LogKd(R) Log10DissociationConstantOfCementHydrationProduct(R,T)
@@ -257,7 +236,7 @@ void HardenedCementChemistry_UpdateChemicalConstants(HardenedCementChemistry_t* 
 
 void HardenedCementChemistry_PrintChemicalConstants(HardenedCementChemistry_t* hcc)
 {
-  double T = HardenedCementChemistry_GetTemperature(hcc) ;
+  double T = HardenedCementChemistry_GetRoomTemperature(hcc) ;
   
     
   Log10DissociationConstantOfCementHydrationProduct_Print(T) ;

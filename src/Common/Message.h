@@ -27,17 +27,19 @@ extern int    (Message_SetVerbosity)(const int) ;
 #include <stdlib.h>
 //#include <stdio.h>
 
-#define Message_PrintSourceLocation      Message_Direct("\nAt %s, line %d",__FILE__,__LINE__)
+#define Message_PrintSourceLocation \
+        Message_Direct("\nAt %s, line %d",__FILE__,__LINE__)
 
-#define Message_RuntimeError(...) {   \
-        Message_PrintSourceLocation ; \
-        Message_RuntimeError0(__VA_ARGS__) ; }
+#define Message_RuntimeError(...) \
+        do { Message_PrintSourceLocation ; \
+        Message_RuntimeError0(__VA_ARGS__) ; } while(0)
 
-#define Message_FatalError(...) {     \
-        Message_PrintSourceLocation ; \
-        Message_FatalError0(__VA_ARGS__) ; }
+#define Message_FatalError(...) \
+        do { Message_PrintSourceLocation ; \
+        Message_FatalError0(__VA_ARGS__) ; } while(0)
                                            
-#define Message_Exit        exit(EXIT_SUCCESS)
+#define Message_Exit \
+        exit(EXIT_SUCCESS)
 
 
 #include <time.h>

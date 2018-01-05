@@ -14,6 +14,7 @@
 
 
 
+/* Implementation */
 #define PiecewiseLinearTemperatureDependence_Lt0(T,L1,...) \
         (((T) < 0  ) ? (L1) : \
         PiecewiseLinearTemperatureDependence_Lt25(T,L1,__VA_ARGS__))

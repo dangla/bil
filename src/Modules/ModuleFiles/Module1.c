@@ -69,9 +69,10 @@ int calcul(DataSet_t* jdd)
   /* 2. Calculation */
     {
       Solution_t* sol = Solutions_GetSolution(sols) ;
-      double* date    = Dates_GetDate(dates) ;
+      Date_t* date    = Dates_GetDate(dates) ;
+      double t0       = Date_GetTime(date) ;
       
-      Solution_GetTime(sol) = date[0] ;
+      Solution_GetTime(sol) = t0 ;
       
       Algorithm(jdd,sols,solver,outputfiles) ;
     }
@@ -113,7 +114,7 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
   
   Nodes_t*       nodes       = Mesh_GetNodes(mesh) ;
   unsigned int   nbofdates   = Dates_GetNbOfDates(dates) ;
-  double*        date        = Dates_GetDate(dates) ;
+  Date_t*        date        = Dates_GetDate(dates) ;
 
   unsigned int   idate ;
   double t_0 ;
@@ -123,10 +124,7 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
    * 1. Initialization
    */
   Mesh_InitializeSolutionPointers(mesh,sols) ;
-  
-  //T_1 = date[0] ;
-  //DT_1 = 0. ;
-  //STEP_1 = 0 ;
+
   
   {
     int i = Mesh_LoadCurrentSolution(mesh,datafile,&T_1) ;
@@ -134,7 +132,7 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
     idate = 0 ;
     
     if(i) {
-      while(idate + 1 < nbofdates && T_1 >= date[idate + 1]) idate++ ;
+      while(idate + 1 < nbofdates && T_1 >= Date_GetTime(date + idate + 1)) idate++ ;
       
       Message_Direct("Continuation ") ;
       
@@ -171,6 +169,7 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
    * 3. Loop on dates
    */
   for(; idate < nbofdates - 1 ; idate++) {
+    Date_t* date_i = date + idate ;
     
     /*
      * 3.1 Loop on time steps
@@ -195,10 +194,6 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
           Mesh_InitializeSolutionPointers(mesh,sols) ;
           OutputFiles_BackupSolutionAtTime(outputfiles,jdd,T_1,idate+1) ;
           Mesh_StoreCurrentSolution(mesh,datafile,T_1) ;
-          //Mesh_InitializeSolutionPointers(mesh,SOL_n) ;
-          //OutputFiles_BackupSolutionAtTime(outputfiles,jdd,T_n,idate+1) ;
-          //Mesh_StoreCurrentSolution(mesh,datafile,T_n) ;
-          //Solutions_GetSolution(sols) = SOL_n ;
           return(-1) ;
         }
       }
@@ -224,7 +219,9 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
        * 3.1.3 Compute and set the time step
        */
       {
-        double dt = TimeStep_ComputeTimeStep(timestep,nodes,T_n,DT_n,date[idate],date[idate+1]) ;
+        double t1 = Date_GetTime(date_i) ;
+        double t2 = Date_GetTime(date_i + 1) ;
+        double dt = TimeStep_ComputeTimeStep(timestep,nodes,T_n,DT_n,t1,t2) ;
         
         DT_1 = dt ;
         STEP_1 = STEP_n + 1 ;
@@ -408,7 +405,7 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
        * 3.1.8 Go to 3.2 if convergence was not met
        */
       if(IterProcess_ConvergenceIsNotMet(iterprocess)) break ;
-    } while(T_1 < date[idate + 1]) ;
+    } while(T_1 < Date_GetTime(date_i + 1)) ;
     
     /*
      * 3.2 Backup for this time
@@ -426,14 +423,10 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
    */
   if(IterProcess_ConvergenceIsMet(iterprocess)) {
     Mesh_StoreCurrentSolution(mesh,datafile,T_1) ;
-    //Solutions_GetSolution(sols) = SOL_1 ;
   } else {
     Solutions_StepBackward(sols) ;
     Mesh_InitializeSolutionPointers(mesh,sols) ;
     Mesh_StoreCurrentSolution(mesh,datafile,T_1) ;
-    //Mesh_InitializeSolutionPointers(mesh,SOL_n) ;
-    //Mesh_StoreCurrentSolution(mesh,datafile,T_n) ;
-    //Solutions_GetSolution(sols) = SOL_n ;
     return(-1) ;
   }
   

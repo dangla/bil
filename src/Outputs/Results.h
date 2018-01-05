@@ -19,7 +19,7 @@ extern void       Results_Delete(Results_t**) ;
 
 struct Results_s {            /* Results */
   unsigned int nbofresults ;  /* nb of results */
-  Result_t *result ;          /* result */
+  Result_t* result ;          /* result */
 } ;
 
 #endif

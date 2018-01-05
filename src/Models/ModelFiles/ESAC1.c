@@ -425,7 +425,7 @@ static double a_p ;
 
 void ComputePhysicoChemicalProperties(void)
 {
-  RT = PhysicalConstant_PerfectGasConstant * Temperature_RoomValue ;
+  RT = PhysicalConstant_PerfectGasConstant * TEMPERATURE ;
 }
 
 
@@ -641,10 +641,12 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
   }
 
   {
-    HardenedCementChemistry_SetTemperature(TEMPERATURE) ;
-    
     if(!csd) csd = CementSolutionDiffusion_Create() ;
     if(!hcc) hcc = HardenedCementChemistry_Create() ;
+    
+    HardenedCementChemistry_SetRoomTemperature(hcc,TEMPERATURE) ;
+    
+    CementSolutionDiffusion_SetRoomTemperature(csd,TEMPERATURE) ;
   
     {
       Curves_t* curves = Material_GetCurves(mat) ;
@@ -1801,7 +1803,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
   double beta_p = PoreWallEquilibriumSaturationIndex(beta_pn,strain_n,straind_n,s_aft,s_c,dt) ;
   double strain  = strain_n + dt*a_p*(1 - beta_p/s_aft) ;
   /* Compute the crystal pore deformation */
-  double phipore_c = s_c * strain ;
+  double varphi_c = s_c * strain ;
   
   
   /* Solid contents */
@@ -1815,7 +1817,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
   double n_afm      = AFmSolidContent(n_afmn,s_afm,dt) ;
   //double n_aftn     = x[I_N_AFtn] ;
   //double n_aft      = AFtSolidContent(n_aftn,s_aft,dt) ;
-  double n_aft      = (phi0*s_c + phipore_c)/V_AFt ;
+  double n_aft      = (phi0*s_c + varphi_c)/V_AFt ;
   double n_c3ah6n   = x[I_N_C3AH6n] ;
   double n_c3ah6    = C3AH6SolidContent(n_c3ah6n,s_c3ah6,dt) ;
   double n_csh      = CSHSolidContent(zn_si_s) ;
@@ -1842,7 +1844,8 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
 
 
   /* total porosity */
-  double phi_c      = phi_con ;
+  double varphi     = strain ;
+  double phi_c      = phi_con + varphi ;
   double phi_t      = phi_con - v_csh2 ;
   
 

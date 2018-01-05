@@ -395,7 +395,7 @@ static Curve_t* satcurve ;
 
 void ComputePhysicoChemicalProperties(void)
 {
-  RT = PhysicalConstant_PerfectGasConstant * Temperature_RoomValue ;
+  RT = PhysicalConstant_PerfectGasConstant * TEMPERATURE ;
 }
 
 
@@ -593,10 +593,12 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
   }
 
   {
-    HardenedCementChemistry_SetTemperature(TEMPERATURE) ;
-    
     if(!csd) csd = CementSolutionDiffusion_Create() ;
     if(!hcc) hcc = HardenedCementChemistry_Create() ;
+    
+    HardenedCementChemistry_SetRoomTemperature(hcc,TEMPERATURE) ;
+    
+    CementSolutionDiffusion_SetRoomTemperature(csd,TEMPERATURE) ;
   
     {
       Curves_t* curves = Material_GetCurves(mat) ;
