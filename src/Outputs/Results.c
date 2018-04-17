@@ -28,4 +28,5 @@ void Results_Delete(Results_t** results)
   
   Result_Delete(&result) ;
   free(*results) ;
+  *results = NULL ;
 }

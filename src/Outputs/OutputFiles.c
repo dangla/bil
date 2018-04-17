@@ -190,6 +190,7 @@ void   (OutputFiles_Delete)(OutputFiles_t** outputfiles)
   Results_Delete(&(OutputFiles_GetResults(*outputfiles))) ;
   
   free(*outputfiles) ;
+  *outputfiles = NULL ;
 }
 
 
@@ -232,6 +233,7 @@ void   (OutputFile_Delete)(OutputFile_t** outputfile,int nfiles)
   }
   
   free(*outputfile) ;
+  *outputfile = NULL ;
 }
 
 
@@ -886,7 +888,7 @@ void (OutputFiles_PostProcessForGmshParsedFileFormatVersion2)(OutputFiles_t* out
 
 
 
-void (OutputFiles_BackupSolutionAtTime)(OutputFiles_t* outputfiles,DataSet_t* dataset,double t,int idate1)
+void (OutputFiles_BackupSolutionAtTime_)(OutputFiles_t* outputfiles,DataSet_t* dataset,double t,int idate1)
 /* Backup solutions at a given time in the appropriate output file */
 {
   Mesh_t* mesh = DataSet_GetMesh(dataset) ;
@@ -1015,7 +1017,7 @@ void (OutputFiles_BackupSolutionAtTime)(OutputFiles_t* outputfiles,DataSet_t* da
 
 
 
-void (OutputFiles_BackupSolutionAtPoint)(OutputFiles_t* outputfiles,DataSet_t* dataset,double t,double t_0)
+void (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t* outputfiles,DataSet_t* dataset,double t,double t_0)
 /* Backup solutions at given points in the approriate output files */
 {
   Mesh_t* mesh = DataSet_GetMesh(dataset) ;

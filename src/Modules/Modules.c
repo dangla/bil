@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "Message.h"
 #include "Context.h"
@@ -12,13 +13,28 @@
 extern  Module_SetModuleProp_t XMODULES(_SetModuleProp) ;
 
 
+static void* Modules_Initialize(void*) ;
+
+
 
 Modules_t* Modules_Create(void)
 /** Create the modules found in "ListOfModules.h"  */
 {
   Modules_t* modules = (Modules_t*) malloc(sizeof(Modules_t)) ;
   
-  if(!modules) arret("Modules_Create") ;
+  assert(modules) ;
+  
+  Modules_Initialize(modules) ;
+  
+  return(modules) ;
+}
+
+
+
+void* Modules_Initialize(void* self)
+/** Initialize the modules found in "ListOfModules.h"  */
+{
+  Modules_t* modules = (Modules_t*) self ;
   
   Modules_GetNbOfModules(modules) = NB_MODULES ;
   Modules_GetModule(modules) = Module_Create(NB_MODULES) ;
@@ -44,8 +60,9 @@ Modules_t* Modules_Create(void)
 
 
 
-void  Modules_Delete(Modules_t** modules)
+void  Modules_Delete(void* self)
 {
+  Modules_t** modules = (Modules_t**) self ;
   int n_modules = Modules_GetNbOfModules(*modules) ;
   int i ;
   
@@ -57,6 +74,7 @@ void  Modules_Delete(Modules_t** modules)
   
   free(Modules_GetModule(*modules)) ;
   free(*modules) ;
+  *modules = NULL ;
 }
 
 

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "Message.h"
 #include "Context.h"
@@ -14,9 +15,7 @@ CommandLine_t*    (CommandLine_Create)(int argc,char** argv)
 {
   CommandLine_t* commandline = (CommandLine_t*) malloc(sizeof(CommandLine_t)) ;
   
-  if(!commandline) {
-    arret("CommandLine_Create") ;
-  }
+  assert(commandline) ;
   
   CommandLine_GetNbOfArg(commandline) = argc ;
   CommandLine_GetArg(commandline) = argv ;
@@ -26,7 +25,10 @@ CommandLine_t*    (CommandLine_Create)(int argc,char** argv)
 
 
 
-void (CommandLine_Delete)(CommandLine_t** commandline)
+void (CommandLine_Delete)(void* self)
 {
+  CommandLine_t** commandline = (CommandLine_t**) self ;
+  
   free(*commandline) ;
+  *commandline = NULL ;
 }

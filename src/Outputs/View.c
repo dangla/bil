@@ -35,4 +35,5 @@ void View_Delete(View_t** view)
 {
   free(View_GetNameOfView(*view)) ;
   free(*view) ;
+  *view = NULL ;
 }

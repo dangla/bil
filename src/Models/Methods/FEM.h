@@ -15,7 +15,8 @@ struct FEM_s     ; typedef struct FEM_s     FEM_t ;
 
 /* Extern Functions */
 
-extern FEM_t*   FEM_GetInstance(Element_t*) ;
+extern FEM_t*   (FEM_GetInstance)(Element_t*) ;
+extern void     (FEM_Delete)(void*) ;
 
 /* Matrices */
 extern double*  FEM_ComputeElasticMatrix(FEM_t*,IntFct_t*,double*,int) ;
@@ -65,6 +66,9 @@ extern double   FEM_IntegrateOverElement(FEM_t*,IntFct_t*,double*,int) ;
 /* Averaging */
 extern void     FEM_AverageStresses(Mesh_t*,double*) ;
 
+extern double   FEM_ComputeVolume(Mesh_t*) ;
+
+
 
 #include "Models.h"
 
@@ -88,6 +92,7 @@ extern void     FEM_AverageStresses(Mesh_t*,double*) ;
 
 
 #include "Buffer.h"
+#include <GenericObject.h>
 
 struct FEM_s {                /* Finite Element Method */
   Element_t* el ;             /* Element */
@@ -96,6 +101,7 @@ struct FEM_s {                /* Finite Element Method */
   void*      output ;
   int        shift ;
   Buffer_t*  buffer ;         /* Buffer */
+  GenericObject_Delete_t* Delete ;
 } ;
 
 #endif

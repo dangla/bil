@@ -193,6 +193,9 @@ extern int      (Element_ComputeNbOfSolutions)(Element_t*) ;
 
 #define Element_FindCurve(ELT,S) \
         Material_FindCurve(Element_GetMaterial(ELT),S)
+        
+#define Element_FindMaterialData(ELT,T,N) \
+        Material_FindData(Element_GetMaterial(ELT),T,N)
 
 
 

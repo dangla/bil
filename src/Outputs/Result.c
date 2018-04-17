@@ -53,6 +53,7 @@ void Result_Delete(Result_t** result)
   
   free(Result_GetValue(*result)) ;
   free(*result) ;
+  *result = NULL ;
 }
 
 

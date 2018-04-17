@@ -1,9 +1,12 @@
-#include <signal.h>
 #include "Message.h"
 #include "Exception.h"
+#include "Session.h"
+#include "GenericData.h"
+#include <signal.h>
+#include <assert.h>
 
 
-static Exception_t* instanceexception = NULL ;
+//static Exception_t* instanceexception = NULL ;
 
 static Exception_t*  (Exception_Create)(void) ;
 static void          (Exception_Initialize)(void) ;
@@ -16,7 +19,8 @@ static void SignalHandler(int) ;
 
 
 /* Global functions */
-Exception_t*  (Exception_GetInstance)(void)
+#if 0
+//Exception_t*  (Exception_GetInstance0)(void)
 {
   if(!instanceexception) {
     instanceexception = Exception_Create() ;
@@ -24,10 +28,57 @@ Exception_t*  (Exception_GetInstance)(void)
   
   return(instanceexception) ;
 }
+#endif
+
+
+
+Exception_t*  (Exception_GetInstance)(void)
+{
+  GenericData_t* gdat = Session_FindGenericData(Exception_t,"Exception") ;
+  
+  if(!gdat) {
+    Exception_t* msg = Exception_Create() ;
+    
+    gdat = GenericData_Create(1,msg,Exception_t,"Exception") ;
+    
+    Session_AddGenericData(gdat) ;
+    
+    assert(gdat == Session_FindGenericData(Exception_t,"Exception")) ;
+  }
+  
+  return((Exception_t*) GenericData_GetData(gdat)) ;
+}
 
 
 
 /* Intern functions */
+Exception_t*  (Exception_Create)(void)
+{
+  Exception_t* exception = (Exception_t*) malloc(sizeof(Exception_t)) ;
+  
+  if(!exception) {
+    arret("Exception_Create") ;
+  }
+  
+  Exception_GetDelete(exception) = Exception_Delete ;
+  
+  Exception_Initialize() ;
+  
+  return(exception) ;
+}
+
+
+
+void  (Exception_Delete)(void* self)
+{
+  Exception_t** pexception = (Exception_t**) self ;
+  
+  free(*pexception) ;
+  *pexception = NULL ;
+}
+
+
+
 void (Exception_Initialize)(void)
 {
   if(signal(SIGINT,SignalHandler) == SIG_ERR) {
@@ -41,21 +92,6 @@ void (Exception_Initialize)(void)
   if(signal(SIGSEGV,SignalHandler) == SIG_ERR) {
     Message_FatalError("An error occured while setting a signal handler.\n") ;
   }
-}
-
-
-
-Exception_t*  (Exception_Create)(void)
-{
-  Exception_t* exception = (Exception_t*) malloc(sizeof(Exception_t)) ;
-  
-  if(!exception) {
-    arret("Exception_Create") ;
-  }
-  
-  Exception_Initialize() ;
-  
-  return(exception) ;
 }
 
 

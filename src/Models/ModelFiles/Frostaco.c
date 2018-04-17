@@ -133,7 +133,7 @@
  * ------------------ */
 #include "PhysicalConstant.h"
 /* Perfect gas constant (J/mol/K) */
-static double R_g = PhysicalConstant(PerfectGasConstant) ;
+static double R_g ;
 
 
 
@@ -141,47 +141,47 @@ static double R_g = PhysicalConstant(PerfectGasConstant) ;
 /* Water properties
  * ---------------- */
  /* Molar mass (kg/mol) */
-static double M_H2O = (18.e-3) * kg / mol ;
+static double M_H2O ;
 /* Molar volume of liquid water (m3/mol) */
-static double V_H2O = (18.e-6) * m3 / mol ;
+static double V_H2O ;
 /* Mass density of water */
-static double rho_h2o_l0 = M_H2O/V_H2O ;
+static double rho_h2o_l0 ;
 /* Molar volume of ice (m3/mol) */
-static double V_Ice = (19.63e-6) * m3 / mol ;
+static double V_Ice ;
 /* Mass density of ice */
-static double rho_h2o_i0 = M_H2O/V_Ice ;
+static double rho_h2o_i0 ;
 /* Viscosity (Pa.s) */
 #include "WaterViscosity.h"
 /* Logarithm of water activity in brine */
 //#include "Log10ActivityOfWaterInBrine.h"
-#define LogActivityOfWater(c_s,T)      activity(c_s,T)
+#define LogActivityOfWater(c_s,T)      activity(c_s,T_m)
 //#define LogActivityOfWater(c_s,T)      activite_w_ideal(c_s,T)
 /* Entropy of fusion of ice (J/mol/K) */
-static double S_m = (23.54) * Joule / mol / Kelvin ;
+static double S_m ;
 /* Melting temperature of ice at atmospheric pressure */
-static double T_m = (273.) * Kelvin ;
+static double T_m ;
 /* Atmospheric pressure (Pa) */
-static double p_m = (1.e5) * Pa ;
+static double p_m ;
 /* Bulk modulus of liquid water (Pa) */
-static double K_l = (1.8e9) * Pa ;
+static double K_l ;
 /* Bulk modulus of ice (Pa) */
-static double K_i = (7.8e9) * Pa ;
+static double K_i ;
 /* Specific heat of liquid water (J/kg/K) */
-static double C_l = (4180.) * Joule / kg / Kelvin ;
+static double C_l ;
 /* Specific heat of ice (J/kg/K) */
-static double C_i = (2000.) * Joule / kg / Kelvin ;
+static double C_i ;
 /* Thermal conductivity of liquid water (W/m/K) */
 #define LAM_l       ((0.6) * Watt / m / Kelvin)
-static double lam_l = LAM_l ;
+static double lam_l ;
 /* Thermal conductivity of ice (W/m/K) */
 #define LAM_i       ((2.2) * Watt / m / Kelvin)
-static double lam_i = LAM_i ;
+static double lam_i ;
 /* Thermal volumetric expansion coefficient of liquid water (1/K) */
 /* #define ALPHA_l    (-298.e-6) */
 #define ALPHA_l(theta)    ((-68.7e-6 + 13.877e-6/Kelvin*(theta))/Kelvin)  /* After Speedy (1987) */
 /* Thermal volumetric expansion coefficient of ice (1/K) */
 #define ALPHA_i           ((155.e-6) * (1./Kelvin))
-static double alpha_i = ALPHA_i ;
+static double alpha_i ;
 
 
 
@@ -236,9 +236,9 @@ static double alpha_i = ALPHA_i ;
 #endif
 /* Molecular diffusion coefficient of the salt */
 #define D_CA     ((Z_C - Z_A)*D_C*D_A/(Z_C*D_C - Z_A*D_A))
-static double D_salt = D_CA ;
+static double D_salt ;
 /* Relative specific partial volume of the salt (m3/kg) */
-static double vr_salt = ((NU_A*V_A + NU_C*V_C)/M_Salt - V_H2O/M_H2O) ;
+static double vr_salt ;
 
 
 
@@ -278,6 +278,7 @@ int pm(const char* s)
   else if(strcmp(s,"T0") == 0)       return (8) ;
   else return (-1) ;
 }
+
 /* They are retrieved automatically by calling the following function */
 static void    GetProperties(Element_t*) ;
 void GetProperties(Element_t* el)

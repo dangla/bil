@@ -33,13 +33,17 @@ struct CCSformat_s      ; typedef struct CCSformat_s      CCSformat_t ;
 #endif
 
 
-extern LDUSKLformat_t* LDUSKLformat_Create(Mesh_t*) ;
+extern LDUSKLformat_t* (LDUSKLformat_Create)(Mesh_t*) ;
+extern void            (LDUSKLformat_Delete)(void*) ;
 extern void LDUSKLformat_AssembleElementMatrix(LDUSKLformat_t*,double*,int*,int*,int) ;
 extern void LDUSKLformat_PrintMatrix(LDUSKLformat_t*,unsigned int,const char*) ;
 
 #ifdef SLU_DIR
-extern SuperMatrix_t* SuperMatrix_Create(Mesh_t*) ;
-extern NCformat_t* NCformat_Create(Mesh_t*) ;
+extern SuperMatrix_t* (SuperMatrix_Create)(Mesh_t*) ;
+extern void           (SuperMatrix_Delete)(void*) ;
+
+extern NCformat_t* (NCformat_Create)(Mesh_t*) ;
+extern void        (NCformat_Delete)(void*) ;
 extern void NCformat_AssembleElementMatrix(NCformat_t*,double*,int*,int*,int,int*,int) ;
 extern void NCformat_PrintMatrix(NCformat_t*,unsigned int,const char*) ;
 #endif
@@ -86,7 +90,16 @@ extern void NCformat_PrintMatrix(NCformat_t*,unsigned int,const char*) ;
 
 
 
-/** Macros for CCSformat or NCformat ---------------------------------*/
+/** Macros for CCSformat --------------------------------------------*/
+#define CCSformat_GetNbOfNonZeroValues(a)               ((a)->nnz)
+#define CCSformat_GetNonZeroValue(a)                    ((a)->nzval)
+#define CCSformat_GetRowIndexOfTheNonZeroValue(a)       ((a)->rowind)
+#define CCSformat_GetFirstNonZeroValueIndexOfColumn(a)  ((a)->colptr)
+                                                      
+
+
+
+/** Macros for NCformat (same as CCSformat)--------------------------*/
 #define NCformat_GetNbOfNonZeroValues(a)               ((a)->nnz)
 #define NCformat_GetNonZeroValue(a)                    ((a)->nzval)
 #define NCformat_GetRowIndexOfTheNonZeroValue(a)       ((a)->rowind)

@@ -17,13 +17,21 @@ extern OutputFiles_t*   (OutputFiles_Create)(char*,int,int) ;
 extern void    (OutputFiles_Delete)(OutputFiles_t**) ;
 extern void    (OutputFiles_PostProcessForGmshParsedFileFormat)(OutputFiles_t*,DataSet_t*) ;
 extern void    (OutputFiles_PostProcessForGmshASCIIFileFormat)(OutputFiles_t*,DataSet_t*) ;
-extern void    (OutputFiles_BackupSolutionAtTime)(OutputFiles_t*,DataSet_t*,double,int) ;
-extern void    (OutputFiles_BackupSolutionAtPoint)(OutputFiles_t*,DataSet_t*,double,double) ;
+extern void    (OutputFiles_BackupSolutionAtTime_)(OutputFiles_t*,DataSet_t*,double,int) ;
+extern void    (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t*,DataSet_t*,double,double) ;
 
 
 /* Function-like macros */
 #define OutputFiles_ReadLineFromCurrentFilePosition(OFS,textfile) \
         TextFile_ReadLineFromCurrentFilePosition(textfile,OutputFiles_GetTextLine(OFS),OutputFiles_MaxLengthOfTextLine)
+        
+
+#define OutputFiles_BackupSolutionAtTime(OFS,...) \
+        if(OFS) OutputFiles_BackupSolutionAtTime_(OFS,__VA_ARGS__)
+
+
+#define OutputFiles_BackupSolutionAtPoint(OFS,...) \
+        if(OFS) OutputFiles_BackupSolutionAtPoint_(OFS,__VA_ARGS__)
 
 
 #include "Views.h"
@@ -54,6 +62,8 @@ extern void    (OutputFiles_BackupSolutionAtPoint)(OutputFiles_t*,DataSet_t*,dou
 //#define OutputFiles_GetDateFile(OFS)                (OutputFile_GetTextFile(OutputFiles_GetDateOutputFile(OFS)))
 //#define OutputFiles_GetPointFile(OFS)               ((OFS)->pointfile))
 //#define OutputFiles_GetPointFile(OFS)                (OutputFile_GetTextFile(OutputFiles_GetPointOutputFile(OFS)))
+
+
 
 
 

@@ -36,7 +36,7 @@ rho_s = 0         # mass density of the dry material
 sig0_11 = 0       # initial stress 11
 sig0_22 = 0       # initial stress 22
 sig0_33 = 0       # initial stress 33
-young = 5000e6    # Young's modulus
+young = 5000.e6   # Young's modulus
 poisson = 0.49    # Poisson's ratio
 macro-gradient_12 = 1.e-3
 macro-gradient_21 = 1.e-3
@@ -99,11 +99,11 @@ u_2 = 1.e-4
 
 
 Iterative Process
-Iterations = 10
+Iterations = 20
 Tolerance = 1.e-4
 Repetition = 0
 
 
 Time Steps
-Dtini = 0.1
-Dtmax = 1
+Dtini = 1.e-2
+Dtmax = 10

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <math.h>
 #include "Options.h"
 #include "Mesh.h"
@@ -20,7 +21,7 @@ LDUSKLformat_t* LDUSKLformat_Create(Mesh_t* mesh)
   LDUSKLformat_t* a = (LDUSKLformat_t*) malloc(sizeof(LDUSKLformat_t)) ;
   
   if(!a) {
-    arret("LDUSKLformat_Create (1) : impossible d\'allouer la memoire") ;
+    assert(a) ;
   }
 
 
@@ -159,6 +160,18 @@ LDUSKLformat_t* LDUSKLformat_Create(Mesh_t* mesh)
 }
 
 
+
+void LDUSKLformat_Delete(void* self)
+{
+  LDUSKLformat_t** a = (LDUSKLformat_t**) self ;
+  free(LDUSKLformat_GetNonZeroValue(*a)) ;
+  free(LDUSKLformat_GetPointerToLowerRow(*a)) ;
+  free(*a) ;
+  *a = NULL ;
+}
+
+
+
 #ifdef SLU_DIR
 SuperMatrix_t* SuperMatrix_Create(Mesh_t* mesh)
 /* Create a matrix in SuperMatrix format */
@@ -167,7 +180,7 @@ SuperMatrix_t* SuperMatrix_Create(Mesh_t* mesh)
   NCformat_t*    asluNC = NCformat_Create(mesh) ;
   SuperMatrix_t* aslu = (SuperMatrix_t*) malloc(sizeof(SuperMatrix_t)) ;
 
-  if(!aslu) arret("SuperMatrix_Create (1) : impossible d\'allouer la memoire") ;
+  if(!aslu) assert(aslu) ;
   
   SuperMatrix_GetStorageType(aslu) = SLU_NC ;
   SuperMatrix_GetDataType(aslu) = SLU_D ;
@@ -178,6 +191,20 @@ SuperMatrix_t* SuperMatrix_Create(Mesh_t* mesh)
   
   return(aslu) ;
 }
+
+
+
+void SuperMatrix_Delete(void* self)
+{
+  SuperMatrix_t** aslu = (SuperMatrix_t**) self ;
+  NCformat_t* asluNC = (NCformat_t*) SuperMatrix_GetStorage(*aslu) ;
+  
+  NCformat_Delete(&asluNC) ;
+  
+  free(*aslu) ;
+  *aslu = NULL ;
+}
+
 
 
 NCformat_t* NCformat_Create(Mesh_t* mesh)
@@ -194,7 +221,7 @@ NCformat_t* NCformat_Create(Mesh_t* mesh)
   int    nnz_max ;
   NCformat_t*    asluNC = (NCformat_t*) malloc(sizeof(NCformat_t)) ;
 
-  if(!asluNC) arret("NCformat_Create (2) : impossible d\'allouer la memoire") ;
+  if(!asluNC) assert(asluNC) ;
 
 
   /* tableau de travail */
@@ -340,6 +367,18 @@ NCformat_t* NCformat_Create(Mesh_t* mesh)
   }
   
   return(asluNC) ;
+}
+
+
+
+void NCformat_Delete(void* self)
+{
+  NCformat_t** a = (NCformat_t**) self ;
+  free(NCformat_GetFirstNonZeroValueIndexOfColumn(*a)) ;
+  free(NCformat_GetRowIndexOfTheNonZeroValue(*a)) ;
+  free(NCformat_GetNonZeroValue(*a)) ;
+  free(*a) ;
+  *a = NULL ;
 }
 #endif
 

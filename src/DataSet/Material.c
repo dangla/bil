@@ -3,6 +3,7 @@
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>
+#include <assert.h>
 #include "Message.h"
 #include "DataFile.h"
 #include "Material.h"
@@ -17,7 +18,8 @@ Material_t* (Material_Create)(int n_mat)
   int    i ;
   Material_t* material   = (Material_t*) malloc(n_mat*sizeof(Material_t)) ;
   
-  if(!material) arret("Material_Create") ;
+  if(!material) assert(material) ;
+  
     
   /* Allocation of memory space for each material */
   for(i = 0 ; i < n_mat ; i++) {
@@ -42,6 +44,11 @@ Material_t* (Material_Create)(int n_mat)
     
       Material_GetNbOfProperties(mat) = 0 ;
       Material_GetProperty(mat) = pr ;
+    }
+    
+    /* The generic data */
+    {
+      Material_GetGenericData(mat) = NULL ;
     }
 
     /* Curves */
@@ -72,8 +79,13 @@ int  (Material_ReadProperties)(Material_t* material,DataFile_t* datafile)
   
   if(model) {
     Model_ReadMaterialProperties_t* readmatprop = Model_GetReadMaterialProperties(model) ;
+    int n = readmatprop(material,datafile) ;
     
-    return(readmatprop(material,datafile)) ;
+    if(n > Material_MaxNbOfProperties) {
+      Message_RuntimeError("Material_ReadProperties: too many properties") ;
+    }
+    
+    return(n) ;
   }
   
   Material_ScanProperties(material,datafile,NULL) ;

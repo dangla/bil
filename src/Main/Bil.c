@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <assert.h>
 #include "DataSet.h"
 #include "Message.h"
 #include "Context.h"
@@ -17,6 +18,7 @@
 #include "Exception.h"
 #include "BilVersion.h"
 #include "BilInfo.h"
+#include "Session.h"
 
 
 
@@ -30,47 +32,57 @@ Bil_t*    (Bil_Create)(int argc,char** argv)
 {
   Bil_t* bil = (Bil_t*) malloc(sizeof(Bil_t)) ;
   
-  if(!bil) {
-    arret("Bil_Create") ;
-  }
+  assert(bil) ;
+  
+  Session_Open() ;
   
   {
     Context_t* ctx = Context_Create(argc,argv) ;
     
     Bil_GetContext(bil) = ctx ;
   }
+    
+  Session_Close() ;
   
   return(bil) ;
 }
 
 
 
-void Bil_Delete(Bil_t** bil)
+void Bil_Delete(void* self)
 {
-  Context_Delete(&(Bil_GetContext(*bil))) ;
-  free(*bil) ;
+  Bil_t** pbil = (Bil_t**) self ;
+  Bil_t*   bil = *pbil ;
+  
+  Context_Delete(&(Bil_GetContext(bil))) ;
+  free(bil) ;
+  *pbil = NULL ;
 }
 
 
 
 int Bil_Main(Bil_t* bil)
 {
+  int val = 0 ;
   
-  Message_Initialize() ;
+  Session_Open() ;
   
   {
-    int val = Exception_SaveEnvironment ;
+    val = Exception_SaveEnvironment ;
     
     if(!val) {
+      /* Command-line interface */
       Bil_CLI(bil) ;
+      /* Graphical user interface */
+      //Bil_GUI(bil) ; /* Not done yet */
     } else {
       Message_Direct("An exception occurs with value %d\n",val) ;
     }
-  
-    return(val) ;
   }
+    
+  Session_Close() ;
   
-  return(0) ;
+  return(val) ;
 }
 
 

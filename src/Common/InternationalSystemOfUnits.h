@@ -55,10 +55,11 @@ struct InternationalSystemOfUnits_s ;
 typedef struct InternationalSystemOfUnits_s     InternationalSystemOfUnits_t ;
 
 
-extern InternationalSystemOfUnits_t* InternationalSystemOfUnits_GetInstance(void) ;
-extern void InternationalSystemOfUnits_UseAsLength(const char*) ;
-extern void InternationalSystemOfUnits_UseAsTime(const char*) ;
-extern void InternationalSystemOfUnits_UseAsMass(const char*) ;
+extern InternationalSystemOfUnits_t* (InternationalSystemOfUnits_GetInstance)(void) ;
+extern void (InternationalSystemOfUnits_Delete)(void*) ;
+extern void (InternationalSystemOfUnits_UseAsLength)(const char*) ;
+extern void (InternationalSystemOfUnits_UseAsTime)(const char*) ;
+extern void (InternationalSystemOfUnits_UseAsMass)(const char*) ;
 
 
 
@@ -90,6 +91,7 @@ extern void InternationalSystemOfUnits_UseAsMass(const char*) ;
 #define InternationalSystemOfUnits_GetGray(si)      ((si)->gray)
 #define InternationalSystemOfUnits_GetSievert(si)   ((si)->sievert)
 #define InternationalSystemOfUnits_GetKatal(si)     ((si)->katal)
+#define InternationalSystemOfUnits_GetDelete(si)    ((si)->Delete)
 
 
 
@@ -175,6 +177,7 @@ extern void InternationalSystemOfUnits_UseAsMass(const char*) ;
         InternationalSystemOfUnits_GetKatal(InternationalSystemOfUnits_GetInstance())
 
 
+#include <GenericObject.h>
 
 struct InternationalSystemOfUnits_s {
   /* Base units */
@@ -206,6 +209,7 @@ struct InternationalSystemOfUnits_s {
   double gray      ; /* (J/kg)    */
   double sievert   ; /* (J/kg)    */
   double katal     ; /* (mol/s)   */
+  GenericObject_Delete_t* Delete ;
 } ;
 
 #endif

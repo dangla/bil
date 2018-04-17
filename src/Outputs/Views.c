@@ -25,4 +25,5 @@ void Views_Delete(Views_t** views)
   
   View_Delete(&view) ;
   free(*views) ;
+  *views = NULL ;
 }

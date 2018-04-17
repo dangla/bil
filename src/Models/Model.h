@@ -1,6 +1,6 @@
 /*
-** File: Model.h
-** $Id:$
+** File:
+** $Id: Model.h$
 **
 **
 ** Purpose:
@@ -20,35 +20,35 @@ struct Model_s        ; typedef struct Model_s        Model_t ;
 /*  Typedef names of Methods */
 #include <stdio.h>
 
-typedef int    Model_SetModelProp_t(Model_t*) ;
-typedef int    Model_ComputePropertyIndex_t(const char*) ;
-typedef int    Model_PrintModelProp_t(Model_t*,FILE*) ;
+typedef int    (Model_SetModelProp_t)(Model_t*) ;
+typedef int    (Model_ComputePropertyIndex_t)(const char*) ;
+typedef int    (Model_PrintModelProp_t)(Model_t*,FILE*) ;
 
 #include "Element.h"
 
-typedef int    Model_ComputeInitialState_t(Element_t*,double) ;
-typedef int    Model_ComputeExplicitTerms_t(Element_t*,double) ;
-typedef int    Model_ComputeImplicitTerms_t(Element_t*,double,double) ;
-typedef int    Model_ComputeMatrix_t(Element_t*,double,double,double*) ;
-typedef int    Model_ComputeResidu_t(Element_t*,double,double,double*) ;
-typedef void   Model_ComputeSecondaryVariables_t(Element_t*,double,double*) ;
+typedef int    (Model_ComputeInitialState_t)(Element_t*,double) ;
+typedef int    (Model_ComputeExplicitTerms_t)(Element_t*,double) ;
+typedef int    (Model_ComputeImplicitTerms_t)(Element_t*,double,double) ;
+typedef int    (Model_ComputeMatrix_t)(Element_t*,double,double,double*) ;
+typedef int    (Model_ComputeResidu_t)(Element_t*,double,double,double*) ;
+typedef void   (Model_ComputeSecondaryVariables_t)(Element_t*,double,double*) ;
 
 #include "IntFcts.h"
 
-typedef int    Model_DefineElementProperties_t(Element_t*,IntFcts_t*) ;
+typedef int    (Model_DefineElementProperties_t)(Element_t*,IntFcts_t*) ;
 
 #include "Load.h"
 
-typedef int    Model_ComputeLoads_t(Element_t*,double,double,Load_t*,double*) ;
+typedef int    (Model_ComputeLoads_t)(Element_t*,double,double,Load_t*,double*) ;
 
 #include "Result.h"
 
-typedef int    Model_ComputeOutputs_t(Element_t*,double,double*,Result_t*) ;
+typedef int    (Model_ComputeOutputs_t)(Element_t*,double,double*,Result_t*) ;
 
 #include "Material.h"
 #include "DataFile.h"
 
-typedef int    Model_ReadMaterialProperties_t(Material_t*,DataFile_t*) ;
+typedef int    (Model_ReadMaterialProperties_t)(Material_t*,DataFile_t*) ;
 
 
 

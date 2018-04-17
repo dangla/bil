@@ -147,8 +147,12 @@ void CementSolutionDiffusion_Initialize(CementSolutionDiffusion_t* csd)
     double* v = CementSolutionDiffusion_GetDiffusionCoefficient(csd) ;
     double TK = CementSolutionDiffusion_GetRoomTemperature(csd) ;
   
-    for(int i = 0 ; i < n ; i++) {
-      v[i] = 0. ;
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        v[i] = 0. ;
+      }
     }
   
 #define D(A)         DiffusionCoefficientOfMoleculeInWater(A,TK)
@@ -203,8 +207,12 @@ void CementSolutionDiffusion_Initialize(CementSolutionDiffusion_t* csd)
     int     n = CementSolutionDiffusion_NbOfSpecies ;
     double* v = CementSolutionDiffusion_GetGradient(csd) ;
   
-    for(int i = 0 ; i < n ; i++) {
-      v[i] = 0. ;
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        v[i] = 0. ;
+      }
     }
   }
   
@@ -213,8 +221,12 @@ void CementSolutionDiffusion_Initialize(CementSolutionDiffusion_t* csd)
     int     n = CementSolutionDiffusion_NbOfSpecies ;
     double* v = CementSolutionDiffusion_GetFlux(csd) ;
   
-    for(int i = 0 ; i < n ; i++) {
-      v[i] = 0. ;
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        v[i] = 0. ;
+      }
     }
   }
   
@@ -223,8 +235,12 @@ void CementSolutionDiffusion_Initialize(CementSolutionDiffusion_t* csd)
     int     n = CementSolutionDiffusion_NbOfElementFluxes ;
     double* v = CementSolutionDiffusion_GetElementFlux(csd) ;
   
-    for(int i = 0 ; i < n ; i++) {
-      v[i] = 0. ;
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        v[i] = 0. ;
+      }
     }
   }
 }

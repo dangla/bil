@@ -15,7 +15,8 @@ struct FVM_s     ; typedef struct FVM_s     FVM_t ;
 typedef void     FVM_ComputeFluxes_t(FVM_t*,double*,double*,int,int) ;
 
 
-extern FVM_t*     FVM_GetInstance(Element_t*) ;
+extern FVM_t*     (FVM_GetInstance)(Element_t*) ;
+extern void       (FVM_Delete)(void*) ;
 
 extern double*    FVM_ComputeMassMatrix(FVM_t*,double*,int) ;
 extern double*    FVM_ComputeIsotropicConductionMatrix(FVM_t*,double*,int) ;
@@ -73,6 +74,7 @@ extern double*    FVM_ComputeTheNodalFluxVector(FVM_t*,double*) ;
 
 
 #include "Buffer.h"
+#include <GenericObject.h>
 
 struct FVM_s {                /* Finite Volume Method */
   Element_t* el ;             /* Element */
@@ -83,6 +85,7 @@ struct FVM_s {                /* Finite Volume Method */
   double*    cellvolumes ;
   double*    cellsurfaceareas ;
   double*    celldistances ;
+  GenericObject_Delete_t* Delete ;
 } ;
 
 #endif

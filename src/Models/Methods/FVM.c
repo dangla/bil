@@ -1,18 +1,21 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <ctype.h>
-#include <string.h>
-#include <strings.h>
 #include "FVM.h"
 #include "Message.h"
 #include "Tools/Math.h"
 #include "Geometry.h"
 #include "Elements.h"
 #include "Nodes.h"
+#include "Session.h"
+#include "GenericData.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <ctype.h>
+#include <string.h>
+#include <strings.h>
+#include <assert.h>
 
 
-static FVM_t* instancefvm = NULL ;
+//static FVM_t* instancefvm = NULL ;
 
 static FVM_t*  FVM_Create(void) ;
 static int     FVM_FindHalfSpace(FVM_t*,int,int,double*) ;
@@ -58,7 +61,22 @@ FVM_t* FVM_Create(void)
 }
 
 
-FVM_t* FVM_GetInstance(Element_t* el)
+void FVM_Delete(void* self)
+{
+  FVM_t** pfvm = (FVM_t**) self ;
+  FVM_t*   fvm = *pfvm ;
+  
+  free(FVM_GetOutput(fvm)) ;
+  free(FVM_GetInput(fvm)) ;
+  Buffer_Delete(&FVM_GetBuffer(fvm)) ;
+  free(fvm) ;
+  *pfvm = NULL ;
+}
+
+
+
+#if 0
+//FVM_t* FVM_GetInstance1(Element_t* el)
 {
   if(!instancefvm) {
     instancefvm = FVM_Create() ;
@@ -72,6 +90,36 @@ FVM_t* FVM_GetInstance(Element_t* el)
   FVM_GetIntercellDistances(instancefvm) = NULL ;
   
   return(instancefvm) ;
+}
+#endif
+
+
+
+FVM_t*  (FVM_GetInstance)(Element_t* el)
+{
+  GenericData_t* gdat = Session_FindGenericData(FVM_t,"FVM") ;
+  
+  if(!gdat) {
+    FVM_t* fvm = FVM_Create() ;
+    
+    gdat = GenericData_Create(1,fvm,FVM_t,"FVM") ;
+    
+    Session_AddGenericData(gdat) ;
+    
+    assert(gdat == Session_FindGenericData(FVM_t,"FVM")) ;
+  }
+  
+  {
+    FVM_t* fvm = (FVM_t*) GenericData_GetData(gdat) ;
+  
+    FVM_GetElement(fvm) = el ;
+    FVM_FreeBuffer(fvm) ;
+    FVM_GetCellVolumes(fvm) = NULL ;
+    FVM_GetCellSurfaceAreas(fvm) = NULL ;
+    FVM_GetIntercellDistances(fvm) = NULL ;
+  
+    return(fvm) ;
+  }
 }
 
 
@@ -820,6 +868,7 @@ double* FVM_ComputeTheNodalFluxVector(FVM_t* fvm,double* w)
   
   /* 0D */
   if(dim == 0) {
+    return(wn) ;
     
   /* 1D */
   } else if(dim == 1) {

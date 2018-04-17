@@ -32,6 +32,7 @@ extern void*        (DataFile_ReadDataFromCurrentFilePosition)(DataFile_t*,void*
 #define DataFile_GetTextFile(DF)              ((DF)->textfile)
 #define DataFile_GetTextLine(DF)              ((DF)->line)
 #define DataFile_GetInitialization(DF)        ((DF)->initialization)
+#define DataFile_GetFileContent(DF)          ((DF)->filecontent)
 
 
 
@@ -102,6 +103,7 @@ struct DataFile_s {
   TextFile_t* textfile ;      /* Text file */
   char* line ;                /* memory space for a line */
   int   initialization ;
+  char* filecontent ;
 
 } ;
 

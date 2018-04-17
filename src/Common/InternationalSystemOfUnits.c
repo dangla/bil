@@ -1,10 +1,13 @@
-#include <stdlib.h>
-#include <string.h>
 #include "Message.h"
 #include "InternationalSystemOfUnits.h"
+#include "Session.h"
+#include "GenericData.h"
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
 
-static InternationalSystemOfUnits_t* instancesi = NULL ;
+//static InternationalSystemOfUnits_t* instancesi = NULL ;
 
 static InternationalSystemOfUnits_t* InternationalSystemOfUnits_Create(void) ;
 static void InternationalSystemOfUnits_UpdateDerivedUnits(InternationalSystemOfUnits_t*) ;
@@ -15,10 +18,7 @@ InternationalSystemOfUnits_t* (InternationalSystemOfUnits_Create)(void)
 {
   InternationalSystemOfUnits_t* si = (InternationalSystemOfUnits_t*) malloc(sizeof(InternationalSystemOfUnits_t)) ;
 
-  
-  if(!si) {
-    arret("InternationalSystemOfUnits_Create(1)") ;
-  }
+  assert(si) ;
   
   
   /* Initialization */
@@ -31,19 +31,49 @@ InternationalSystemOfUnits_t* (InternationalSystemOfUnits_Create)(void)
   InternationalSystemOfUnits_GetMole(si)     = 1 ;
   
   InternationalSystemOfUnits_UpdateDerivedUnits(si) ;
+  
+  //InternationalSystemOfUnits_GetDelete(si) = InternationalSystemOfUnits_Delete ;
 
   return(si) ;
 }
 
 
+void (InternationalSystemOfUnits_Delete)(void* self)
+{
+  InternationalSystemOfUnits_t** pis = (InternationalSystemOfUnits_t**) self ;
 
-InternationalSystemOfUnits_t* (InternationalSystemOfUnits_GetInstance)(void)
+  free(*pis) ;
+}
+
+
+#if 0
+//InternationalSystemOfUnits_t* (InternationalSystemOfUnits_GetInstance0)(void)
 {
   if(!instancesi) {
     instancesi = InternationalSystemOfUnits_Create() ;
   }
   
   return(instancesi) ;
+}
+#endif
+
+
+
+InternationalSystemOfUnits_t*  (InternationalSystemOfUnits_GetInstance)(void)
+{
+  GenericData_t* gdat = Session_FindGenericData(InternationalSystemOfUnits_t,"InternationalSystemOfUnits") ;
+  
+  if(!gdat) {
+    InternationalSystemOfUnits_t* isu = InternationalSystemOfUnits_Create() ;
+    
+    gdat = GenericData_Create(1,isu,InternationalSystemOfUnits_t,"InternationalSystemOfUnits") ;
+    
+    Session_AddGenericData(gdat) ;
+    
+    assert(gdat == Session_FindGenericData(InternationalSystemOfUnits_t,"InternationalSystemOfUnits")) ;
+  }
+  
+  return((InternationalSystemOfUnits_t*) GenericData_GetData(gdat)) ;
 }
 
 

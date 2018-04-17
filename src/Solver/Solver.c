@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <math.h>
 #include "Solver.h"
 #include "Message.h"
@@ -31,11 +32,11 @@ static void   lubksb(LDUSKLformat_t*,double*,double*,int) ;
   Extern functions
 */
 
-Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options)
+Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options,const int n)
 {
   Solver_t* solver = (Solver_t*) malloc(sizeof(Solver_t)) ;
   
-  if(!solver) arret("Solver_Create") ;
+  if(!solver) assert(solver) ;
   
   
   /*  Method */
@@ -77,9 +78,10 @@ Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options)
   /* Allocation of space for the right hand side */
   {
     int n_col = Solver_GetNbOfColumns(solver) ;
-    double* rhs = (double*) malloc(n_col*sizeof(double)) ;
+    size_t sz = n*n_col*sizeof(double) ;
+    double* rhs = (double*) malloc(sz) ;
     
-    if(!rhs) arret("Solver_Create") ;
+    if(!rhs) assert(rhs) ;
     
     Solver_GetRHS(solver) = rhs ;
   }
@@ -88,14 +90,28 @@ Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options)
   /* Allocation of space for the solution */
   {
     int n_col = Solver_GetNbOfColumns(solver) ;
-    double* sol = (double*) malloc(n_col*sizeof(double)) ;
+    size_t sz = n*n_col*sizeof(double) ;
+    double* sol = (double*) malloc(sz) ;
     
-    if(!sol) arret("Solver_Create") ;
+    if(!sol) assert(sol) ;
     
     Solver_GetSolution(solver) = sol ;
   }
   
   return(solver) ;
+}
+
+
+
+void  Solver_Delete(Solver_t** solver)
+{
+  Matrix_t* a = Solver_GetMatrix(*solver) ;
+  
+  Matrix_Delete(&a) ;
+  free(Solver_GetRHS(*solver)) ;
+  free(Solver_GetSolution(*solver)) ;
+  free(*solver) ;
+  *solver = NULL ;
 }
 
 
@@ -289,9 +305,16 @@ int   solveCROUT(Solver_t* solver)
   int n = Solver_GetNbOfColumns(solver) ;
   LDUSKLformat_t* askl = (LDUSKLformat_t*) Matrix_GetStorage(a) ;
 
-  int i = ludcmp(askl,n) ;
-  if(i < 0) return(i) ;
+  if(Matrix_WasNotModified(a)) {
+    int i = ludcmp(askl,n) ;
+    
+    Matrix_SetToModifiedState(a) ;
+    
+    if(i < 0) return(i) ;
+  }
+  
   lubksb(askl,x,b,n) ;
+  
   return(0) ;
 }
 

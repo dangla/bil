@@ -6,6 +6,9 @@
 struct AdjacencyList_s  ; typedef struct AdjacencyList_s AdjacencyList_t ;
 
 
+extern AdjacencyList_t* (AdjacencyList_Create)(int,int*) ;
+extern void             (AdjacencyList_Delete)(AdjacencyList_t**) ;
+
 
 #define AdjacencyList_GetNbOfNeighbors(adj)       ((adj)->ndest)
 #define AdjacencyList_GetNeighbor(adj)            ((adj)->dest)

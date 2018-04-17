@@ -46,6 +46,7 @@ void LocalVariableVectors_Delete(LocalVariableVectors_t** lvvs)
   }
   
   free(*lvvs) ;
+  *lvvs = NULL ;
 }
 
 

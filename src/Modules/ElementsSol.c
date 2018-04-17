@@ -93,7 +93,7 @@ void (ElementsSol_AllocateMemoryForImplicitTerms)(ElementsSol_t* elementssol)
         int ni = ElementSol_GetNbOfImplicitTerms(elementsol_i) ;
         GenericData_t* gdat = ElementSol_GetImplicitGenericData(elementsol_i) ;
         
-        GenericData_Initialize(gdat,ni,vi,double) ;
+        GenericData_Initialize(gdat,ni,vi,double,"implicit terms") ;
           
         vi += ni ;
       }
@@ -147,7 +147,7 @@ void (ElementsSol_AllocateMemoryForExplicitTerms)(ElementsSol_t* elementssol)
         int ne = ElementSol_GetNbOfExplicitTerms(elementsol_i) ;
         GenericData_t* gdat = ElementSol_GetExplicitGenericData(elementsol_i) ;
         
-        GenericData_Initialize(gdat,ne,ve,double) ;
+        GenericData_Initialize(gdat,ne,ve,double,"explicit terms") ;
           
         ve += ne ;
       }
@@ -201,7 +201,7 @@ void (ElementsSol_AllocateMemoryForConstantTerms)(ElementsSol_t* elementssol)
         int n0 = ElementSol_GetNbOfConstantTerms(elementsol_i) ;
         GenericData_t* gdat = ElementSol_GetConstantGenericData(elementsol_i) ;
         
-        GenericData_Initialize(gdat,n0,v0,double) ;
+        GenericData_Initialize(gdat,n0,v0,double,"constant terms") ;
           
         v0 += n0 ;
       }
@@ -238,7 +238,7 @@ void   (ElementsSol_ShareConstantTermsFrom)(ElementsSol_t* elementssol0,Elements
         void* v0 = ElementSol_GetConstantTerm(elementsol0 + i) ;
         GenericData_t* gdat = ElementSol_GetConstantGenericData(elementsol + i) ;
         
-        GenericData_Initialize(gdat,n0,v0,double) ;
+        GenericData_Initialize(gdat,n0,v0,double,"constant terms") ;
       }
 
     }

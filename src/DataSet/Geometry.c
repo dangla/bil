@@ -38,7 +38,7 @@ Geometry_t*  Geometry_Create(DataFile_t* datafile)
     /* The symmetry */
     Geometry_SetNoSymmetry(geom) ;
 
-    if(dim < 3) {
+    if(dim > 0 && dim < 3) {
       char* pline = line ;
     
       if(!strncasecmp(pline,"plan",4))  {

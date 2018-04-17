@@ -1,0 +1,28 @@
+/*
+** Filename: Give the filename, not including the directory path. This information should be
+automated by the configuration management system. For example the CVS directive
+$ID$ will provide the filename.
+** $Id:$
+**
+** Purpose: A short statement that describes the purpose of the code in the file.
+**
+** Design Notes: List design decisions that apply to all functions in the file. If possible, give
+a brief justification for each decision; for example, list the alternatives and say why they
+were rejected. Longer justifications may be given in the component document; the source
+code cannot contain complete documentation for complex units.
+** 
+** References: List all applicable documentation references. Identify each reference to a
+level of detail that allows the information to be found, but not to a level that will likely
+change. Provide version numbers when applicable. The component document should be
+the first reference.
+**
+** Revision Date:The date of the last file revision, unless using a CM tool that maintains
+this information.
+**
+** Revision Label: The last revision identifier, unless using a CM tool that maintains this
+information.
+**
+** Revision History: For each previous revision, a revision identifier and description of the
+revision, unless using a CM tool that maintains this information.
+**
+*/

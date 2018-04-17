@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "Context.h"
 #include "Message.h"
@@ -18,13 +19,13 @@ Options_t*  (Options_Create)(Context_t* ctx)
 {
   Options_t* options = (Options_t*) malloc(sizeof(Options_t)) ;
   
-  if(!options) arret("Options_Create(1)") ;
+  assert(options) ;
 
   {
     int   max_mot_debug = Options_MaxLengthOfKeyWord ;
     char* c = (char *) malloc(4*max_mot_debug*sizeof(char)) ;
   
-    if(!c) arret("Options_Create(2)") ;
+    assert(c) ;
 
     Options_GetPrintData(options)         = c ;
     Options_GetResolutionMethod(options)  = (c += max_mot_debug) ;
@@ -45,11 +46,14 @@ Options_t*  (Options_Create)(Context_t* ctx)
 
 
 
-void Options_Delete(Options_t** options)
+void Options_Delete(void* self)
 {
+  Options_t** options = (Options_t**) self ;
+  
   Context_Delete(&(Options_GetContext(*options))) ;
   free(Options_GetPrintData(*options)) ;
   free(*options) ;
+  *options = NULL ;
 }
 
 

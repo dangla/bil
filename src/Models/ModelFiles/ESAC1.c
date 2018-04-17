@@ -325,22 +325,29 @@
 #define AFtSolidContent(n,s,dt)     MAX((n + dt*r_aft*(s - 1)),0.)
 /* Surface tension (N/m) */
 #define Gamma_AFt   (0.1*Pa*m)
-/* Interface equilibrium saturation index of AFt */
-#define InterfaceEquilibriumSaturationIndex(r) \
-        (exp(2*Gamma_AFt*V_AFt/(RT*r)))
-        
-#define dInterfaceEquilibriumSaturationIndex(r) \
-        (-2*Gamma_AFt*V_AFt/(RT*r*r)*InterfaceEquilibriumSaturationIndex(r))
-        
-#define InverseOfInterfaceEquilibriumSaturationIndex(b) \
-        (2*Gamma_AFt*V_AFt/(RT*log(b)))
-        
-/* Crystallization pressure of ettringite */
+
+
+/* Crystal properties */
+#define V_Crystal       V_AFt
+#define Gamma_Crystal   Gamma_AFt
+/* Crystal - pore wall interface */
+/* Crystallization pressure */
 #define CrystallizationPressure(beta) \
-        ((beta > 1) ? RT/V_AFt*log(beta) : 0)
+        RT/V_Crystal*log(beta)
         
 #define dCrystallizationPressure(beta) \
-        ((beta > 1) ? RT/V_AFt/(beta) : 0)
+        RT/V_Crystal/(beta)
+
+/* Crystal - liquid interface */
+/* Interface equilibrium saturation index */
+#define InterfaceEquilibriumSaturationIndex(r) \
+        (exp(2*Gamma_Crystal*V_Crystal/(RT*r)))
+
+#define dInterfaceEquilibriumSaturationIndex(r) \
+        (-2*Gamma_Crystal*V_Crystal/(RT*r*r)*InterfaceEquilibriumSaturationIndex(r))
+
+#define InverseOfInterfaceEquilibriumSaturationIndex(b) \
+        (2*Gamma_Crystal*V_Crystal/(RT*log(b)))
 
 
 /* C3AH6 Properties ((Ca3).(Al2).12(OH)) */
@@ -1905,7 +1912,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
   x[I_S_C       ] = s_c ;
   
   /* Crystallization pressure */
-  x[I_P_C       ] = CrystallizationPressure(s_aft) ;
+  x[I_P_C       ] = CrystallizationPressure(beta_p) ;
   
   /* Radius */
   x[I_Radius    ] = r ;
@@ -2208,7 +2215,8 @@ double DamageStrain(double strain,double straind)
 {
   double Y = 0.5*strain*K_bulk*strain ;
   double K = 0.5*straind*K_bulk*straind ;
-  double crit = Y - K ;
+  //double crit = Y - K ;
+  double crit = strain - straind ;
   
   if(crit > 0) {
     straind = strain ;

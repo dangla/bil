@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <math.h>
 #include "Options.h"
 #include "Mesh.h"
@@ -25,7 +26,7 @@ Matrix_t*   Matrix_Create(Mesh_t* mesh,Options_t* options)
 {
   Matrix_t* a = (Matrix_t*) malloc(sizeof(Matrix_t)) ;
   
-  if(!a) arret("Matrix_Create") ;
+  if(!a) assert(a) ;
 
 
   /*  Nb of rows and columns */
@@ -102,7 +103,37 @@ Matrix_t*   Matrix_Create(Mesh_t* mesh,Options_t* options)
 
 
 
-void Matrix_AssembleElementMatrix(Matrix_t* a,double *ke,int *cole,int *lige,int n)
+void Matrix_Delete(void* self)
+{
+  Matrix_t** a = (Matrix_t**) self ;
+  MatrixFormat_t fmt = Matrix_GetMatrixFormat(*a) ;
+  void* storage = Matrix_GetStorage(*a) ;
+
+
+  /* Skyline format */
+  if(fmt == LDUSKL) {
+    LDUSKLformat_t* askl = (LDUSKLformat_t*) storage ;
+      
+    LDUSKLformat_Delete(&askl) ;
+    
+  /* SuperMatrix format */
+  #ifdef SLU_DIR
+  } else if(fmt == HBSLU) {
+    SuperMatrix_t* aslu = (SuperMatrix_t*) storage ;
+      
+    SuperMatrix_Delete(&aslu) ;
+
+    free(Matrix_GetWorkSpace(*a)) ;
+  #endif
+
+  } else {
+    arret("Matrix_Delete(2): unknown format") ;
+  }
+}
+
+
+
+void Matrix_AssembleElementMatrix_(Matrix_t* a,double* ke,int* cole,int* lige,int n)
 /* Assemblage de la matrice elementaire ke dans la matrice globale a */
 {
   /* Skyline format */

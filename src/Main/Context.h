@@ -9,7 +9,7 @@ struct Context_s  ; typedef struct Context_s  Context_t ;
 
 
 extern Context_t*    (Context_Create)(int,char**) ;
-extern void          (Context_Delete)(Context_t**) ;
+extern void          (Context_Delete)(void*) ;
 
 
 #define Context_GetHelpOnline(CTX)         ((CTX)->help)

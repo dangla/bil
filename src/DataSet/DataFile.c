@@ -26,6 +26,8 @@ DataFile_t*  (DataFile_Create)(char* filename)
     DataFile_GetTextFile(datafile) = textfile ;
   }
   
+  
+  /* Memory space for line */
   {
     char* line = (char*) malloc(DataFile_MaxLengthOfTextLine*sizeof(char)) ;
     
@@ -34,6 +36,14 @@ DataFile_t*  (DataFile_Create)(char* filename)
     }
     
     DataFile_GetTextLine(datafile) = line ;
+  }
+  
+  
+  /* The datafile content */
+  {
+    TextFile_t* textfile = DataFile_GetTextFile(datafile) ;
+    
+    DataFile_GetFileContent(datafile) = TextFile_StoreFileContent(textfile) ;
   }
   
   return(datafile) ;

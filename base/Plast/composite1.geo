@@ -12,6 +12,7 @@ Symmetry{0,1,0,0} {Duplicata{Surface{100,101,102,108} ;} }
 */
 
 Physical Point(2) = {1} ;
+Physical Point(1) = {2} ;
 Physical Line(1) = {13,112,104,122,14,105,123,113} ;
 Physical Surface(1) = {100,102,120,110} ;
 Physical Surface(2) = {101,108,126,116} ;

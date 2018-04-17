@@ -18,23 +18,30 @@ typedef enum ResolMethod_e  ResolMethod_t ;
 #include "Options.h"
 #include "Matrix.h"
 
-extern Solver_t*  Solver_Create(Mesh_t*,Options_t*) ;
-extern void       Solver_Print(Solver_t*,char*) ;
+extern Solver_t*  (Solver_Create)(Mesh_t*,Options_t*,const int) ;
+extern void       (Solver_Delete)(Solver_t**) ;
+extern void       (Solver_Print)(Solver_t*,char*) ;
 
 
-#define Solver_GetResolutionMethod(solver)  ((solver)->mth)
-#define Solver_GetNbOfRows(solver)          ((solver)->n)
-#define Solver_GetNbOfColumns(solver)       ((solver)->n)
-#define Solver_GetMatrix(solver)            ((solver)->a)
-#define Solver_GetRHS(solver)               ((solver)->b)
-#define Solver_GetSolution(solver)          ((solver)->x)
+#define Solver_GetResolutionMethod(SV)  ((SV)->mth)
+#define Solver_GetNbOfRows(SV)          ((SV)->n)
+#define Solver_GetNbOfColumns(SV)       ((SV)->n)
+#define Solver_GetMatrix(SV)            ((SV)->a)
+#define Solver_GetRHS(SV)               ((SV)->b)
+#define Solver_GetSolution(SV)          ((SV)->x)
+#define Solver_GetSolve(SV)             ((SV)->solve)
 
-#define Solver_GetSolve(solver)             ((solver)->solve)
 
-#define Solver_Solve(solver)                (Solver_GetSolve(solver)(solver))
+
+
+#define Solver_Solve(SV) \
+        (Solver_GetSolve(SV)(SV))
+
+
 
 /*  Typedef names of Methods */
 typedef int  Solver_Solve_t(Solver_t*) ;
+
 
 
 /* complete the structure types by using the typedef */

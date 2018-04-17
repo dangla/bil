@@ -14,58 +14,44 @@ static void   (IntFct_ComputeIsoShapeFct)(int,int,double*,double*,double*) ;
 static void   IntFct_ComputeAtMidSurfacePoints(IntFct_t*,int,int) ;
 static void   midpoints(double*,double) ;
 static void   normale(int,int,double**,double*,double*) ;
+static void   (IntFct_AllocateMemory)(IntFct_t*) ;
 
 
 /* Extern functions */
 
-void IntFct_Create(IntFct_t* intfct,int nn,int dim,const char* type)
+IntFct_t* (IntFct_Create)(int nn,int dim,const char* type)
 {
+  IntFct_t* intfct = (IntFct_t*) malloc(sizeof(IntFct_t)) ;
+  
+  if(!intfct) {
+    arret("IntFct_Create(1)") ;
+  }
+  
   IntFct_GetDimension(intfct) = dim ;
   IntFct_GetNbOfNodes(intfct) = nn ;
   
-  {
-    char* p = (char*) malloc(IntFct_MaxLengthOfKeyWord*sizeof(char)) ;
-    
-    if(!p) arret("IntFct_Create(1)") ;
-    
-    IntFct_GetType(intfct) = p ;
-    strcpy(IntFct_GetType(intfct),type) ;
-  }
+  IntFct_AllocateMemory(intfct) ;
   
-  {
-    int k = IntFct_MaxNbOfIntPoints*(1 + nn*(1 + dim) + dim) ;
-    double* weight = (double*) malloc(k*sizeof(double)) ;
+  strcpy(IntFct_GetType(intfct),type) ;
     
-    if(!weight) arret("IntFct_Create(2)") ;
-    
-    IntFct_GetWeight(intfct) = weight ;
-    IntFct_GetFunction(intfct) = IntFct_GetWeight(intfct) + IntFct_MaxNbOfIntPoints ;
-    IntFct_GetFunctionGradient(intfct) = IntFct_GetFunction(intfct) + IntFct_MaxNbOfIntPoints*nn ;
-    IntFct_GetPointCoordinates(intfct) = IntFct_GetFunctionGradient(intfct) + IntFct_MaxNbOfIntPoints*nn*dim ;
-  }
-  
-  {
-    //IntFct_GetInterpolationFunction(intfct) = IntFct_ComputeIsoShapeFct ;
-  }
-    
-  if(!strcmp(type,"Noeuds")) {
+  if(IntFct_TypeIs(intfct,"Nodes")) {
     IntFct_ComputeAtNodes(intfct,nn,dim) ;
-  } else if(!strcmp(type,"Gauss")) {
+  } else if(IntFct_TypeIs(intfct,"Gauss")) {
     IntFct_ComputeAtGaussPoints(intfct,nn,dim) ;
-  } else if(!strcmp(type,"MidSurface")) {
+  } else if(IntFct_TypeIs(intfct,"MidSurface")) {
     IntFct_ComputeAtMidSurfacePoints(intfct,nn,dim) ;
   } else {
     arret("IntFct_Create(3): type \"%s\" unknown",type) ;
   }
   
-  return ;
+  return(intfct) ;
 }
 
 
 
 
-double IntFct_InterpolateAtPoint(IntFct_t* intfct,double* var,int shift,int p)
-/** Interpolate from nodal values and stored in "var". 
+double (IntFct_InterpolateAtPoint)(IntFct_t* intfct,double* var,int shift,int p)
+/** Interpolate from nodal values stored in "var". 
  *  Return the interpolated value at the point p. */
 {
 #define U(n)   (var[(n)*shift])
@@ -294,7 +280,7 @@ void (IntFct_ComputeIsoShapeFct)(int dim,int nn,double* x,double* h,double* dh)
 
 
 
-int IntFct_ComputeFunctionIndexAtPointOfReferenceFrame(IntFct_t* intfct,double* x)
+int (IntFct_ComputeFunctionIndexAtPointOfReferenceFrame)(IntFct_t* intfct,double* x)
 /* Compute function values at point x of the reference frame. 
  * Return the index of the point where values are recorded. */
 {
@@ -329,10 +315,11 @@ void   IntFct_ComputeAtGaussPoints(IntFct_t* f,int nn,int dim)
   if(dim == 0) {
     /* 1 noeud */
     if(nn == 1) {
+      int np = 1 ;
       double* w = IntFct_GetWeight(f) ;
       double* h = IntFct_GetFunction(f) ;
       
-      IntFct_GetNbOfPoints(f) = 1  ;
+      IntFct_GetNbOfPoints(f) = np  ;
       h[0] = 1. ;
       w[0] = 1 ;
       
@@ -343,13 +330,16 @@ void   IntFct_ComputeAtGaussPoints(IntFct_t* f,int nn,int dim)
   } else if(dim == 1) {
     /* segment a 2 ou 3 noeuds */
     if(nn == 2 || nn == 3) {
-      int p,np = 2 ;
+      int np = 2 ;
       //double a[3*IntFct_MaxNbOfIntPoints] ;
       double* a = IntFct_GetPointCoordinates(f) ;
       double* w = IntFct_GetWeight(f) ;
+      int p ;
       
       IntFct_GetNbOfPoints(f) = np ;
-      if(np > IntFct_MaxNbOfIntPoints) arret("IntFct_ComputeAtGaussPoints (1)") ;
+      if(np > IntFct_MaxNbOfIntPoints) {
+        arret("IntFct_ComputeAtGaussPoints (1)") ;
+      }
       gaussp(np,a,w) ;
       
       for(p = 0 ; p < np ; p++) {
@@ -900,5 +890,37 @@ void normale(int dim,int nn,double** x,double* dh,double* norm)
 
   arret("normale") ;
 #undef DH
+}
+
+
+
+
+void (IntFct_AllocateMemory)(IntFct_t* intfct)
+{
+  int dim = IntFct_GetDimension(intfct) ;
+  int nn  = IntFct_GetNbOfNodes(intfct) ;
+  
+  {
+    char* p = (char*) malloc(IntFct_MaxLengthOfKeyWord*sizeof(char)) ;
+    
+    if(!p) arret("IntFct_AllocateMemory(1)") ;
+    
+    IntFct_GetType(intfct) = p ;
+  }
+  
+  {
+    int np = IntFct_MaxNbOfIntPoints ;
+    int k  = np*(1 + nn*(1 + dim) + dim) ;
+    double* weight = (double*) malloc(k*sizeof(double)) ;
+    
+    if(!weight) arret("IntFct_AllocateMemory(2)") ;
+    
+    IntFct_GetWeight(intfct)           = weight ;
+    IntFct_GetFunction(intfct)         = weight + np ;
+    IntFct_GetFunctionGradient(intfct) = weight + np*(1 + nn) ;
+    IntFct_GetPointCoordinates(intfct) = weight + np*(1 + nn*(1 + dim)) ;
+  }
+  
+  return ;
 }
 

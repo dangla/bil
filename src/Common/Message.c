@@ -1,3 +1,6 @@
+#include "Message.h"
+#include "Session.h"
+#include "GenericData.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -5,59 +8,122 @@
 #include <strings.h>
 #include <stdarg.h>
 #include <time.h>
+#include <assert.h>
 
 
-#include "Message.h"
+static Message_t*  (Message_GetInstance)(void) ;
+static Message_t*  (Message_Create)(void) ;
+
 
 //static Message_t* instancemsg = NULL ;
-static Message_t msg1, *msg = &msg1 ;
-static char launchdate[26] ;
-static time_t now1, *now = &now1 ;
+
 
 
 /* Extern functions */
-/*
 Message_t*  (Message_GetInstance)(void)
 {
+  GenericData_t* gdat = Session_FindGenericData(Message_t,"Message") ;
+  
+  if(!gdat) {
+    Message_t* msg = Message_Create() ;
+    
+    gdat = GenericData_Create(1,msg,Message_t,"Message") ;
+    
+    Session_AddGenericData(gdat) ;
+    
+    assert(gdat == Session_FindGenericData(Message_t,"Message")) ;
+  }
+  
+  return((Message_t*) GenericData_GetData(gdat)) ;
+}
+
+
+#if 0
+//Message_t*  (Message_GetInstance0)(void)
+{
+  
   if(!instancemsg) {
     instancemsg = Message_Create() ;
   }
   
   return(instancemsg) ;
 }
+#endif
+
 
 
 
 Message_t*  (Message_Create)(void)
 {
-  Message_t* message = (Message_t*) malloc(sizeof(Message_t)) ;
+  Message_t* msg = (Message_t*) malloc(sizeof(Message_t)) ;
   
-  if(!message) {
-    arret("Message_Create") ;
+  assert(msg) ;
+  
+  {
+    size_t sz = 26*sizeof(char) ;
+    char* date = (char*) malloc(sz) ;
+    
+    assert(date) ;
+    
+    Message_GetLaunchDate(msg) = date ;
   }
   
-  return(message) ;
+  {
+    time_t* now = (time_t*) malloc(sizeof(time_t)) ;
+    
+    assert(now) ;
+    
+    Message_GetLaunchTime(msg) = now ;
+  }
+  
+  Message_GetDelete(msg) = Message_Delete ;
+  
+  Message_Initialize(msg) ;
+  
+  return(msg) ;
 }
-*/
 
 
 
-void (Message_Initialize)(void)
+void  (Message_Delete)(void* self)
 {
-  clock_t start = clock() ;
+  Message_t** pmsg = (Message_t**) self ;
   
-  time(now) ;
-  
-  Message_GetLaunchClock(msg) = start ;
-  Message_GetVerbosity(msg)  = 4 ;
-  Message_GetLaunchTime(msg) = now ;
-  Message_GetLaunchDate(msg) = launchdate ;
-  strcpy(launchdate,ctime(now)) ;
+  free(Message_GetLaunchDate(*pmsg)) ;
+  free(Message_GetLaunchTime(*pmsg)) ;
+  free(*pmsg) ;
 }
 
 
 
-void (Message_FatalError0)(const char *fmt, ...)
+
+void (Message_Initialize)(Message_t* msg)
+{
+  {
+    clock_t start = clock() ;
+  
+    Message_GetLaunchClock(msg) = start ;
+  }
+  
+  {
+    time_t* now = Message_GetLaunchTime(msg) ;
+  
+    time(now) ;
+  }
+  
+  {
+    char* date = Message_GetLaunchDate(msg) ;
+    time_t* now = Message_GetLaunchTime(msg) ;
+    
+    strcpy(date,ctime(now)) ;
+  }
+  
+  Message_GetVerbosity(msg)  = 4 ;
+}
+
+
+
+void (Message_FatalError0)(const char* fmt, ...)
 {
   fflush(stdout) ;
   
@@ -78,9 +144,11 @@ void (Message_FatalError0)(const char *fmt, ...)
 
 
 
-void (Message_RuntimeError0)(const char *fmt, ...)
+void (Message_RuntimeError0)(const char* fmt, ...)
 {
-  if(Message_GetVerbosity(msg) < 1) {
+  Message_t* msg = Message_GetInstance() ;
+  
+  if(!msg || Message_GetVerbosity(msg) < 1) {
     exit(EXIT_SUCCESS) ;
     return ;
   }
@@ -104,9 +172,11 @@ void (Message_RuntimeError0)(const char *fmt, ...)
 
 
 
-void (Message_Warning)(const char *fmt, ...)
+void (Message_Warning)(const char* fmt, ...)
 {
-  if(Message_GetVerbosity(msg) < 2) return ;
+  Message_t* msg = Message_GetInstance() ;
+  
+  if(!msg || Message_GetVerbosity(msg) < 2) return ;
   
   fflush(stdout) ;
   
@@ -126,9 +196,11 @@ void (Message_Warning)(const char *fmt, ...)
 
 
 
-void (Message_Info)(const char *fmt, ...)
+void (Message_Info)(const char* fmt, ...)
 {
-  if(Message_GetVerbosity(msg) < 3) return ;
+  Message_t* msg = Message_GetInstance() ;
+  
+  if(!msg || Message_GetVerbosity(msg) < 3) return ;
   
   fflush(stdout) ;
   
@@ -148,10 +220,12 @@ void (Message_Info)(const char *fmt, ...)
 
 
 
-int (Message_Direct)(const char *fmt, ...)
+int (Message_Direct)(const char* fmt, ...)
 {
+  Message_t* msg = Message_GetInstance() ;
   int n ;
-  if(Message_GetVerbosity(msg) < 4) return(0) ;
+  
+  if(!msg || Message_GetVerbosity(msg) < 4) return(0) ;
   
   fflush(stdout) ;
   
@@ -169,12 +243,15 @@ int (Message_Direct)(const char *fmt, ...)
 
 char* (Message_LaunchDate)(void)
 {
-  return Message_GetLaunchDate(msg) ;
+  Message_t* msg = Message_GetInstance() ;
+  
+  return(Message_GetLaunchDate(msg)) ;
 }
 
 
 double (Message_CPUTime)(void)
 {
+  Message_t* msg = Message_GetInstance() ;
   double start = (double) Message_GetLaunchClock(msg) ;
   double end   = (double) clock() ;
   double t_cpu = end - start ;
@@ -186,6 +263,7 @@ double (Message_CPUTime)(void)
 
 int (Message_SetVerbosity)(const int newverb)
 {
+  Message_t* msg = Message_GetInstance() ;
   int oldverb = Message_GetVerbosity(msg) ;
   
   Message_GetVerbosity(msg)  = newverb ;

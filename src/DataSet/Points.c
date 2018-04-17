@@ -11,9 +11,9 @@
 static void Point_SetEnclosingElement(Point_t*,Mesh_t*) ;
 
 
-Points_t*  Points_Create(DataFile_t *datafile,Mesh_t *mesh)
+Points_t*  Points_Create(DataFile_t* datafile,Mesh_t* mesh)
 {
-  Points_t *points = (Points_t*) malloc(sizeof(Points_t)) ;
+  Points_t* points = (Points_t*) malloc(sizeof(Points_t)) ;
   int dim = Mesh_GetDimension(mesh) ;
   int n_points ;
   FILE *ficd ;
@@ -41,7 +41,7 @@ Points_t*  Points_Create(DataFile_t *datafile,Mesh_t *mesh)
   
   /* Memory space for points */
   {
-    Point_t *point = (Point_t*) malloc(n_points*sizeof(Point_t)) ;
+    Point_t* point = (Point_t*) malloc(n_points*sizeof(Point_t)) ;
     
     if(!point) arret("Points_Create (2)") ;
     
@@ -51,12 +51,12 @@ Points_t*  Points_Create(DataFile_t *datafile,Mesh_t *mesh)
   
   /* Memory space for coordinates */
   {
-    double *coor = (double *) calloc(3*n_points,sizeof(double)) ;
+    double* coor = (double*) calloc(3*n_points,sizeof(double)) ;
     
     if(!coor) arret("Points_Create (1)") ;
     
     for(i = 0 ; i < n_points ; i++) {
-      Point_t *point_i = Points_GetPoint(points) + i ;
+      Point_t* point_i = Points_GetPoint(points) + i ;
       double  *x = coor + i*3 ;
       
       Point_GetCoordinate(point_i) = x ;
@@ -67,7 +67,7 @@ Points_t*  Points_Create(DataFile_t *datafile,Mesh_t *mesh)
   /* Read in the input data file */
   {
     for(i = 0 ; i < n_points ; i++) {
-      Point_t *point_i = Points_GetPoint(points) + i ;
+      Point_t* point_i = Points_GetPoint(points) + i ;
       double  *x = Point_GetCoordinate(point_i) ;
       int j ;
       
@@ -80,7 +80,7 @@ Points_t*  Points_Create(DataFile_t *datafile,Mesh_t *mesh)
 
   /* The enclosing element */
   for(i = 0 ; i < n_points ; i++) {
-    Point_t *point_i = Points_GetPoint(points) + i ;
+    Point_t* point_i = Points_GetPoint(points) + i ;
     
     Point_SetEnclosingElement(point_i,mesh) ;
   }
@@ -93,13 +93,13 @@ Points_t*  Points_Create(DataFile_t *datafile,Mesh_t *mesh)
 
 
 
-void Point_SetEnclosingElement(Point_t *point,Mesh_t *mesh)
+void Point_SetEnclosingElement(Point_t* point,Mesh_t* mesh)
 /** Set a pointer to the element which encloses the point */
 {
   unsigned short int dim = Mesh_GetDimension(mesh) ;
   int n_el = Mesh_GetNbOfElements(mesh) ;
-  Element_t *el = Mesh_GetElement(mesh) ;
-  double *pt = Point_GetCoordinate(point) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  double* pt = Point_GetCoordinate(point) ;
   double d0 = 0. ;
   int ie = -1 ;
   int    i ;
@@ -107,7 +107,7 @@ void Point_SetEnclosingElement(Point_t *point,Mesh_t *mesh)
 
   for(i = 0 ; i < n_el ; i++) {
     int  nn = Element_GetNbOfNodes(el + i) ;
-    Material_t *mat = Element_GetMaterial(el + i) ;
+    Material_t* mat = Element_GetMaterial(el + i) ;
     double x_s[3] = {0.,0.,0.} ;
     double d = 0. ;
     int    j ;

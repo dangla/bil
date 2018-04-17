@@ -15,19 +15,18 @@ struct Material_s     ; typedef struct Material_s     Material_t ;
 
 extern Material_t* (Material_Create)(int) ;
 extern int         (Material_ReadProperties)(Material_t*,DataFile_t*) ;
-//extern void        (Material_ScanProperties)(Material_t*,DataFile_t*, int (*)(const char*)) ;
 extern void        (Material_ScanProperties)(Material_t*,DataFile_t*,Model_ComputePropertyIndex_t*) ;
-//extern void        (Material_ScanProperties1)(Material_t*,FILE*,int (*)(const char*),int) ;
 extern void        (Material_ScanProperties1)(Material_t*,FILE*,Model_ComputePropertyIndex_t*,int) ;
-//extern void        (Material_ScanProperties2)(Material_t*,FILE*,int (*)(const char*),int,int) ;
 extern void        (Material_ScanProperties2)(Material_t*,FILE*,Model_ComputePropertyIndex_t*,int,int) ;
+
 
 
 #define Material_MaxLengthOfKeyWord            (30)
 #define Material_MaxLengthOfTextLine           (500)
 
 #define Material_MaxNbOfCurves                 (20)     /* Max nb of curves per mat */
-#define Material_MaxNbOfProperties             (100)    /* Max nb of scalar inputs */
+#define Material_MaxNbOfProperties             (200)    /* Max nb of scalar inputs */
+
 
 
 #define Material_GetNbOfProperties(MAT)   ((MAT)->n)
@@ -38,6 +37,8 @@ extern void        (Material_ScanProperties2)(Material_t*,FILE*,Model_ComputePro
 #define Material_GetModel(MAT)            ((MAT)->model)
 #define Material_GetMethod(MAT)           ((MAT)->method)
 #define Material_GetCodeNameOfModel(MAT)  ((MAT)->codenameofmodel)
+#define Material_GetGenericData(MAT)      ((MAT)->genericdata)
+
 
 
 /* Material properties */
@@ -88,6 +89,25 @@ extern void        (Material_ScanProperties2)(Material_t*,FILE*,Model_ComputePro
 
 #define Material_GetObjectiveValue(MAT) \
         Model_GetObjectiveValue(Material_GetModel(MAT))
+        
+        
+#include "TypeId.h"
+
+/* GenericData */
+#define Material_AppendGenericData(MAT,gdat) \
+        do { \
+          if(Material_GetGenericData(MAT)) { \
+            GenericData_Append(Material_GetGenericData(MAT),gdat) ; \
+          } else { \
+            Material_GetGenericData(MAT) = gdat ; \
+          } \
+        } while(0)
+        
+#define Material_FindGenericData(MAT,T,N) \
+        GenericData_Find(Material_GetGenericData(MAT),T,N)
+        
+#define Material_FindData(MAT,T,N) \
+        GenericData_FindData(Material_GetGenericData(MAT),T,N)
 
 
 
@@ -95,12 +115,14 @@ extern void        (Material_ScanProperties2)(Material_t*,FILE*,Model_ComputePro
 #include "Fields.h"
 #include "Functions.h"
 #include "Curves.h"
+#include "GenericData.h"
 
 struct Material_s {           /* material */
   char*   codenameofmodel ;   /**< Code name of the model */
   char*   method ;            /**< Characterize a method */
   int     n ;                 /**< Nb of properties */
   double* pr ;                /**< The properties */
+  GenericData_t* genericdata ;
   Curves_t* curves ;          /**< Curves */
   Fields_t* fields ;          /**< Fields */
   Functions_t* functions ;    /**< Time functions */

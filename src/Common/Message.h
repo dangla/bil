@@ -7,12 +7,13 @@
 struct Message_s      ; typedef struct Message_s      Message_t ;
 
 /* Fonctions */
+extern void   (Message_Delete)(void*) ;
 extern void   (Message_RuntimeError0)(const char*,...) ;
 extern void   (Message_FatalError0)(const char*,...) ;
 extern void   (Message_Warning)(const char*,...) ;
 extern void   (Message_Info)(const char*,...) ;
 extern int    (Message_Direct)(const char*,...) ;
-extern void   (Message_Initialize)(void) ;
+extern void   (Message_Initialize)(Message_t*) ;
 extern char*  (Message_LaunchDate)(void) ;
 extern double (Message_CPUTime)(void) ;
 extern int    (Message_SetVerbosity)(const int) ;
@@ -22,13 +23,14 @@ extern int    (Message_SetVerbosity)(const int) ;
 #define Message_GetLaunchTime(message)            ((message)->launchtime)
 #define Message_GetLaunchDate(message)            ((message)->launchdate)
 #define Message_GetVerbosity(message)             ((message)->verbosity)
+#define Message_GetDelete(message)                ((message)->Delete)
 
 
 #include <stdlib.h>
-//#include <stdio.h>
+#include <stdio.h>
 
 #define Message_PrintSourceLocation \
-        Message_Direct("\nAt %s, line %d",__FILE__,__LINE__)
+        fprintf(stdout,"\nAt %s, line %d",__FILE__,__LINE__)
 
 #define Message_RuntimeError(...) \
         do { Message_PrintSourceLocation ; \
@@ -43,6 +45,7 @@ extern int    (Message_SetVerbosity)(const int) ;
 
 
 #include <time.h>
+#include <GenericObject.h>
 
 struct Message_s {            /* message */
   clock_t  launchclock ;      /* Start up processor clock time */
@@ -56,6 +59,7 @@ struct Message_s {            /* message */
    *   4:  normal, 
    *   99: debug) */
   int  verbosity ;
+  GenericObject_Delete_t* Delete ;
 } ;
 
 

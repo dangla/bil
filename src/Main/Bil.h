@@ -9,7 +9,7 @@ struct Bil_s  ; typedef struct Bil_s  Bil_t ;
 
 
 extern Bil_t*    (Bil_Create)(int,char**) ;
-extern void      (Bil_Delete)(Bil_t**) ;
+extern void      (Bil_Delete)(void*) ;
 extern int       (Bil_Main)  (Bil_t*) ;
 
 

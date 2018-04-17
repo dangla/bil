@@ -8,10 +8,10 @@
 struct IntFct_s       ; typedef struct IntFct_s       IntFct_t ;
 
 
-extern void   (IntFct_Create)(IntFct_t*,int,int,const char*) ;
-extern void   (IntFct_ComputeIsoShapeFctInActualSpace)(int,int,double**,double*,int,double*,double*) ;
-extern int    (IntFct_ComputeFunctionIndexAtPointOfReferenceFrame)(IntFct_t*,double*) ;
-extern double (IntFct_InterpolateAtPoint)(IntFct_t*,double*,int,int) ;
+extern IntFct_t*  (IntFct_Create)(int,int,const char*) ;
+extern void       (IntFct_ComputeIsoShapeFctInActualSpace)(int,int,double**,double*,int,double*,double*) ;
+extern int        (IntFct_ComputeFunctionIndexAtPointOfReferenceFrame)(IntFct_t*,double*) ;
+extern double     (IntFct_InterpolateAtPoint)(IntFct_t*,double*,int,int) ;
 
 
 #define IntFct_MaxLengthOfKeyWord          (30)
@@ -37,6 +37,9 @@ extern double (IntFct_InterpolateAtPoint)(IntFct_t*,double*,int,int) ;
 #define IntFct_GetFunctionGradientAtPoint(IFCT,p) \
         (IntFct_GetFunctionGradient(IFCT) + \
         (p)*IntFct_GetDimension(IFCT)*IntFct_GetNbOfNodes(IFCT))
+        
+#define IntFct_TypeIs(IFCT,type) \
+        (!strcmp(IntFct_GetType(IFCT),type))
 
 
 
@@ -46,7 +49,7 @@ extern double (IntFct_InterpolateAtPoint)(IntFct_t*,double*,int,int) ;
 
 
 struct IntFct_s {             /* Interpolation function */
-  char   *type ;              /* Type of the function */
+  char*   type ;              /* Type of the function */
   unsigned short int nn ;     /* Number of functions/nodes */
   unsigned short int np ;     /* Number of integration points */
   double* a ;                 /* Reference coordinates of integration points */
