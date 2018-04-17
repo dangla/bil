@@ -234,6 +234,7 @@ void  Model_Delete(Model_t** model,int n_models)
   }
   
   free(*model) ;
+  *model = NULL ;
 }
 
 

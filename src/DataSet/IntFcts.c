@@ -82,7 +82,11 @@ int IntFcts_AddIntFct(IntFcts_t* intfcts,int nn,int dim,const char* type)
   /* Index of the new function */
   i = IntFcts_GetNbOfIntFcts(intfcts) - 1 ;
   
-  IntFct_Create(intfct + i,nn,dim,type) ;
+  {
+    IntFct_t* intfcti = IntFct_Create(nn,dim,type) ;
+    
+    intfct[i] = *intfcti ;
+  }
   
   return(i) ;
 }

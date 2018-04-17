@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "Help.h"
 #include "BilVersion.h"
@@ -20,9 +21,7 @@ Context_t* (Context_Create)(int argc,char** argv)
 {
   Context_t* ctx = (Context_t*) calloc(1,sizeof(Context_t)) ;
   
-  if(!ctx) {
-    arret("Context_Create") ;
-  }
+  assert(ctx) ;
   
   
   {
@@ -66,11 +65,14 @@ Context_t* (Context_Create)(int argc,char** argv)
 }
 
 
-void Context_Delete(Context_t** ctx)
+void Context_Delete(void* self)
 {
-  CommandLine_Delete(&(Context_GetCommandLine(*ctx))) ;
-  Options_Delete(&(Context_GetOptions(*ctx))) ;
-  free(*ctx) ;
+  Context_t** pctx = (Context_t**) self ;
+  
+  CommandLine_Delete(&(Context_GetCommandLine(*pctx))) ;
+  Options_Delete(&(Context_GetOptions(*pctx))) ;
+  free(*pctx) ;
+  *pctx = NULL ;
 }
 
 

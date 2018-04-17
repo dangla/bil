@@ -1,9 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <ctype.h>
-#include <string.h>
-#include <strings.h>
 #include "FEM.h"
 #include "Message.h"
 #include "Tools/Math.h"
@@ -14,9 +8,18 @@
 #include "Nodes.h"
 #include "Models.h"
 #include "Buffer.h"
+#include "Session.h"
+#include "GenericData.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <ctype.h>
+#include <string.h>
+#include <strings.h>
+#include <assert.h>
 
 
-static FEM_t* instancefem = NULL ;
+//static FEM_t* instancefem = NULL ;
 
 static FEM_t*  FEM_Create(void) ;
 static double* FEM_ComputeJacobianMatrix(Element_t*,double*,int) ;
@@ -31,7 +34,7 @@ FEM_t* FEM_Create(void)
 {
   FEM_t*  fem    = (FEM_t*) malloc(sizeof(FEM_t)) ;
   
-  if(!fem) arret("FEM_Create") ;
+  if(!fem) assert(fem) ;
   
   
   /* Space allocation for output */
@@ -82,7 +85,23 @@ FEM_t* FEM_Create(void)
 }
 
 
-FEM_t* FEM_GetInstance(Element_t* el)
+
+void FEM_Delete(void* self)
+{
+  FEM_t** pfem = (FEM_t**) self ;
+  FEM_t*   fem = *pfem ;
+  
+  free(FEM_GetOutput(fem)) ;
+  free(FEM_GetInput(fem)) ;
+  free(FEM_GetPointerToIntFct(fem)) ;
+  Buffer_Delete(&FEM_GetBuffer(fem))  ;
+  free(fem) ;
+  *pfem = NULL ;
+}
+
+
+#if 0
+//FEM_t* FEM_GetInstance0(Element_t* el)
 {
   if(!instancefem) {
     instancefem = FEM_Create() ;
@@ -94,6 +113,35 @@ FEM_t* FEM_GetInstance(Element_t* el)
   
   return(instancefem) ;
 }
+#endif
+
+
+
+FEM_t*  (FEM_GetInstance)(Element_t* el)
+{
+  GenericData_t* gdat = Session_FindGenericData(FEM_t,"FEM") ;
+  
+  if(!gdat) {
+    FEM_t* fem = FEM_Create() ;
+    
+    gdat = GenericData_Create(1,fem,FEM_t,"FEM") ;
+    
+    Session_AddGenericData(gdat) ;
+    
+    assert(gdat == Session_FindGenericData(FEM_t,"FEM")) ;
+  }
+  
+  {
+    FEM_t* fem = (FEM_t*) GenericData_GetData(gdat) ;
+  
+    FEM_GetElement(fem) = el ;
+  
+    FEM_FreeBuffer(fem) ;
+  
+    return(fem) ;
+  }
+}
+
 
 
 double*  FEM_ComputeElasticMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec)
@@ -1117,30 +1165,14 @@ void   FEM_AverageStresses(Mesh_t* mesh,double* stress)
 {
   unsigned int nel = Mesh_GetNbOfElements(mesh) ;
   Element_t* el0 = Mesh_GetElement(mesh) ;
-  double area = 0 ;
-  int i ;
-  
-  /* The surface area */
-  {
-    unsigned int ie ;
-    
-    for(ie = 0 ; ie < nel ; ie++) {
-      Element_t* el = el0 + ie ;
-      IntFct_t* intfct = Element_GetIntFct(el) ;
-      FEM_t*    fem    = FEM_GetInstance(el) ;
-      double one = 1 ;
-    
-      if(Element_IsSubmanifold(el)) continue ;
-      
-      area +=  FEM_IntegrateOverElement(fem,intfct,&one,0) ;
-    }
-  }
+  double vol = FEM_ComputeVolume(mesh) ;
   
   /* Stress integration */
   {
-    int n_models = 2 ;
-    const char* modelswithstresses[2] = {"Elast","Plast"} ;
-    const int   stressindex[2] = {0,0} ;
+    int n_models = 3 ;
+    const char* modelswithstresses[3] = {"Elast","Plast","MechaMic"} ;
+    const int   stressindex[3] = {0,0,0} ;
+    int i ;
     
     for(i = 0 ; i < 9 ; i++) {
       double sig = 0 ;
@@ -1175,9 +1207,36 @@ void   FEM_AverageStresses(Mesh_t* mesh,double* stress)
       }
     
       /* Stress average */
-      stress[i] = sig/area ;
+      stress[i] = sig/vol ;
     }
   }
+}
+
+
+
+double   FEM_ComputeVolume(Mesh_t* mesh)
+{
+  unsigned int nel = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el0 = Mesh_GetElement(mesh) ;
+  double vol = 0 ;
+  
+  /* The volume */
+  {
+    unsigned int ie ;
+    
+    for(ie = 0 ; ie < nel ; ie++) {
+      Element_t* el = el0 + ie ;
+      IntFct_t* intfct = Element_GetIntFct(el) ;
+      FEM_t*    fem    = FEM_GetInstance(el) ;
+      double one = 1 ;
+    
+      if(Element_IsSubmanifold(el)) continue ;
+      
+      vol +=  FEM_IntegrateOverElement(fem,intfct,&one,0) ;
+    }
+  }
+  
+  return(vol) ;
 }
 
 
@@ -2108,6 +2167,11 @@ double* FEM_ComputeInverseJacobianMatrix(Element_t* element,double* dh,int nn)
       else arret("FEM_ComputeInverseJacobianMatrix (8)") ;
       return(cj) ;
     } else arret("FEM_ComputeInverseJacobianMatrix (9)") ;
+
+  /* 4. Point */
+  } else if(dim_h == 0) {
+    return(cj) ;
+
   }
 
   arret("FEM_ComputeInverseJacobianMatrix (10)") ;

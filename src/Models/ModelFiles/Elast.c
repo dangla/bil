@@ -39,13 +39,14 @@
 static Model_ComputePropertyIndex_t  pm ;
 static void    GetProperties(Element_t*,double) ;
 static double* IsotropicElasticTensor(double,double,double*) ;
-static double* MicrostructureElasticTensor(char*,double*) ;
+static double* MicrostructureElasticTensor(DataSet_t*,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double*,double,double,int) ;
 static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
 
-static void    StressAveraging(Mesh_t*,double*) ;
 static void    ComputeMicrostructure(DataSet_t*,double*,double*) ;
+static void    CheckMicrostructureDataSet(DataSet_t*) ;
+
 
 static double* MacroGradient(Element_t*,double) ;
 static double* MacroStrain(Element_t*,double) ;
@@ -222,8 +223,12 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
     if(!strncmp(method,"Microstructure",14)) {
       char* p = strstr(method," ") ;
       char* cellname = p + strspn(p," ") ;
+      Options_t* options = Options_Create(NULL) ;
+      DataSet_t* jdd = DataSet_Create(cellname,options) ;
       
-      MicrostructureElasticTensor(cellname,c) ;
+      CheckMicrostructureDataSet(jdd) ;
+      
+      MicrostructureElasticTensor(jdd,c) ;
       
     /* isotropic Hooke's law */
     } else {
@@ -236,6 +241,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 
 #if 0
     {
+      printf("\n") ;
       printf("4th rank elastic tensor:\n") ;
       
       for(i = 0 ; i < 9 ; i++) {
@@ -540,7 +546,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
   FEM_t* fem = FEM_GetInstance(el) ;
 
-  if(Element_IsSubmanifold(el)) return(0) ;
+  //if(Element_IsSubmanifold(el)) return(0) ;
   
   /*
     Input data
@@ -728,13 +734,10 @@ double* IsotropicElasticTensor(double Young,double Poisson,double* c)
 
 
   
-double* MicrostructureElasticTensor(char* cellname,double* c)
+double* MicrostructureElasticTensor(DataSet_t* jdd,double* c)
 {
 #define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
-  int verb = Message_SetVerbosity(0) ;
-  Options_t* options = Options_Create(NULL) ;
-  DataSet_t* jdd = DataSet_Create(cellname,options) ;
-  
+
   {
     double grd[9] = {0,0,0,0,0,0,0,0,0} ;
     int k ;
@@ -750,7 +753,18 @@ double* MicrostructureElasticTensor(char* cellname,double* c)
         grd[k*3 + l] = 1 ;
           
         /* For eack (k,l) compute the stresses Sij = Cijkl */
-        ComputeMicrostructure(jdd,grd,sig) ;
+        {
+          Session_Open() ;
+          Message_SetVerbosity(0) ;
+        
+          Message_Direct("\n") ;
+          Message_Direct("Start a microstructure calculation") ;
+          Message_Direct("\n") ;
+          
+          ComputeMicrostructure(jdd,grd,sig) ;
+          
+          Session_Close() ;
+        }
 
         for(i = 0 ; i < 3 ; i++) {
           int j ;
@@ -764,9 +778,7 @@ double* MicrostructureElasticTensor(char* cellname,double* c)
       }
     }
   }
-  
-  Message_SetVerbosity(verb) ;
-  
+    
   return(c) ;
 #undef C
 }
@@ -775,19 +787,27 @@ double* MicrostructureElasticTensor(char* cellname,double* c)
 
 void ComputeMicrostructure(DataSet_t* jdd,double* macrograd,double* sig)
 {
-  /* Set input data */
+  /* Set input data of the microstructure */
   {
-    Materials_t* mats = DataSet_GetMaterials(jdd) ;
-    int nmats = Materials_GetNbOfMaterials(mats) ;
-    int j ;
+    /* Update the macro-gradient */
+    {
+      Materials_t* mats = DataSet_GetMaterials(jdd) ;
+      int nmats = Materials_GetNbOfMaterials(mats) ;
+      int j ;
     
-    for(j = 0 ; j < nmats ; j++) {
-      Material_t* mat = Materials_GetMaterial(mats) + j ;
-      double* grd = Material_GetProperty(mat) + pm("macro-gradient") ;
-      int i ;
+      for(j = 0 ; j < nmats ; j++) {
+        Material_t* mat = Materials_GetMaterial(mats) + j ;
+        Model_t* model = Material_GetModel(mat) ;
+        Model_ComputePropertyIndex_t* pidx = Model_GetComputePropertyIndex(model) ;
+        
+        {
+          double* grd = Material_GetProperty(mat) + pidx("macro-gradient") ;
+          int i ;
     
-      for(i = 0 ; i < 9 ; i++) {
-        grd[i] = macrograd[i] ;
+          for(i = 0 ; i < 9 ; i++) {
+            grd[i] = macrograd[i] ;
+          }
+        }
       }
     }
   }
@@ -804,55 +824,91 @@ void ComputeMicrostructure(DataSet_t* jdd,double* macrograd,double* sig)
   {
     Mesh_t* mesh = DataSet_GetMesh(jdd) ;
     
-    StressAveraging(mesh,sig) ;
+    //Mesh_InitializeSolutionPointers(mesh,sols) ;
+    FEM_AverageStresses(mesh,sig) ;
   }
 }
 
 
 
-void   StressAveraging(Mesh_t* mesh,double* x)
+
+void CheckMicrostructureDataSet(DataSet_t* jdd)
 {
-  unsigned int nel = Mesh_GetNbOfElements(mesh) ;
-  Element_t* el0 = Mesh_GetElement(mesh) ;
-  double area = 0 ;
-  int i ;
-  
-  /* The surface area */
+  /* Set input data of the microstructure */
   {
-    unsigned int ie ;
+    /* Update the macro-fctindex */
+    {
+      Materials_t* mats = DataSet_GetMaterials(jdd) ;
+      int nmats = Materials_GetNbOfMaterials(mats) ;
+      int j ;
     
-    for(ie = 0 ; ie < nel ; ie++) {
-      Element_t* el = el0 + ie ;
-      IntFct_t* intfct = Element_GetIntFct(el) ;
-      FEM_t*    fem    = FEM_GetInstance(el) ;
-      double one = 1 ;
-    
-      if(Element_IsSubmanifold(el)) continue ;
+      for(j = 0 ; j < nmats ; j++) {
+        Material_t* mat = Materials_GetMaterial(mats) + j ;
+        Model_t* model = Material_GetModel(mat) ;
+        Model_ComputePropertyIndex_t* pidx = Model_GetComputePropertyIndex(model) ;
+        
+        if(!pidx) {
+          arret("ComputeMicrostructure(1): Model_GetComputePropertyIndex(model) undefined") ;
+        }
+          
+        {
+          int k = pidx("macro-fctindex") ;
+          int i ;
+            
+          for(i = 0 ; i < 9 ; i++) {
+            Material_GetProperty(mat)[k + i] = 1 ;
+          }
+        }
+      }
+    }
+
+    /* Check and update the function of time */
+    {
+      Functions_t* fcts = DataSet_GetFunctions(jdd) ;
+      int nfcts = Functions_GetNbOfFunctions(fcts) ;
       
-      area +=  FEM_IntegrateOverElement(fem,intfct,&one,0) ;
+      if(nfcts < 1) {
+        arret("ComputeMicrostructure(1): the min nb of functions should be 1") ;
+      }
+        
+      {
+        Function_t* func = Functions_GetFunction(fcts) ;
+        int npts = Function_GetNbOfPoints(func) ;
+          
+        if(npts < 2) {
+          arret("ComputeMicrostructure(2): the min nb of points should be 2") ;
+        }
+          
+        {
+          double* t = Function_GetXValue(func) ;
+          double* f = Function_GetFValue(func) ;
+            
+          Function_GetNbOfPoints(func) = 2 ;
+          t[0] = 0 ;
+          t[1] = 1 ;
+          f[0] = 0 ;
+          f[1] = 1 ;
+        }
+      }
     }
-  }
-  
-  /* Stress integration */
-  for(i = 0 ; i < 9 ; i++) {
-    double sig = 0 ;
-    unsigned int ie ;
     
-    for(ie = 0 ; ie < nel ; ie++) {
-      Element_t* el = el0 + ie ;
-      double* vim = Element_GetCurrentImplicitTerm(el) ;
-      IntFct_t* intfct = Element_GetIntFct(el) ;
-      FEM_t*    fem    = FEM_GetInstance(el) ;
-    
-      if(Element_IsSubmanifold(el)) continue ;
-    
-      sig +=  FEM_IntegrateOverElement(fem,intfct,SIG + i,NVI) ;
+    /* The dates */
+    {
+      {
+        Dates_t* dates = DataSet_GetDates(jdd) ;
+        int     nbofdates  = Dates_GetNbOfDates(dates) ;
+          
+        if(nbofdates < 2) {
+          arret("ComputeMicrostructure(3): the min nb of dates should be 2") ;
+        }
+      
+        Dates_GetNbOfDates(dates) = 2 ;
+      }
     }
-    
-    /* Stress average */
-    x[i] = sig/area ;
   }
 }
+
+
 
 
 /* Not used from here */

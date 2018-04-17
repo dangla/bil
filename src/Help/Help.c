@@ -883,12 +883,18 @@ void Help_ObjectiveValues(void)
   Message_Direct("\n") ;
   
   Message_Direct("\
-  Give as many times as the number of types of primary unknowns:\n\
+  Give as many times as the number of types of primary unknowns:\n") ;
+  
+  Message_Direct("\
   for(i = 0 ; i < Nb of unknowns ; i++) {\n\
-->\t key,\"=\",V_obj\n\
-  }\n\
-  \t key                 = string representing the unknown \n\
+->\t key,\"=\",V_obj (opt)\"Absolute\"/\"Relative\" (opt)\"Relaxation =\",r\n\
+  }\n") ;
+  Message_Direct("\
+  \t key                 = string representing the unknown \n") ;
+  Message_Direct("\
   \t V_obj               = objective variation of the unknown \n") ;
+  Message_Direct("\
+  \t r                   = relation factor (1 by default) \n") ;
 
   Message_Direct("\n") ;
   
@@ -965,6 +971,27 @@ void Help_TimeStep(void)
 \t dtini               = initial time step\n") ;
   Message_Direct("\
 \t dtmax               = maximum time step\n") ;
+  
+  Message_Direct("\
+->(opt)\t \"Dtmin = \",dtmin\n") ;
+
+  Message_Direct("\n") ;
+  Message_Direct("\
+\t dtmin               = minimum time step\n") ;
+  
+  Message_Direct("\
+->(opt)\t \"Fraction = \",frac\n") ;
+
+  Message_Direct("\n") ;
+  Message_Direct("\
+\t frac                = Reduction factor (0.5 by default)\n") ;
+  
+  Message_Direct("\
+->(opt)\t \"Raison = \",raison\n") ;
+
+  Message_Direct("\n") ;
+  Message_Direct("\
+\t raison              = Maximum common ratio\n") ;
 }
 
 void Help_BuiltinCurves(void)

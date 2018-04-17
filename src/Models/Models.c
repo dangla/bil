@@ -58,6 +58,7 @@ void  Models_Delete(Models_t** models)
   Model_Delete(&model,n_models) ;
   
   free(*models) ;
+  *models = NULL ;
 }
 
 

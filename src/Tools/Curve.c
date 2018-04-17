@@ -64,6 +64,7 @@ void Curve_Delete(Curve_t** curve)
   free(Curve_GetXRange(*curve)) ;
   free(Curve_GetNameOfXAxis(*curve)) ;
   free(*curve) ;
+  *curve = NULL ;
 }
 
 

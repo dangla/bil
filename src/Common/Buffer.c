@@ -36,6 +36,7 @@ void Buffer_Delete(Buffer_t* *buffer)
 {
   free(Buffer_GetBeginOfBuffer(*buffer)) ;
   free(*buffer) ;
+  *buffer = NULL ;
 }
 
 

@@ -1,25 +1,34 @@
 #include <stdio.h>
+#include <assert.h>
 #include "Solutions.h"
 #include "Message.h"
 
 
 
-static Solution_t*  (Solution_Create)(Mesh_t*,int) ;
+static Solution_t*  (Solution_Create)(const int,Mesh_t*) ;
 static void         (Solutions_Initialize)(Mesh_t*,Solutions_t*) ;
 
 
 /* Extern functions */
 
-Solutions_t*   (Solutions_Create)(Mesh_t* mesh,int n_sol)
+Solutions_t*   (Solutions_Create)(const int n,Mesh_t* mesh,const int n_sol)
 {
-  Solutions_t* sols = (Solutions_t*) malloc(sizeof(Solutions_t)) ;
+  Solutions_t* sols = (Solutions_t*) malloc(n*sizeof(Solutions_t)) ;
   
-  if(!sols) arret("Solutions_Create") ;
+  if(!sols) assert(sols) ;
   
-  Solutions_GetNbOfSolutions(sols) = n_sol ;
-  Solutions_GetSolution(sols) = Solution_Create(mesh,n_sol) ;
+  {
+    int i ;
+    
+    for(i = 0 ; i < n ; i++) {
+      Solutions_t* solsi = sols + i ;
+      
+      Solutions_GetNbOfSolutions(solsi) = n_sol ;
+      Solutions_GetSolution(solsi) = Solution_Create(n_sol,mesh) ;
   
-  Solutions_Initialize(mesh,sols) ;
+      Solutions_Initialize(mesh,solsi) ;
+    }
+  }
   
   return(sols) ;
 }
@@ -122,12 +131,12 @@ void Solutions_StepBackward(Solutions_t* sols)
 
 
 
-Solution_t*   (Solution_Create)(Mesh_t* mesh,int n_sol)
+Solution_t*   (Solution_Create)(const int n_sol,Mesh_t* mesh)
 {
   Solution_t* sol = (Solution_t*) malloc(n_sol*sizeof(Solution_t)) ;
   int    i ;
   
-  if(!sol) arret("Solution_Create") ;
+  if(!sol) assert(sol) ;
 
   for(i = 0 ; i < n_sol ; i++) {
     Solution_t* soli = sol + i ;

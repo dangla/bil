@@ -61,18 +61,22 @@ CementSolutionChemistry_t* CementSolutionChemistry_Create(const int n)
   
   if(!csc) arret("CementSolutionChemistry_Create") ;
   
-  for(int i = 0 ; i < n ; i++) {
-    CementSolutionChemistry_t* csci = csc + i ;
+  {
+    int i ;
+      
+    for(i = 0 ; i < n ; i++) {
+      CementSolutionChemistry_t* csci = csc + i ;
     
-    /* Memory allocation */
-    CementSolutionChemistry_AllocateMemory(csci) ;
+      /* Memory allocation */
+      CementSolutionChemistry_AllocateMemory(csci) ;
   
-    /* Initialize the equilibrium constants */
-    CementSolutionChemistry_UpdateChemicalConstants(csci) ;
+      /* Initialize the equilibrium constants */
+      CementSolutionChemistry_UpdateChemicalConstants(csci) ;
   
   
-    /* Initialize concentrations to zero and other related variables */
-    CementSolutionChemistry_Initialize(csci) ;
+      /* Initialize concentrations to zero and other related variables */
+      CementSolutionChemistry_Initialize(csci) ;
+    }
   }
   
   return(csc) ;
@@ -773,8 +777,12 @@ void CementSolutionChemistry_CopyConcentrations(CementSolutionChemistry_t* csc,d
     int     n = CementSolutionChemistry_NbOfSpecies ;
     double* c = CementSolutionChemistry_GetConcentration(csc) ;
   
-    for(int i = 0 ; i < n ; i++) {
-      v[i] = c[i] ;
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        v[i] = c[i] ;
+      }
     }
   }
 }
@@ -787,8 +795,12 @@ void CementSolutionChemistry_CopyLogConcentrations(CementSolutionChemistry_t* cs
     int     n = CementSolutionChemistry_NbOfSpecies ;
     double* logc = CementSolutionChemistry_GetLogConcentration(csc) ;
   
-    for(int i = 0 ; i < n ; i++) {
-      v[i] = logc[i] ;
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        v[i] = logc[i] ;
+      }
     }
   }
 }
@@ -803,8 +815,12 @@ void CementSolutionChemistry_CopyChemicalPotential(CementSolutionChemistry_t* cs
     double  epot = CementSolutionChemistry_GetElectricPotential(csc) ;
     double* z = CementSolutionChemistry_GetValence() ;
   
-    for(int i = 0 ; i < n ; i++) {
-      v[i] = Ln10 * logc[i] + z[i] * epot ;
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        v[i] = Ln10 * logc[i] + z[i] * epot ;
+      }
     }
   }
 }
@@ -1341,8 +1357,12 @@ void CementSolutionChemistry_Initialize(CementSolutionChemistry_t* csc)
     int     n = CementSolutionChemistry_NbOfSpecies ;
     double* v = CementSolutionChemistry_GetConcentration(csc) ;
   
-    for(int i = 0 ; i < n ; i++) {
-      v[i] = 0. ;
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        v[i] = 0. ;
+      }
     }
   }
   
@@ -1351,8 +1371,12 @@ void CementSolutionChemistry_Initialize(CementSolutionChemistry_t* csc)
     int     n = CementSolutionChemistry_NbOfSpecies ;
     double* v = CementSolutionChemistry_GetLogConcentration(csc) ;
   
-    for(int i = 0 ; i < n ; i++) {
-      v[i] = - 99 ;
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        v[i] = - 99 ;
+      }
     }
   }
   
@@ -1361,8 +1385,12 @@ void CementSolutionChemistry_Initialize(CementSolutionChemistry_t* csc)
     int     n = CementSolutionChemistry_NbOfSpecies ;
     double* v = CementSolutionChemistry_GetLogActivity(csc) ;
   
-    for(int i = 0 ; i < n ; i++) {
-      v[i] = - 99 ;
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        v[i] = - 99 ;
+      }
     }
   }
   
@@ -1371,8 +1399,12 @@ void CementSolutionChemistry_Initialize(CementSolutionChemistry_t* csc)
     int     n = CementSolutionChemistry_NbOfElementConcentrations ;
     double* v = CementSolutionChemistry_GetElementConcentration(csc) ;
   
-    for(int i = 0 ; i < n ; i++) {
-      v[i] = 0. ;
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        v[i] = 0. ;
+      }
     }
   }
   
@@ -1381,8 +1413,12 @@ void CementSolutionChemistry_Initialize(CementSolutionChemistry_t* csc)
     int     n = CementSolutionChemistry_NbOfOtherVariables ;
     double* v = CementSolutionChemistry_GetOtherVariable(csc) ;
   
-    for(int i = 0 ; i < n ; i++) {
-      v[i] = 0. ;
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        v[i] = 0. ;
+      }
     }
   }
 }
@@ -1472,8 +1508,12 @@ void CementSolutionChemistry_TranslateConcentrationsIntoActivities(CementSolutio
   double* logc = CementSolutionChemistry_GetLogConcentration(csc) ;
   double* loga = CementSolutionChemistry_GetLogActivity(csc) ;
   
-  for(int i = 0 ; i < n ; i++) {
-    loga[i] = logc[i] - logc0 ;
+  {
+    int i ;
+      
+    for(i = 0 ; i < n ; i++) {
+      loga[i] = logc[i] - logc0 ;
+    }
   }
 }
 

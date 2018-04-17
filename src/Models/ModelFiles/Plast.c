@@ -59,10 +59,19 @@ static double* ComputeVariables(Element_t*,double**,double**,double*,double,doub
 static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
 //static double* ComputeVariablesDerivatives(Element_t*,double,double*,double,int) ;
 
-static double ReturnMapping_DruckerPrager(double*,double*,double*) ;
-static double Criterion_DruckerPrager(const double*,const double,double*,double*,double*) ;
+typedef double ReturnMapping_t(double*,double*,double*) ;
+typedef double Criterion_t(const double*,const double,double*,double*,double*) ;
+
+static ReturnMapping_t ReturnMapping_DruckerPrager ;
+static Criterion_t     Criterion_DruckerPrager ;
+
 static double* MacroGradient(Element_t*,double) ;
 static double* MacroStrain(Element_t*,double) ;
+
+
+
+#define Criterion       Criterion_DruckerPrager
+#define ReturnMapping   ReturnMapping_DruckerPrager
 
 //static double (*ReturnMapping[])(double*,double*,double*) = {ReturnMapping_DruckerPrager,ReturnMapping_CamClay} ;
 
@@ -130,23 +139,38 @@ int pm(const char* s)
     return(13 + 3*i + j) ;
   } else if(!strcmp(s,"Cijkl")) {
     return(22) ;
+  } else if(!strcmp(s,"criterion")) {
+    return(103) ;
+    
+    /* Drucker-Prager */
   } else if(!strcmp(s,"cohesion")) {
-    return (103) ;
+    return(104) ;
   } else if(!strcmp(s,"frottement")) {
-    return (104) ;
+    return(105) ;
   } else if(!strcmp(s,"dilatance"))  {
-    return (105) ;
+    return(106) ;
   } else if(!strcmp(s,"alpha"))      {
-    return (106) ;
+    return(107) ;
   } else if(!strcmp(s,"gamma_R"))    {
-    return (107) ;
-  } else if(!strcmp(s,"macro-fctindex")) {
     return(108) ;
+    
+    /* Cam-clay */
+  } else if(!strcmp(s,"kappa")) {
+    return(104) ;
+  } else if(!strcmp(s,"lambda")) {
+    return(105) ;
+  } else if(!strcmp(s,"M"))  {
+    return(106) ;
+  } else if(!strcmp(s,"phi"))      {
+    return(107) ;
+    
+  } else if(!strcmp(s,"macro-fctindex")) {
+    return(109) ;
   } else if(!strncmp(s,"macro-fctindex_",15)) {
     int i = (strlen(s) > 15) ? s[15] - '1' : 0 ;
     int j = (strlen(s) > 16) ? s[16] - '1' : 0 ;
     
-    return(108 + 3*i + j) ;
+    return(109 + 3*i + j) ;
   } else return(-1) ;
 }
 
@@ -264,7 +288,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 /** Read the material properties in the stream file ficd 
  *  Return the nb of (scalar) properties of the model */
 {
-  int NbOfProp = 117 ;
+  int NbOfProp = 118 ;
   int i ;
 
   /* Par defaut tout a 0 */
@@ -625,7 +649,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
   FEM_t* fem = FEM_GetInstance(el) ;
 
-  if(Element_IsSubmanifold(el)) return(0) ;
+  //if(Element_IsSubmanifold(el)) return(0) ;
 
   /* Initialization */
   {
@@ -765,7 +789,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
           double fc[9] ;
           double cg[9] ;
           double hm ;
-          double crit1 = Criterion_DruckerPrager(SIG,GAM_P,dfsds,dgsds,&hm) ;
+          double crit1 = Criterion(SIG,GAM_P,dfsds,dgsds,&hm) ;
           double fcg = UpdateElastoplasticTensor(dfsds,dgsds,fc,cg,hm,c1) ;
           
           if(fcg < 0) return(-1) ;
@@ -906,7 +930,7 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
     
       /* Projection */
       {
-        double crit = ReturnMapping_DruckerPrager(sig,eps_p,&gam_p) ;
+        double crit = ReturnMapping(sig,eps_p,&gam_p) ;
         
         x[I_CRIT]  = crit ;
         x[I_GAM_P] = gam_p ;
@@ -1033,8 +1057,15 @@ double UpdateElastoplasticTensor(double* dfsds,double* dgsds,double* fc,double* 
 
 
 double Criterion_DruckerPrager(const double* sig,const double gam_p,double* dfsds,double* dgsds,double* hm)
-/** Drucker-Prager criterion. Inputs are: 
+/** Drucker-Prager criterion. 
+ *  Inputs are: 
+ *  the stresses (sig), the cumulative plastic shear strain (gam_p). 
+ *  Parameters are:
  *  the friction angle (af), the dilatancy angle (ad) and the cohesion.
+ *  On outputs the following values are modified:
+ *  dfsds = derivative of the yield function wrt stresses
+ *  dgsds = derivative of the potential function wrt stresses
+ *  hm    = hardening modulus
  *  Return the value of the yield function. */
 {
   double id[9] = {1,0,0,0,1,0,0,0,1} ;
@@ -1153,7 +1184,8 @@ double Criterion_DruckerPrager(const double* sig,const double gam_p,double* dfsd
 
 
 double ReturnMapping_DruckerPrager(double* sig,double* eps_p,double* gam_p)
-/** Drucker-Prager return mapping. Inputs are: 
+/** Drucker-Prager return mapping.
+ *  Parameters are:
  *  the Young modulus (young),
  *  the Poisson's ratio (poisson),
  *  the friction angle (af), 
@@ -1162,7 +1194,7 @@ double ReturnMapping_DruckerPrager(double* sig,double* eps_p,double* gam_p)
  *  On outputs, the following values are modified:
  *  the stresses (sig), 
  *  the plastic strains (eps_p), 
- *  the hardening variable (gam_p).
+ *  the cumulative plastic shear strain (gam_p).
  *  Return the value of the yield function. */
 {
   double id[9] = {1,0,0,0,1,0,0,0,1} ;
@@ -1321,8 +1353,8 @@ double ReturnMapping_DruckerPrager(double* sig,double* eps_p,double* gam_p)
 
 
 #if 0
-double Criterion_CamClay(double *sig,double pc,double *dfsds,double *dgsds,double *hm,Element_t *el)
-/* Critere de Cam-Clay */
+double Criterion_CamClay(double* sig,double pc,double* dfsds,double* dgsds,double* hm,Element_t *el)
+/** Cam-Clay criterion */
 {
   double id[9] = {1,0,0,0,1,0,0,0,1} ;
   double p,q,crit,m2 ;
@@ -1340,7 +1372,7 @@ double Criterion_CamClay(double *sig,double pc,double *dfsds,double *dgsds,doubl
   crit = q*q/m2 + p*(p + pc) ;
   
   /*
-    Les gradients
+    Gradients
   */
   for(i = 0 ; i < 9 ; i++) {
     double dev = sig[i] - p*id[i] ;
@@ -1364,17 +1396,27 @@ double Criterion_CamClay(double *sig,double pc,double *dfsds,double *dgsds,doubl
 
 
 
-double ReturnMapping_CamClay(double *sig,double *sig_n,double *p_co,double *eps_p,Element_t *el)
-/* Critere de Cam-Clay : return mapping algorithm (sig,p_co,eps_p)
-   (d apres Borja & Lee 1990, modifie par Dangla)
-*/
+double ReturnMapping_CamClay(double* sig,double* eps_p,double* p_co,Element_t *el)
+/** Cam-Clay return mapping. Inputs are: 
+ *  the slope of the swelling line (kappa),
+ *  the slope of the virgin consolidation line (lambda),
+ *  the shear modulus (mu),
+ *  the slope of the critical state line (M),
+ *  the pre-consolidation pressure (p_co),
+ *  the porosity or the void ratio (phi0,e0).
+ *  On outputs, the following values are modified:
+ *  the stresses (sig), 
+ *  the plastic strains (eps_p), 
+ *  the hardening variable (p_co).
+ *  Return the value of the yield function. 
+ *  Algorithm from Borja & Lee 1990 modified by Dangla. */
 {
   double id[9] = {1,0,0,0,1,0,0,0,1} ;
   double p_t,q_t,p,q,pc,crit,m2,v,a ;
   double dl ;
   int    i ;
   /*
-    Donnees
+    Data
   */
   kappa   = GetProperty("kappa") ;
   mu      = GetProperty("mu") ;
@@ -1385,7 +1427,7 @@ double ReturnMapping_CamClay(double *sig,double *sig_n,double *p_co,double *eps_
   v       = 1./(lambda - kappa) ;
   
   /* 
-     Le critere
+     The criterion
   */
   p    = (sig[0] + sig[4] + sig[8])/3. ;
   q    = sqrt(3*j2(sig)) ;
@@ -1393,11 +1435,11 @@ double ReturnMapping_CamClay(double *sig,double *sig_n,double *p_co,double *eps_
   crit = q*q/m2 + p*(p + pc) ;
   
   /*
-    Algorithme de projection (closest point projection)
-    Une seule boucle iterative pour le calcul de p, racine de
-    q*q/m2 + p*(p + pc) = 0
-    Les autres variables (pc,q,dl) sont donnees explicitement par p.
-  */
+     Closest point projection algorithm.
+   * Only one iterative loop is used to solve
+                    q*q/m2 + p*(p + pc) = 0
+     for p. The other variables (pc,q,dl) are expressed with p.
+   */
   dl    = 0. ;
   p_t   = p ;
   q_t   = q ;
@@ -1419,7 +1461,7 @@ double ReturnMapping_CamClay(double *sig,double *sig_n,double *p_co,double *eps_
       
       p     -= fcrit/df ;
       
-      /* Les variables (pc,dl,q) sont explicites en p */
+      /* Variables (pc,dl,q) are explicit in p */
       pc     = pc_n*pow(p/p_t,-v*kappa) ;
       dl     = (1 - phi0)*kappa*log(p/p_t)/(2*p + pc) ;
       q      = q_t*m2/(m2 + 6*mu*dl) ;
@@ -1433,7 +1475,7 @@ double ReturnMapping_CamClay(double *sig,double *sig_n,double *p_co,double *eps_
   }
   
   /*
-    Les contraintes et deformations plastiques
+    Plastic stresses and strains
   */
   a = 1./(1 + 6*mu/m2*dl) ;
   
@@ -1445,7 +1487,7 @@ double ReturnMapping_CamClay(double *sig,double *sig_n,double *p_co,double *eps_
     eps_p[i] = dl*dfsds ;
   }
   
-  /* La pression de consolidation */
+  /* Consolidation pressure */
   *p_co = pc ;
   return(crit) ;
 }

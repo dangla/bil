@@ -11,7 +11,7 @@
 
 
 #if 0
-Element_AllocateGenericData(Element_t* el,int n,void* gdat,TypeId_t typeid,)
+Element_AllocateGenericData(Element_t* el,int n,void* gdat,TypeId_t typeid)
 {
   
 
@@ -33,7 +33,7 @@ Element_AllocateGenericData(Element_t* el,int n,void* gdat,TypeId_t typeid,)
             int i ;
     
             for(i = 0 ; i < NbOfIntPoints ; i++) {
-              Solutions_t* solsi = Solutions_Create(mesh,nsol_micro) ;
+              Solutions_t* solsi = Solutions_Create(1,mesh,nsol_micro) ;
 
               /* Not essential */
               Solutions_MergeExplicitTerms(solsi) ;
@@ -46,7 +46,7 @@ Element_AllocateGenericData(Element_t* el,int n,void* gdat,TypeId_t typeid,)
             GenericData_t* gdat0 = ElementSol_GetImplicitGenericData(elementsol) ;
             GenericData_t* gdat  = GenericData_New() ;
           
-            GenericData_Initialize(gdat,NbOfIntPoints,sols,Solutions_t) ;
+            GenericData_Initialize(gdat,NbOfIntPoints,sols,Solutions_t,"solutions") ;
           
             GenericData_InsertAfter(gdat0,gdat) ;
           }
@@ -441,6 +441,8 @@ double*  Element_ComputeCoordinateInReferenceFrame(Element_t* el,double* x)
       a[i] = 0 ;
     }
     
+    if(dim_e == 0) return(a) ;
+    
     for(iter = 0 ; iter < max_iter ; iter++) {
       double* h = ShapeFct_GetFunction(shapefct) ;
       double* dh = ShapeFct_GetFunctionGradient(shapefct) ;
@@ -474,13 +476,17 @@ double*  Element_ComputeCoordinateInReferenceFrame(Element_t* el,double* x)
         }
       }
     
-      for(i = 0 ; i < dim ; i++) {
-        int  j ;
       
-        r[i] /= diameter ;
+      if(diameter > 0) {
+       for(i = 0 ; i < dim ; i++) {
+          int  j ;
+      
+          r[i] /= diameter ;
         
-        for(j = 0 ; j < dim ; j++) k[dim*i+j] /= diameter ;
+          for(j = 0 ; j < dim ; j++) k[dim*i+j] /= diameter ;
+        }
       }
+      
     
       Math_SolveByGaussElimination(k,r,dim) ;
     

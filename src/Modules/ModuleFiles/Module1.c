@@ -43,10 +43,10 @@ int SetModuleProp(Module_t* module)
 int calcul(DataSet_t* jdd)
 {
   Mesh_t* mesh = DataSet_GetMesh(jdd) ;
-  int n_sol = 2 ; /* Must be 2 at minimum but works with more */
-  Solutions_t* sols = Solutions_Create(mesh,n_sol) ;
+  const int n_sol = 2 ; /* Must be 2 at minimum but works with more */
+  Solutions_t* sols = Solutions_Create(1,mesh,n_sol) ;
 
-  /* 1. Execute this line to set only one allocation of space for explicit terms. */
+  /* Execute this line to set only one allocation of space for explicit terms. */
   /* This is not mandatory except in some models where constant terms are saved as 
    * explicit terms and updated only once during initialization. 
    * It is then necessary to merge explicit terms. Otherwise it is not mandatory.
@@ -57,31 +57,46 @@ int calcul(DataSet_t* jdd)
   
   {
     DataFile_t* datafile = DataSet_GetDataFile(jdd) ;
-    char*   filename = DataFile_GetFileName(datafile) ;
-    Dates_t*  dates    = DataSet_GetDates(jdd) ;
-    int     nbofdates  = Dates_GetNbOfDates(dates) ;
-    Points_t* points   = DataSet_GetPoints(jdd) ;
-    int     n_points   = Points_GetNbOfPoints(points) ;
-    OutputFiles_t* outputfiles = OutputFiles_Create(filename,nbofdates,n_points) ;
-    Options_t* options = DataSet_GetOptions(jdd) ;
-    Solver_t* solver = Solver_Create(mesh,options) ;
+    int i = 0 ;
     
-  /* 2. Calculation */
+  /* 1. Initial time */
     {
       Solution_t* sol = Solutions_GetSolution(sols) ;
+      Dates_t*  dates = DataSet_GetDates(jdd) ;
       Date_t* date    = Dates_GetDate(dates) ;
       double t0       = Date_GetTime(date) ;
       
       Solution_GetTime(sol) = t0 ;
-      
-      Algorithm(jdd,sols,solver,outputfiles) ;
     }
-  
-  /* 3. Close the output files */
-    OutputFiles_Delete(&outputfiles) ;
+    
+  /* 2. Calculation */
+    {
+      char*   filename = DataFile_GetFileName(datafile) ;
+      Dates_t*  dates    = DataSet_GetDates(jdd) ;
+      int     nbofdates  = Dates_GetNbOfDates(dates) ;
+      Points_t* points   = DataSet_GetPoints(jdd) ;
+      int     n_points   = Points_GetNbOfPoints(points) ;
+      Options_t* options = DataSet_GetOptions(jdd) ;
+      Solver_t* solver = Solver_Create(mesh,options,1) ;
+      OutputFiles_t* outputfiles = OutputFiles_Create(filename,nbofdates,n_points) ;
+      
+      i = Algorithm(jdd,sols,solver,outputfiles) ;
+      
+      Solver_Delete(&solver) ;
+      OutputFiles_Delete(&outputfiles) ;
+    }
+      
+  /* 3. Store for future resume */
+    {
+      Solution_t* sol = Solutions_GetSolution(sols) ;
+      double t =  Solution_GetTime(sol) ;
+      
+      Mesh_InitializeSolutionPointers(mesh,sols) ;
+      Mesh_StoreCurrentSolution(mesh,datafile,t) ;
+    }
+    
+    return(i) ;
   }
-  
-  return(0) ;
 }
 
 
@@ -91,6 +106,11 @@ int calcul(DataSet_t* jdd)
 
 
 static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputFiles_t* outputfiles)
+/** On input sols should point to the initial solution
+ *  except if the context tells that initialization should be performed.
+ *  On output sols points to the last converged solution.
+ *  Return 0 if convergence has met, -1 otherwise.
+ */
 {
 #define SOL_1     Solutions_GetSolution(sols)
 #define SOL_n     Solution_GetPreviousSolution(SOL_1)
@@ -193,7 +213,7 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
           Solutions_StepBackward(sols) ;
           Mesh_InitializeSolutionPointers(mesh,sols) ;
           OutputFiles_BackupSolutionAtTime(outputfiles,jdd,T_1,idate+1) ;
-          Mesh_StoreCurrentSolution(mesh,datafile,T_1) ;
+          //Mesh_StoreCurrentSolution(mesh,datafile,T_1) ;
           return(-1) ;
         }
       }
@@ -421,12 +441,18 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
   /*
    * 4. Store for future resume
    */
+   /*
   if(IterProcess_ConvergenceIsMet(iterprocess)) {
     Mesh_StoreCurrentSolution(mesh,datafile,T_1) ;
   } else {
     Solutions_StepBackward(sols) ;
     Mesh_InitializeSolutionPointers(mesh,sols) ;
     Mesh_StoreCurrentSolution(mesh,datafile,T_1) ;
+    return(-1) ;
+  }
+  */
+  if(IterProcess_ConvergenceIsNotMet(iterprocess)) {
+    Solutions_StepBackward(sols) ;
     return(-1) ;
   }
   
@@ -484,6 +510,36 @@ int ComputeExplicitTerms(Mesh_t* mesh,double t)
 
 int ComputeMatrix(Mesh_t* mesh,double t,double dt,Matrix_t* a)
 {
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  unsigned int    ie ;
+
+  Matrix_SetValuesToZero(a) ;
+  
+  for(ie = 0 ; ie < n_el ; ie++) {
+    Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+    if(mat) {
+#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+      double ke[NE*NE] ;
+#undef NE
+      int    i ;
+      
+      Element_FreeBuffer(el + ie) ;
+      i = Element_ComputeMatrix(el + ie,t,dt,ke) ;
+      if(i != 0) return(i) ;
+      
+      Matrix_AssembleElementMatrix(a,el+ie,ke) ;
+    }
+  }
+  
+  return(0) ;
+}
+
+
+#if 0
+int ComputeMatrix(Mesh_t* mesh,double t,double dt,Matrix_t* a)
+{
 #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
   int    cole[NE],lige[NE] ;
   double ke[NE*NE] ;
@@ -497,6 +553,8 @@ int ComputeMatrix(Mesh_t* mesh,double t,double dt,Matrix_t* a)
     unsigned int    j ;
     
     for(j = 0 ; j < nnz ; j++) Matrix_GetNonZeroValue(a)[j] = zero ;
+    
+    Matrix_SetToInitialState(a) ;
   }
   
   for(ie = 0 ; ie < n_el ; ie++) {
@@ -523,13 +581,14 @@ int ComputeMatrix(Mesh_t* mesh,double t,double dt,Matrix_t* a)
           lige[ij] = (jj_row >= 0) ? Node_GetMatrixRowIndex(node_i)[jj_row] : -1 ;
         }
       }
-      Matrix_AssembleElementMatrix(a,ke,cole,lige,nn*neq) ;
+      Matrix_AssembleElementMatrix_(a,ke,cole,lige,nn*neq) ;
     }
   }
   
   return(0) ;
 #undef NE
 }
+#endif
 
 
 void ComputeResidu(Mesh_t* mesh,double t,double dt,double* r,Loads_t* loads)

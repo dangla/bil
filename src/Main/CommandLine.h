@@ -8,7 +8,7 @@ struct CommandLine_s  ; typedef struct CommandLine_s  CommandLine_t ;
 
 
 extern CommandLine_t*    (CommandLine_Create)(int,char**) ;
-extern void              (CommandLine_Delete)(CommandLine_t**) ;
+extern void              (CommandLine_Delete)(void*) ;
 
 
 #define CommandLine_GetNbOfArg(cmd)            ((cmd)->argc)

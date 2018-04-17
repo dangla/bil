@@ -45,6 +45,7 @@ enum TypeId_e {
   TypeId_Graph_t,
   TypeId_ICond_t,
   TypeId_IConds_t,
+  TypeId_InternationalSystemOfUnits_t,
   TypeId_IntFct_t,
   TypeId_IntFcts_t,
   TypeId_IterProcess_t,
@@ -75,6 +76,7 @@ enum TypeId_e {
   TypeId_Points_t,
   TypeId_Result_t,
   TypeId_Results_t,
+  TypeId_Session_t,
   TypeId_ShapeFct_t,
   TypeId_ShapeFcts_t,
   TypeId_Solution_t,
@@ -90,6 +92,13 @@ enum TypeId_e {
 } ;
 
 typedef enum TypeId_e     TypeId_t ;
+
+
+//typedef void (TypeId_Delete_t)(void*) ;
+
+
+extern void  (TypeId_Delete)(TypeId_t,void*) ;
+
         
 
 #include "Utils.h"
@@ -112,6 +121,8 @@ typedef enum TypeId_e     TypeId_t ;
         
 #define TypeId_SetTo(ID,T) \
         do {ID = TypeId_Create(T) ;} while(0)
+        
+        
 
 
 /* Implementation */

@@ -39,7 +39,7 @@ BIL_YEAR      := ${shell date +%Y}
 BIL_HOST      := ${shell hostname}: ${shell hostname -I}
 BIL_PACKAGER  := ${shell whoami}
 BIL_OS        := ${shell uname -sr}
-BIL_URL       := "http://perso.lcpc.fr/dangla.patrick/bil"
+BIL_URL       := "http://bil.ifsttar.fr"
 BIL_EMAIL     := "patrick.dangla@ifsttar.fr"
 #BIL_COPYRIGHT := "Copyright \(C\) 2002-"${BIL_YEAR}" Patrick Dangla"
 BIL_COPYRIGHT := "Copyright \(C\) 2002 Patrick Dangla"
@@ -248,6 +248,51 @@ zip:
 	
 
 #=======================================================================
+# Target rules for githelp
+
+githelp:
+	@( echo "States of files: tracked or untracked" )
+	@( echo "  tracked files: can be unmodified, modified or staged" )
+	@( echo "  untracked files: anything else" )
+	@( echo "" )
+	@( echo "Checking" )
+	@( echo "  checking the status of files: git status" )
+	@( echo "  ...for a more compact output: git status -s" )
+	@( echo "" )
+	@( echo "Tracking" )
+	@( echo "  tracking new files: git add <pathtonewfile.c>" )
+	@( echo "" )
+	@( echo "Staging" )
+	@( echo "  staging modified files: git add <pathtofile.c>" )
+	@( echo "  viewing staged and unstaged changes: git diff" )
+	@( echo "  viewing what was staged that will go into the next commit: git diff --staged" )
+	@( echo "" )
+	@( echo "Committing" )
+	@( echo "  committing the changes: git commit -m <message>" )
+	@( echo "  skipping the staging:   git commit -a -m <message>" )
+	@( echo "" )
+	@( echo "Viewing" )
+	@( echo "  viewing the commit history: git log" )
+	@( echo "  showing the difference introduced in each commit: git log -p" )
+	@( echo "  prints on a single line: git log --pretty=oneline" )
+	@( echo "" )
+	@( echo "Working with remotes" )
+	@( echo "  showing your remotes: git remote" )
+	@( echo "  with the URLs that Git has stored for the shortname to be used: git remote -v" )
+	@( echo "  adding a remote: git remote add <shortname> <url>" )
+	@( echo "" )
+	@( echo "Pushing" )
+	@( echo "  pushing to remote ifsttar: git push ifsttar master" )
+	@( echo "  pushing to remote dangla: git push dangla master" )
+	@( echo "  adding a remote: git remote add <shortname> <url>" )
+	@( echo "" )
+	@( echo "Tagging" )
+	@( echo "  listing the available tags: git tag" )
+	@( echo "  creating annotated tags: git tag -a <version> -m <message>" )
+	@( echo "  tagging later: git tag -a <version> <checksum>" )
+	
+
+#=======================================================================
 # Target rules for tests
 
 test:
@@ -255,3 +300,10 @@ test:
 	@( echo "BIL_PATH = ${BIL_PATH}" )
 	@( echo "BIL_COPYRIGHT = ${BIL_COPYRIGHT}" )
 	@( echo "BIL_LIBS = ${BIL_LIBS}" )
+	
+
+#=======================================================================
+# Target rules for memcheck through valgrind
+
+memcheck:
+	@( valgrind --tool=memcheck --leak-check=full ${BIL_EXE} )

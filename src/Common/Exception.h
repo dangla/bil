@@ -8,10 +8,12 @@ struct Exception_s     ; typedef struct Exception_s     Exception_t ;
 
 
 extern Exception_t*    (Exception_GetInstance)(void) ;
+extern void            (Exception_Delete)(void*) ;
 
 
 #define Exception_GetEnvironment(exception)        ((exception)->env)
 #define Exception_GetExceptionType(exception)      ((exception)->type)
+#define Exception_GetDelete(exception)             ((exception)->Delete)
 
 
 #include <signal.h>
@@ -39,9 +41,12 @@ extern Exception_t*    (Exception_GetInstance)(void) ;
         (!Exception_IsCaught)
 
 
+#include <GenericObject.h>
+
 struct Exception_s {        /* Exception handler */
   jmp_buf env ;             /* Environment */
   int type ;                /* Signal sent by longjmp */
+  GenericObject_Delete_t* Delete ;
 } ;
 
 #endif

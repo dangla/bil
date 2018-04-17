@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "Message.h"
 #include "Context.h"
@@ -8,19 +9,37 @@
 
 
 
+void* Module_Initialize(void*) ;
+
+
+
 Module_t* Module_Create(int n_module)
 /* Create modules */
 {
   Module_t* module = (Module_t*) calloc(n_module,sizeof(Module_t)) ;
-  int i ;
   
-  if(!module) arret("Module_Create") ;
+  assert(module) ;
   
-  
-  for(i = 0 ; i < n_module ; i++) {
-    Module_t* module_i = module + i ;
+  {
+    int i ;
     
+    for(i = 0 ; i < n_module ; i++) {
+      Module_t* module_i = module + i ;
     
+      Module_Initialize(module_i) ;
+    }
+  }
+  
+  return(module) ;
+}
+
+
+
+void* Module_Initialize(void* self)
+{
+  Module_t* module_i = (Module_t*) self ;
+  
+  {
     /* Allocation of space for the code name */
     {
       size_t sz = Module_MaxLengthOfKeyWord*sizeof(char) ;
@@ -58,5 +77,5 @@ Module_t* Module_Create(int n_module)
     }
   }
   
-  return(module) ;
+  return(module_i) ;
 }

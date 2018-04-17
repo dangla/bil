@@ -45,6 +45,7 @@ void Curves_Delete(Curves_t** curves)
   free(Curves_GetCurve(*curves)) ;
   free(Curves_GetBuffer(*curves)) ;
   free(*curves) ;
+  *curves = NULL ;
 }
 
 

@@ -34,7 +34,6 @@ static void   (DataSet_PrintData)(DataSet_t*,char*) ;
 #define OBVALS        DataSet_GetObVals(DATASET)
 #define ITERPROCESS   DataSet_GetIterProcess(DATASET)
 #define TIMESTEP      DataSet_GetTimeStep(DATASET)
-#define MODELS        DataSet_GetModels(DATASET)
 #define OPTIONS       DataSet_GetOptions(DATASET)
 #define MODULES       DataSet_GetModules(DATASET)
 
@@ -61,9 +60,6 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   Units_Create(DATAFILE) ;
   
   GEOMETRY    = Geometry_Create(DATAFILE) ;
-  
-  //MODELS      = Models_Create(GEOMETRY) ;
-  //if(!strcmp(debug,"model")) DataSet_PrintData(jdd,debug) ;
   
   MATERIALS   = Materials_Create(DATAFILE,GEOMETRY) ;
   if(!strcmp(debug,"mate")) DataSet_PrintData(jdd,debug) ;
@@ -113,6 +109,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   if(!strcmp(debug,"module")) DataSet_PrintData(jdd,debug) ;
   
   if(!strcmp(debug,"all")) DataSet_PrintData(jdd,debug) ;
+
+  Message_Direct("End of reading %s\n",filename) ;
+  Message_Direct("\n") ;
   
   return(jdd) ;
 }

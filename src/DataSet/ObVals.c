@@ -46,11 +46,18 @@ ObVals_t*  ObVals_Create(DataFile_t* datafile,Mesh_t* mesh,Materials_t* mats)
       unsigned int n_nodes = Mesh_GetNbOfNodes(mesh) ;
       unsigned int i ;
       
+      for(i = 0 ; i < n_nodes ; i++) {
+        Node_GetObValIndex(node + i) = index ;
+        index += Node_GetNbOfEquations(node + i) ;
+      }
+      
+      /*
       Node_GetObValIndex(node) = index ;
       
       for(i = 1 ; i < n_nodes ; i++) {
         Node_GetObValIndex(node + i) = Node_GetObValIndex(node + i - 1) + Node_GetNbOfEquations(node + i - 1) ;
       }
+      */
     }
     
     /* To access the objective values */

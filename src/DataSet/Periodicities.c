@@ -195,7 +195,7 @@ Graph_t*  (Periodicities_ComputeGraph)(Mesh_t* mesh)
     int n_per   = Periodicities_GetNbOfPeriodicities(periodicities) ;
     int i_per ;
     double hmin = Elements_GetMinimumSizeOfElements(elts) ;
-    double tol = 0.01*hmin ;
+    double tol = 0.01*fabs(hmin) ;
     
     
     for(i_per = 0 ; i_per < n_per ; i_per++) {

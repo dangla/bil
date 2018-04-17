@@ -10,7 +10,7 @@ struct Options_s      ; typedef struct Options_s      Options_t ;
 #include "Context.h"
 
 extern Options_t*  (Options_Create)(Context_t*) ;
-extern void        (Options_Delete)(Options_t**) ;
+extern void        (Options_Delete)(void*) ;
 
 
 #define Options_MaxLengthOfKeyWord               (30)

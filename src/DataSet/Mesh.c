@@ -35,6 +35,7 @@ static int*   (Mesh_ComputeInversePermutationOfElements)(Mesh_t*,const char*) ;
 static Graph_t*  (Mesh_CreateGraph)(Mesh_t*) ;
 
 
+static void   mail0d(Mesh_t*) ;
 static void   mail1d(Mesh_t*,FILE*) ;
 static void   maillage(double*,int*,double,int,Node_t*) ;
 static int    mesh1d(double*,double*,int,Node_t**) ;
@@ -119,6 +120,12 @@ Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geo
     ficd = DataFile_GetFileStream(datafile) ;
     
     mail1d(mesh,ficd) ;
+    ecrit_mail_msh_1(mesh,filename) ;
+    
+  } else if(dim == 0) {
+    char* filename = DataFile_GetFileName(datafile) ;
+    
+    mail0d(mesh) ;
     ecrit_mail_msh_1(mesh,filename) ;
     
   } else {
@@ -1232,6 +1239,57 @@ void (Mesh_UpdateCurrentUnknowns)(Mesh_t* mesh,Solver_t* solver)
 #define NO            Mesh_GetNode(MESH)
 #define N_EL          Mesh_GetNbOfElements(MESH)
 #define EL            Mesh_GetElement(MESH)
+
+
+
+void mail0d(Mesh_t* mesh)
+/* MAILLAGE 0D */
+{
+  /* nombre d'elements */
+  N_EL = 1 ;
+
+  /* nombre de noeuds */
+  N_NO = 1 ;
+
+  /* les noeuds */
+  NO = (Node_t*) malloc(N_NO*sizeof(Node_t)) ;
+  if(NO == NULL) arret("mail0d(1) : impossible d\'allouer la memoire") ;
+
+  {
+    double* x = (double*) malloc(N_NO*3*sizeof(double)) ;
+    if(x == NULL) arret("mail0d(2) : impossible d\'allouer la memoire") ;
+  
+    Node_GetCoordinate(NO) = x ;
+    Node_GetNodeIndex(NO)  = 0 ;
+  }
+
+  /* les elements */
+  EL = (Element_t*) malloc(N_EL*sizeof(Element_t)) ;
+  if(EL == NULL) {
+    fprintf(stderr,"impossible d\'allouer la memoire") ;
+    exit(EXIT_FAILURE) ;
+  }
+
+  /* Indexes */
+  Element_GetElementIndex(EL) = 0 ;
+
+  Element_GetMaterialIndex(EL) = 0 ;
+  Element_GetRegionIndex(EL) = 1 ;
+
+  Element_GetNbOfNodes(EL) = 1 ;    /* nb de noeuds */
+  Element_GetDimension(EL) = 0 ;
+
+  
+  {
+    Node_t** no = (Node_t**) malloc(sizeof(Node_t*)) ; /* pointeurs */
+    if(!no) arret("mail1d : impossible d\'allouer la memoire") ;
+    
+    Element_GetPointerToNode(EL) = no ;
+  }
+
+  /* numerotation */
+  Element_GetNode(EL,0) = NO ;
+}
 
 
 

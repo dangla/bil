@@ -5,7 +5,9 @@
 #include "Tools/Math.h"
 #include "ShapeFcts.h"
 
-static void   ShapeFct_Create(ShapeFct_t*,int,int) ;
+
+static ShapeFct_t* (ShapeFct_Create)(int,int) ;
+static void        (ShapeFct_AllocateMemory)(ShapeFct_t*) ;
 
 
 /* Extern functions */
@@ -35,7 +37,7 @@ ShapeFcts_t*  ShapeFcts_Create(void)
 
 
 
-int ShapeFcts_FindShapeFct(ShapeFcts_t *shapefcts,int nn,int dim)
+int ShapeFcts_FindShapeFct(ShapeFcts_t* shapefcts,int nn,int dim)
 /** Find a Shape Function class defined by 
  *  nn = Nb of nodes 
  *  dim = local dimension
@@ -46,7 +48,7 @@ int ShapeFcts_FindShapeFct(ShapeFcts_t *shapefcts,int nn,int dim)
 
   /* Does the function already exist? */
   for(i = 0 ; i < n_fi ; i++) {
-    ShapeFct_t *fi = ShapeFcts_GetShapeFct(shapefcts) + i ;
+    ShapeFct_t* fi = ShapeFcts_GetShapeFct(shapefcts) + i ;
     int    i_nn = ShapeFct_GetNbOfFunctions(fi) ;
     int    i_dim = ShapeFct_GetDimension(fi) ;
 
@@ -61,13 +63,13 @@ int ShapeFcts_FindShapeFct(ShapeFcts_t *shapefcts,int nn,int dim)
 }
 
 
-int ShapeFcts_AddShapeFct(ShapeFcts_t *shapefcts,int nn,int dim)
+int ShapeFcts_AddShapeFct(ShapeFcts_t* shapefcts,int nn,int dim)
 /** Add a Shape Function class defined by 
  *  nn = Nb of nodes 
  *  dim = local dimension
  *  Return the index of the shape function. */
 {
-  ShapeFct_t *shapefct = ShapeFcts_GetShapeFct(shapefcts) ;
+  ShapeFct_t* shapefct = ShapeFcts_GetShapeFct(shapefcts) ;
   int    i ;
 
   /* We add a new function */
@@ -80,7 +82,11 @@ int ShapeFcts_AddShapeFct(ShapeFcts_t *shapefcts,int nn,int dim)
   /* Index of the new function */
   i = ShapeFcts_GetNbOfShapeFcts(shapefcts) - 1 ;
   
-  ShapeFct_Create(shapefct + i,nn,dim) ;
+  {
+    ShapeFct_t* shapefcti = ShapeFct_Create(nn,dim) ;
+    
+    shapefct[i] = *shapefcti ;
+  }
   
   return(i) ;
 }
@@ -88,20 +94,38 @@ int ShapeFcts_AddShapeFct(ShapeFcts_t *shapefcts,int nn,int dim)
 
 /* Intern functions */
 
-void ShapeFct_Create(ShapeFct_t* shapefct,int nn,int dim)
+ShapeFct_t* ShapeFct_Create(int nn,int dim)
 {
+  ShapeFct_t* shapefct = (ShapeFct_t*) malloc(sizeof(ShapeFct_t)) ;
+  
+  if(!shapefct) {
+    arret("ShapeFct_AllocateMemory(1)") ;
+  }
+  
   ShapeFct_GetDimension(shapefct) = dim ;
   ShapeFct_GetNbOfFunctions(shapefct) = nn ;
+  
+  ShapeFct_AllocateMemory(shapefct) ;
+  
+  return(shapefct) ;
+}
+
+
+
+void ShapeFct_AllocateMemory(ShapeFct_t* shapefct)
+{
+  int dim = ShapeFct_GetDimension(shapefct) ;
+  int nn  = ShapeFct_GetNbOfFunctions(shapefct) ;
   
   {
     int k = dim + nn*(1 + dim) ;
     double* b = (double*) malloc(k*sizeof(double)) ;
     
-    if(!b) arret("ShapeFct_Create(1)") ;
+    if(!b) arret("ShapeFct_AllocateMemory(1)") ;
     
-    ShapeFct_GetCoordinate(shapefct) = b ;
-    ShapeFct_GetFunction(shapefct) = ShapeFct_GetCoordinate(shapefct) + dim ;
-    ShapeFct_GetFunctionGradient(shapefct) = ShapeFct_GetFunction(shapefct) + nn ;
+    ShapeFct_GetCoordinate(shapefct)       = b ;
+    ShapeFct_GetFunction(shapefct)         = b + dim ;
+    ShapeFct_GetFunctionGradient(shapefct) = b + dim + nn ;
   }
   
   return ;
