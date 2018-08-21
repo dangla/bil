@@ -11,7 +11,7 @@
 
 
 static LocalVariableVector_t*     LocalVariableVector_Create(int,int) ;
-static void                       LocalVariableVector_Delete(LocalVariableVector_t**) ;
+static void                       LocalVariableVector_Delete(void*) ;
 
 
 LocalVariableVectors_t* LocalVariableVectors_Create(int NbOfVariables)
@@ -37,16 +37,19 @@ LocalVariableVectors_t* LocalVariableVectors_Create(int NbOfVariables)
 
 
 
-void LocalVariableVectors_Delete(LocalVariableVectors_t** lvvs)
+void LocalVariableVectors_Delete(void* self)
 {
+  LocalVariableVectors_t** plvvs = (LocalVariableVectors_t**) self ;
+  LocalVariableVectors_t*   lvvs =  *plvvs ;
+  
   {
-    LocalVariableVector_t* lvv = LocalVariableVectors_GetLocalVariableVector(*lvvs) ;
+    LocalVariableVector_t* lvv = LocalVariableVectors_GetLocalVariableVector(lvvs) ;
     
     LocalVariableVector_Delete(&lvv) ;
   }
   
-  free(*lvvs) ;
-  *lvvs = NULL ;
+  free(lvvs) ;
+  *plvvs = NULL ;
 }
 
 
@@ -93,10 +96,14 @@ LocalVariableVector_t* LocalVariableVector_Create(int NbOfVectors,int NbOfVariab
 
 
 
-void LocalVariableVector_Delete(LocalVariableVector_t** lvv)
+void LocalVariableVector_Delete(void* self)
 {
-  free(LocalVariableVector_GetVariable(*lvv)) ;
-  free(LocalVariableVector_GetVariableDerivative(*lvv)) ;
+  LocalVariableVector_t** plvv = (LocalVariableVector_t**) self ;
+  LocalVariableVector_t*   lvv =  *plvv;
   
-  free(*lvv) ;
+  free(LocalVariableVector_GetVariable(lvv)) ;
+  free(LocalVariableVector_GetVariableDerivative(lvv)) ;
+  
+  free(lvv) ;
+  *plvv = NULL ;
 }

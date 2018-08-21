@@ -172,12 +172,14 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
   fprintf(stdout,"debug(%d)\n",i_debug++) ;
   fprintf(stdout,"-----\n") ;
 
-
+  /* Geometry
+   * -------- */
   if(!strcmp(mot,"geom") || !strcmp(mot,"all")) {
     fprintf(stdout,"\n") ;
     fprintf(stdout,"Geometry:\n") ;
     
-    fprintf(stdout,"\t Dimension = %dD, Symmetry = ",DIM) ;
+    fprintf(stdout,"\t Dimension = %dD\n",DIM) ;
+    fprintf(stdout,"\t Symmetry = ") ;
     
     if(0) {
       
@@ -195,16 +197,18 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     }
   }
 
-
+  /* Mesh
+   * ---- */
   if(!strcmp(mot,"mesh") || !strcmp(mot,"all")) {
     int i ;
     int c1 = 14 ;
-    int c2 = 40 ;
-    int c3 = 50 ;
+    int c2 = 30 ;
+    int c3 = 45 ;
     
     fprintf(stdout,"\n") ;
     fprintf(stdout,"Mesh:\n") ;
     
+    fprintf(stdout,"\t Nodes:\n") ;
     fprintf(stdout,"\t Nb of nodes = %d\n",N_NO) ;
     
     for(i = 0 ; i < (int) N_NO ; i++) {
@@ -223,6 +227,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       fprintf(stdout,"\n") ;
     }
     
+    fprintf(stdout,"\n") ;
+    fprintf(stdout,"\t Elements:\n") ;
     fprintf(stdout,"\t Nb of elements = %d\n",N_EL) ;
     
     for(i = 0 ; i < (int) N_EL ; i++) {
@@ -235,26 +241,29 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       
       n += fprintf(stdout,":") ;
       
-      n += fprintf(stdout," no(") ;
+      n += fprintf(stdout,"  reg(%d)",Element_GetRegionIndex(elt_i)) ;
+      
+      while(n < c2) n += fprintf(stdout," ") ;
+      
+      n += fprintf(stdout,"  mat(%d)",Element_GetMaterialIndex(elt_i)) ;
+      
+      while(n < c3) n += fprintf(stdout," ") ;
+      
+      n += fprintf(stdout,"  no(") ;
       
       for(j = 0 ; j < nn ; j++) {
         n += fprintf(stdout,"%d",Node_GetNodeIndex(Element_GetNode(elt_i,j))) ;
         n += fprintf(stdout,((j < nn - 1) ? "," : ")")) ;
       }
       
-      while(n < c2) n += fprintf(stdout," ") ;
       
-      n += fprintf(stdout,"mat(%d)",Element_GetMaterialIndex(elt_i)) ;
-      
-      while(n < c3) n += fprintf(stdout," ") ;
-      
-      n += fprintf(stdout,"reg(%d)",Element_GetRegionIndex(elt_i)) ;
       
       fprintf(stdout,"\n") ;
     }
   }
 
-
+  /* Materials
+   * --------- */
   if(!strcmp(mot,"mate") || !strcmp(mot,"all")) {
     int i ;
     int c2 = 40 ;
@@ -274,6 +283,9 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       
       fprintf(stdout,"\t Model = %s\n",Material_GetCodeNameOfModel(MAT + i)) ;
       
+      fprintf(stdout,"\n") ;
+      
+      fprintf(stdout,"\t Equations:\n") ;
       fprintf(stdout,"\t Nb of equations = %d\n",nb_eqn) ;
       
       for(j = 0 ; j < nb_eqn ; j++) {
@@ -288,6 +300,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       
       fprintf(stdout,"\n") ;
       
+      fprintf(stdout,"\t Properties:\n") ;
       fprintf(stdout,"\t Nb of properties = %d\n",nb_pr) ;
       
       for(j = 0 ; j < nb_pr ; j++) {
@@ -295,6 +308,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       }
       
       fprintf(stdout,"\n") ;
+      
+      fprintf(stdout,"\t Curves:\n") ;
       fprintf(stdout,"\t Nb of curves = %d\n",nb_cv) ;
       
       for(j = 0 ; j < nb_cv ; j++) {
@@ -318,7 +333,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     }
   }
 
-
+  /* Continuity
+   * ---------- */
   if(!strcmp(mot,"continuity")) {
     int i ;
     fprintf(stdout,"\n") ;
@@ -395,7 +411,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     }
   }
 
-
+  /* Matrix numbering
+   * ---------------- */
   if(!strcmp(mot,"numbering")) {
     int i ;
     fprintf(stdout,"\n") ;
@@ -433,7 +450,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     }
   }
 
-
+  /* Functions
+   * --------- */
   if(!strcmp(mot,"func") || !strcmp(mot,"all")) {
     int i ;
     
@@ -454,7 +472,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     }
   }
 
-
+  /* Fields
+   * ------ */
   if(!strcmp(mot,"field") || !strcmp(mot,"all")) {
     int i ;
     
@@ -529,7 +548,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     }
   }
 
-
+  /* Initial conditions
+   * ------------------ */
   if(!strcmp(mot,"init") || !strcmp(mot,"all")) {
     int i ;
     int c1 = 14 ;
@@ -595,7 +615,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     }
   }
 
-
+  /* Boundary conditions
+   * ------------------- */
   if(!strcmp(mot,"bcond") || !strcmp(mot,"all")) {
     int i ;
     
@@ -635,7 +656,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     }
   }
 
-
+  /* Loads
+   * ----- */
   if(!strcmp(mot,"load") || !strcmp(mot,"all")) {
     int i ;
     
@@ -676,7 +698,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     }
   }
 
-
+  /* Points
+   * ------ */
   if(!strcmp(mot,"points") || !strcmp(mot,"all")) {
     int n_points = N_POINTS ;
     Point_t* point = Points_GetPoint(POINTS) ;
@@ -703,7 +726,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     }
   }
 
-
+  /* Dates
+   * ----- */
   if(!strcmp(mot,"dates") || !strcmp(mot,"all")) {
     int n_dates = N_DATES ;
     Date_t* date = Dates_GetDate(DATES) ;
@@ -723,7 +747,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     }
   }
 
-
+  /* Time steps
+   * ---------- */
   if(!strcmp(mot,"time") || !strcmp(mot,"all")) {
     fprintf(stdout,"\n") ;
     fprintf(stdout,"Time Step:\n") ;
@@ -740,7 +765,8 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     fprintf(stdout,"\t Nb of repetitions = %d\n",IterProcess_GetNbOfRepetitions(ITERPROCESS)) ;
   }
 
-
+  /* Objective variations
+   * -------------------- */
   if(!strcmp(mot,"obval") || !strcmp(mot,"all")) {
     int i ;
     
@@ -751,13 +777,14 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     
     for(i = 0 ; i < (int) N_OBJ ; i++) {
       fprintf(stdout,"\t %s = %e",ObVal_GetNameOfUnknown(OBJ + i),ObVal_GetValue(OBJ + i)) ;
-      fprintf(stdout," type = %c",ObVal_GetType(OBJ + i)) ;
-      fprintf(stdout," relaxation factor = %e",ObVal_GetRelaxationFactor(OBJ + i)) ;
+      fprintf(stdout," , type = %c",ObVal_GetType(OBJ + i)) ;
+      fprintf(stdout," , relaxation factor = %e",ObVal_GetRelaxationFactor(OBJ + i)) ;
       fprintf(stdout,"\n") ;
     }
   }
 
-
+  /* Interpolation functions
+   * ----------------------- */
   if(!strcmp(mot,"inter")) {
     int i ;
     

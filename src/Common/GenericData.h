@@ -17,12 +17,11 @@ struct GenericData_s     ; typedef struct GenericData_s     GenericData_t ;
 
 extern GenericData_t* (GenericData_New)          (void) ;
 extern void           (GenericData_Delete)       (void*) ;
-extern void           (GenericData_Remove)       (GenericData_t**) ;
 extern GenericData_t* (GenericData_Create_)      (int,void*,TypeId_t,char const*) ;
 extern void           (GenericData_Initialize_)  (GenericData_t*,int,void*,TypeId_t,char const*) ;
-extern void           (GenericData_InsertBefore) (GenericData_t*,GenericData_t*) ;
-extern void           (GenericData_InsertAfter)  (GenericData_t*,GenericData_t*) ;
-extern GenericData_t* (GenericData_Merge)        (GenericData_t*,GenericData_t*) ;
+//extern void           (GenericData_InsertBefore) (GenericData_t*,GenericData_t*) ;
+//extern void           (GenericData_InsertAfter)  (GenericData_t*,GenericData_t*) ;
+extern GenericData_t* (GenericData_Append)       (GenericData_t*,GenericData_t*) ;
 extern GenericData_t* (GenericData_First)        (GenericData_t*) ;
 extern GenericData_t* (GenericData_Last)         (GenericData_t*) ;
 extern GenericData_t* (GenericData_Find_)        (GenericData_t*,TypeId_t,char const*) ;
@@ -55,16 +54,16 @@ extern GenericData_t* (GenericData_Find_)        (GenericData_t*,TypeId_t,char c
         GenericData_Find_(GD,TypeId_Create(T),N)
         
         
-#define GenericData_Append(A,B) \
-        GenericData_InsertAfter(GenericData_Last(A),B)
-        
-        
 #define GenericData_Is(GD,I,S) \
         ((GenericData_GetTypeId(GD) == I) && !strcmp(GenericData_GetName(GD),S))
         
         
 #define GenericData_FindData(GD,T,N) \
         GenericData_GetData(GenericData_Find(GD,T,N))
+        
+        
+#define GenericData_Merge(A,B) \
+        GenericData_Append(A,GenericData_First(B))
 
 
 

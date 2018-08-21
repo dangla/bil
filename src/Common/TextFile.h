@@ -11,7 +11,7 @@ struct TextFile_s       ; typedef struct TextFile_s       TextFile_t ;
 #include <stdio.h>
 
 extern TextFile_t*     (TextFile_Create)(char*) ;
-extern void            (TextFile_Delete)(TextFile_t**) ;
+extern void            (TextFile_Delete)(void*) ;
 extern FILE*           (TextFile_OpenFile)(TextFile_t*,const char*) ;
 extern void            (TextFile_CloseFile)(TextFile_t*) ;
 extern void            (TextFile_StoreFilePosition)(TextFile_t*) ;

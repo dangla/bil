@@ -29,6 +29,7 @@ template <typename T> inline void* GenericObject_New_(const int n)
   if(A) assert(A) ;
   return(A) ;
 }
+
 #define GenericObject_New(T, ...) \
         GenericObject_New_<T>(__VA_ARGS__)
 
@@ -52,7 +53,7 @@ template <typename T> inline void* GenericObject_New_(const int n)
 
 
 //#define GenericObject_Delete(GO,...) \
-        TypeId_Delete(TypeId_Create(GenericObject_Type(GO)),__VA_ARGS__)
+//        TypeId_Delete(TypeId_Create(GenericObject_Type(GO)),__VA_ARGS__)
 
  
  

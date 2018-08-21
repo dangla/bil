@@ -32,11 +32,14 @@ void Buffer_Free(Buffer_t* buffer)
 }
 
 
-void Buffer_Delete(Buffer_t* *buffer)
+void Buffer_Delete(void* self)
 {
-  free(Buffer_GetBeginOfBuffer(*buffer)) ;
-  free(*buffer) ;
-  *buffer = NULL ;
+  Buffer_t** pbuffer = (Buffer_t**) self ;
+  Buffer_t*   buffer = *pbuffer ;
+  
+  free(Buffer_GetBeginOfBuffer(buffer)) ;
+  free(buffer) ;
+  *pbuffer = NULL ;
 }
 
 

@@ -11,9 +11,7 @@ typedef struct HardenedCementChemistry_s     HardenedCementChemistry_t ;
 extern HardenedCementChemistry_t* (HardenedCementChemistry_Create)(void) ;
 extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O)        (HardenedCementChemistry_t*) ;
 extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O)        (HardenedCementChemistry_t*) ;
-extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_2)      (HardenedCementChemistry_t*) ;
 extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O)  (HardenedCementChemistry_t*) ;
-extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_2)(HardenedCementChemistry_t*) ;
 extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemistry_t*) ;
 
 
@@ -35,6 +33,7 @@ extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemi
         
 
 
+/* Copying */
 #define HardenedCementChemistry_CopyConcentrations(HCC,v)  \
         (CementSolutionChemistry_CopyConcentrations(HardenedCementChemistry_GetCementSolutionChemistry(HCC),v))
 
@@ -58,26 +57,39 @@ extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemi
 
 
 /* The getters for attributes */
+#define HardenedCementChemistry_GetPrimaryVariableIndex(HCC) \
+        ((HCC)->primaryvariableindex)
+        
 #define HardenedCementChemistry_GetPrimaryVariable(HCC) \
         ((HCC)->primaryvariable)
+        
 #define HardenedCementChemistry_GetVariable(HCC) \
         ((HCC)->variable)
+        
 #define HardenedCementChemistry_GetSaturationIndex(HCC) \
         ((HCC)->saturationindex)
+        
 #define HardenedCementChemistry_GetConstant(HCC) \
         ((HCC)->constant)
+        
 #define HardenedCementChemistry_GetLog10Ksp(HCC) \
         ((HCC)->log10solubilityproductconstant)
+        
 #define HardenedCementChemistry_GetCSHCurves(HCC) \
         ((HCC)->cshcurves)
+        
 #define HardenedCementChemistry_GetCementSolutionChemistry(HCC) \
         ((HCC)->csc)
+        
 #define HardenedCementChemistry_GetLog10SaturationIndex(HCC) \
         ((HCC)->log10saturationindex)
+        
 #define HardenedCementChemistry_GetCurveOfCalciumSiliconRatioInCSH(HCC) \
         ((HCC)->curveofcalciumsiliconratioincsh)
+        
 #define HardenedCementChemistry_GetCurveOfWaterSiliconRatioInCSH(HCC) \
         ((HCC)->curveofwatersiliconratioincsh)
+        
 #define HardenedCementChemistry_GetCurveOfSaturationIndexOfSH(HCC) \
         ((HCC)->curveofsaturationindexofsh)
 
@@ -91,29 +103,83 @@ extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemi
 
 
 
-/* Macros for primary variables
- * ----------------------------*/
-#define HardenedCementChemistry_NbOfPrimaryVariables  (8)
+/* Indexes for the primary variables
+ * ---------------------------------*/
+#define HardenedCementChemistry_NbOfPrimaryVariables  (9)
 
-#define HardenedCementChemistry_SI_Ca        (0)
-#define HardenedCementChemistry_SI_Si        (1)
-#define HardenedCementChemistry_SI_Al        (2)
 
-#define HardenedCementChemistry_LogA_Na      (3)
-#define HardenedCementChemistry_LogA_K       (4)
-#define HardenedCementChemistry_LogA_CO2     (5)
-#define HardenedCementChemistry_LogA_OH      (6)
-#define HardenedCementChemistry_LogA_H2SO4   (7)
+/* Different primary variables may be used */
+#define HardenedCementChemistry_H2O          (0)
+#define HardenedCementChemistry_LogA_H2O     (0)
 
-#define HardenedCementChemistry_LogC_Na      (3)
-#define HardenedCementChemistry_LogC_K       (4)
-#define HardenedCementChemistry_LogC_CO2     (5)
-#define HardenedCementChemistry_LogC_OH      (6)
-#define HardenedCementChemistry_LogC_H2SO4   (7)
+#define HardenedCementChemistry_CaO          (1)
+#define HardenedCementChemistry_SI_CH        (1)
+#define HardenedCementChemistry_SI_CH_CC \
+        (1 + HardenedCementChemistry_NbOfPrimaryVariables)
+#define HardenedCementChemistry_SI_CH_CSH2 \
+        (1 + 2*HardenedCementChemistry_NbOfPrimaryVariables)
 
-/* Input */
+#define HardenedCementChemistry_SiO2         (2)
+#define HardenedCementChemistry_SI_CSH       (2)
+
+#define HardenedCementChemistry_Al2O3        (3)
+#define HardenedCementChemistry_SI_AH3       (3)
+
+#define HardenedCementChemistry_Na2O         (4)
+#define HardenedCementChemistry_LogA_Na      (4)
+#define HardenedCementChemistry_LogC_Na      (4)
+
+#define HardenedCementChemistry_K2O          (5)
+#define HardenedCementChemistry_LogA_K       (5)
+#define HardenedCementChemistry_LogC_K       (5)
+
+#define HardenedCementChemistry_CO2          (6)
+#define HardenedCementChemistry_LogA_CO2     (6)
+#define HardenedCementChemistry_LogC_CO2     (6)
+
+#define HardenedCementChemistry_LogA_OH      (7)
+#define HardenedCementChemistry_LogC_OH      (7)
+
+#define HardenedCementChemistry_SO3          (8)
+#define HardenedCementChemistry_LogA_H2SO4   (8)
+#define HardenedCementChemistry_LogC_H2SO4   (8)
+#define HardenedCementChemistry_LogC_SO4 \
+        (8 + HardenedCementChemistry_NbOfPrimaryVariables)
+
+
+
+/* Inputs: definition
+ * ------------------ */
 #define HardenedCementChemistry_GetInput(HCC,U) \
-        (HardenedCementChemistry_GetPrimaryVariable(HCC)[HardenedCementChemistry_##U])
+        HardenedCementChemistry_GetPrimaryVariable(HCC)[HardenedCementChemistry_InputIndex(U)]
+
+#define HardenedCementChemistry_SetIndex(HCC,U) \
+        do{ \
+          HardenedCementChemistry_GetIndex(HCC,U) = HardenedCementChemistry_Index(U) ; \
+        } while(0)
+        
+#define HardenedCementChemistry_SetInput(HCC,U,...) \
+        do{ \
+          HardenedCementChemistry_GetIndex(HCC,U) = HardenedCementChemistry_Index(U) ; \
+          HardenedCementChemistry_GetInput(HCC,U) = __VA_ARGS__ ; \
+        } while(0)
+        
+#define HardenedCementChemistry_InputCaOIs(HCC,V) \
+        HardenedCementChemistry_InputIs(HCC,CaO,V)
+        
+/* Inputs: implementation
+ * ---------------------- */
+#define HardenedCementChemistry_Index(U) \
+        (HardenedCementChemistry_##U)
+
+#define HardenedCementChemistry_InputIndex(U) \
+        (HardenedCementChemistry_Index(U) % HardenedCementChemistry_NbOfPrimaryVariables)
+        
+#define HardenedCementChemistry_GetIndex(HCC,U) \
+        HardenedCementChemistry_GetPrimaryVariableIndex(HCC)[HardenedCementChemistry_InputIndex(U)]
+        
+#define HardenedCementChemistry_InputIs(HCC,U,V) \
+        (HardenedCementChemistry_GetIndex(HCC,U) == HardenedCementChemistry_Index(V))
 
 
 
@@ -137,46 +203,6 @@ extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemi
 
 #define HardenedCementChemistry_GetLog10SaturationIndexOf(HCC,A) \
         (HardenedCementChemistry_GetLog10SaturationIndex(HCC)[HardenedCementChemistry_S_##A])
-
-/* Saturation index of CH */
-#define HardenedCementChemistry_GetSaturationIndexOfCH(HCC) \
-        HardenedCementChemistry_GetSaturationIndexOf(HCC,CH)
-        
-/* Saturation index of CC */
-#define HardenedCementChemistry_GetSaturationIndexOfCC(HCC) \
-        HardenedCementChemistry_GetSaturationIndexOf(HCC,CC)
-        
-/* Saturation index of SH */
-#define HardenedCementChemistry_GetSaturationIndexOfSH(HCC) \
-        HardenedCementChemistry_GetSaturationIndexOf(HCC,SH)
-        
-/* Saturation index of CSH2 */
-#define HardenedCementChemistry_GetSaturationIndexOfCSH2(HCC) \
-        HardenedCementChemistry_GetSaturationIndexOf(HCC,CSH2)
-
-/* Saturation index of AH3 */
-#define HardenedCementChemistry_GetSaturationIndexOfAH3(HCC) \
-        HardenedCementChemistry_GetSaturationIndexOf(HCC,AH3)
-
-/* Saturation index of AFm */
-#define HardenedCementChemistry_GetSaturationIndexOfAFm(HCC) \
-        HardenedCementChemistry_GetSaturationIndexOf(HCC,AFm)
-
-/* Saturation index of AFt */
-#define HardenedCementChemistry_GetSaturationIndexOfAFt(HCC) \
-        HardenedCementChemistry_GetSaturationIndexOf(HCC,AFt)
-
-/* Saturation index of C3AH6 */
-#define HardenedCementChemistry_GetSaturationIndexOfC3AH6(HCC) \
-        HardenedCementChemistry_GetSaturationIndexOf(HCC,C3AH6)
-
-/* Saturation index of C2AH8 */
-#define HardenedCementChemistry_GetSaturationIndexOfC2AH8(HCC) \
-        HardenedCementChemistry_GetSaturationIndexOf(HCC,C2AH8)
-
-/* Saturation index of CAH10 */
-#define HardenedCementChemistry_GetSaturationIndexOfCAH10(HCC) \
-        HardenedCementChemistry_GetSaturationIndexOf(HCC,CAH10)
 
 
 
@@ -335,6 +361,7 @@ extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemi
 struct HardenedCementChemistry_s {
 //  int nbofprimaryvariables ;
 //  int nbofvariables ;
+  int*    primaryvariableindex ;
   double* primaryvariable ;
   double* constant ;
   double* variable ;

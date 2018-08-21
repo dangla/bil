@@ -148,6 +148,7 @@ void Log10EquilibriumConstantOfHomogeneousReactionInWater_Print(double T)
   printf("Sulfur compounds\n") ;
   PREACT("H2SO4[0]            = HSO4[-] + H[+]",logk_h2so4) ;
   PREACT("HSO4[-]             = SO4[2-] + H[+]",logk_hso4) ;
+  PREACT("H2SO4[0] + 2OH[-]   = SO4[2-] + 2H2O",logk_h2so4 + logk_hso4 - 2*logk_h2o) ;
   }
   
   printf("\n") ;

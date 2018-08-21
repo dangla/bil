@@ -33,6 +33,9 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
 #define CementSolutionChemistry_GetTemperature(CSC) \
         ((CSC)->temperature)
         
+#define CementSolutionChemistry_GetPrimaryVariableIndex(CSC) \
+        ((CSC)->primaryvariableindex)
+        
 #define CementSolutionChemistry_GetPrimaryVariable(CSC) \
         ((CSC)->primaryvariable)
 
@@ -80,28 +83,75 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
 #define CementSolutionChemistry_NbOfPrimaryVariables  (8)
 
 /* Different primary variables may be used */
+#define CementSolutionChemistry_CaO          (0)
 #define CementSolutionChemistry_LogQ_CH      (0)
-#define CementSolutionChemistry_LogA_Ca      (0) // not used yet
+#define CementSolutionChemistry_LogA_Ca \
+        (0 + CementSolutionChemistry_NbOfPrimaryVariables) // not used yet
+
+#define CementSolutionChemistry_SiO2         (1)
 #define CementSolutionChemistry_LogQ_SH      (1)
-#define CementSolutionChemistry_LogA_H4SiO4  (1) // not used yet
+#define CementSolutionChemistry_LogA_H4SiO4 \
+        (1 + CementSolutionChemistry_NbOfPrimaryVariables) // not used yet
+
+#define CementSolutionChemistry_Al2O3        (2)
 #define CementSolutionChemistry_LogQ_AH3     (2)
-#define CementSolutionChemistry_LogA_AlO4H4  (2) // not used yet
+#define CementSolutionChemistry_LogA_AlO4H4 \
+        (2 + CementSolutionChemistry_NbOfPrimaryVariables) // not used yet
 
+#define CementSolutionChemistry_Na20         (3)
 #define CementSolutionChemistry_LogA_Na      (3)
+
+#define CementSolutionChemistry_K2O          (4)
 #define CementSolutionChemistry_LogA_K       (4)
+
+#define CementSolutionChemistry_CO2          (5)
 #define CementSolutionChemistry_LogA_CO2     (5)
+
 #define CementSolutionChemistry_LogA_OH      (6)
+
+#define CementSolutionChemistry_SO3          (7)
 #define CementSolutionChemistry_LogA_H2SO4   (7)
+#define CementSolutionChemistry_LogA_SO4 \
+        (7 + CementSolutionChemistry_NbOfPrimaryVariables)
 
-#define CementSolutionChemistry_LogC_Na      (3)
-#define CementSolutionChemistry_LogC_K       (4)
-#define CementSolutionChemistry_LogC_CO2     (5)
-#define CementSolutionChemistry_LogC_OH      (6)
-#define CementSolutionChemistry_LogC_H2SO4   (7)
 
-/* Input */
+       
+/* Inputs: definition
+ * ------------------ */
 #define CementSolutionChemistry_GetInput(CSC,U) \
-       (CementSolutionChemistry_GetPrimaryVariable(CSC)[CementSolutionChemistry_##U])
+        CementSolutionChemistry_GetPrimaryVariable(CSC)[CementSolutionChemistry_InputIndex(U)]
+
+#define CementSolutionChemistry_SetIndex(CSC,U) \
+        do{ \
+          CementSolutionChemistry_GetIndex(CSC,U) = CementSolutionChemistry_Index(U) ; \
+        } while(0)
+        
+#define CementSolutionChemistry_SetInput(CSC,U,...) \
+        do{ \
+          CementSolutionChemistry_GetIndex(CSC,U) = CementSolutionChemistry_Index(U) ; \
+          CementSolutionChemistry_GetInput(CSC,U) = __VA_ARGS__ ; \
+        } while(0)
+        
+#define CementSolutionChemistry_InputCaOIs(CSC,V) \
+        CementSolutionChemistry_InputIs(CSC,CaO,V)
+        
+#define CementSolutionChemistry_InputSO3Is(CSC,V) \
+        CementSolutionChemistry_InputIs(CSC,SO3,V)
+        
+/* Inputs: implementation
+ * ---------------------- */
+#define CementSolutionChemistry_Index(U) \
+        (CementSolutionChemistry_##U)
+
+#define CementSolutionChemistry_InputIndex(U) \
+        (CementSolutionChemistry_Index(U) % CementSolutionChemistry_NbOfPrimaryVariables)
+        
+#define CementSolutionChemistry_GetIndex(CSC,U) \
+        CementSolutionChemistry_GetPrimaryVariableIndex(CSC)[CementSolutionChemistry_InputIndex(U)]
+        
+#define CementSolutionChemistry_InputIs(CSC,U,V) \
+        (CementSolutionChemistry_GetIndex(CSC,U) == CementSolutionChemistry_Index(V))
+
 
        
        
@@ -181,21 +231,18 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
        ,Al,AlO4H4 \
        )
        
-//       ,H2SO4,HSO4,SO4,SO3,S2O3 \
+/*
+       ,H2SO4,HSO4,SO4,SO3,S2O3 \
        ,H2S,HS,S,S0 \
-
-
-
-#include "Utils.h"
-
-#define CementSolutionChemistry_GetIndexOf(CPD) \
-        Utils_CAT(CementSolutionChemistry_A_,CPD)
+*/
 
 
 #include "Algos.h"
 
-//#define CementSolutionChemistry_ENUM \
-          Tuple_SEQ(Algos_MAP(CementSolutionChemistry_ListOfCompounds,CementSolutionChemistry_GetIndexOf))
+/*
+#define CementSolutionChemistry_ENUM \
+        Tuple_SEQ(Algos_MAP(CementSolutionChemistry_ListOfCompounds,CementSolutionChemistry_GetIndexOf))
+*/
 
 
 enum CementSolutionChemistry_e {
@@ -204,8 +251,8 @@ enum CementSolutionChemistry_e {
 
 
 
-/* Macros for the concentrations
- * -----------------------------*/
+/* Macros for the activities/concentrations
+ * ----------------------------------------*/
 
 #define CementSolutionChemistry_A_H2O         (0)
 #define CementSolutionChemistry_A_H           (1)
@@ -257,6 +304,13 @@ enum CementSolutionChemistry_e {
 
 #define CementSolutionChemistry_A_Al          (29)
 #define CementSolutionChemistry_A_AlO4H4      (30)
+
+
+
+#include "Utils.h"
+
+#define CementSolutionChemistry_GetIndexOf(CPD) \
+        Utils_CAT(CementSolutionChemistry_A_,CPD)
 
 
 #define CementSolutionChemistry_GetConcentrationOf(CSC,CPD) \
@@ -364,6 +418,7 @@ struct CementSolutionChemistry_s {
   Temperature_t* temperature ;
 //  int nbofprimaryvariables ;
 //  int nbofvariables ;
+  int*    primaryvariableindex ;
   double* primaryvariable ;
   double* concentration ;
   double* logconcentration ;

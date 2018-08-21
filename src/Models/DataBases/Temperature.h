@@ -12,7 +12,11 @@ extern Temperature_t* (Temperature_Create)(void) ;
 
 
 
-#define Temperature_DefaultValue        (293.)
+#define Temperature_0C                  (273.15)
+#define Temperature_20C                 (293.15)
+#define Temperature_25C                 (298.15)
+
+#define Temperature_DefaultValue        (Temperature_20C)
 
 
 #define Temperature_GetRoomValue(TEMP)     ((TEMP)->roomvalue)

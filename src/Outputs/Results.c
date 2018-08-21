@@ -22,11 +22,13 @@ Results_t* Results_Create(int n)
 
 
 
-void Results_Delete(Results_t** results)
+void Results_Delete(void* self)
 {
-  Result_t* result = Results_GetResult(*results) ;
+  Results_t** presults = (Results_t**) self ;
+  Results_t*   results =  *presults;
+  Result_t* result = Results_GetResult(results) ;
   
   Result_Delete(&result) ;
-  free(*results) ;
-  *results = NULL ;
+  free(results) ;
+  *presults = NULL ;
 }

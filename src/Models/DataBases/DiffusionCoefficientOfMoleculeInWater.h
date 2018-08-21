@@ -103,7 +103,7 @@
 #define DiffusionCoefficientOfMoleculeInWater_Cs           (20.5e-10)   /* (d) */
 
 #define DiffusionCoefficientOfMoleculeInWater_Al           (5.41e-10)   /* (g) */
-#define DiffusionCoefficientOfMoleculeInWater_AlO4H4       (6.12e-10)   /* r = 4 A */
+#define DiffusionCoefficientOfMoleculeInWater_AlO4H4       (1.04e-9)    /* (h) */
 
 
 /* Compounds of type II. */
@@ -130,6 +130,7 @@
  * (e) DataBase MINTEQA2
  * (f) DataBase data0 dataset of Wolery et al 
  * (g) David R. Lide, ed., CRC Handbook of Chemistry and Physics, CRC Press, Boca Raton, FL, 2005.
+ * (h) James E. Mackin and Robert C.Aller (1983), The infinite dilution diffusion coefficient for Al(OH)4 at 25C, Geochimica et Cosmochimica Acta Vol. 47. pp. 959-961.
  */
 
 #endif

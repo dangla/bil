@@ -150,12 +150,16 @@ extern void Log10EquilibriumConstantOfHomogeneousReactionInWater_Print(double) ;
         (-10.4)
 
 /* H2CO3[*] = HCO3[-] + H[+] */
-//#define Log10EquilibriumConstantOfHomogeneousReactionInWater_H2CO3__HCO3_H(T) \
+/*
+#define Log10EquilibriumConstantOfHomogeneousReactionInWater_H2CO3__HCO3_H(T) \
           (-6.3)
+*/
 
 /* HCO3[-] + H2O = H2CO3[*] + OH[-] */
-//#define Log10EquilibriumConstantOfHomogeneousReactionInWater_HCO3_H2O__H2CO3_OH(T) \
+/*
+#define Log10EquilibriumConstantOfHomogeneousReactionInWater_HCO3_H2O__H2CO3_OH(T) \
           (-7.648)
+*/
 
 /* HCO3[-] = CO2[0] + OH[-] */
 #define Log10EquilibriumConstantOfHomogeneousReactionInWater_HCO3__CO2_OH(T) \
@@ -341,7 +345,7 @@ extern void Log10EquilibriumConstantOfHomogeneousReactionInWater_Print(double) ;
 #define Log10EquilibriumConstantOfHomogeneousReactionInWater_NaHCO3__Na_HCO3(T) \
         (0.25) 
 
-/* NaCO3[-] = Na[+] + CO3[2-] */
+/* NaCO3[-] = Na[+] + CO3[2-] */ /* (ref [4]) */
 #define Log10EquilibriumConstantOfHomogeneousReactionInWater_NaCO3__Na_CO3(T) \
         (-1.27) 
 
@@ -399,12 +403,16 @@ extern void Log10EquilibriumConstantOfHomogeneousReactionInWater_Print(double) ;
 
 /* Ca[2+] + SO4[2-]    = CaSO4[0] (wrong values which should be changed with those of ref [3] below)
  *                                (kept because used in Yuan's models) */
-//#define Log10EquilibriumConstantOfHomogeneousReactionInWater_Ca_SO4__CaSO4(T) \
+/*
+#define Log10EquilibriumConstantOfHomogeneousReactionInWater_Ca_SO4__CaSO4(T) \
         (3.146128036)
+*/
 
 /* CaSO4[0] = Ca[2+] + SO4[2-] */
-//#define Log10EquilibriumConstantOfHomogeneousReactionInWater_CaSO4__Ca_SO4(T) \
+/*
+#define Log10EquilibriumConstantOfHomogeneousReactionInWater_CaSO4__Ca_SO4(T) \
         (-3.146128036)
+*/
 
 /* CaSO4[0] = Ca[2+] + SO4[2-] */
 //#define Log10EquilibriumConstantOfHomogeneousReactionInWater_CaSO4__Ca_SO4(T)  (-LOGK(T,2.0713,2.1111,2.2647,2.5111,2.9101,3.4328,4.1424,5.1853))
@@ -507,6 +515,7 @@ extern void Log10EquilibriumConstantOfHomogeneousReactionInWater_Print(double) ;
  * 
  * [3] D.Jacques, Benchmarking of the cement model and detrimental chemical reactions including temperature dependent parameters, Project near surface disposal of category A waste at Dessel, 2009.
  * 
+ * [4] W. Hummel, U. Berner, E. Curti, F.J. Pearson, T. Thoenen, Nagra/PSI Chemical Thermodynamic Data Base 01/01, Universal Publishers/u-PUBLISH.com, USA, also published as Nagra Technical Report NTB 02 - 16, Nagra, Wettingen, Switzerland, 2002.
  */
 
 

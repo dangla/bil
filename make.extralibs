@@ -6,8 +6,9 @@ BLAS_USE := NO
 SLU_USE  := NO
 
 # if YES, where are these libraries ?
-# Change if needed.
-SLU_DIR  := ${HOME}/Documents/Softwares/superLU/SuperLU_3.0
+# Change if needed  (${HOME} is root when sudo so I removed it)
+#SLU_DIR  := ${HOME}/Documents/Softwares/superLU/SuperLU_3.0
+SLU_DIR  := /home/dangla/Documents/Softwares/superLU/SuperLU_3.0
 SLU_LIB  := ${SLU_DIR}/superlu_linux.a
 BLAS_DIR := ${SLU_DIR}
 BLAS_LIB := ${BLAS_DIR}/blas_linux.a
@@ -24,5 +25,5 @@ endif
 
 
 # Library UEL
-#BIL_EXTRALIBS += /home/dangla/Documents/Softwares/bil/Projects/IoannisStefanou/libUEL505_32_2.so
+BIL_EXTRALIBS += /home/dangla/Documents/Softwares/bil/Projects/IoannisStefanou/libUEL_64.so
 #BIL_EXTRALIBS += -luel

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "Model.h"
 #include "Models.h"
@@ -61,7 +62,7 @@ Model_t* Model_Create(int n_models)
   int i ;
   Model_t* model = (Model_t*) calloc(n_models,sizeof(Model_t)) ;
   
-  if(!model) arret("Model_Create") ;
+  assert(model) ;
   
   
   for(i = 0 ; i < n_models ; i++) {
@@ -201,41 +202,84 @@ Model_t* Model_Create(int n_models)
 
 
 
-void  Model_Delete(Model_t** model,int n_models)
+void  Model_Delete(void* self)
 {
-  int i ;
+  Model_t** pmodel = (Model_t**) self ;
+  Model_t*   model = *pmodel ;
   
-  for(i = 0 ; i < n_models ; i++) {
-    Model_t* model_i = *model + i ;
-    
-    free(Model_GetNameOfEquation(model_i)[0]) ;
-    free(Model_GetNameOfEquation(model_i)) ;
-    free(Model_GetNameOfUnknown(model_i)[0]) ;
-    free(Model_GetNameOfUnknown(model_i)) ;
-    free(Model_GetCodeNameOfModel(model_i)) ;
-    free(Model_GetShortTitle(model_i)) ;
-    free(Model_GetNameOfAuthors(model_i)) ;
-    free(Model_GetObjectiveValue(model_i)) ;
+  {
+    free(Model_GetNameOfEquation(model)[0]) ;
+    free(Model_GetNameOfEquation(model)) ;
+    free(Model_GetNameOfUnknown(model)[0]) ;
+    free(Model_GetNameOfUnknown(model)) ;
+    free(Model_GetCodeNameOfModel(model)) ;
+    free(Model_GetShortTitle(model)) ;
+    free(Model_GetNameOfAuthors(model)) ;
+    free(Model_GetObjectiveValue(model)) ;
     {
-      Views_t* views = Model_GetViews(model_i) ;
+      Views_t* views = Model_GetViews(model) ;
       
       Views_Delete(&views) ;
     }
     {
-      LocalVariableVectors_t* lvv = Model_GetLocalVariableVectors(model_i) ;
+      LocalVariableVectors_t* lvv = Model_GetLocalVariableVectors(model) ;
       
       LocalVariableVectors_Delete(&lvv) ;
     }
     {
-      LocalVariableVectors_t* lvv = Model_GetLocalFluxVectors(model_i) ;
+      LocalVariableVectors_t* lvv = Model_GetLocalFluxVectors(model) ;
       
       LocalVariableVectors_Delete(&lvv) ;
     }
   }
   
-  free(*model) ;
-  *model = NULL ;
+  //free(model) ;
+  //*pmodel = NULL ;
 }
+
+
+#if 0
+void  Model_Delete(void* self,int n_models)
+{
+  Model_t** pmodel = (Model_t**) self ;
+  Model_t*   model = *pmodel ;
+  
+  {
+    int i ;
+  
+    for(i = 0 ; i < n_models ; i++) {
+      Model_t* model_i = model + i ;
+    
+      free(Model_GetNameOfEquation(model_i)[0]) ;
+      free(Model_GetNameOfEquation(model_i)) ;
+      free(Model_GetNameOfUnknown(model_i)[0]) ;
+      free(Model_GetNameOfUnknown(model_i)) ;
+      free(Model_GetCodeNameOfModel(model_i)) ;
+      free(Model_GetShortTitle(model_i)) ;
+      free(Model_GetNameOfAuthors(model_i)) ;
+      free(Model_GetObjectiveValue(model_i)) ;
+      {
+        Views_t* views = Model_GetViews(model_i) ;
+      
+        Views_Delete(&views) ;
+      }
+      {
+        LocalVariableVectors_t* lvv = Model_GetLocalVariableVectors(model_i) ;
+      
+        LocalVariableVectors_Delete(&lvv) ;
+      }
+      {
+        LocalVariableVectors_t* lvv = Model_GetLocalFluxVectors(model_i) ;
+      
+        LocalVariableVectors_Delete(&lvv) ;
+      }
+    }
+  }
+  
+  free(model) ;
+  *pmodel = NULL ;
+}
+#endif
 
 
 

@@ -798,19 +798,20 @@ int ComputeInitialState(Element_t* el)
         double logc_na    = -99 ;
         double logc_k     = LogC_K(i) ;
         double logc_oh    = -7 ;
-        double c_cl       = 0 ;
+        double c_cl       = 1.e-99 ;
   
-        HardenedCementChemistry_GetInput(hcc,SI_Ca) = MIN(zn_ca_s,0) ;
-        HardenedCementChemistry_GetInput(hcc,SI_Si) = MIN(zn_si_s,0) ;
-        HardenedCementChemistry_GetInput(hcc,SI_Al) = MIN(zn_al_s,0) ;
-        HardenedCementChemistry_GetInput(hcc,LogC_H2SO4) = logc_h2so4 ;
-        HardenedCementChemistry_GetInput(hcc,LogC_Na)  = logc_na ;
-        HardenedCementChemistry_GetInput(hcc,LogC_K)   = logc_k ;
-        HardenedCementChemistry_GetInput(hcc,LogC_OH)  = logc_oh ;
+        HardenedCementChemistry_SetInput(hcc,SI_CH,MIN(zn_ca_s,0)) ;
+        HardenedCementChemistry_SetInput(hcc,SI_CSH,MIN(zn_si_s,0)) ;
+        HardenedCementChemistry_SetInput(hcc,SI_AH3,MIN(zn_al_s,0)) ;
+        HardenedCementChemistry_SetInput(hcc,LogC_H2SO4,logc_h2so4) ;
+        HardenedCementChemistry_SetInput(hcc,LogC_Na,logc_na) ;
+        HardenedCementChemistry_SetInput(hcc,LogC_K,logc_k) ;
+        HardenedCementChemistry_SetInput(hcc,LogC_OH,logc_oh) ;
     
         HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
+        HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = log10(c_cl) ;
   
-        HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_2) ;
+        HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O) ;
       
         HardenedCementChemistry_SolveElectroneutrality(hcc) ;
       }
@@ -1752,18 +1753,19 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
     double logc_oh    = log10(x[I_C_OHn]) ;
 #endif
   
-    HardenedCementChemistry_GetInput(hcc,SI_Ca) = MIN(zn_ca_s,0) ;
-    HardenedCementChemistry_GetInput(hcc,SI_Si) = MIN(zn_si_s,0) ;
-    HardenedCementChemistry_GetInput(hcc,SI_Al) = MIN(zn_al_s,0) ;
-    HardenedCementChemistry_GetInput(hcc,LogC_H2SO4) = logc_h2so4 ;
-    HardenedCementChemistry_GetInput(hcc,LogC_Na)  = logc_na ;
-    HardenedCementChemistry_GetInput(hcc,LogC_K)   = logc_k ;
-    HardenedCementChemistry_GetInput(hcc,LogC_OH)  = logc_oh ;
+    HardenedCementChemistry_SetInput(hcc,SI_CH,MIN(zn_ca_s,0)) ;
+    HardenedCementChemistry_SetInput(hcc,SI_CSH,MIN(zn_si_s,0)) ;
+    HardenedCementChemistry_SetInput(hcc,SI_AH3,MIN(zn_al_s,0)) ;
+    HardenedCementChemistry_SetInput(hcc,LogC_H2SO4,logc_h2so4) ;
+    HardenedCementChemistry_SetInput(hcc,LogC_Na,logc_na) ;
+    HardenedCementChemistry_SetInput(hcc,LogC_K,logc_k) ;
+    HardenedCementChemistry_SetInput(hcc,LogC_OH,logc_oh) ;
     HardenedCementChemistry_GetElectricPotential(hcc) = psi ;
     
     HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
+    HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = log10(c_cl) ;
   
-    HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_2) ;
+    HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O) ;
 
 #ifndef E_el
   #if (ELECTRONEUTRALITY == IMPLICIT)

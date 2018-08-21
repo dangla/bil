@@ -31,9 +31,12 @@ View_t* View_Create(int n)
 }
 
 
-void View_Delete(View_t** view)
+void View_Delete(void* self)
 {
-  free(View_GetNameOfView(*view)) ;
-  free(*view) ;
-  *view = NULL ;
+  View_t** pview = (View_t**) self ;
+  View_t*   view = *pview ;
+  
+  free(View_GetNameOfView(view)) ;
+  free(view) ;
+  *pview = NULL ;
 }

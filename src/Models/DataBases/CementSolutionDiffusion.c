@@ -46,8 +46,6 @@ void CementSolutionDiffusion_AllocateMemory(CementSolutionDiffusion_t* csd)
   {
     Temperature_t* temp = Temperature_Create() ;
     
-    if(!temp) arret("CementSolutionDiffusion_AllocateMemory(1)") ;
-    
     CementSolutionDiffusion_GetTemperature(csd) = temp ;
   }
   

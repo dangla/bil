@@ -105,8 +105,11 @@ void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(co
   if(!ficd) return ;
 
   while(cont) {
-    char   mot[Material_MaxLengthOfKeyWord] ;
-    char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
+    char   mot[Material_MaxLengthOfKeyWord] = {'\n'} ;
+    char*  line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
+    char* equal = (line) ? strchr(line,'=') : NULL ;
+    
+    //if(!equal) continue ;
     
     if(!line) break ;
     
@@ -122,7 +125,7 @@ void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(co
         arret("Material_ScanProperties (2) : trop de courbes") ;
       }
 
-    /* Reading the method (obsolete!) */
+    /* Reading the method */
     } else if(!strncmp(mot,"Method",6)) {
       char   *p = strchr(line,'=') ;
       

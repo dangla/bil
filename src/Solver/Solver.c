@@ -7,6 +7,12 @@
 #include "Message.h"
 #include "BilLib.h"
 
+
+#include "LDUSKLformat.h"
+#include "NCformat.h"
+#include "SuperLUformat.h"
+
+
 #ifdef SLU_DIR
   #define val(x) #x
   #define xval(x) val(x)
@@ -17,15 +23,14 @@
 
 
 static int    solveCROUT(Solver_t*) ;
+static int    ludcmp(LDUSKLformat_t*,int) ;
+static void   lubksb(LDUSKLformat_t*,double*,double*,int) ;
+
 
 #ifdef SLU_DIR
 static void   resolSLU(Matrix_t*,double*,double*,int) ;
 static int    solveSLU(Solver_t*) ;
 #endif
-
-static int    ludcmp(LDUSKLformat_t*,int) ;
-
-static void   lubksb(LDUSKLformat_t*,double*,double*,int) ;
 
 
 /*
@@ -36,7 +41,7 @@ Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options,const int n)
 {
   Solver_t* solver = (Solver_t*) malloc(sizeof(Solver_t)) ;
   
-  if(!solver) assert(solver) ;
+  assert(solver) ;
   
   
   /*  Method */
@@ -45,13 +50,13 @@ Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options,const int n)
     
     if(!strcmp(method,"crout")) {
     
-      Solver_GetResolutionMethod(solver) = CROUT ;
+      Solver_GetResolutionMethod(solver) = ResolutionMethod_CROUT ;
       Solver_GetSolve(solver) = solveCROUT ;
     
     #ifdef SLU_DIR
     } else if(!strcmp(method,"slu")) {
     
-      Solver_GetResolutionMethod(solver) = SLU ;
+      Solver_GetResolutionMethod(solver) = ResolutionMethod_SLU ;
       Solver_GetSolve(solver) = solveSLU ;
     #endif
 
@@ -81,7 +86,7 @@ Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options,const int n)
     size_t sz = n*n_col*sizeof(double) ;
     double* rhs = (double*) malloc(sz) ;
     
-    if(!rhs) assert(rhs) ;
+    assert(rhs) ;
     
     Solver_GetRHS(solver) = rhs ;
   }
@@ -93,7 +98,7 @@ Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options,const int n)
     size_t sz = n*n_col*sizeof(double) ;
     double* sol = (double*) malloc(sz) ;
     
-    if(!sol) assert(sol) ;
+    assert(sol) ;
     
     Solver_GetSolution(solver) = sol ;
   }
@@ -103,15 +108,18 @@ Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options,const int n)
 
 
 
-void  Solver_Delete(Solver_t** solver)
+
+void  Solver_Delete(void* self)
 {
-  Matrix_t* a = Solver_GetMatrix(*solver) ;
+  Solver_t** psolver = (Solver_t**) self ;
+  Solver_t*  solver  = *psolver ;
+  Matrix_t* a = Solver_GetMatrix(solver) ;
   
   Matrix_Delete(&a) ;
-  free(Solver_GetRHS(*solver)) ;
-  free(Solver_GetSolution(*solver)) ;
-  free(*solver) ;
-  *solver = NULL ;
+  free(Solver_GetRHS(solver)) ;
+  free(Solver_GetSolution(solver)) ;
+  free(solver) ;
+  *psolver = NULL ;
 }
 
 
@@ -148,6 +156,7 @@ void Solver_Print(Solver_t* solver,char* keyword)
 
 
 /* Intern functions */
+
 
 int ludcmp(LDUSKLformat_t* a,int n)
 /**
@@ -338,8 +347,8 @@ void   resolSLU(Matrix_t* a,double* x,double* b,int n)
 /* Resolution of a.x = b by SuperLU's method */
 {
   /* pour dgssv */
-  SuperMatrix_t* Aslu = Matrix_GetStorage(a) ;
-  SuperMatrix_t L,U,B ;
+  SuperLUformat_t* Aslu = Matrix_GetStorage(a) ;
+  SuperLUformat_t L,U,B ;
   DNformat    Bstore ;
   superlu_options_t options ;
   SuperLUStat_t stat ;
@@ -354,7 +363,7 @@ void   resolSLU(Matrix_t* a,double* x,double* b,int n)
   mem_usage_t   mem_usage ;
   static int    iresol = 0 ;
   static int*   etree ;
-  SuperMatrix_t X ;
+  SuperLUformat_t X ;
   DNformat    Xstore ;
   static double* R ;
   static double* C ;

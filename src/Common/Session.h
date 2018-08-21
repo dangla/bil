@@ -43,10 +43,10 @@ extern Session_t*     (Session_Close)(void) ;
         
         
 #define Session_AddGenericData(GD) \
-        do {Session_GenericData = GenericData_Merge(Session_GenericData,GD);} while(0)
+        do {Session_GenericData = GenericData_Append(Session_GenericData,GD);} while(0)
         
 //#define Session_MergeGenericData(SS,GD) \
-        (Session_GetGenericData(SS) = GenericData_Merge(Session_GetGenericData(SS),GD))
+//        (Session_GetGenericData(SS) = GenericData_Merge(Session_GetGenericData(SS),GD))
 
 
 

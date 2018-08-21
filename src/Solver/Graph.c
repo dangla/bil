@@ -61,10 +61,13 @@ void*  Graph_Initialize(void* self,va_list ap)
 
 
 
-void Graph_Delete(Graph_t** graph)
+void Graph_Delete(void* self)
 {
-  AdjacencyList_Delete(&Graph_GetAdjacencyList(*graph)) ;
-  free(*graph) ;
-  *graph = NULL ;
+  Graph_t** pgraph = (Graph_t**) self ;
+  Graph_t*   graph = *pgraph ;
+  
+  AdjacencyList_Delete(&Graph_GetAdjacencyList(graph)) ;
+  free(graph) ;
+  *pgraph = NULL ;
 }
 

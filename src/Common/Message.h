@@ -41,7 +41,7 @@ extern int    (Message_SetVerbosity)(const int) ;
         Message_FatalError0(__VA_ARGS__) ; } while(0)
                                            
 #define Message_Exit \
-        exit(EXIT_SUCCESS)
+        (exit(EXIT_SUCCESS))
 
 
 #include <time.h>

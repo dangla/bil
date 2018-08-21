@@ -40,12 +40,15 @@ Curves_t* Curves_Create(unsigned int n_curves)
 }
 
 
-void Curves_Delete(Curves_t** curves)
+void Curves_Delete(void* self)
 {
-  free(Curves_GetCurve(*curves)) ;
-  free(Curves_GetBuffer(*curves)) ;
-  free(*curves) ;
-  *curves = NULL ;
+  Curves_t** pcurves   = (Curves_t**) self ;
+  Curves_t*   curves   =  *pcurves;
+  
+  free(Curves_GetCurve(curves)) ;
+  free(Curves_GetBuffer(curves)) ;
+  free(curves) ;
+  *pcurves = NULL ;
 }
 
 
@@ -247,7 +250,7 @@ int   Curves_ReadCurves(Curves_t* curves,const char* dline)
       for(j = 0 ; j < n_curves ; j++) {
         Curve_t *cb_j = Curves_GetCurve(curves) + Curves_GetNbOfCurves(curves) + j ;
         double *y = Curve_GetYValue(cb_j) + i ;
-        char fmt[] = "%*["CurvesFile_FieldDelimiters"] %le" ;
+        char fmt[] = "%*[" CurvesFile_FieldDelimiters "] %le" ;
       
         fscanf(fict,fmt,y) ;
       }

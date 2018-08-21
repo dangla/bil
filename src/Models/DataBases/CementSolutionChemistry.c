@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "Message.h"
 #include "Exception.h"
 #include "Tools/Math.h"
@@ -41,6 +42,9 @@ static void   (CementSolutionChemistry_TranslateConcentrationsIntoActivities)(Ce
 static double*   (CementSolutionChemistry_CreateValence)(void) ;
 static void      (CementSolutionChemistry_InitializeValence)(double*) ;
 
+
+static void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1(CementSolutionChemistry_t*) ;
+
 static double* instancevalence = NULL ;
 
 
@@ -59,7 +63,7 @@ CementSolutionChemistry_t* CementSolutionChemistry_Create(const int n)
 {
   CementSolutionChemistry_t* csc = (CementSolutionChemistry_t*) malloc(n*sizeof(CementSolutionChemistry_t)) ;
   
-  if(!csc) arret("CementSolutionChemistry_Create") ;
+  assert(csc) ;
   
   {
     int i ;
@@ -92,9 +96,18 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
   {
     Temperature_t* temp = Temperature_Create() ;
     
-    if(!temp) arret("CementSolutionChemistry_AllocateMemory(1)") ;
-    
     CementSolutionChemistry_GetTemperature(csc) = temp ;
+  }
+  
+  
+  /* Allocation of space for the primary variable indexes */
+  {
+    size_t sz = CementSolutionChemistry_NbOfPrimaryVariables*sizeof(int) ;
+    int* ind = (int*) malloc(sz) ;
+    
+    assert(ind) ;
+    
+    CementSolutionChemistry_GetPrimaryVariableIndex(csc) = ind ;
   }
   
   
@@ -103,7 +116,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
     size_t sz = CementSolutionChemistry_NbOfPrimaryVariables*sizeof(double) ;
     double* var = (double*) malloc(sz) ;
     
-    if(!var) arret("CementSolutionChemistry_AllocateMemory(1)") ;
+    assert(var) ;
     
     CementSolutionChemistry_GetPrimaryVariable(csc) = var ;
   }
@@ -114,7 +127,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
     size_t sz = CementSolutionChemistry_NbOfSpecies*sizeof(double) ;
     double* a = (double*) malloc(sz) ;
     
-    if(!a) arret("CementSolutionChemistry_AllocateMemory(2)") ;
+    assert(a) ;
     
     CementSolutionChemistry_GetActivity(csc) = a ;
   }
@@ -125,7 +138,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
     size_t sz = CementSolutionChemistry_NbOfSpecies*sizeof(double) ;
     double* loga = (double*) malloc(sz) ;
     
-    if(!loga) arret("CementSolutionChemistry_AllocateMemory(3)") ;
+    assert(loga) ;
     
     CementSolutionChemistry_GetLogActivity(csc) = loga ;
   }
@@ -136,7 +149,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
     size_t sz = CementSolutionChemistry_NbOfSpecies*sizeof(double) ;
     double* c = (double*) malloc(sz) ;
     
-    if(!c) arret("CementSolutionChemistry_AllocateMemory(2)") ;
+    assert(c) ;
     
     CementSolutionChemistry_GetConcentration(csc) = c ;
   }
@@ -147,7 +160,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
     size_t sz = CementSolutionChemistry_NbOfSpecies*sizeof(double) ;
     double* logc = (double*) malloc(sz) ;
     
-    if(!logc) arret("CementSolutionChemistry_AllocateMemory(3)") ;
+    assert(logc) ;
     
     CementSolutionChemistry_GetLogConcentration(csc) = logc ;
   }
@@ -158,7 +171,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
     size_t sz = CementSolutionChemistry_NbOfElementConcentrations*sizeof(double) ;
     double* ec = (double*) malloc(sz) ;
     
-    if(!ec) arret("CementSolutionChemistry_AllocateMemory(6)") ;
+    assert(ec) ;
     
     CementSolutionChemistry_GetElementConcentration(csc) = ec ;
   }
@@ -169,7 +182,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
     size_t sz = CementSolutionChemistry_NbOfOtherVariables*sizeof(double) ;
     double* var = (double*) malloc(sz) ;
     
-    if(!var) arret("CementSolutionChemistry_AllocateMemory(7)") ;
+    assert(var) ;
     
     CementSolutionChemistry_GetOtherVariable(csc) = var ;
   }
@@ -180,7 +193,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
     size_t sz = CementSolutionChemistry_NbOfSpecies*sizeof(double) ;
     double* keq = (double*) malloc(sz) ;
     
-    if(!keq) arret("CementSolutionChemistry_AllocateMemory(8)") ;
+    assert(keq) ;
     
     CementSolutionChemistry_GetLog10Keq(csc) = keq ;
   }
@@ -193,7 +206,7 @@ double* CementSolutionChemistry_CreateValence(void)
   size_t sz = CementSolutionChemistry_NbOfSpecies*sizeof(double) ;
   double* z = (double*) malloc(sz) ;
     
-  if(!z) arret("Valence_Create(1)") ;
+  assert(z) ;
     
   CementSolutionChemistry_InitializeValence(z) ;
   
@@ -645,7 +658,22 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O(CementSolut
 
 
 
+
 void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(CementSolutionChemistry_t* csc)
+{
+  if(CementSolutionChemistry_InputIs(csc,SO3,LogA_H2SO4)) {
+    CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1(csc) ;
+    return ;
+  }
+  
+  arret("CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O") ;
+}
+
+
+
+
+
+void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
@@ -712,7 +740,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(CementSolut
     LogConcentration(H2SO4)  = logc_h2so4 ;
     LogConcentration(HSO4)   = logc_hso4 ;
     LogConcentration(SO4)    = logc_so4 ;
-  
+
     LogConcentration(CaHSO4) = logc_cahso4 ;
     LogConcentration(CaSO4)  = logc_caso4 ;
   }
@@ -956,12 +984,13 @@ double CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t*
   
     double c_cahso4   = Concentration(CaHSO4) ;
 
-    /* Compute the charge in a3,a2,a1,a0 for n = +3,+2,+1,0 */
+    /* Compute the positive charge in a3,a2,a1,a0 for n = +3,+2,+1,0 */
     double a3 = Z(Al)*c_al ;
     double a2 = Z(Ca)*c_ca ;
     double a1 = Z(H)*c_h + Z(CaHCO3)*c_cahco3 + Z(CaH3SiO4)*c_cah3sio4 + Z(CaOH)*c_caoh + Z(CaHSO4)*c_cahso4 ;
-    double a0 = Z(Na)*c_na + Z(K)*c_k + Z(Cl)*c_cl ;
-    /* Compute the charge in b1,b2 for n = -1,-2 */
+    double a0 = Z(Na)*c_na + Z(K)*c_k ;
+    /* Compute the negative charge in b0,b1,b2 for n = 0,-1,-2 */
+    double b0 = Z(Cl)*c_cl ;
     double b1 = Z(OH)*c_oh + Z(HCO3)*c_hco3 + Z(H3SiO4)*c_h3sio4 + Z(HSO4)*c_hso4 + Z(AlO4H4)*c_alo4h4 ;
     double b2 = Z(CO3)*c_co3 + Z(H2SiO4)*c_h2sio4 + Z(NaCO3)*c_naco3 + Z(SO4)*c_so4 ;
   
@@ -972,7 +1001,7 @@ double CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t*
       double a_oh    = pow(10,loga_oh) ;
       
       /* Solve for x = (c_h/c_h0) as root of the 4th order polynomial */
-      x = poly4(a2,a1,a0,b1,b2,a_h,a_oh) ;
+      x = poly4(a2,a1,a0+b0,b1,b2,a_h,a_oh) ;
     
     } else {
       double loga_oh = LogActivity(OH) ;
@@ -982,7 +1011,7 @@ double CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t*
       double y[6] = {a3,a2,a1,a0,b1,b2} ;
       double tol = 1.e-4 ;
   
-      x = poly4(a2,a1,a0,b1,b2,a_h,a_oh) ;
+      x = poly4(a2,a1,a0+b0,b1,b2,a_h,a_oh) ;
       x = Math_PolishPolynomialEquationRoot(y,5,x,tol*x,20) ;
     }
   
@@ -1433,32 +1462,43 @@ void CementSolutionChemistry_UpdateElementConcentrations(CementSolutionChemistry
   //double c_h        = Concentration(H) ;
   //double c_oh       = Concentration(OH) ;
   
+  /* Calcium */
   double c_ca       = Concentration(Ca) ;
   double c_caoh     = Concentration(CaOH) ;
   double c_caoh2    = Concentration(CaO2H2) ;
   
+  /* Silicon */
   double c_h4sio4   = Concentration(H4SiO4) ;
   double c_h3sio4   = Concentration(H3SiO4) ;
   double c_h2sio4   = Concentration(H2SiO4) ;
   
+  /* Sodium */
   double c_na       = Concentration(Na) ;
   double c_naoh     = Concentration(NaOH) ;
   
+  /* Potassium */
   double c_k        = Concentration(K) ;
   double c_koh      = Concentration(KOH) ;
   
+  /* Carbon */
   double c_co2      = Concentration(CO2) ;
   double c_h2co3    = Concentration(H2CO3) ;
   double c_hco3     = Concentration(HCO3) ;
   double c_co3      = Concentration(CO3) ;
   
+  /* Sulfur */
   double c_h2so4    = Concentration(H2SO4) ;
   double c_hso4     = Concentration(HSO4) ;
   double c_so4      = Concentration(SO4) ;
   
+  /* Aluminium */
   double c_al       = Concentration(Al) ;
   double c_alo4h4   = Concentration(AlO4H4) ;
   
+  /* Chlore */
+  double c_cl       = Concentration(Cl) ;
+  
+  /* Compounds of type II */
   double c_cah2sio4 = Concentration(CaH2SiO4) ;
   double c_cah3sio4 = Concentration(CaH3SiO4) ;
   
@@ -1481,6 +1521,7 @@ void CementSolutionChemistry_UpdateElementConcentrations(CementSolutionChemistry
   double c_c_l     = c_co2 + c_h2co3 + c_hco3 + c_co3 ;
   double c_s_l     = c_h2so4 + c_hso4 + c_so4 ;
   double c_al_l    = c_al + c_alo4h4 ;
+  double c_cl_l    = c_cl ;
   /* Compounds type II */
   double c_ca_si_l = c_cah2sio4 + c_cah3sio4 ;
   double c_ca_c_l  = c_cahco3 + c_caco3 ;
@@ -1497,6 +1538,7 @@ void CementSolutionChemistry_UpdateElementConcentrations(CementSolutionChemistry
   CementSolutionChemistry_GetElementConcentrationOf(csc,C)  = c_c_l + c_ca_c_l + c_na_c_l ;
   CementSolutionChemistry_GetElementConcentrationOf(csc,S)  = c_s_l + c_ca_s_l ;
   CementSolutionChemistry_GetElementConcentrationOf(csc,Al) = c_al_l ;
+  CementSolutionChemistry_GetElementConcentrationOf(csc,Cl) = c_cl_l ;
 }
 
 
@@ -1523,6 +1565,62 @@ void CementSolutionChemistry_TranslateConcentrationsIntoActivities(CementSolutio
 double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh)
 /* Solve ax^4 + bx^3 + cx^2 + dx + e = 0 
  * for x in the range defined by x*a_h < 1 and a_oh/x < 1 (a_oh < x < 1/a_h)
+ * because a_h and a_oh should be < 1 (ie 0 < pH < -logKw) 
+ * Return the solution which is the closest to 1. */
+{
+  double tol = 1e-4 ;
+  double y[5] ;
+  double x ;
+  
+  y[0] = a ;
+  y[1] = b ;
+  y[2] = c ;
+  y[3] = d ;
+  y[4] = e ;
+  
+  {
+    int n = Math_ComputePolynomialEquationRoots(y,4) ;
+    int i ;
+    
+    x = y[0] ;
+    for(i = 1 ; i < n ; i++) {
+      double x1 = fabs(x - 1) ;
+      double y1 = fabs(y[i] - 1) ;
+      
+      if(y1 < x1) x = y[i] ;
+    }
+
+
+    if((x*a_h > 1) || (a_oh/x > 1)) {
+      printf("\n") ;
+      printf("n    = %d\n",n) ;
+      printf("a,b,c,d,e = %e,%e,%e,%e,%e\n",a,b,c,d,e) ;
+      printf("x    = %e\n",x) ;
+      printf("a_h  = %e\n",a_h) ;
+      printf("a_oh = %e\n",a_oh) ;
+      /* Raise an interrupt signal instead of exit */
+      Message_Warning("poly4: a_h = %e > 1 or a_oh = %e > 1!",x*a_h,a_oh/x) ;
+      Exception_Interrupt ;
+    }
+  }
+  
+  y[0] = a ;
+  y[1] = b ;
+  y[2] = c ;
+  y[3] = d ;
+  y[4] = e ;
+  
+  x = Math_PolishPolynomialEquationRoot(y,4,x,tol*x,20) ;
+  
+  return(x) ;
+}
+
+
+
+#if 0
+double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh)
+/* Solve ax^4 + bx^3 + cx^2 + dx + e = 0 
+ * for x in the range defined by x*a_h < 1 and a_oh/x < 1 (a_oh < x < 1/a_h)
  * because a_h and a_oh should be < 1 (ie 0 < pH < -logKw) */
 {
   double tol = 1e-4 ;
@@ -1546,10 +1644,14 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
     }
     
     if(i == n) {
-      printf("a_h = %e\n",x*a_h) ;
-      printf("a_oh = %e\n",a_oh/x) ;
+      printf("\n") ;
+      printf("n    = %d\n",n) ;
+      printf("a,b,c,d,e = %e,%e,%e,%e,%e\n",a,b,c,d,e) ;
+      printf("x    = %e\n",x) ;
+      printf("a_h  = %e\n",a_h) ;
+      printf("a_oh = %e\n",a_oh) ;
       /* Raise an interrupt signal instead of exit */
-      Message_Warning("poly4: a_h = %e > 1!",x*a_h) ;
+      Message_Warning("poly4: a_h = %e > 1 or a_oh = %e > 1!",x*a_h,a_oh/x) ;
       Exception_Interrupt ;
     }
   }
@@ -1564,6 +1666,7 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
   
   return(x) ;
 }
+#endif
 
 
 

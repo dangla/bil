@@ -44,6 +44,15 @@ extern ElementSol_t* (ElementSol_GetDeepElementSol)(ElementSol_t*,unsigned int) 
         GenericData_GetData(ElementSol_GetConstantGenericData(ES))
 
 
+/* Add generic data */
+#define ElementSol_AddImplicitGenericData(ES,GD) \
+        GenericData_Append(ElementSol_GetImplicitGenericData(ES),GD)
+        
+#define ElementSol_AddExplicitGenericData(ES,GD) \
+        GenericData_Append(ElementSol_GetExplicitGenericData(ES),GD)
+        
+#define ElementSol_AddConstantGenericData(ES,GD) \
+        GenericData_Append(ElementSol_GetConstantGenericData(ES),GD)
 
 
 #include "GenericData.h"

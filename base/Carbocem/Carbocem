@@ -26,23 +26,23 @@ Curves_log = modif-HsS-V-CN
 
 Fields
 8
-Value = -15 		          Gradient = 0. 	Point = 0. 
-Value = -0.158		        Gradient = 0.	  Point = 0.  
-Value = -70.50000E+06 		Gradient = 0.	  Point = 0.
-Value = 0.0		            Gradient = 0.	  Point = 0.    
-Value = 0.03		          Gradient = 0.	  Point = 0. 
-Value = 1   		          Gradient = 0.	  Point = 0.    
-Value = 1  		            Gradient = 0.	  Point = 0.
-Type = grid 		          File = CN_satb
+Value = -15 		        Gradient = 0. 0. 0.     Point = 0. 0. 0. 
+Value = -0.158		        Gradient = 0. 0. 0.     Point = 0. 0. 0.  
+Value = -70.50000E+06 		Gradient = 0. 0. 0.     Point = 0. 0. 0.
+Value = 0.0		        Gradient = 0. 0. 0.     Point = 0. 0. 0.    
+Value = 0.03		        Gradient = 0. 0. 0.     Point = 0. 0. 0. 
+Value = 1   		        Gradient = 0. 0. 0.     Point = 0. 0. 0.    
+Value = 1  		        Gradient = 0. 0. 0.     Point = 0. 0. 0.
+Type = grid 		        File = CN_satb
 
 
 Initialization
 5
-Region = 2 	Unknown = logc_co2  	Field = 1
-Region = 2 	Unknown = p_l   		  Field = 8
-Region = 2 	Unknown = psi    		  Field = 0
-Region = 2 	Unknown = z_si    	  Field = 6
-Region = 2 	Unknown = z_ca 		    Field = 7
+Region = 2 	Unknown = logc_co2      Field = 1       Function = 0
+Region = 2 	Unknown = p_l           Field = 8       Function = 0
+Region = 2 	Unknown = psi           Field = 0       Function = 0
+Region = 2 	Unknown = z_si          Field = 6       Function = 0
+Region = 2 	Unknown = z_ca          Field = 7       Function = 0
 
 
 Functions
@@ -52,9 +52,9 @@ N = 2 F(0) = 1. F(3600) = 0.16
 
 Boundary Conditions
 3
-Region = 1 	Unknown = psi   		  Field = 0 	Function = 0
-Region = 1 	Unknown = p_l   		  Field = 3 	Function = 0
-Region = 1 	Unknown = logc_co2  	Field = 1 	Function = 1
+Region = 1 	Unknown = psi           Field = 0       Function = 0
+Region = 1 	Unknown = p_l           Field = 3       Function = 0
+Region = 1 	Unknown = logc_co2      Field = 1       Function = 1
 
 
 Loads
@@ -75,8 +75,8 @@ logc_co2 = 0.1
 p_l      = 1.e5 
 z_ca     = 0.1
 psi      = 1.
-c_na     = 1e-1
-c_k      = 1e-1
+logc_na     = 1e-1
+logc_k      = 1e-1
 z_si     = 1e-1
 
 

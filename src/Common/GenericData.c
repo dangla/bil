@@ -9,6 +9,7 @@
 #include "Tools/Math.h"
 
 
+static void           (GenericData_Remove)(GenericData_t**) ;
 
 
 /* Global functions */
@@ -113,70 +114,23 @@ void (GenericData_Initialize_)(GenericData_t* gdat,int n,void* data,TypeId_t typ
 
 
 
-void (GenericData_InsertBefore)(GenericData_t* cur,GenericData_t* gdat)
-/** Insert "gdat" in the linked list before "cur". */
-{
-  
-  if(!cur) {
-    exit ;
-    return ;
-  }
-  
-  /* Insert gdat between prev and cur: prev - gdat - cur */
-  {
-    GenericData_t* prev = GenericData_GetPreviousGenericData(cur) ;
-    
-    GenericData_GetPreviousGenericData(gdat) = prev ;
-    GenericData_GetNextGenericData(gdat)     = cur ;
-    if(prev) GenericData_GetNextGenericData(prev) = gdat ;
-    if(cur) GenericData_GetPreviousGenericData(cur) = gdat ;
-  }
-}
-
-
-
-void (GenericData_InsertAfter)(GenericData_t* cur,GenericData_t* gdat)
-/** Insert "gdat" in the linked list after "cur". */
-{
-  
-  if(!cur) {
-    exit ;
-    return ;
-  }
-    
-  /* Insert gdat between cur and next: cur - gdat - next */
-  {
-    GenericData_t* next = GenericData_GetNextGenericData(cur) ;
-    
-    GenericData_GetPreviousGenericData(gdat) = cur ;
-    GenericData_GetNextGenericData(gdat)     = next ;
-    if(next) GenericData_GetPreviousGenericData(next) = gdat ;
-    if(cur) GenericData_GetNextGenericData(cur) = gdat ;
-  }
-}
-
-
-
-GenericData_t* (GenericData_Merge)(GenericData_t* a,GenericData_t* b)
-/** Merge a and b into one generic data and return it. */
+GenericData_t* (GenericData_Append)(GenericData_t* a,GenericData_t* b)
+/** Append "b" to "a". 
+ *  Return the appended generic data (ie "a" or "b") or NULL pointer. */
 {
   
   if(!a) {
     return(b) ;
   }
     
-  /* Insert the complete b between a and next(a): 
-   * a - first(b) ... last(b) - next(a) */
-  if(a) {
-    GenericData_t* next  = GenericData_GetNextGenericData(a) ;
-    GenericData_t* first = GenericData_First(b) ;
-    GenericData_t* last  = GenericData_Last(b) ;
+  /* Add b at the end of a:
+   * a ... last(a) - b */
+  {
+    GenericData_t* lasta  = GenericData_Last(a) ;
     
-    GenericData_GetNextGenericData(a) = b ;
-    GenericData_GetPreviousGenericData(first) = a ;
-    
-    GenericData_GetNextGenericData(last) = next ;
-    if(next) GenericData_GetPreviousGenericData(next) = b ;
+    /* The condition is useless since "lasta" must not be NULL.  */
+    if(lasta) GenericData_GetNextGenericData(lasta) = b ;
+    if(b) GenericData_GetPreviousGenericData(b) = lasta ;
     
     return(a) ;
   }
@@ -236,3 +190,50 @@ GenericData_t* (GenericData_Find_)(GenericData_t* gdat,TypeId_t typ,char const* 
   
   return(NULL) ;
 }
+
+
+
+#if 0
+void (GenericData_InsertBefore)(GenericData_t* a,GenericData_t* b)
+/** Insert "b" in the linked list before "a". */
+{
+  
+  if(!a) {
+    exit(0) ;
+    return ;
+  }
+  
+  /* Insert b between prev(a) and a: prev(a) - b - a */
+  {
+    GenericData_t* preva = GenericData_GetPreviousGenericData(a) ;
+    
+    GenericData_GetPreviousGenericData(b) = preva ;
+    GenericData_GetNextGenericData(b)     = a ;
+    if(preva) GenericData_GetNextGenericData(preva) = b ;
+    if(a) GenericData_GetPreviousGenericData(a) = b ;
+  }
+}
+
+
+
+
+void (GenericData_InsertAfter)(GenericData_t* a,GenericData_t* b)
+/** Insert "b" in the linked list after "a". */
+{
+  
+  if(!a) {
+    exit(0) ;
+    return ;
+  }
+    
+  /* Insert b between a and next(a): a - b - next(a) */
+  {
+    GenericData_t* nexta = GenericData_GetNextGenericData(a) ;
+    
+    GenericData_GetPreviousGenericData(b) = a ;
+    GenericData_GetNextGenericData(b)     = nexta ;
+    if(nexta) GenericData_GetPreviousGenericData(nexta) = b ;
+    if(a) GenericData_GetNextGenericData(a) = b ;
+  }
+}
+#endif

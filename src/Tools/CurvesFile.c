@@ -53,12 +53,16 @@ static GenericFunction_t MolarDensityOfPerfectGas ;
 static GenericFunction_t MolarDensityOfCO2 ;
 static GenericFunction_t Affine ;
 static GenericFunction_t VanGenuchten_gas ;
+static GenericFunction_t PermeabilityCoefficient_KozenyCarman ;
+static GenericFunction_t PermeabilityCoefficient_VermaPruess ;
+static GenericFunction_t TortuosityToLiquid_OhJang ;
+static GenericFunction_t TortuosityToLiquid_BazantNajjar ;
 
 
-static double vangenuchten(double,double) ;
-static double fraction_Silica(double*,double*,int,double) ;
-static double MolarDensityOfCO2_RedlichKwong(double,double) ;
-static double ViscosityOfCO2_Fenghour(double,double) ;
+static double (vangenuchten)(double,double) ;
+static double (fraction_Silica)(double*,double*,int,double) ;
+static double (MolarDensityOfCO2_RedlichKwong)(double,double) ;
+static double (ViscosityOfCO2_Fenghour)(double,double) ;
 static double (langmuir)(double,double,double,double) ;
 
 
@@ -173,15 +177,20 @@ int   (CurvesFile_Initialize)(CurvesFile_t* curvesfile,const char* cmdline)
     char* filename = CurvesFile_GetFileName(curvesfile) ;
 
     {
-      const char* line = strchr(cmdline,'=') + 1 ;
-      sscanf(line," %s",filename) ;
-    
-      if(strlen(filename) > CurvesFile_MaxLengthOfFileName) {
-        arret("CurvesFile_Initialize(1)") ;
-      }
+      const char* line = strchr(cmdline,'=') ;
       
-      line  = strstr(line,filename) + strlen(filename) ;
-      CurvesFile_GetCurrentPositionInTheCommandLine(curvesfile) = line ;
+      if(line) {
+        line += 1 ;
+        
+        sscanf(line," %s",filename) ;
+    
+        if(strlen(filename) > CurvesFile_MaxLengthOfFileName) {
+          arret("CurvesFile_Initialize(1)") ;
+        }
+      
+        line  = strstr(line,filename) + strlen(filename) ;
+        CurvesFile_GetCurrentPositionInTheCommandLine(curvesfile) = line ;
+      }
     }
   }
   
@@ -294,7 +303,7 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
   /* Write the first column x-axis */
   
   /* Read the range and the nb of points */
-  if(sscanf(line," %s = %[^({]",xlabel,xmodel) == 2) {
+  if(line && sscanf(line," %s = %[^({]",xlabel,xmodel) == 2) {
       
     line = strchr(line,'{') ;
       
@@ -613,6 +622,30 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
       sscanf(line,"{ %*s = %lf }",&temperature) ;
       
       PasteColumn(FenghourCO2,temperature) ;
+      
+    } else if(!strcmp(YMODEL,"KozenyCarman")) {
+      double phi0 ;
+      
+      sscanf(line,"{ %*s = %lf }",&phi0) ;
+      
+      PasteColumn(PermeabilityCoefficient_KozenyCarman,phi0) ;
+      
+    } else if(!strcmp(YMODEL,"VermaPruess")) {
+      double phi0 ;
+      double frac ;
+      double phi_r ;
+      
+      sscanf(line,"{ %*s = %lf , %*s = %lf , %*s = %lf }",&phi0,&frac,&phi_r) ;
+      
+      PasteColumn(PermeabilityCoefficient_VermaPruess,phi0,frac,phi_r) ;
+      
+    } else if(!strcmp(YMODEL,"OhJang")) {
+      
+      PasteColumn(TortuosityToLiquid_OhJang,0) ;
+      
+    } else if(!strcmp(YMODEL,"BazantNajjar")) {
+      
+      PasteColumn(TortuosityToLiquid_BazantNajjar,0) ;
       
     } else {
       arret("CurvesFile_WriteCurves : fonction non connue") ;
@@ -1296,6 +1329,95 @@ double (CSHLangmuirN)(double s,va_list args)
   }
       
   return(output) ;
+}
+
+
+
+
+
+double (PermeabilityCoefficient_KozenyCarman)(double phi,va_list args)
+/* Kozeny-Carman model */
+{
+  double phi0 = va_arg(args,double) ;
+  double coeff_permeability ;
+  
+  {
+    double kozeny_carman  = pow(phi/phi0,3.)*pow(((1 - phi0)/(1 - phi)),2.) ;
+	
+    coeff_permeability = kozeny_carman ;
+  }
+  
+  return(coeff_permeability) ;
+}
+
+
+
+double (PermeabilityCoefficient_VermaPruess)(double phi,va_list args)
+/* Ref:
+ * A. Verma and K. Pruess,
+ * Thermohydrological Conditions and Silica Redistribution Near High-Level
+ * Nuclear Wastes Emplaced in Saturated Geological Formations,
+ * Journal of Geophysical Research, 93(B2) 1159-1173, 1988
+ * frac  = fractionnal length of pore bodies (0.8) 
+ * phi_r = fraction of initial porosity (phi/phi0) at which permeability is 0 
+ */
+{
+  double phi0 = va_arg(args,double) ;
+  double frac = va_arg(args,double) ;
+  double phi_r = va_arg(args,double) ;
+  double coeff_permeability ;
+  
+  {
+	  double S_s =  (phi0 - phi)/phi0    ;
+	  double w = 1 + (1/frac)/(1/phi_r - 1) ;
+    double t = (1 - S_s - phi_r)/(1 - phi_r) ;
+	  double verma_pruess = (t > 0) ? t*t*(1 - frac + (frac/(w*w)))/(1 - frac + frac*(pow(t/(t + w - 1),2.))) : 0 ;
+	
+    coeff_permeability = verma_pruess ;
+  }
+  
+  return(coeff_permeability) ;
+}
+
+
+
+
+double (TortuosityToLiquid_OhJang)(double phi,va_list args)
+/* Ref:
+ * Byung Hwan Oh, Seung Yup Jang, 
+ * Prediction of diffusivity of concrete based on simple analytic equations, 
+ * Cement and Concrete Research 34 (2004) 463 - 480.
+ * tau = (m_p + sqrt(m_p**2 + phi_c/(1 - phi_c) * (Ds/D0)**(1/n)))**n
+ * m_p = 0.5 * ((phi_cap - phi_c) + (Ds/D0)**(1/n) * (1 - phi_c - phi_cap)) / (1 - phi_c)
+ */
+{
+  double phi_cap = phi/2  ;
+  double phi_c   = 0.17 ;   /* Percolation capilar porosity */
+  double n     = 2.7 ; 		      /* OPC n  = 2.7  --------  Fly ash n  = 4.5 */
+  double ds    = 1.e-4 ;	      /* OPC ds = 1e-4 --------  Fly ash ds = 5e-5 */
+  double dsn   = pow(ds,1/n) ;
+  double m_phi = 0.5 * ((phi_cap - phi_c) + dsn * (1 - phi_c - phi_cap)) / (1 - phi_c) ;
+  double tausat =  pow(m_phi + sqrt(m_phi*m_phi + dsn * phi_c/(1 - phi_c)),n) ;
+  
+  double tau =  tausat ;
+    
+  return tau ;
+}
+
+
+
+
+double (TortuosityToLiquid_BazantNajjar)(double phi,va_list args)
+/* Ref:
+ * Z. P. BAZANT, L.J. NAJJAR,
+ * Nonlinear water diffusion in nonsaturated concrete,
+ * Materiaux et constructions, 5(25), 1972.
+ */
+{
+  double tausat = 0.00029 * exp(9.95 * phi) ;
+  double tau    = tausat ;
+    
+  return tau ;
 }
 
 

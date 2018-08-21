@@ -49,7 +49,7 @@ CFLAGS-MODULES = ${CFLAGS} ${IFLAGS-MODULES}
 
 # Fortran compiler flags
 #-----------------------
-FFLAGS =
+FFLAGS = -fPIC
 
 
 # Optimization flags
