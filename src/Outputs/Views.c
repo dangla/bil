@@ -19,11 +19,13 @@ Views_t* Views_Create(int n)
 }
 
 
-void Views_Delete(Views_t** views)
+void Views_Delete(void* self)
 {
-  View_t* view = Views_GetView(*views) ;
+  Views_t** pviews = (Views_t**) self ;
+  Views_t*   views = *pviews ;
+  View_t* view = Views_GetView(views) ;
   
   View_Delete(&view) ;
-  free(*views) ;
-  *views = NULL ;
+  free(views) ;
+  *pviews = NULL ;
 }

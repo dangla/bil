@@ -84,7 +84,7 @@
 #define U_H2SO4     LOG_U
 #define U_K         LOG_U
 #define U_OH        LOG_U
-#define U_Cl        NOLOG_U
+#define U_Cl        LOG_U
 #define EXPLICIT  1
 #define IMPLICIT  2
 #define U_PHI     IMPLICIT
@@ -339,7 +339,7 @@
 
 /* Concrete properties */
 #define CC_Con     (10.*GPa)       /* (??) */
-#define CS_Con     (3.5*MPa)      /* Attention the pressure should be lower than CC_Gyp * PHI_Gyp = 4.25e6 here */
+#define CS_Con     (3.5*MPa)      /* Attention the pressure should be lower than CC_Gyp * PHI_Gyp i.e. 4.25 MPa  here. */
 
 
 /* To retrieve the material properties */
@@ -374,6 +374,7 @@ static double TortuosityBazantNajjar(double) ;
 
 /* Parameters */
 static double phi0 ;
+static double phi_min ;
 static double t_ch,t_csh2,t_afm,t_aft ;
 static double r_afm,r_aft,r_c3ah6,r_csh2 ;
 static double n_ca_ref,n_si_ref,n_al_ref ;
@@ -479,6 +480,7 @@ int pm(const char *s)
   else if(strcmp(s,"R_AFt") == 0)      return (13) ;
   else if(strcmp(s,"R_C3AH6") == 0)    return (14) ;
   else if(strcmp(s,"R_CSH2") == 0)     return (15) ;
+  else if(strcmp(s,"porosity_min") == 0)   return (16) ;
   else return(-1) ;
 }
 
@@ -501,6 +503,7 @@ void GetProperties(Element_t* el)
   r_aft     = GetProperty("R_AFt") ;
   r_c3ah6   = GetProperty("R_C3AH6") ;
   r_csh2    = GetProperty("R_CSH2") ;
+  phi_min  = GetProperty("porosity_min") ;
   
   MolarVolumeOfCSH_Curve = Element_FindCurve(el,"V_CSH") ;
 }
@@ -557,7 +560,7 @@ int SetModelProp(Model_t* model)
 int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 /* Lecture des donnees materiaux dans le fichier ficd */
 {
-  int  NbOfProp = 16 ;
+  int  NbOfProp = 17 ;
   
   InternationalSystemOfUnits_UseAsLength("decimeter") ;
 
@@ -741,18 +744,20 @@ int ComputeInitialState(Element_t* el)
         double logc_k     = LogC_K(i) ;
         double logc_oh    = -7 ;
         double c_cl       = C_Cl(i) ;
+        double logc_cl    = log10(c_cl) ;
   
-        HardenedCementChemistry_GetInput(hcc,SI_Ca) = MIN(zn_ca_s,0) ;
-        HardenedCementChemistry_GetInput(hcc,SI_Si) = MIN(zn_si_s,0) ;
-        HardenedCementChemistry_GetInput(hcc,SI_Al) = MIN(zn_al_s,0) ;
-        HardenedCementChemistry_GetInput(hcc,LogC_H2SO4) = logc_h2so4 ;
-        HardenedCementChemistry_GetInput(hcc,LogC_Na)  = logc_na ;
-        HardenedCementChemistry_GetInput(hcc,LogC_K)   = logc_k ;
-        HardenedCementChemistry_GetInput(hcc,LogC_OH)  = logc_oh ;
+        HardenedCementChemistry_SetInput(hcc,SI_CH,MIN(zn_ca_s,0)) ;
+        HardenedCementChemistry_SetInput(hcc,SI_CSH,MIN(zn_si_s,0)) ;
+        HardenedCementChemistry_SetInput(hcc,SI_AH3,MIN(zn_al_s,0)) ;
+        HardenedCementChemistry_SetInput(hcc,LogC_H2SO4,logc_h2so4) ;
+        HardenedCementChemistry_SetInput(hcc,LogC_Na,logc_na) ;
+        HardenedCementChemistry_SetInput(hcc,LogC_K,logc_k) ;
+        HardenedCementChemistry_SetInput(hcc,LogC_OH,logc_oh) ;
     
         HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
+        HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = logc_cl ;
   
-        HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_SO3_Al2O3_2) ;
+        HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O) ;
       
         HardenedCementChemistry_SolveElectroneutrality(hcc) ;
       }
@@ -1083,7 +1088,10 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   }
   
 
-
+/* On output TangentCoefficients has computed the derivatives wrt
+ * Log(C_H2SO4), Log(C_K), Log(C_OH) and C_Cl 
+ * (see ComputeVariables and ComputeVariablesDerivatives). */
+ 
 #if (U_H2SO4 == NOLOG_U)
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
@@ -1102,6 +1110,17 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     for(i = 0 ; i < 2*NEQ ; i++){
       K(i,U_C_K)     /= Ln10*C_K(0) ;
       K(i,U_C_K+NEQ) /= Ln10*C_K(1) ;
+    }
+  }
+#endif
+
+#if (U_Cl == LOG_U)
+  {
+    double** u = Element_ComputePointerToNodalUnknowns(el) ;
+    
+    for(i = 0 ; i < 2*NEQ ; i++){
+      K(i,U_C_Cl)     *= Ln10*C_Cl(0) ;
+      K(i,U_C_Cl+NEQ) *= Ln10*C_Cl(1) ;
     }
   }
 #endif
@@ -1309,7 +1328,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     /* molarites */
     double* x = ComputeVariables(el,u,u,f,0,j) ;
     /* Concentrations */
-#define ptC(CPD)   &(HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,CPD))
+#define ptC(CPD)   &(HardenedCementChemistry_GetAqueousConcentrationOf(hcc,CPD))
 #define ptS(CPD)   &(HardenedCementChemistry_GetSaturationIndexOf(hcc,CPD))
 #define ptPSI      &(HardenedCementChemistry_GetElectricPotential(hcc))
 #define ptX_CSH    &(HardenedCementChemistry_GetCalciumSiliconRatioInCSH(hcc))
@@ -1318,7 +1337,8 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     i = 0 ;
     
     {
-      double ph        = - *(ptC(H )) ;
+      double c_h       = *(ptC(H )) ;
+      double ph        = - log10(c_h) ;
       
       Result_Store(r + i++,&ph,"ph",1) ;
     }
@@ -1485,6 +1505,10 @@ int TangentCoefficients(Element_t* el,double dt,double* c)
     dui[U_C_K] =  1.e-2*ObVal_GetValue(obval + U_C_K)/(Ln10*xi[U_C_K]) ;
     #endif
     
+    #if (U_Cl == LOG_U)
+    dui[U_C_Cl] =  1.e-2*ObVal_GetValue(obval + U_C_Cl)*(Ln10*xi[U_C_Cl]) ;
+    #endif
+    
     #ifdef U_C_OH
       #if (U_OH == NOLOG_U)
       dui[U_C_OH] =  1.e-2*ObVal_GetValue(obval + U_C_OH)/(Ln10*xi[U_C_OH]) ;
@@ -1617,19 +1641,21 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
 #else
     double logc_oh    = log10(x[I_C_OHn]) ;
 #endif
+    double logc_cl    = log10(c_cl) ;
   
-    HardenedCementChemistry_GetInput(hcc,SI_Ca) = MIN(zn_ca_s,0) ;
-    HardenedCementChemistry_GetInput(hcc,SI_Si) = MIN(zn_si_s,0) ;
-    HardenedCementChemistry_GetInput(hcc,SI_Al) = MIN(zn_al_s,0) ;
-    HardenedCementChemistry_GetInput(hcc,LogC_H2SO4) = logc_h2so4 ;
-    HardenedCementChemistry_GetInput(hcc,LogC_Na)  = logc_na ;
-    HardenedCementChemistry_GetInput(hcc,LogC_K)   = logc_k ;
-    HardenedCementChemistry_GetInput(hcc,LogC_OH)  = logc_oh ;
+    HardenedCementChemistry_SetInput(hcc,SI_CH,MIN(zn_ca_s,0)) ;
+    HardenedCementChemistry_SetInput(hcc,SI_CSH,MIN(zn_si_s,0)) ;
+    HardenedCementChemistry_SetInput(hcc,SI_AH3,MIN(zn_al_s,0)) ;
+    HardenedCementChemistry_SetInput(hcc,LogC_H2SO4,logc_h2so4) ;
+    HardenedCementChemistry_SetInput(hcc,LogC_Na,logc_na) ;
+    HardenedCementChemistry_SetInput(hcc,LogC_K,logc_k) ;
+    HardenedCementChemistry_SetInput(hcc,LogC_OH,logc_oh) ;
     HardenedCementChemistry_GetElectricPotential(hcc) = psi ;
     
     HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
+    HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = logc_cl ;
   
-    HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_SO3_Al2O3_2) ;
+    HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O) ;
 
 #ifndef E_el
   #if (ELECTRONEUTRALITY == IMPLICIT)
@@ -1693,9 +1719,11 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
   /* Porosities in unconfined conditions (no pressure) */
   double v_cem0     = x[I_V_Cem0] ;
   /* ... of concrete */
-  double phi_con    = phi0 + v_cem0 - v_cem ;
+  double dv_cem     = v_cem - v_cem0 ;
+  double phi_con    = phi0 - dv_cem ;
+  //double phi_con    = MAX(phi0 - dv_cem,phi_min) ;
   /* ... of gypsum */
-  double phi_gyp    = PHI_Gyp ;
+  //double phi_gyp    = PHI_Gyp ;
 
 
   /* Confining pressure of gypsum 
@@ -1703,6 +1731,7 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
    *     volume of gypsum:  v_gyp(p)   = v_gyp   * ( 1 - p/CC_Gyp ) 
    *     and
    *     concrete porosity: phi_con(p) = phi_con * ( 1 + p/CC_Con ) 
+   * 
    */
   double p_csh2    = (v_gyp > phi_con) ? (v_gyp - phi_con)/(phi_con/CC_Con + v_gyp/CC_Gyp) : 0 ;
   //double p_csh2     = 0 ;
@@ -1713,10 +1742,15 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
   double damage     = (p_csh2 > CS_Con || damagen > 0.5) ? 1 : 0 ;
   
   /* In case of damage the concrete porosity is no more determined 
-   * by the volume of cement and should be redefined.*/
+   * by the volume of cement and should be redefined. */
   if(damage > 0.5) {
     p_csh2    = 0 ;
     phi_con   = v_gyp ;
+  } else {
+    /* p_csh2 should be lower than CC_Gyp * PHI_Gyp */
+    if(p_csh2 > CC_Gyp * PHI_Gyp) {
+      arret("The pressure of gypsum %e should be lower than %e",p_csh2,CC_Gyp * PHI_Gyp) ;
+    }
   }
 
   /* Porosities in confined conditions */
@@ -1724,7 +1758,9 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
   double phi_conp   = phi_con * (1 + p_csh2/CC_Con) ;
   double phi_c      = phi_conp ;
   /* ... total porosity */
-  double phi_t      = phi_conp - v_csh2 ;
+  //double phi_t      = phi_conp - v_csh2 ;
+  /* Eulerian porosity */
+  double phi_t      = (phi_conp - v_csh2)/(1 + phi_conp - (phi0 - dv_cem)) ;
   
   
 
@@ -1754,10 +1790,6 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
   #endif
 #endif
     
-    
-  if(p_csh2 > CC_Gyp*phi_gyp) {
-    arret("ComputeSecondaryVariables: pressure too high") ;
-  }
   /*
   if(damage > 0.5) {
     arret("ComputeSecondaryVariables: damage not allowed") ;

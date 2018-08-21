@@ -18,6 +18,7 @@ extern void            (Exception_Delete)(void*) ;
 
 #include <signal.h>
 #include <setjmp.h>
+#include "Message.h"
 
 #define Exception_Environment \
         Exception_GetEnvironment(Exception_GetInstance())
@@ -32,7 +33,11 @@ extern void            (Exception_Delete)(void*) ;
         (longjmp(Exception_Environment,val))
 
 #define Exception_Interrupt \
-        (raise(SIGINT))
+        do { \
+          if(!raise(SIGINT)) { \
+            Message_FatalError("Error raising the signal") ; \
+          } \
+        } while (0)
 
 #define Exception_IsCaught \
         (Exception_ExceptionType)

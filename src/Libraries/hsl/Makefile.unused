@@ -1,0 +1,54 @@
+#
+#
+SHELL = /bin/sh
+
+include ../make.inc
+
+LIBHSLa     = ${BIL_LIBDIR}/libhsl.a
+
+LIBHSLso    = ${BIL_LIBDIR}/libhsl.so
+
+# Library extensions. Depends on which kind of library t want to install
+# Choose either "so" (shared object) or "a" (static)
+# Pay attenntion here, the choice "so" doesn't work at the present time:
+# the ldd /usr/local/bin/bil command doesn't find libhsl.so, something
+# should be changed in the install-bin/install-libso rules of ${BIL}/Makefile.
+LIBHSLEXT   = a
+
+# Library to be installed
+LIBHSL      = ${BIL_LIBDIR}/libhsl.${LIBHSLEXT}
+
+SRC = $(wildcard *.f)
+
+OBJ = ${SRC:.f=.o}
+
+#.SUFFIXES: .o .f
+
+
+# Rules
+# -----
+entry: ${LIBHSL}
+
+
+${LIBHSLa}: ${OBJ}
+	@echo "\nCreating the static library "${LIBHSLa}
+	${AR} ${LIBHSLa} ${OBJ}
+	${RANLIB} ${LIBHSLa}
+
+
+${LIBHSLso}: ${OBJ}
+	@echo "\nCreating the shared library "${LIBHSLso}
+	${CCSO} ${OPTIM} -o ${LIBHSLso} ${OBJ}
+	
+	
+
+#.f.o:
+#	${F77} ${OPTIM} ${FFLAGS} -c $<
+
+
+%.o: %.f ../make.inc
+	${F77} ${OPTIM} ${FFLAGS} -c $<
+
+
+clean:
+	rm -f *.o

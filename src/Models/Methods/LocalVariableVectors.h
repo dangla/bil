@@ -13,7 +13,7 @@ typedef struct LocalVariableVectors_s     LocalVariableVectors_t ;
 
 
 extern LocalVariableVectors_t*     LocalVariableVectors_Create(int) ;
-extern void                        LocalVariableVectors_Delete(LocalVariableVectors_t**) ;
+extern void                        LocalVariableVectors_Delete(void*) ;
 
 
 

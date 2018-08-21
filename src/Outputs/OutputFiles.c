@@ -916,7 +916,7 @@ void (OutputFiles_BackupSolutionAtTime_)(OutputFiles_t* outputfiles,DataSet_t* d
   {
     time_t date ;
     time(&date) ;
-    fprintf(fict,"# Version "BIL_VERSION", %s",ctime(&date)) ;
+    fprintf(fict,"# Version " BIL_VERSION ", %s",ctime(&date)) ;
     fprintf(fict,"# Time = %e\n",t) ;
   }
   
@@ -1058,7 +1058,7 @@ void (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t* outputfiles,DataSet_t* 
       time_t date ;
       time(&date) ;
     
-      fprintf(ficp,"# Version "BIL_VERSION", %s",ctime(&date)) ;
+      fprintf(ficp,"# Version " BIL_VERSION ", %s",ctime(&date)) ;
     
       fprintf(ficp,"# Point =") ;
       for(j = 0 ; j < dim ; j++) fprintf(ficp," %e",xp[j]) ;

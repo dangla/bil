@@ -5,6 +5,7 @@
 #include <string.h>
 #include <strings.h>
 //#include <stdarg.h>
+#include <assert.h>
 
 #include "Message.h"
 #include "Buffer.h"
@@ -15,7 +16,7 @@ TextFile_t*   (TextFile_Create)(char* filename)
 {
   TextFile_t* textfile   = (TextFile_t*) malloc(sizeof(TextFile_t)) ;
   
-  if(!textfile) arret("TextFile_Create(0)") ;
+  if(!textfile) assert(textfile) ;
   
   
   /* Initialization */
@@ -29,7 +30,7 @@ TextFile_t*   (TextFile_Create)(char* filename)
     char* name = (char*) malloc(TextFile_MaxLengthOfFileName*sizeof(char)) ;
     
     if(!name) {
-      arret("TextFile_Create(1)") ;
+      assert(name) ;
     }
     
     if(filename) {
@@ -47,7 +48,7 @@ TextFile_t*   (TextFile_Create)(char* filename)
   {
     fpos_t* pos = (fpos_t*) malloc(sizeof(fpos_t)) ;
     
-    if(!pos) arret("TextFile_Create(2)") ;
+    if(!pos) assert(pos) ;
     
     TextFile_GetFilePosition(textfile) = pos ;
   }
@@ -68,10 +69,10 @@ TextFile_t*   (TextFile_Create)(char* filename)
   /* Memory space for the text line to be read */
   /*
   {
-    int n = TextFile_MaxLengthOfTextLine ;
+    int n = TextFile_CountTheMaxNbOfCharactersPerLine(textfile) ;
     char* line = (char*) malloc(n*sizeof(char)) ;
     
-    if(!line) arret("TextFile_Create(5)") ;
+    if(!line) assert(line) ;
     
     TextFile_GetTextLine(textfile) = line ;
     TextFile_GetMaxNbOfCharactersPerLine(textfile) = n ;
@@ -82,14 +83,16 @@ TextFile_t*   (TextFile_Create)(char* filename)
 }
 
 
-void (TextFile_Delete)(TextFile_t** textfile)
+void (TextFile_Delete)(void* self)
 {
-  free(TextFile_GetFileName(*textfile)) ;
-  free(TextFile_GetFilePosition(*textfile)) ;
-  free(TextFile_GetFileContent(*textfile)) ;
+  TextFile_t** ptextfile = (TextFile_t**) self ;
+  TextFile_t*   textfile = *ptextfile ;
   
-  free(*textfile) ;
-  *textfile = NULL ;
+  free(TextFile_GetFileName(textfile)) ;
+  free(TextFile_GetFilePosition(textfile)) ;
+  free(TextFile_GetFileContent(textfile)) ;
+  free(textfile) ;
+  *ptextfile = NULL ;
 }
 
 
@@ -217,14 +220,11 @@ char* (TextFile_ReadLineFromCurrentFilePosition)(TextFile_t* textfile,char* line
 
 
 long int TextFile_CountNbOfCharacters(TextFile_t* textfile)
+/** Return the number of character of the file including end of file */
 {
   FILE* str = TextFile_OpenFile(textfile,"r") ;
   long int count = 1 ;
   char c ;
-  
-  if(!str) {
-    arret("TextFile_CountNbOfCharacters") ;
-  }
   
   while((c = fgetc(str)) != EOF) {
     
@@ -239,15 +239,12 @@ long int TextFile_CountNbOfCharacters(TextFile_t* textfile)
 
 
 int TextFile_CountTheMaxNbOfCharactersPerLine(TextFile_t* textfile)
+/** Return the max number of character per line including end of line */
 {
   FILE* str = TextFile_OpenFile(textfile,"r") ;
   int linelength = 0 ;
   int ll = 0 ;
   char c ;
-  
-  if(!str) {
-    arret("TextFile_CountTheMaxNbOfCharactersPerLine") ;
-  }
   
   while((c = fgetc(str)) != EOF) {
     
@@ -258,6 +255,9 @@ int TextFile_CountTheMaxNbOfCharactersPerLine(TextFile_t* textfile)
       ll = 0 ;
     }
   }
+  
+  /* Include end of line character */
+  linelength += 1 ;
   
   TextFile_CloseFile(textfile) ;
   
@@ -281,10 +281,6 @@ char* (TextFile_FileCopy)(TextFile_t* textfile)
   {
     char c ;
     FILE*   source  = TextFile_OpenFile(textfile,"r") ;
-  
-    if(!source) {
-      arret("TextFile_FileCopy(1)") ;
-    }
     
     while( (c = fgetc(source)) != EOF ) fputc(c,target) ;
   }
@@ -302,10 +298,6 @@ FILE* (TextFile_FileStreamCopy)(TextFile_t* textfile)
 {
   FILE*   target = tmpfile() ; /* temporary file */
   FILE*   source = TextFile_OpenFile(textfile,"r") ;
-  
-  if(!source) {
-    arret("TextFile_FileStreamCopy(0)") ;
-  }
   
   {
     char c ;
@@ -327,25 +319,30 @@ char* (TextFile_StoreFileContent)(TextFile_t* textfile)
  *  and copy the file content in it. 
  *  Return the pointer to the allocated space. */
 {
+  /* Free the space allocated for the content if any */
+  {
+    char* content = TextFile_GetFileContent(textfile) ;
+    
+    free(content) ;
+  }
+  
+  /* Allocate the memory space for the content */
   {
     int n = TextFile_CountNbOfCharacters(textfile) ;
     size_t sz = n*sizeof(char) ;
     char* content = (char*) malloc(sz) ;
     
     if(!content) {
-      arret("TextFile_StoreFileContent(1)") ;
+      assert(content) ;
     }
   
     TextFile_GetFileContent(textfile) = content ;
   }
   
+  /* Read the chars and fill in the allocated space */
   {
     char* c = TextFile_GetFileContent(textfile) ;
     FILE* str  = TextFile_OpenFile(textfile,"r") ;
-  
-    if(!str) {
-      arret("TextFile_StoreFileContent(2)") ;
-    }
     
     while( (*c = fgetc(str)) != EOF ) c++ ;
     

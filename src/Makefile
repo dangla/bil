@@ -8,7 +8,7 @@ LIBBILa     = ${BIL_LIBDIR}/libbil-${BIL_VERSION}.a
 
 LIBBILso    = ${BIL_LIBDIR}/libbil-${BIL_VERSION}.so
 
-#Library to be installed
+# Library to be installed
 LIBBIL      = ${BIL_LIBDIR}/libbil-${BIL_VERSION}.${LIBBILEXT}
 
 sinclude Models/ListOfModels.inc
@@ -63,7 +63,8 @@ SRCMODULES    = ${SRCMODULESC} ${SRCMODULESCPP}
 # Other sources
 SRCOTHERC   = ${wildcard ${addsuffix *.c,${DIRSOTHER}}}
 SRCOTHERCPP = ${wildcard ${addsuffix *.cpp,${DIRSOTHER}}}
-SRCOTHER    = ${SRCOTHERC} ${SRCOTHERCPP}
+SRCOTHERF   = ${wildcard ${addsuffix *.f,${DIRSOTHER}}}
+SRCOTHER    = ${SRCOTHERC} ${SRCOTHERCPP} ${SRCOTHERF}
 
 # All sources
 SRCALL = ${SRCOTHER} ${SRCMODELS} ${SRCMODULES}
@@ -85,17 +86,26 @@ HEADERSONLY = ${filter-out ${addsuffix .h,${basename ${SRCALL}}},${HEADERSALL}}
 OBJMAIN    = Main/Main.o
 OBJMODELS  = ${filter %.o,${SRCMODELS:.c=.o} ${SRCMODELS:.cpp=.o}}
 OBJMODULES = ${filter %.o,${SRCMODULES:.c=.o} ${SRCMODULES:.cpp=.o}}
-OBJOTHER   = ${filter %.o,${SRCOTHER:.c=.o} ${SRCOTHER:.cpp=.o}}
+OBJOTHER   = ${filter %.o,${SRCOTHER:.c=.o} ${SRCOTHER:.cpp=.o} ${SRCOTHER:.f=.o}}
 # All binaries
 OBJALL     = ${OBJOTHER} ${OBJMODELS} ${OBJMODULES}
 # All binaries except Main
 OBJALL1 = ${filter-out ${OBJMAIN},${OBJALL}}
 
 
+
 # Rules
 # -----
+
+
+#=======================================================================
+# Default target executed when no arguments are given to make.
 entry: models modules ${LIBBIL}
 
+
+
+#=======================================================================
+# Target rules for creating libraries
 
 ${LIBBILa}: ${SRCALL} ${OBJALL}
 	@echo "\nCreating the static library "${LIBBILa}
@@ -105,9 +115,11 @@ ${LIBBILa}: ${SRCALL} ${OBJALL}
 
 ${LIBBILso}: ${SRCALL} ${OBJALL}
 	@echo "\nCreating the shared library "${LIBBILso}
-	${CCSO} ${OPTIM} -o ${LIBBILso} ${OBJALL1}
+	${CCSO} ${OPTIM} -Wl,-soname=${LIBBILso} -o ${LIBBILso} ${OBJALL1}
 	
 
+
+#=======================================================================
 # We define pattern rules for sources older than headers
 
 %.c %.cpp:: %.h
@@ -119,6 +131,8 @@ ${LIBBILso}: ${SRCALL} ${OBJALL}
 	touch $@
 
 
+
+#=======================================================================
 # We define pattern rules for compilation of objects in OBJALL
 
 ${DIRMODELFILES}%.o: ${DIRMODELFILES}%.c
@@ -144,10 +158,17 @@ ${DIRMODULEFILES}%.o: ${DIRMODULEFILES}%.cpp
 %.o: %.cpp
 	@echo "\nCompilation of the C++ source: "$<
 	${CC} ${OPTIM} ${CFLAGS} -c $< -o $@
+	
+%.o: %.f
+	@echo "\nCompilation of the fortran source: "$<
+	${F77} ${OPTIM} ${FFLAGS} -c $< -o $@
 
 
+
+#=======================================================================
 # Extra rules with no recipes (the recipes are given above).
 # Force some objects to be recompiled if some prerequisites change.
+
 ${OBJALL}: ${HEADERSONLY} ../make.inc
 
 Models/Models.o: Models/ListOfModels.inc
@@ -156,16 +177,28 @@ Modules/Modules.o: Modules/ListOfModules.inc
 
 
 
+#=======================================================================
+# Target rules for compiling models
 
 .PHONY: models
 models:
 	@echo "\nLook for available models"
 	cd ${DIRMODELFILES} && ${MAKE}
 
+
+
+#=======================================================================
+# Target rules for compiling modules
+
 .PHONY: modules
 modules:
 	@echo "\nLook for available modules"
 	cd ${DIRMODULEFILES} && ${MAKE}
+
+
+
+#=======================================================================
+# Target rules for cleaning
 
 clean:
 	rm -f ${wildcard ${addsuffix *.o,${DIRSOTHER}}}
@@ -173,6 +206,11 @@ clean:
 	cd ${DIRMODELFILES} && ${MAKE} clean
 	cd ${DIRMODULEFILES} && ${MAKE} clean
 
+
+
+
+#=======================================================================
+# Target rules for testing
 
 test:
 	@echo '----------------------------------------------'

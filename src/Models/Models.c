@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "Models.h"
 #include "Model.h"
@@ -13,7 +14,7 @@
 
 
 static Models_t* (Models_Create)(Geometry_t*) ;
-static void      (Models_Delete)(Models_t**) ;
+static void      (Models_Delete)(void*) ;
 
 
 Models_t* Models_Create(Geometry_t* geom)
@@ -21,7 +22,7 @@ Models_t* Models_Create(Geometry_t* geom)
 {
   Models_t* models = (Models_t*) malloc(sizeof(Models_t)) ;
   
-  if(!models) arret("Models_Create") ;
+  assert(models) ;
   
   {
     int n = Models_NbOfModels ;
@@ -50,15 +51,26 @@ Models_t* Models_Create(Geometry_t* geom)
 
 
 
-void  Models_Delete(Models_t** models)
+void  Models_Delete(void* self)
 {
-  int n_models = Models_GetNbOfModels(*models) ;
-  Model_t* model = Models_GetModel(*models) ;
+  Models_t** pmodels = (Models_t**) self ;
+  Models_t*   models = *pmodels ;
+  int n_models = Models_GetNbOfModels(models) ;
+  Model_t* model = Models_GetModel(models) ;
   
-  Model_Delete(&model,n_models) ;
+  {
+    int i ;
+    
+    for(i = 0 ; i < n_models ; i++) {
+      Model_t* modeli = model + i ;
+      
+      //Model_Delete(&model,n_models) ;
+      Model_Delete(&modeli) ;
+    }
+  }
   
-  free(*models) ;
-  *models = NULL ;
+  free(models) ;
+  *pmodels = NULL ;
 }
 
 

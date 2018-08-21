@@ -8,7 +8,7 @@
 
 
 # To produce eps file
-set term postscript eps enhanced color 20 size 10cm, 10cm
+set term postscript eps enhanced color 24 size 10cm, 10cm
 # To produce animation
 #set term gif animate delay 100
 
@@ -19,15 +19,15 @@ set termoption font ",20"
 
 
 # Linetypes
-set linetype 1 lw 4 linecolor rgb "red"
-set linetype 2 lw 4 linecolor rgb "light-magenta"
-set linetype 3 lw 4 linecolor rgb "purple"
-set linetype 4 lw 4 linecolor rgb "steelblue"
-set linetype 5 lw 4 linecolor rgb "aquamarine"
-set linetype 6 lw 4 linecolor rgb "bisque"
-set linetype 7 lw 4 linecolor rgb "bisque"
-set linetype 8 lw 4 linecolor rgb "light-goldenrod"
-set linetype 9 lw 4 linecolor rgb "light-goldenrod"
+set linetype 1 lw 4 pi -1 ps 2 pt 12 linecolor rgb "red"
+set linetype 2 lw 4 pi -1 ps 2 pt 12 linecolor rgb "light-magenta"
+set linetype 3 lw 4 pi -1 ps 2 pt 12 linecolor rgb "purple"
+set linetype 4 lw 4 pi -1 ps 2 pt 12 linecolor rgb "steelblue"
+set linetype 5 lw 4 pi -1 ps 2 pt 12 linecolor rgb "aquamarine"
+set linetype 6 lw 4 pi -1 ps 2 pt 12 linecolor rgb "bisque"
+set linetype 7 lw 4 pi -1 ps 2 pt 12 linecolor rgb "bisque"
+set linetype 8 lw 4 pi -1 ps 2 pt 12 linecolor rgb "light-goldenrod"
+set linetype 9 lw 4 pi -1 ps 2 pt 12 linecolor rgb "light-goldenrod"
 #set linetype cycle 9
 
 
@@ -57,6 +57,7 @@ logk_csh_Jen = -17.36
 
 
 # Functions
+# ---------
 Langmuir(s,n) = (s)**n/(1 + (s)**n)
 FITX1(s) = x1*Langmuir(s/s1,n1) + x2*Langmuir(s/s2,n2)
 FITSSH1(s) = ((1 + (s/s1)**n1)**(-x1/n1)) * ((1 + (s/s2)**n2)**(-x2/n2))
@@ -90,22 +91,27 @@ FITSSH_SH(s)  = 1
 # ------
 # Size
 set size square 1.,1.
+set origin 0.,0.
+
 
 # x-axis
-set origin 0.,0.
-#set xlabel '{/Symbol r}_{CO_2}/{/Symbol r}@_{CO_2}^{CH}' font ",24"
 set xlabel 'Saturation index of portlandite' font ",24"
+X0 = 1.e-8
+X1 = 10
+set xrange[X0:X1]
 set logscale x
 set format x "10^{%T}"
 set xtics mirror 1.e-2
-set xrange[1.e-8:1]
+
 
 # y-axis
-set ylabel 'Saturation index of silica' font ",24"
+set ylabel 'Saturation index of silica gel' font ",24"
+Y0 = 1.e-6
+Y1 = 10
+set yrange[Y0:Y1]
 set logscale y
 set format y "10^{%T}"
-set yrange[1.e-6:1.e1]
-set ytics mirror
+set ytics mirror 1.e-2
 
 
 
@@ -119,15 +125,40 @@ set key bottom left reverse Left spacing 1.5 samplen 2
 #set key left at 1.e-5,1.35 reverse Left spacing 1.5 samplen 1
 
 
+a = 1.e-3
+b = 6.e-2
+da = 10
+db = 0.8*da
+set arrow nohead from a,b   to a/da,b
+set arrow nohead from a,b   to a,b/db
+set arrow nohead from a/da,b to a,b/db
+set label "0.8" at a*1.5,b/(0.4*db) left
+
+a = 4.e-1
+b = 6.e-5
+da = 4.
+db = 1.7*da
+set arrow nohead from a,b   to a/da,b
+set arrow nohead from a,b   to a,b/db
+set arrow nohead from a/da,b to a,b/db
+set label "1.7" at a*1.5,b/(0.4*db) left
+
+
+set label sprintf("C/S ratio = - slope") at 2.e-8,1.e-3
+
+
+set grid xtics ytics
+
 
 set output 'PhaseDiagramOfCaO-SiO2-H2O.eps'
 
 
 plot \
-     FITSSH_SH(x)   w l lw 2 lt 4  title 'Tobermorite' \
-    ,FITSSH_TOB(x)  w l lw 2 lt 2  title 'Silica' \
-    ,FITSSH_JEN(x)  w l lw 2 lt 3  title 'Jennite' \
-    ,FITSSH1(x)     w l lw 3 lt 1  title 'C-S-H' \
+     'cal-greenberg-a1' us 2:3 w p  lt 1 lw 2 pt 5 ps 2 title '(exp. Greenberg)'\
+    , FITSSH1(x)  w l lt -1 lw 3 title '(model)' \
+#    ,FITSSH_SH(x)   w l lw 2 lt 4  title 'Tobermorite' \
+#    ,FITSSH_TOB(x)  w l lw 2 lt 2  title 'Silica' \
+#    ,FITSSH_JEN(x)  w l lw 2 lt 3  title 'Jennite' \
 
 
 exit

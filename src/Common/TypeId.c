@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "TypeId.h"
 #include "BCond.h"
 #include "GenericData.h"
@@ -6,8 +9,6 @@
 #include "Methods/FVM.h"
 #include "Exception.h"
 #include "InternationalSystemOfUnits.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 
 
@@ -19,14 +20,14 @@ void  (TypeId_Delete)(TypeId_t typ,void* self)
     case TypeId_undefined       : break ;
     case TypeId_unsigned_char   : return(free(self));
     case TypeId_char            : return(free(self));
+    case TypeId_double          : return(free(self));
+    case TypeId_long_double     : return(free(self));
+    case TypeId_float           : return(free(self));
     case TypeId_unsigned_int    : return(free(self));
     case TypeId_short_int       : return(free(self));
     case TypeId_int             : return(free(self));
     case TypeId_unsigned_long   : return(free(self));
     case TypeId_long_int        : return(free(self));
-    case TypeId_float           : return(free(self));
-    case TypeId_double          : return(free(self));
-    case TypeId_long_double     : return(free(self));
     case TypeId_BCond_t         : break ;
     case TypeId_BConds_t        : break ;
     case TypeId_Buffer_t        : break ;

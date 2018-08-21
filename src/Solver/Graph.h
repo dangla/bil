@@ -7,7 +7,7 @@ struct Graph_s          ; typedef struct Graph_s Graph_t ;
 
 
 extern Graph_t*  Graph_Create(int,int*) ;
-extern void      Graph_Delete(Graph_t**) ;
+extern void      Graph_Delete(void*) ;
 
 
 #define Graph_GetNbOfVertices(graph)              ((graph)->nvertices)

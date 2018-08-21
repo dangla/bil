@@ -10,7 +10,7 @@ struct DataFile_s     ; typedef struct DataFile_s     DataFile_t ;
 #include <stdio.h>
 
 extern DataFile_t*  (DataFile_Create)(char*) ;
-extern void         (DataFile_Delete)(DataFile_t**) ;
+extern void         (DataFile_Delete)(void*) ;
 extern int          (DataFile_CountNbOfKeyWords)(DataFile_t*,const char*,const char*) ;
 extern void         (DataFile_SetFilePositionAfterKey)(DataFile_t*,const char*,const char*,short int) ;
 extern char*        (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t*) ;
@@ -22,7 +22,7 @@ extern void*        (DataFile_ReadDataFromCurrentFilePosition)(DataFile_t*,void*
 #include "TextFile.h"
 
 #define DataFile_MaxLengthOfFileName    (TextFile_MaxLengthOfFileName)
-#define DataFile_MaxLengthOfTextLine    (TextFile_MaxLengthOfTextLine)
+//#define DataFile_MaxLengthOfTextLine    (TextFile_MaxLengthOfTextLine)
 #define DataFile_MaxLengthOfKeyWord     (30)
 
 #define DataFile_MaxNbOfKeyWords        (10)
@@ -32,7 +32,8 @@ extern void*        (DataFile_ReadDataFromCurrentFilePosition)(DataFile_t*,void*
 #define DataFile_GetTextFile(DF)              ((DF)->textfile)
 #define DataFile_GetTextLine(DF)              ((DF)->line)
 #define DataFile_GetInitialization(DF)        ((DF)->initialization)
-#define DataFile_GetFileContent(DF)          ((DF)->filecontent)
+#define DataFile_GetFileContent(DF)           ((DF)->filecontent)
+#define DataFile_GetMaxLengthOfTextLine(DF)   ((DF)->linelength)
 
 
 
@@ -104,6 +105,7 @@ struct DataFile_s {
   char* line ;                /* memory space for a line */
   int   initialization ;
   char* filecontent ;
+  int   linelength ;          /* Length of the longest line */
 
 } ;
 

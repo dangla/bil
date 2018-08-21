@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "DataFile.h"
 #include "Message.h"
@@ -12,16 +13,12 @@ DataFile_t*  (DataFile_Create)(char* filename)
 {
   DataFile_t* datafile = (DataFile_t*) malloc(sizeof(DataFile_t)) ;
   
-  if(!datafile) arret("DataFile_Create") ;
+  if(!datafile) assert(datafile) ;
   
   
   /* Memory space for textfile */
   {
     TextFile_t* textfile = TextFile_Create(filename) ;
-    
-    if(!textfile) {
-      arret("DataFile_Create(1)") ;
-    }
     
     DataFile_GetTextFile(datafile) = textfile ;
   }
@@ -29,13 +26,17 @@ DataFile_t*  (DataFile_Create)(char* filename)
   
   /* Memory space for line */
   {
-    char* line = (char*) malloc(DataFile_MaxLengthOfTextLine*sizeof(char)) ;
+    TextFile_t* textfile = DataFile_GetTextFile(datafile) ;
+    int n = TextFile_CountTheMaxNbOfCharactersPerLine(textfile) ;
+    size_t sz = n*sizeof(char) ;
+    char* line = (char*) malloc(sz) ;
     
     if(!line) {
-      arret("DataFile_Create(2)") ;
+      assert(line) ;
     }
     
     DataFile_GetTextLine(datafile) = line ;
+    DataFile_GetMaxLengthOfTextLine(datafile) = n ;
   }
   
   
@@ -43,18 +44,22 @@ DataFile_t*  (DataFile_Create)(char* filename)
   {
     TextFile_t* textfile = DataFile_GetTextFile(datafile) ;
     
-    DataFile_GetFileContent(datafile) = TextFile_StoreFileContent(textfile) ;
+    TextFile_StoreFileContent(textfile) ;
+    DataFile_GetFileContent(datafile) = TextFile_GetFileContent(textfile) ;
   }
   
   return(datafile) ;
 }
 
 
-void (DataFile_Delete)(DataFile_t** datafile)
+void (DataFile_Delete)(void* self)
 {
-  TextFile_Delete(&DataFile_GetTextFile(*datafile)) ;
-  free(DataFile_GetTextLine(*datafile)) ;
-  free(*datafile) ;
+  DataFile_t** pdatafile = (DataFile_t**) self ;
+  DataFile_t*   datafile = *pdatafile ;
+  
+  TextFile_Delete(&DataFile_GetTextFile(datafile)) ;
+  free(DataFile_GetTextLine(datafile)) ;
+  free(datafile) ;
 }
 
 
@@ -169,7 +174,7 @@ char* (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t* datafile)
 {
   char* line = DataFile_GetTextLine(datafile) ;
   TextFile_t* textfile = DataFile_GetTextFile(datafile) ;
-  int n = DataFile_MaxLengthOfTextLine ;
+  int n = DataFile_GetMaxLengthOfTextLine(datafile) ;
   char* c ;
   
   do {

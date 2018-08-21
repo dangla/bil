@@ -59,12 +59,15 @@ Curve_t* Curve_Create(unsigned int n_points)
 
 
 
-void Curve_Delete(Curve_t** curve)
+void Curve_Delete(void* self)
 {
-  free(Curve_GetXRange(*curve)) ;
-  free(Curve_GetNameOfXAxis(*curve)) ;
-  free(*curve) ;
-  *curve = NULL ;
+  Curve_t** pcurve   = (Curve_t**) self ;
+  Curve_t*   curve   = *pcurve ;
+  
+  free(Curve_GetXRange(curve)) ;
+  free(Curve_GetNameOfXAxis(curve)) ;
+  free(curve) ;
+  *pcurve = NULL ;
 }
 
 

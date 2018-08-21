@@ -9,7 +9,7 @@ struct Buffer_s     ; typedef struct Buffer_s     Buffer_t ;
 #include <stddef.h>
 
 extern Buffer_t*  Buffer_Create(size_t) ;
-extern void       Buffer_Delete(Buffer_t**) ;
+extern void       Buffer_Delete(void*) ;
 extern void*      Buffer_Allocate(Buffer_t*,size_t) ;
 extern void       Buffer_Free(Buffer_t*) ;
 extern void       Buffer_FreeFrom(Buffer_t*,char*) ;

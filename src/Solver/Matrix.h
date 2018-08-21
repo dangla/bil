@@ -16,7 +16,7 @@ extern void        (Matrix_AssembleElementMatrix_)(Matrix_t*,double*,int*,int*,i
 extern void        (Matrix_PrintMatrix)(Matrix_t*,const char* keyword) ;
 
 
-#define Matrix_GetMatrixFormat(MAT)              ((MAT)->fmt)
+#define Matrix_GetMatrixStorageFormat(MAT)       ((MAT)->fmt)
 #define Matrix_GetNbOfRows(MAT)                  ((MAT)->n)
 #define Matrix_GetNbOfColumns(MAT)               ((MAT)->n)
 #define Matrix_GetNbOfNonZeroValues(MAT)         ((MAT)->nnz)
@@ -77,10 +77,17 @@ extern void        (Matrix_PrintMatrix)(Matrix_t*,const char* keyword) ;
 
 
 
+
+
 #include "MatrixStorageFormat.h"
 
+#define Matrix_StorageFormatIs(MAT,KEY) \
+        MatrixStorageFormat_Is(Matrix_GetMatrixStorageFormat(MAT),KEY)
+        
+        
+
 struct Matrix_s {             /* Matrix */
-  MatrixFormat_t fmt ;        /* Storage format */
+  MatrixStorageFormat_t fmt ; /* Storage format */
   unsigned int    n ;         /* Nb of rows/columns */
   unsigned int    nnz ;       /* Nb of non zero terms */
   double* s ;                 /* Pointer to the non zero terms */

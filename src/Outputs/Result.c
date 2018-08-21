@@ -45,15 +45,17 @@ Result_t* Result_Create(int n)
 
 
 
-void Result_Delete(Result_t** result)
+void Result_Delete(void* self)
 {
-  View_t* view = Result_GetView(*result) ;
+  Result_t** presult = (Result_t**) self ;
+  Result_t*   result = *presult ;
+  View_t* view = Result_GetView(result) ;
   
   View_Delete(&view) ;
   
-  free(Result_GetValue(*result)) ;
-  free(*result) ;
-  *result = NULL ;
+  free(Result_GetValue(result)) ;
+  free(result) ;
+  *presult = NULL ;
 }
 
 

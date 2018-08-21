@@ -47,7 +47,8 @@ BIL_PROGNAME  := "Bil, a modeling platform based on FEM/FVM"
 
 
 # Source directories of Bil and HSL
-BIL_DIRS := src hsl
+#BIL_DIRS := src hsl
+BIL_DIRS := src
 
 
 # Directories of Bil
@@ -65,7 +66,8 @@ export BIL_LIBDIR
 
 # Libraries of Bil and HSL
 #BIL_LIBS := -Llib -lbil -lhsl
-BIL_LIBS := -lbil-${BIL_VERSION} -lhsl
+#BIL_LIBS := -lbil-${BIL_VERSION} -lhsl
+BIL_LIBS := -lbil-${BIL_VERSION}
 
 
 # Directive file for the loading of extra-libraries
@@ -117,8 +119,8 @@ install-bin: install-lib${LIBBILEXT}
 	chmod 555 ${BINDIR}/bil
 	@echo "\nChecking shared libraries required by Bil"
 	ldd ${BINDIR}/bil
-#@echo "\nChecking the shared library required by Bil (objdump)"
-#objdump -p ${BINDIR}/bil
+	@echo "\nChecking the shared library required by Bil (objdump)"
+	#objdump -p ${BINDIR}/bil
 
 install-libso:
 	@echo "\nInstalling the library libbil-${BIL_VERSION}.so in "${LIBDIR}
@@ -131,6 +133,8 @@ install-libso:
 	${LINKER} ${OPTIM} ${BIL_SRCDIR}/Main/Main.o -L${BIL_LIBDIR} ${BIL_LIBS} -o ${BIL_BINDIR}/${BIL_EXE} ${LFLAGS}
 	@echo "\nChecking shared libraries required by libbil-${BIL_VERSION}.so"
 	ldd ${LIBDIR}/libbil-${BIL_VERSION}.so
+	@echo "\nChecking shared libraries required by libbil-${BIL_VERSION}.so (objdump)"
+	#objdump -p ${LIBDIR}/libbil-${BIL_VERSION}.so
 
 install-liba:
 #	@echo "\nNo library libbil-${BIL_VERSION}.a to install in "${LIBDIR}"!"
@@ -155,6 +159,7 @@ clean:
 
 clean-all: clean
 	rm -f ${BIL_BINDIR}/${BIL_EXE}
+	rm -f ${BIL_BINDIR}/*
 	rm -f ${BIL_VERSION_FILE} 
 	rm -f ${BIL_INFO_FILE} 
 	rm -f ${BIL_LIB_FILE}
@@ -176,6 +181,7 @@ path_init:
 #=======================================================================
 # Target rules for building version file
 
+.PHONY: version
 version:
 	rm -f ${BIL_VERSION_FILE}
 	echo "#define BIL_MAJOR_VERSION ${BIL_MAJOR_VERSION}" >  ${BIL_VERSION_FILE}
@@ -241,7 +247,7 @@ base:
 targz: tar zip
 	
 tar: clean-all
-	cd .. && tar cvf bil-${BIL_VERSION}-src.tar bil-${BIL_VERSION}
+	cd .. && tar cvf bil-${BIL_VERSION}-src.tar ${notdir ${BIL_PATH}}
 
 zip:
 	cd .. && gzip bil-${BIL_VERSION}-src.tar
@@ -298,6 +304,7 @@ githelp:
 test:
 	@( cd base; pwd )
 	@( echo "BIL_PATH = ${BIL_PATH}" )
+	@( echo "Last part of BIL_PATH = ${notdir ${BIL_PATH}}" )
 	@( echo "BIL_COPYRIGHT = ${BIL_COPYRIGHT}" )
 	@( echo "BIL_LIBS = ${BIL_LIBS}" )
 	
@@ -306,4 +313,4 @@ test:
 # Target rules for memcheck through valgrind
 
 memcheck:
-	@( valgrind --tool=memcheck --leak-check=full ${BIL_EXE} )
+	@( valgrind --tool=memcheck --leak-check=full ${BIL_EXE} ${arg} )

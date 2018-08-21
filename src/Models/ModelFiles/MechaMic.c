@@ -356,12 +356,9 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
           }
           
           {
-            GenericData_t* gdat0 = ElementSol_GetImplicitGenericData(elementsol) ;
-            GenericData_t* gdat  = GenericData_New() ;
+            GenericData_t* gdat  = GenericData_Create(NbOfIntPoints,sols,Solutions_t,"Solutions") ;
           
-            GenericData_Initialize(gdat,NbOfIntPoints,sols,Solutions_t,"Solutions") ;
-          
-            GenericData_InsertAfter(gdat0,gdat) ;
+            ElementSol_AddImplicitGenericData(elementsol,gdat) ;
           }
         
           elementsol = ElementSol_GetPreviousElementSol(elementsol) ;

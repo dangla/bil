@@ -12,7 +12,7 @@ struct Curves_s       ; typedef struct Curves_s       Curves_t ;
 #include "Curve.h"
 
 extern Curves_t* (Curves_Create)(unsigned int) ;
-extern void      (Curves_Delete)(Curves_t**) ;
+extern void      (Curves_Delete)(void*) ;
 extern int       (Curves_ReadCurves)(Curves_t*,const char*) ;
 //extern int       (Curves_WriteCurves1)(char*) ;
 //extern int       (Curves_WriteCurves2)(char*) ;

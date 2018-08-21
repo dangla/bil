@@ -9,7 +9,7 @@ struct Result_s       ; typedef struct Result_s       Result_t ;
 
 
 extern Result_t* Result_Create(int) ;
-extern void      Result_Delete(Result_t**) ;
+extern void      Result_Delete(void*) ;
 extern void      Result_Store(Result_t*,double*,const char*,int) ;
 extern void      Result_SetValuesToZero(Result_t*) ;
 

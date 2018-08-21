@@ -84,7 +84,6 @@ extern void (InternationalSystemOfUnits_UseAsMass)(const char*) ;
 #define InternationalSystemOfUnits_GetWeber(si)     ((si)->weber)
 #define InternationalSystemOfUnits_GetTesla(si)     ((si)->tesla)
 #define InternationalSystemOfUnits_GetHenry(si)     ((si)->henry)
-#define InternationalSystemOfUnits_GetDegree(si)    ((si)->degree)
 #define InternationalSystemOfUnits_GetLumen(si)     ((si)->lumen)
 #define InternationalSystemOfUnits_GetLux(si)       ((si)->lux)
 #define InternationalSystemOfUnits_GetBecquerel(si) ((si)->becquerel)
@@ -202,7 +201,6 @@ struct InternationalSystemOfUnits_s {
   double weber     ; /* (V.s)     */
   double tesla     ; /* (Wb/m2)   */
   double henry     ; /* (Wb/A)    */
-  //double degree    ; /* (K)       */
   double lumen     ; /* (cd.sr)   */
   double lux       ; /* (lm/m2)   */
   double becquerel ; /* (1/s)     */

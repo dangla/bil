@@ -90,7 +90,7 @@ Functions_t* (Functions_Create)(DataFile_t* datafile,Materials_t* materials)
       char* pline = strchr(line,'=') + 1 ;
       char name[Function_MaxLengthOfFileName] ;
       
-      if(strlen(pline) > Field_MaxLengthOfFileName) {
+      if(strlen(pline) > Function_MaxLengthOfFileName) {
         arret("Functions_Create(5): too long file name") ;
       }
       

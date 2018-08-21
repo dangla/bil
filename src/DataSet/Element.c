@@ -43,12 +43,11 @@ Element_AllocateGenericData(Element_t* el,int n,void* gdat,TypeId_t typeid)
           }
           
           {
-            GenericData_t* gdat0 = ElementSol_GetImplicitGenericData(elementsol) ;
-            GenericData_t* gdat  = GenericData_New() ;
+            //GenericData_t* gdat0 = ElementSol_GetImplicitGenericData(elementsol) ;
+            GenericData_t* gdat  = GenericData_Create(NbOfIntPoints,sols,Solutions_t,"solutions") ;
           
-            GenericData_Initialize(gdat,NbOfIntPoints,sols,Solutions_t,"solutions") ;
-          
-            GenericData_InsertAfter(gdat0,gdat) ;
+            //GenericData_Append(gdat0,gdat) ;
+            ElementSol_AddImplicitGenericData(elementsol,gdat) ;
           }
         
           elementsol = ElementSol_GetPreviousElementSol(elementsol) ;

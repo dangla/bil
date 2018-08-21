@@ -11,7 +11,7 @@ struct Curve_s        ; typedef struct Curve_s        Curve_t ;
 
 
 extern Curve_t* (Curve_Create)(unsigned int) ;
-extern void     (Curve_Delete)(Curve_t**) ;
+extern void     (Curve_Delete)(void*) ;
 extern Curve_t* (Curve_CreateDerivative)(Curve_t*) ;
 extern Curve_t* (Curve_CreateIntegral)(Curve_t*) ;
 extern Curve_t* (Curve_CreateInverse)(Curve_t*,const char) ;
