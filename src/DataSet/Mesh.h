@@ -80,6 +80,13 @@ extern void     (Mesh_UpdateCurrentUnknowns)(Mesh_t*,Solver_t*) ;
 
 
 
+/* Compute the nb of matrix entries */
+#define Mesh_ComputeNbOfMatrixEntries(MSH) \
+        Elements_ComputeNbOfMatrixEntries(Mesh_GetElements(MSH))
+
+
+
+
 /* Periodicities */
 #define Mesh_GetPeriodicities(MSH) \
         Geometry_GetPeriodicities(Mesh_GetGeometry(MSH))

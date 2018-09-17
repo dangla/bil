@@ -15,12 +15,12 @@ typedef double    (Plasticity_Criterion_t)(Plasticity_t*,const double*,const dou
 /* Drucker-Prager */
 static int    pmDruckerPrager(const char* s) ;
 static double Plasticity_CriterionDruckerPrager(Plasticity_t*,const double*,const double,const double,const double,const double,const double,const double) ;
-static double Plasticity_ReturnMappingDruckerPrager(Plasticity_t*,const double,const double,const double,const double,const double) ;
+static double Plasticity_ReturnMappingDruckerPrager(Plasticity_t*,double*,double*,double*,const double,const double,const double,const double,const double) ;
 
 
 /* Cam-Clay */
 static int    pmCamClay(const char* s) ;
-static double Plasticity_CriterionCamClay(Plasticity_t*,const double*,const double,double*,double*,double*,const double,const double,const double,const double) ;
+static double Plasticity_CriterionCamClay(Plasticity_t*,const double*,const double,const double,const double,const double,const double) ;
 static double Plasticity_ReturnMappingCamClay(Plasticity_t*,double*,double*,double*,const double,const double,const double,const double,const double) ;
 
 

@@ -1,91 +1,80 @@
+# Time(1) ph(2) c_oh(3) c_h(4) c_ca(5) c_caoh(6) c_h2sio4(7) c_h3sio4(8) c_h4sio4(9) c_cah2sio4(10) c_cah3sio4(11) c_h2so4(12) c_hso4(13) c_so4(14) c_caso4aq(15) c_cahso4(16) c_k(17) c_koh(18) zn_ca_s(19) zn_si_s(20) s_ch(21) s_csh2(22) n_ch(23) n_csh2(24) n_csh(25) porosite(26) potentiel_electrique(27) charge(28) V_CSH(29) C/S(30) W_Si(31) W_Ca(32) W_S(33) P_CSH2(34) Damage(35) c_al(36) c_alo4h4(37) zn_al_s(38) s_ah3(39) s_afm(40) s_aft(41) s_c3ah6(42) n_ah3(43) n_afm(44) n_aft(45) n_c3ah6(46) W_Al(47) W_q(48) N_Ca(49) N_Si(50) N_S(51) N_Al(52) N_K(53) N_Cl(54) Saturation degree of crystal(55) Pore entry radius(56) Equilibrium saturation index of AFt(57) Crystallization pressure(58) Strain(59)
+
 Units
 Length = decimeter
 Time   = second
 Mass   = hectogram
 
 
-
 Geometry
 Dimension = 1  axis
 
 
-
 Mesh
 4
-0. 0. 1  1
+0. 0. 1.  1.
 1.
 1 1 1
 1 1 1
 
 
-
 Material
-Model    = Sulfaco
+Model = Sulfaco
 porosity = 0.2
-N_CH     = 1.9637
-N_CSH    = 1.279
-N_AH3    = 0
-N_CSH2   = 1.e-5
-N_AFm    = 2
+N_CH     = 1.53
+N_CSH    = 1.393
+N_AH3    = 1.e-6
+N_CSH2   = 0
+N_AFm    = 0
 N_AFt    = 0
-N_C3AH6  = 0
+N_C3AH6  = 0.114
 R_CSH2   = 0
-R_AFm    = 1.e-6
-R_AFt    = 1.e-7
-R_C3AH6  = 0
-Curves_log = Sat  r = Range{r1 = 1.e-8 , r2 = 2.e-5 , n = 1000} S_r = Expressions(1){r0=15.979e-8; m = 0.4388 ; S_r = (1 + (r0/r)**(1/(1-m)))**(-m)}
-#Curves_log = Sat  r = Range{r1 = 1.e-8 , r2 = 1.e-5 , n = 1000} S_r = Expressions(1){a = 5.72 ; m = 0.438 ; V_w = 18.e-3 ; Gamma_lg = 0.072 ; RT = 2436.e2 ; r0 = a*V_w/RT*2*Gamma_lg ; S_r = (1 + (r0/r)**(1/(1-m)))**(-m)}
-a_AFt = 9e-8
+R_AFm    = 0
+R_C3AH6  = 1.e-7
+Curves_log = Sat  r = Range{r1 = 1.e-8 , r2 = 1.e-2 , n = 2000} S_r = Expressions(1){r0=155.82e-8; m = 0.2516 ; S_r = (1 + (r0/r)**(1/(1-m)))**(-m)}
+A_i = 9e-9
 K_bulk = 20.e9
-Strain0 = 1e-5
-Strainf = 3.9e-4
-A_p = 3e-10
-AlphaCoef = 0  #2.55
-BetaCoef  = 15.87 
-
+Strain0 = 6e-4
+Strainf = 3.9e-3
+A_p = 1.1e-9
 
 
 Fields
 1
-Value = 1   Gradient = 0 0 0 Point = 0 0 0
-
+Value = 1       Gradient = 0 0 0 Point = 0 0 0
 
 
 Initialization
 5
-Region = 2 Unknown = logc_h2so4  Field = 1 Function = 1
-Region = 2 Unknown = psi         Field = 0 Function = 0
-Region = 2 Unknown = z_ca        Field = 1 Function = 4
-Region = 2 Unknown = z_al        Field = 1 Function = 3
-Region = 2 Unknown = logc_k      Field = 1 Function = 2
-#Region = 2 Unknown = logc_oh    Field = 1 Function = 5
-
+Region = 2 Unknown = logc_h2so4   Field = 1 Function = 1
+Region = 2 Unknown = psi          Field = 0 Function = 0
+Region = 2 Unknown = z_ca         Field = 1 Function = 4
+Region = 2 Unknown = z_al         Field = 1 Function = 3
+Region = 2 Unknown = logc_k       Field = 1 Function = 2
+#Region = 2 Unknown = logc_oh      Field = 1 Function = 5
 
 
 Functions
 5
-N = 2 F(0) = -29.6    F(86400) = -29.6
-N = 2 F(0) = -0.9     F(86400) = -0.9
-N = 2 F(0) = -8       F(86400) = -8
-N = 2 F(0) = 0        F(86400) = 0
-N = 2 F(0) = -0.94    F(86400) = -0.94
-
+N = 2 F(0) = -35       F(86400) = -29.6
+N = 2 F(0) = -90       F(86400) = -0.12
+N = 2 F(0) = -6.32     F(86400) = -6.32
+N = 2 F(0) = 1         F(86400) = 1
+N = 2 F(0) = 0         F(86400) = -7.2
 
 
 Boundary Conditions
-1
-#Region = 2 Unknown = logc_h2so4  Field = 2 Function = 0
-Region = 2 Unknown = psi         Field = 0 Function = 0
+3
+Region = 2 Unknown = logc_h2so4   Field = 1 Function = 1
+Region = 2 Unknown = psi          Field = 0 Function = 0
 #Region = 2 Unknown = z_ca        Field = 1 Function = 4
-#Region = 2 Unknown = z_al        Field = 1 Function = 3
-#Region = 2 Unknown = logc_k      Field = 1 Function = 2
-#Region = 2 Unknown = logc_oh    Field = 1 Function = 5
-
+#Region = 2 Unknown = z_al         Field = 1 Function = 3
+Region = 2 Unknown = logc_k       Field = 1 Function = 2
+#Region = 2 Unknown = logc_oh      Field = 1 Function = 5
 
 
 Loads
 0
-
 
 
 Points
@@ -93,11 +82,9 @@ Points
 0.5
 
 
-
 Dates
 2
-0 3.1536e7
-
+0. 1.38e7   #1.15e4 1.156e4 1.1564e4 1.1566e4 1.15663e4 1.156664e4 2.78e4 9.05e4 6e5 1.0e6  2.62e6 4.29e6 5.2e6  7.68e6 8.17e6 9.3e6 9.62e6 9.83e6 1.0e7 1.03e7 1.05e7 1.08e7 1.1e7 1.21e7 1.24e7 1.38e7 
 
 
 Objective Variations
@@ -109,14 +96,12 @@ z_al         = 1.e-1
 logc_oh      = 1.e-1
 
 
-
 Iterative Process
 Iter = 40 
 Tol = 1.e-4
-Repetition = 2
-
+Repetition = 0
 
 
 Time Steps
-Dtini = 1.
-Dtmax = 1.e9
+Dtini = 1.e-5
+Dtmax = 1.e4

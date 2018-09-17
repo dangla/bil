@@ -1739,7 +1739,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
   double zn_si_s    = 1 ;
   double zn_ca_s    = x[U_ZN_Ca_S] ;
   double zn_al_s    = x[U_ZN_Al_S] ;
-  double c_cl       = 0 ;
+  double c_cl       = 1.e-99 ;
   double psi        = x[U_PSI] ;
   
   /* Solve cement chemistry */

@@ -29,11 +29,31 @@ extern void        (Options_Delete)(void*) ;
 
 #define Options_GetDebug(OPT) \
         Options_GetPrintData(OPT)
+        
+
+#include <string.h>
+        
+#define Options_IsToPrintOutAtEachIteration(OPT) \
+        (!strcmp(Options_GetPrintLevel(OPT),"2"))
+
+
+#define Options_GetFillFactor(OPT) \
+        (((!strcmp(((char**) Context_GetSolver(Options_GetContext(OPT)))[2],"-ff")) && atof(((char**) Context_GetSolver(Options_GetContext(OPT)))[3])) ? \
+        atof(((char**) Context_GetSolver(Options_GetContext(OPT)))[3]) : Options_DefaultFillFactor)
+        
+
+#define Options_DefaultFillFactor (2)
+        
 
 
 struct Options_s {            /* options */
   char*   debug ;             /* data to be printed */
   char*   method ;            /* resolution method */
+  /* Print level
+   *   0:  minimal, 
+   *   1:  normal at each step , 
+   *   2:  normal at each iteration, 
+   *   3-: not used) */
   char*   level ;             /* print level */
   char*   module ;            /* module */
   char*   graph ;             /* Graph method */

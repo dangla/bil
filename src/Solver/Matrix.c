@@ -11,18 +11,10 @@
 
 
 
-#include "LDUSKLformat.h"
-#include "NCformat.h"
-#include "SuperLUformat.h"
-
-
-#ifdef SLU_DIR
-  #define val(x) #x
-  #define xval(x) val(x)
-  #include xval(SLU_DIR/SRC/dsp_defs.h)
-  #undef val
-  #undef xval
-#endif
+#include "LDUSKLFormat.h"
+#include "NCFormat.h"
+#include "SuperLUFormat.h"
+#include "CoordinateFormat.h"
 
 
 /* Extern functions */
@@ -51,6 +43,9 @@ Matrix_t*   Matrix_Create(Mesh_t* mesh,Options_t* options)
     
     } else if(!strcmp(method,"slu")) {
       Matrix_GetMatrixStorageFormat(a) = MatrixStorageFormat_SuperLU ;
+
+    } else if(!strcmp(method,"ma38")) {
+      Matrix_GetMatrixStorageFormat(a) = MatrixStorageFormat_Coordinate ;
     
     } else {
       arret("Matrix_Create(1): unknown method") ;
@@ -62,23 +57,23 @@ Matrix_t*   Matrix_Create(Mesh_t* mesh,Options_t* options)
   {
     /* Skyline format */
     if(Matrix_StorageFormatIs(a,LDUSKL)) {
-      LDUSKLformat_t* askl = LDUSKLformat_Create(mesh) ;
+      LDUSKLFormat_t* askl = LDUSKLFormat_Create(mesh) ;
     
       Matrix_GetStorage(a) = (void*) askl ;
-      Matrix_GetNbOfNonZeroValues(a) = LDUSKLformat_GetNbOfNonZeroValues(askl) ;
-      Matrix_GetNonZeroValue(a) = LDUSKLformat_GetNonZeroValue(askl) ;
+      Matrix_GetNbOfNonZeroValues(a) = LDUSKLFormat_GetNbOfNonZeroValues(askl) ;
+      Matrix_GetNonZeroValue(a) = LDUSKLFormat_GetNonZeroValue(askl) ;
     
     /* SuperLU format */
-    #ifdef SLU_DIR
+    #ifdef SUPERLULIB
     } else if(Matrix_StorageFormatIs(a,SuperLU)) {
-      SuperLUformat_t* aslu = SuperLUformat_Create(mesh) ;
-      NCformat_t*  asluNC = SuperLUformat_GetStorage(aslu) ;
+      SuperLUFormat_t* aslu = SuperLUFormat_Create(mesh) ;
+      NCFormat_t*  asluNC = (NCFormat_t*) SuperLUFormat_GetStorage(aslu) ;
     
       Matrix_GetStorage(a) = (void*) aslu ;
-      Matrix_GetNbOfNonZeroValues(a) = NCformat_GetNbOfNonZeroValues(asluNC) ;
-      Matrix_GetNonZeroValue(a) = NCformat_GetNonZeroValue(asluNC) ;
+      Matrix_GetNbOfNonZeroValues(a) = NCFormat_GetNbOfNonZeroValues(asluNC) ;
+      Matrix_GetNonZeroValue(a) = (double*) NCFormat_GetNonZeroValue(asluNC) ;
 
-      /*  Work space for NCformat_AssembleElementMatrix */
+      /*  Work space for NCFormat_AssembleElementMatrix */
       {
         int n_col = Matrix_GetNbOfColumns(a) ;
         void* work = (void*) malloc(n_col*sizeof(int)) ;
@@ -88,6 +83,25 @@ Matrix_t*   Matrix_Create(Mesh_t* mesh,Options_t* options)
         Matrix_GetWorkSpace(a) = work ;
       }
     #endif
+    
+    } else if(Matrix_StorageFormatIs(a,Coordinate)) {
+      CoordinateFormat_t* ac = CoordinateFormat_Create(mesh,options) ;
+    
+      Matrix_GetStorage(a) = (void*) ac ;
+      Matrix_GetNbOfNonZeroValues(a) = CoordinateFormat_GetNbOfNonZeroValues(ac) ;
+      Matrix_GetNonZeroValue(a) = CoordinateFormat_GetNonZeroValue(ac) ;
+
+      /*  Work space for ma38cd */
+      {
+        int n_col = Matrix_GetNbOfColumns(a) ;
+        int lwork = 4 * n_col ;
+        size_t sz = lwork * sizeof(double) ;
+        void* work = (void*) malloc(sz) ;
+      
+        assert(work) ;
+      
+        Matrix_GetWorkSpace(a) = work ;
+      }
 
     } else {
       arret("Matrix_Create(2): unknown format") ;
@@ -114,19 +128,26 @@ void Matrix_Delete(void* self)
 
   /* Skyline format */
   if(Matrix_StorageFormatIs(a,LDUSKL)) {
-    LDUSKLformat_t* askl = (LDUSKLformat_t*) storage ;
+    LDUSKLFormat_t* askl = (LDUSKLFormat_t*) storage ;
       
-    LDUSKLformat_Delete(&askl) ;
+    LDUSKLFormat_Delete(&askl) ;
     
   /* SuperLU format */
-  #ifdef SLU_DIR
+  #ifdef SUPERLULIB
   } else if(Matrix_StorageFormatIs(a,SuperLU)) {
-    SuperLUformat_t* aslu = (SuperLUformat_t*) storage ;
+    SuperLUFormat_t* aslu = (SuperLUFormat_t*) storage ;
       
-    SuperLUformat_Delete(&aslu) ;
+    SuperLUFormat_Delete(&aslu) ;
 
     free(Matrix_GetWorkSpace(a)) ;
   #endif
+  
+  } else if(Matrix_StorageFormatIs(a,Coordinate)) {
+    CoordinateFormat_t* ac = (CoordinateFormat_t*) storage ;
+      
+    CoordinateFormat_Delete(&ac) ;
+
+    free(Matrix_GetWorkSpace(a)) ;
 
   } else {
     arret("Matrix_Delete(2): unknown format") ;
@@ -138,27 +159,42 @@ void Matrix_Delete(void* self)
 
 
 
-void Matrix_AssembleElementMatrix_(Matrix_t* a,double* ke,int* cole,int* lige,int n)
-/* Assemblage de la matrice elementaire ke dans la matrice globale a */
+void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
+/** Assemble the element matrix ke in the global matrix a */
 {
+  int  ndof = Element_GetNbOfDOF(el) ;
+
   /* Skyline format */
   if(Matrix_StorageFormatIs(a,LDUSKL)) {
-    LDUSKLformat_t* askl = (LDUSKLformat_t*) Matrix_GetStorage(a) ;
+    int* row = Element_ComputeMatrixRowAndColumnIndices(el) ;
+    int* col = row + ndof ;
+    LDUSKLFormat_t* askl = (LDUSKLFormat_t*) Matrix_GetStorage(a) ;
     
-    LDUSKLformat_AssembleElementMatrix(askl,ke,cole,lige,n) ;
+    LDUSKLFormat_AssembleElementMatrix(askl,ke,col,row,ndof) ;
     return ;
     
-#ifdef SLU_DIR
+#ifdef SUPERLULIB
   /* CCS format (or Harwell-Boeing format) used in SuperLU */
   } else if(Matrix_StorageFormatIs(a,SuperLU)) {
-    SuperLUformat_t* aslu   = (SuperLUformat_t*) Matrix_GetStorage(a) ;
-    NCformat_t*    asluNC = (NCformat_t*) SuperLUformat_GetStorage(aslu) ;
-    int*        rowind = (int*) Matrix_GetWorkSpace(a) ;
-    int         nrow = SuperLUformat_GetNbOfRows(aslu) ;
+    int* row = Element_ComputeMatrixRowAndColumnIndices(el) ;
+    int* col = row + ndof ;
+    SuperLUFormat_t* aslu   = (SuperLUFormat_t*) Matrix_GetStorage(a) ;
+    NCFormat_t*    asluNC = (NCFormat_t*) SuperLUFormat_GetStorage(aslu) ;
+    int*        rowptr = (int*) Matrix_GetWorkSpace(a) ;
+    int         nrow = SuperLUFormat_GetNbOfRows(aslu) ;
     
-    NCformat_AssembleElementMatrix(asluNC,ke,cole,lige,n,rowind,nrow) ;
+    NCFormat_AssembleElementMatrix(asluNC,ke,col,row,ndof,rowptr,nrow) ;
     return ;
 #endif
+  
+  } else if(Matrix_StorageFormatIs(a,Coordinate)) {
+    CoordinateFormat_t* ac = (CoordinateFormat_t*) Matrix_GetStorage(a) ;
+    int len = Matrix_GetNbOfEntries(a) ;
+    
+    len = CoordinateFormat_AssembleElementMatrix(ac,el,ke,len) ;
+    
+    Matrix_GetNbOfEntries(a) = len ;
+    return ;
   }
   
   arret("Matrix_AssembleElementMatrix: unknown format") ;
@@ -166,24 +202,32 @@ void Matrix_AssembleElementMatrix_(Matrix_t* a,double* ke,int* cole,int* lige,in
 
 
 
+
 void Matrix_PrintMatrix(Matrix_t* a,const char* keyword)
 {
   /* format Sky Line */
   if(Matrix_StorageFormatIs(a,LDUSKL)) {
-    LDUSKLformat_t* askl = (LDUSKLformat_t*) Matrix_GetStorage(a) ;
+    LDUSKLFormat_t* askl = (LDUSKLFormat_t*) Matrix_GetStorage(a) ;
     int nrows = Matrix_GetNbOfRows(a) ;
     
-    LDUSKLformat_PrintMatrix(askl,nrows,keyword) ;
+    LDUSKLFormat_PrintMatrix(askl,nrows,keyword) ;
     
-#ifdef SLU_DIR
+#ifdef SUPERLULIB
   /* format Harwell-Boeing de SuperLU */
   } else if(Matrix_StorageFormatIs(a,SuperLU)) {
-    SuperLUformat_t* aslu   = (SuperLUformat_t*) Matrix_GetStorage(a) ;
-    NCformat_t*    asluNC = (NCformat_t*) SuperLUformat_GetStorage(aslu) ;
+    SuperLUFormat_t* aslu   = (SuperLUFormat_t*) Matrix_GetStorage(a) ;
+    NCFormat_t*    asluNC = (NCFormat_t*) SuperLUFormat_GetStorage(aslu) ;
     int nrows = Matrix_GetNbOfRows(a) ;
     
-    NCformat_PrintMatrix(asluNC,nrows,keyword) ;
+    NCFormat_PrintMatrix(asluNC,nrows,keyword) ;
 #endif
+  
+  } else if(Matrix_StorageFormatIs(a,Coordinate)) {
+    CoordinateFormat_t* ac = (CoordinateFormat_t*) Matrix_GetStorage(a) ;
+    int nrows = Matrix_GetNbOfRows(a) ;
+    
+    CoordinateFormat_PrintMatrix(ac,nrows,keyword) ;
+    return ;
 
   } else {
       arret("Matrix_PrintMatrix: unknown format") ;

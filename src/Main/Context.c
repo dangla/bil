@@ -107,6 +107,18 @@ void (Context_Initialize)(Context_t* ctx,int argc,char** argv)
       } else {
         Message_FatalError("Missing solver") ;
       }
+      
+      /* Skip two more entries if the following entry is "-ff" 
+       * i.e. an input for a Fill Factor for multi-frontal methods */
+      {
+        if(!strncmp(argv[i + 1],"-ff",strlen(argv[i + 1]))) {
+          if(i + 2 < argc) {
+            i += 2 ;
+          } else {
+            Message_FatalError("Missing solver") ;
+          }
+        }
+      }
     
     } else if(strncmp(argv[i],"-debug",strlen(argv[i])) == 0) {
       Context_GetDebug(ctx) = (char**) argv + i ;

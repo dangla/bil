@@ -189,7 +189,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     } else if(Symmetry_IsSpherical(SYMMETRY)) {
       fprintf(stdout,"Spherical\n") ;
 
-    } else if(SYMMETRY == PLAN) {
+    } else if(Symmetry_IsPlane(SYMMETRY)) {
       fprintf(stdout,"Plane\n") ;
 
     } else {

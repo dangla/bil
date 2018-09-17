@@ -15,9 +15,10 @@
 #include "Curves.h"
 
 
-static double   Elements_ComputeMaximumSizeOfElements(Elements_t*) ;
-static double   Elements_ComputeMinimumSizeOfElements(Elements_t*) ;
+static double   (Elements_ComputeMaximumSizeOfElements)(Elements_t*) ;
+static double   (Elements_ComputeMinimumSizeOfElements)(Elements_t*) ;
 static double   (Element_ComputeSize)(Element_t*) ;
+static int      (Element_ComputeNbOfMatrixEntries)(Element_t*) ;
 
 
 void Elements_CreateMore(Elements_t* elements,Materials_t* materials)
@@ -275,4 +276,60 @@ double Element_ComputeSize(Element_t* element)
   h *= 2 ;
   
   return(h) ;
+}
+
+
+
+
+int Elements_ComputeNbOfMatrixEntries(Elements_t* elements)
+{
+  int nel = Elements_GetNbOfElements(elements) ;
+  Element_t* el = Elements_GetElement(elements) ;
+  int len = 0 ;
+      
+  {
+    int ie ;
+      
+    for(ie = 0 ; ie < nel ; ie++) {
+      Element_FreeBuffer(el + ie) ;
+      len += Element_ComputeNbOfMatrixEntries(el + ie) ;
+    }
+  }
+  
+  return(len) ;
+}
+
+
+
+
+int Element_ComputeNbOfMatrixEntries(Element_t* element)
+{
+  int   ndof = Element_GetNbOfDOF(element) ;
+  int*  row  = Element_ComputeMatrixRowAndColumnIndices(element) ;
+  int*  col  = row + ndof ;
+  int   len  = 0 ;
+  
+  {
+    int   jdof ;
+
+    for(jdof = 0 ; jdof < ndof ; jdof++) {
+      int jcol = col[jdof] ;
+    
+      if(jcol < 0) continue ;
+
+      {
+        int idof ;
+            
+        for(idof = 0 ; idof < ndof ; idof++) {
+          int irow = row[idof] ;
+      
+          if(irow < 0) continue ;
+        
+          len++ ;
+        }
+      }
+    }
+  }
+  
+  return(len) ;
 }

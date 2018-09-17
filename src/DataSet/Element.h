@@ -9,20 +9,21 @@ struct Element_s      ; typedef struct Element_s      Element_t ;
 
 
 
-extern double** (Element_ComputePointerToCurrentNodalUnknowns)(Element_t*) ;
-extern double** (Element_ComputePointerToPreviousNodalUnknowns)(Element_t*) ;
-extern double*  (Element_ComputeCurrentNodalUnknowns)(Element_t*) ;
-extern double*  (Element_ComputePreviousNodalUnknowns)(Element_t*) ;
-extern double*  (Element_ComputeIncrementalNodalUnknowns)(Element_t*) ;
-extern double*  (Element_ComputeDeepNodalUnknowns)(Element_t*,unsigned int) ;
-extern double** (Element_ComputePointerToNodalCoordinates)(Element_t*) ;
-extern double*  (Element_ComputeNodalCoordinates)(Element_t*) ;
-extern int      (Element_FindUnknownPositionIndex)(Element_t*,char*) ;
-extern int      (Element_FindEquationPositionIndex)(Element_t*,char*) ;
-extern double*  (Element_ComputeIncrementalImplicitTerms)(Element_t*) ;
-extern double*  (Element_ComputeNormalVector)(Element_t*,double*,int) ;
-extern double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t*,double*) ;
-extern int      (Element_ComputeNbOfSolutions)(Element_t*) ;
+extern double** (Element_ComputePointerToCurrentNodalUnknowns)  (Element_t*) ;
+extern double** (Element_ComputePointerToPreviousNodalUnknowns) (Element_t*) ;
+extern double*  (Element_ComputeCurrentNodalUnknowns)           (Element_t*) ;
+extern double*  (Element_ComputePreviousNodalUnknowns)          (Element_t*) ;
+extern double*  (Element_ComputeIncrementalNodalUnknowns)       (Element_t*) ;
+extern double*  (Element_ComputeDeepNodalUnknowns)              (Element_t*,unsigned int) ;
+extern double** (Element_ComputePointerToNodalCoordinates)      (Element_t*) ;
+extern double*  (Element_ComputeNodalCoordinates)               (Element_t*) ;
+extern int      (Element_FindUnknownPositionIndex)              (Element_t*,char*) ;
+extern int      (Element_FindEquationPositionIndex)             (Element_t*,char*) ;
+extern double*  (Element_ComputeIncrementalImplicitTerms)       (Element_t*) ;
+extern double*  (Element_ComputeNormalVector)                   (Element_t*,double*,int) ;
+extern double*  (Element_ComputeCoordinateInReferenceFrame)     (Element_t*,double*) ;
+extern int      (Element_ComputeNbOfSolutions)                  (Element_t*) ;
+extern int*     (Element_ComputeMatrixRowAndColumnIndices)      (Element_t*) ;
 
 
 /* Synonyms */

@@ -1,36 +1,11 @@
 #ifndef GEOMETRY_H
 #define GEOMETRY_H
 
-enum Symmetry_e {             /* symmetry of the problem */
-  NO,
-  PLAN,
-  AXIS,
-  SPHE
-} ;
-
-enum CoorSys_e {              /* coordinate system */
-  CARTESIAN,
-  CYLINDRICAL,
-  SPHERICAL
-} ;
-
 
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
 struct Geometry_s     ; typedef struct Geometry_s     Geometry_t ;
-
-/*     1. Geometry_t attributes */
-typedef enum CoorSys_e      CoorSys_t ;
-typedef enum Symmetry_e     Symmetry_t ;
-
-
-
-/* Test the symmetry */
-#define Symmetry_IsCylindrical(SYM)     (SYM == AXIS)
-#define Symmetry_IsSpherical(SYM)       (SYM == SPHE)
-#define Symmetry_IsPlane(SYM)           (SYM == PLAN)
-
 
 
 /* 1. Geometry_t 
@@ -61,40 +36,39 @@ extern Geometry_t*  Geometry_Create(DataFile_t*) ;
 /* Set the symmetry */
 #define Geometry_SetNoSymmetry(GEO) \
         do { \
-          Geometry_GetSymmetry(GEO) = NO ; \
-          Geometry_GetCoordinateSystem(GEO) = CARTESIAN ; \
+          Symmetry_SetNoSymmetry(Geometry_GetSymmetry(GEO)) ; \
+          CoorSys_SetCartesian(Geometry_GetCoordinateSystem(GEO)) ; \
         } while(0)
         
 #define Geometry_SetPlaneSymmetry(GEO) \
         do { \
-          Geometry_GetSymmetry(GEO) = PLAN ; \
-          Geometry_GetCoordinateSystem(GEO) = CARTESIAN ; \
+          Symmetry_SetPlaneSymmetry(Geometry_GetSymmetry(GEO)) ; \
+          CoorSys_SetCartesian(Geometry_GetCoordinateSystem(GEO)) ; \
         } while(0)
 
 #define Geometry_SetCylindricalSymmetry(GEO) \
         do { \
-          Geometry_GetSymmetry(GEO) = AXIS ; \
-          Geometry_GetCoordinateSystem(GEO) = CYLINDRICAL ; \
+          Symmetry_SetCylindricalSymmetry(Geometry_GetSymmetry(GEO)) ; \
+          CoorSys_SetCylindrical(Geometry_GetCoordinateSystem(GEO)) ; \
         } while(0)
 
 #define Geometry_SetSphericalSymmetry(GEO) \
         do { \
-          Geometry_GetSymmetry(GEO) = SPHE ; \
-          Geometry_GetCoordinateSystem(GEO) = SPHERICAL ; \
+          Symmetry_SetSphericalSymmetry(Geometry_GetSymmetry(GEO)) ; \
+          CoorSys_SetSpherical(Geometry_GetCoordinateSystem(GEO)) ; \
         } while(0)
 
 
+#include "Symmetry.h"
+#include "CoorSys.h"
 #include "Periodicities.h"
 
 struct Geometry_s {
-  unsigned short int dim ;    /* dimension (1,2,3) */
-  Symmetry_t symmetry ;       /* symmetry (PLAN,AXIS,SPHE) */
-  CoorSys_t coorsys ;         /* coordinate system (CARTESIAN,CYLINDRICAL,SPHERICAL) */
+  unsigned short int dim ;    /* Dimension (1,2,3) */
+  Symmetry_t symmetry ;       /* Symmetry */
+  CoorSys_t coorsys ;         /* Coordinate system */
   Periodicities_t* periodicities ;
 } ;
 
-
-/* Old notations which I try to eliminate little by little */
-#define geom_t    Symmetry_t
 
 #endif

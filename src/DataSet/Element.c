@@ -60,7 +60,7 @@ Element_AllocateGenericData(Element_t* el,int n,void* gdat,TypeId_t typeid)
 
 
 
-double** Element_ComputePointerToNodalCoordinates(Element_t* element)
+double** (Element_ComputePointerToNodalCoordinates)(Element_t* element)
 /** Compute the nodal coordinates */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -77,7 +77,7 @@ double** Element_ComputePointerToNodalCoordinates(Element_t* element)
 
 
 
-double* Element_ComputeNodalCoordinates(Element_t* element)
+double* (Element_ComputeNodalCoordinates)(Element_t* element)
 /** Compute the nodal coordinates */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -100,7 +100,7 @@ double* Element_ComputeNodalCoordinates(Element_t* element)
 
 
 
-double** Element_ComputePointerToCurrentNodalUnknowns(Element_t* element)
+double** (Element_ComputePointerToCurrentNodalUnknowns)(Element_t* element)
 /** Compute a pointer to the nodal unknowns at the current time */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -117,7 +117,7 @@ double** Element_ComputePointerToCurrentNodalUnknowns(Element_t* element)
 
 
 
-double** Element_ComputePointerToPreviousNodalUnknowns(Element_t* element)
+double** (Element_ComputePointerToPreviousNodalUnknowns)(Element_t* element)
 /** Compute a pointer to the nodal unknowns at the current time */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -134,7 +134,7 @@ double** Element_ComputePointerToPreviousNodalUnknowns(Element_t* element)
 
 
 
-double* Element_ComputeDeepNodalUnknowns(Element_t* element,unsigned int depth)
+double* (Element_ComputeDeepNodalUnknowns)(Element_t* element,unsigned int depth)
 /** Compute the nodal unknowns at the some depth */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -163,7 +163,7 @@ double* Element_ComputeDeepNodalUnknowns(Element_t* element,unsigned int depth)
 
 
 
-double* Element_ComputeCurrentNodalUnknowns(Element_t* element)
+double* (Element_ComputeCurrentNodalUnknowns)(Element_t* element)
 /** Compute the nodal unknowns at the current time */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -192,7 +192,7 @@ double* Element_ComputeCurrentNodalUnknowns(Element_t* element)
 
 
 
-double* Element_ComputePreviousNodalUnknowns(Element_t* element)
+double* (Element_ComputePreviousNodalUnknowns)(Element_t* element)
 /** Compute the nodal unknowns at the previous time */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -221,7 +221,7 @@ double* Element_ComputePreviousNodalUnknowns(Element_t* element)
 
 
 
-double* Element_ComputeIncrementalNodalUnknowns(Element_t* element)
+double* (Element_ComputeIncrementalNodalUnknowns)(Element_t* element)
 /** Compute the incremental values of nodal unknowns */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -251,7 +251,7 @@ double* Element_ComputeIncrementalNodalUnknowns(Element_t* element)
 
 
 
-double* Element_ComputeIncrementalImplicitTerms(Element_t* element)
+double* (Element_ComputeIncrementalImplicitTerms)(Element_t* element)
 {
   int n = Element_GetNbOfImplicitTerms(element) ;
   double* vi1 = Element_GetCurrentImplicitTerm(element) ;
@@ -267,7 +267,7 @@ double* Element_ComputeIncrementalImplicitTerms(Element_t* element)
 
 
 
-int    Element_FindUnknownPositionIndex(Element_t* element,char* s)
+int    (Element_FindUnknownPositionIndex)(Element_t* element,char* s)
 /** Find the unknown position index whose name is pointed to by s */
 {
   int n = Element_GetNbOfEquations(element) ;
@@ -287,7 +287,7 @@ int    Element_FindUnknownPositionIndex(Element_t* element,char* s)
 
 
 
-int    Element_FindEquationPositionIndex(Element_t* element,char* s)
+int    (Element_FindEquationPositionIndex)(Element_t* element,char* s)
 /** Find the equation position index whose name is pointed to by s */
 {
   int n = Element_GetNbOfEquations(element) ;
@@ -308,7 +308,7 @@ int    Element_FindEquationPositionIndex(Element_t* element,char* s)
 
 
 
-double*  Element_ComputeNormalVector(Element_t* element,double* dh,int nn)
+double*  (Element_ComputeNormalVector)(Element_t* element,double* dh,int nn)
 /** Compute the unit outward normal vector to a submanifold element
  *  of dimension dim-1 */
 {
@@ -382,7 +382,7 @@ double*  Element_ComputeNormalVector(Element_t* element,double* dh,int nn)
 
 
 
-double*  Element_ComputeCoordinateInReferenceFrame(Element_t* el,double* x)
+double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t* el,double* x)
 /** Compute the local coordinates in the reference element which maps 
  *  into coordinates "x" in the actual space */
 {
@@ -512,7 +512,7 @@ double*  Element_ComputeCoordinateInReferenceFrame(Element_t* el,double* x)
 
 
 
-int Element_ComputeNbOfSolutions(Element_t* el)
+int (Element_ComputeNbOfSolutions)(Element_t* el)
 {
   ElementSol_t* elementsol = Element_GetElementSol(el) ;
   int n = 0 ;
@@ -525,4 +525,33 @@ int Element_ComputeNbOfSolutions(Element_t* el)
   }
   
   return(n) ;
+}
+
+
+
+int* (Element_ComputeMatrixRowAndColumnIndices)(Element_t* el)
+{
+  int  nn  = Element_GetNbOfNodes(el) ;
+  int  neq = Element_GetNbOfEquations(el) ;
+  
+  size_t SizeNeeded = 2*nn*neq*sizeof(int) ;
+  int* rowind = (int*) Element_AllocateInBuffer(el,SizeNeeded) ;
+  int* colind = rowind + nn*neq ;
+  int  i ;
+    
+  for(i = 0 ; i < nn ; i++) {
+    Node_t* node_i = Element_GetNode(el,i) ;
+    int    j ;
+    
+    for(j = 0 ; j < neq ; j++) {
+      int ij = i*neq + j ;
+      int jj_col = Element_GetUnknownPosition(el)[ij] ;
+      int jj_row = Element_GetEquationPosition(el)[ij] ;
+      
+      colind[ij] = (jj_col >= 0) ? Node_GetMatrixColumnIndex(node_i)[jj_col] : -1 ;
+      rowind[ij] = (jj_row >= 0) ? Node_GetMatrixRowIndex(node_i)[jj_row] : -1 ;
+    }
+  }
+  
+  return(rowind) ;
 }

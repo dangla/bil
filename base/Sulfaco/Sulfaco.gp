@@ -47,18 +47,12 @@ set linetype cycle 15
 
 
 # Input files
-file1  = 'RVE1'
-file2  = 'RVE2'
-file3  = 'RVE3'
+file1  = 'Sulfaco'
 
 
 # Files
 file1p1  = file1.'.p1'
-file2p1  = file2.'.p1'
-file3p1  = file3.'.p1'
 fileI    = file1p1
-fileII   = file2p1
-fileIII  = file3p1
 
 
 
@@ -93,7 +87,7 @@ set ylabel "Strain (-)" font ",24"
 y0 = 0
 y1 = 5
 set yrange [y0:y1] noreverse nowriteback
-set ytics  nomirror
+set ytics 0.001 nomirror
 set tics in
 set autoscale y
 #set y2label "Gipsum content (mol/L)" font ",24"
@@ -115,8 +109,7 @@ set origin 0,0
 
 plot \
      fileI   us ($1/day):($59) w l lt 1 title '1'  \
-    ,fileII  us ($1/day):($59) w l lt 2 title '2' \
-    ,fileIII us ($1/day):($59) w l lt 3 title '3' \
+
 
 reset
 
@@ -167,7 +160,6 @@ set origin 0,0
 
 plot \
      fileI  us ($1/day):($41) w l lt 1 title '1' \
-    ,fileII us ($1/day):($41) w l lt 2 title '2' \
 
 reset
 
@@ -218,7 +210,6 @@ set origin 0,0
 
 plot \
      fileI  us ($1/day):($45) w l lt 1 title '1' \
-    ,fileII us ($1/day):($45) w l lt 2 title '2' \
 
 reset
 
@@ -269,8 +260,6 @@ set origin 0,0
 
 plot \
      fileI   us ($1/day):($58) w l lt 1 title '1' \
-    ,fileII  us ($1/day):($58) w l lt 2 title '2' \
-    ,fileIII us ($1/day):($58) w l lt 3 title '3' \
 
 reset
 
@@ -299,7 +288,7 @@ set ylabel "pH (-)" font ",24"
 y0 = 0
 y1 = 14
 set yrange [y0:y1] noreverse nowriteback
-set ytics 1 nomirror
+set ytics 0.05 nomirror
 set tics in
 set autoscale y
 #set y2label "Gipsum content (mol/L)" font ",24"
@@ -321,8 +310,6 @@ set origin 0,0
 
 plot \
      fileI   us ($1/day):($2) w l lt 1 title '1' \
-    ,fileII  us ($1/day):($2) w l lt 2 title '2' \
-    ,fileIII us ($1/day):($2) w l lt 3 title '3' \
 
 reset
 
@@ -374,18 +361,7 @@ set origin 0,0
 plot \
      fileI   us ($1/day):($41/$57) w l lt 1 title '1: supersat AFt' \
     ,fileI   us ($1/day):($22)     w l lt 2 title '1: CSH_2' \
-    ,fileII  us ($1/day):($41/$57) w l lt 3 title '2: supersat AFt' \
-    ,fileII  us ($1/day):($22)     w l lt 4 title '2: CSH_2' \
-    ,fileIII us ($1/day):($41/$57) w l lt 5 title '3: supersat AFt' \
-    ,fileIII us ($1/day):($22)     w l lt 6 title '3: CSH_2' \
 
-#     fileI   us ($1/day):($41)     w l lt 1 title '1: AFt' \
-#    ,fileII  us ($1/day):($41)     w l lt 3 title '2: AFt' \
-#    ,fileIII us ($1/day):($41)     w l lt 5 title '3: AFt' \
-#    ,fileI  us ($1/day):($42)     w l lt 2 title '1: C_3AH_6' \
-#    ,fileII us ($1/day):($42)     w l lt 5 title '2: C_3AH_6' \
-#    ,fileI  us ($1/day):($41/$57) w l lt 3 title '1: supersat AFt' \
-#    ,fileII us ($1/day):($41/$57) w l lt 6 title '2: supersat AFt' \
 
 
 reset
@@ -439,12 +415,6 @@ plot \
      fileI   us ($1/day):($23) w l lt 7 title '1: CH' \
     ,fileI   us ($1/day):($45) w l lt 1 title '1: AFt' \
     ,fileI   us ($1/day):($46) w l lt 3 title '1: C_3AH_6' \
-    ,fileII  us ($1/day):($23) w l lt 8 title '2: CH' \
-    ,fileII  us ($1/day):($45) w l lt 4 title '2: AFt' \
-    ,fileII  us ($1/day):($46) w l lt 5 title '2: C_3AH_6' \
-    ,fileIII us ($1/day):($23) w l lt 2 title '3: CH' \
-    ,fileIII us ($1/day):($45) w l lt 6 title '3: AFt' \
-    ,fileIII us ($1/day):($46) w l lt 9 title '3: C_3AH_6' \
 
 
 reset
@@ -496,8 +466,6 @@ set origin 0,0
 
 plot \
      fileI   us ($1/day):(10**$14) w l lt 1 title '1: SO@_4^{-2}' \
-    ,fileII  us ($1/day):(10**$14) w l lt 2 title '2: SO@_4^{-2}' \
-    ,fileIII us ($1/day):(10**$14) w l lt 3 title '3: SO@_4^{-2}' \
 
 reset
 
@@ -538,7 +506,6 @@ set origin 0,0
 
 plot \
      fileI  us ($59):($55*$58) w l lt 1 title '1' \
-    ,fileII us ($59):($55*$58) w l lt 2 title '2' \
 
 
 
@@ -582,7 +549,6 @@ set origin 0,0
 
 plot \
      fileI  us ($1/day):($28) w l lt 1 title '1' \
-    ,fileII us ($1/day):($28) w l lt 2 title '2' \
 
 
 

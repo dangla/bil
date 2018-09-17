@@ -444,13 +444,13 @@ static double phi0 ;
 static double r_afm,r_aft,r_c3ah6,r_csh2 ;
 static double n_ca_ref,n_si_ref,n_al_ref ;
 static double n_afm_0,n_aft_0,n_c3ah6_0,n_csh2_0 ;
-static double a_AFt ;
+static double ai_AFt ;
 static double RT ;
 static Curve_t* satcurve ;
 static double K_bulk ;
 static double strain0 ;
 static double strainf ;
-static double a_p ;
+static double ap_AFt ;
 static double alphacoef ;
 static double betacoef ;
 
@@ -576,7 +576,7 @@ int pm(const char *s)
   else if(strcmp(s,"R_AFt") == 0)      return (13) ;
   else if(strcmp(s,"R_C3AH6") == 0)    return (14) ;
   else if(strcmp(s,"R_CSH2") == 0)     return (15) ;
-  else if(strcmp(s,"a_AFt") == 0)      return (16) ;
+  else if(strcmp(s,"A_i") == 0)      return (16) ;
   else if(strcmp(s,"K_bulk") == 0)     return (17) ;
   else if(strcmp(s,"Strain0") == 0)    return (18) ;
   else if(strcmp(s,"Strainf") == 0)    return (19) ;
@@ -601,11 +601,11 @@ void GetProperties(Element_t* el)
   r_aft     = GetProperty("R_AFt") ;
   r_c3ah6   = GetProperty("R_C3AH6") ;
   r_csh2    = GetProperty("R_CSH2") ;
-  a_AFt     = GetProperty("a_AFt") ;
+  ai_AFt    = GetProperty("A_i") ;
   K_bulk    = GetProperty("K_bulk") ;
   strain0   = GetProperty("Strain0") ;
   strainf   = GetProperty("Strainf") ;
-  a_p       = GetProperty("A_p") ;
+  ap_AFt       = GetProperty("A_p") ;
   alphacoef = GetProperty("AlphaCoef") ;
   betacoef  = GetProperty("BetaCoef") ;
   
@@ -1845,7 +1845,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
   double strain_n  = x[I_Strain_n] ;
   double straind_n = x[I_Straind_n] ;
   double beta_p = PoreWallEquilibriumSaturationIndex(beta_pn,strain_n,straind_n,s_aft,s_c,dt) ;
-  double strain  = strain_n + dt*a_p*(1 - beta_p/s_aft) ;
+  double strain  = strain_n + dt*ap_AFt*(1 - beta_p/s_aft) ;
   
   /* Compute the crystal pore deformation */
   double varphi_c = s_c * strain ;
@@ -2153,10 +2153,10 @@ double Radius(double r_n,double s_aft,double dt,Element_t* el)
       
       /* Kinetic law */
       /* Modified 03/06/2017 */
-      double eq    = s_l - s_ln + dt*a_AFt*(1 - beta/s_aft) ;
-      double deq   = ds_l - dt*a_AFt*dbeta/s_aft ;
-      //double eq    = s_l - s_ln + dt*a_AFt*(s_aft/beta - 1) ;
-      //double deq   = ds_l - dt*a_AFt*s_aft*dbeta/beta/beta ;
+      double eq    = s_l - s_ln + dt*ai_AFt*(1 - beta/s_aft) ;
+      double deq   = ds_l - dt*ai_AFt*dbeta/s_aft ;
+      //double eq    = s_l - s_ln + dt*ai_AFt*(s_aft/beta - 1) ;
+      //double deq   = ds_l - dt*ai_AFt*s_aft*dbeta/beta/beta ;
       
       double dr    = (fabs(deq) > 0) ? - eq/deq : 0. ;
       
@@ -2236,8 +2236,8 @@ double PoreWallEquilibriumSaturationIndex(double beta_pn,double strain_n,double 
     int i ;
     
     for(i = 0 ; i < iterations ; i++) {
-      double strain  = strain_n + dt*a_p*(1 - beta_p/s_aft) ;
-      double dstrain = - dt*a_p/s_aft ;
+      double strain  = strain_n + dt*ap_AFt*(1 - beta_p/s_aft) ;
+      double dstrain = - dt*ap_AFt/s_aft ;
       double stress  =  ElasticDamageStress(strain,straind_n) ;
       double dstress = dElasticDamageStress(strain,straind_n) ;
       double pc  =  CrystallizationPressure(beta_p) ;
