@@ -1,17 +1,21 @@
 #
 SHELL = /bin/sh
 
-# Do you use libraries BLAS and SuperLU (YES/NO) ?
-BLAS_USE := NO
-SLU_USE  := NO
+# Do you use these libraries: BLAS, LAPACK, SuperLU or others (YES/NO) ?
+BLAS_USE   := YES
+SLU_USE    := YES
+LAPACK_USE := YES
 
 # if YES, where are these libraries ?
 # Change if needed  (${HOME} is root when sudo so I removed it)
-#SLU_DIR  := ${HOME}/Documents/Softwares/superLU/SuperLU_3.0
-SLU_DIR  := /home/dangla/Documents/Softwares/superLU/SuperLU_3.0
-SLU_LIB  := ${SLU_DIR}/superlu_linux.a
-BLAS_DIR := ${SLU_DIR}
-BLAS_LIB := ${BLAS_DIR}/blas_linux.a
+#SLU_DIR    := ${HOME}/Documents/Softwares/superLU/SuperLU_3.0
+#SLU_DIR    := /home/dangla/Documents/Softwares/superLU/SuperLU_3.0
+SLU_DIR    := /usr/lib/x86_64-linux-gnu
+SLU_LIB    := ${SLU_DIR}/libsuperlu.so.5
+BLAS_DIR   := /usr/lib
+BLAS_LIB   := ${BLAS_DIR}/libblas.so.3
+LAPACK_DIR := /usr/lib
+LAPACK_LIB := ${LAPACK_DIR}/liblapack.so.3
 
 BIL_EXTRALIBS := 
 
@@ -21,6 +25,10 @@ endif
 
 ifeq (${BLAS_USE},YES)
   BIL_EXTRALIBS += ${BLAS_LIB}
+endif
+
+ifeq (${LAPACK_USE},YES)
+  BIL_EXTRALIBS += ${LAPACK_LIB}
 endif
 
 

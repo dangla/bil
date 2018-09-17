@@ -7,7 +7,7 @@ Bil is distributed under the terms of the GNU General Public License (GnuGPL).
 
 Bil can be downloaded from the URL 
 
-	http://perso.lcpc.fr/dangla.patrick/bil
+	https://github.com/ifsttar/bil
 
 
 Building requirements
@@ -30,7 +30,6 @@ List of folders
 	./bin       binaries
 	./doc       documentations
 	./examples  examples of input data files
-	./hsl       sources from the HSL library
 	./src       sources
 	./lib       libraries
 

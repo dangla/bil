@@ -4,7 +4,8 @@
 
 enum ResolutionMethod_e {     /* Type of resolution method */
   ResolutionMethod_CROUT,     /* Crout method */
-  ResolutionMethod_SLU        /* SuperLU method*/
+  ResolutionMethod_SLU,       /* SuperLU method*/
+  ResolutionMethod_MA38       /* MA38 method*/
 } ;
 
 
@@ -12,6 +13,7 @@ enum ResolutionMethod_e {     /* Type of resolution method */
 
 /* vacuous declarations and typedef names */
 typedef enum ResolutionMethod_e  ResolutionMethod_t ;
+
 
 
 #endif

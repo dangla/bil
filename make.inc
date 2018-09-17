@@ -5,8 +5,8 @@ UNAME = Linux
 
 # Compilers (C++11 for variadic macros)
 #----------
-CC     := gcc -x c++ -std=c++11
-CPP    := g++
+CC     := gcc -x c   -std=c11
+CPP    := gcc -x c++ -std=c++11
 F77    := gfortran
 
 
@@ -27,10 +27,10 @@ DFLAGS = -iquote${BIL_PATH}
 
 # Preprocessor flags
 #-------------------
-IFLAGS = -iprefix ${BIL_PATH}/src/ -iwithprefix . -iwithprefix DataSet -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools -iwithprefix Models -iwithprefix Modules -iwithprefix Help -iwithprefix Common -iwithprefix Main -iwithprefix Macros
+IFLAGS = -iprefix ${BIL_PATH}/src/ -iwithprefix . -iwithprefix Common -iwithprefix DataSet -iwithprefix Help -iwithprefix Libraries -iwithprefix Macros -iwithprefix Main -iwithprefix Models -iwithprefix Modules -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools
 
 # Additional flags for models
-IFLAGS-MODELS = -iprefix ${BIL_PATH}/src/Models/ -iwithprefix .  -iwithprefix Methods  -iwithprefix Libraries  -iwithprefix DataBases
+IFLAGS-MODELS = -iprefix ${BIL_PATH}/src/Models/ -iwithprefix .  -iwithprefix DataBases  -iwithprefix Libraries  -iwithprefix Methods
 
 # Additional flags for modules
 IFLAGS-MODULES =  -iprefix ${BIL_PATH}/src/Modules/ -iwithprefix .

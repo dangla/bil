@@ -20,6 +20,16 @@ typedef void (GenericObject_Delete_t)(void*) ;
 
 /* GenericObject_t
  * ---------------*/
+ 
+
+/* OBJ stands for a pointer to an object. 
+ * (OBJ)->delete should point to a function which is expected 
+ *  to free the space allocated for the creation of OBJ. */
+#define GenericObject_Delete(OBJ) \
+        (*(OBJ))->Delete(OBJ)
+
+#endif
+#if 0
 
 template <typename T> extern void* GenericObject_New_(const int = 1) ;
 template <typename T> inline void* GenericObject_New_(const int n)
@@ -32,13 +42,6 @@ template <typename T> inline void* GenericObject_New_(const int n)
 
 #define GenericObject_New(T, ...) \
         GenericObject_New_<T>(__VA_ARGS__)
-
-
-/* OBJ stands for a pointer to an object. 
- * (OBJ)->delete should point to a function which is expected 
- *  to free the space allocated for the creation of OBJ. */
-#define GenericObject_Delete(OBJ) \
-        (*(OBJ))->Delete(OBJ)
 
 
 #endif

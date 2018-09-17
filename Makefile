@@ -218,10 +218,15 @@ info_init:
 .PHONY: lib
 lib:
 	rm -f ${BIL_LIB_FILE}
+	touch ${BIL_LIB_FILE} ;
 	@if [ ${SLU_USE} = "YES" ] ; then \
-		echo "#define SLU_DIR  ${SLU_DIR}" > ${BIL_LIB_FILE} ; \
-	else \
-		touch ${BIL_LIB_FILE} ; \
+		echo "#define SUPERLULIB  ${SLU_DIR}"    >>  ${BIL_LIB_FILE} ; \
+	fi
+	@if [ ${BLAS_USE} = "YES" ] ; then \
+		echo "#define BLASLIB     ${BLAS_DIR}"   >> ${BIL_LIB_FILE} ; \
+	fi
+	@if [ ${LAPACK_USE} = "YES" ] ; then \
+		echo "#define LAPACKLIB   ${LAPACK_DIR}" >> ${BIL_LIB_FILE} ; \
 	fi
 
 
@@ -230,7 +235,7 @@ lib:
 
 .PHONY: doc
 doc:
-	( cd doc && ${MAKE} )
+	( ${MAKE} -C doc )
 
 
 #=======================================================================
@@ -238,7 +243,7 @@ doc:
 
 .PHONY: base
 base:
-	( cd base && ${MAKE} )
+	( ${MAKE} -C base )
 
 
 #=======================================================================

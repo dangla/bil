@@ -12,6 +12,7 @@ struct Elements_s     ; typedef struct Elements_s     Elements_t ;
 
 extern void     (Elements_CreateMore)(Elements_t*,Materials_t*) ;
 extern void     (Elements_DefineProperties)(Elements_t*) ;
+extern int      (Elements_ComputeNbOfMatrixEntries)(Elements_t*) ;
 
 
 

@@ -1,3 +1,5 @@
+#if 0
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -5,7 +7,6 @@
 #include "Class.h"
 #include "GenericObject.h"
 
-#if 0
 
 
 

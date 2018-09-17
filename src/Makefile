@@ -141,7 +141,7 @@ ${DIRMODELFILES}%.o: ${DIRMODELFILES}%.c
 
 ${DIRMODELFILES}%.o: ${DIRMODELFILES}%.cpp
 	@echo "\nCompilation of the C++ model: "$<
-	${CC} ${OPTIM} ${CFLAGS-MODELS} -D 'BASENAME=${basename ${notdir $@}}' -c $< -o $@
+	${CPP} ${OPTIM} ${CFLAGS-MODELS} -D 'BASENAME=${basename ${notdir $@}}' -c $< -o $@
 
 ${DIRMODULEFILES}%.o: ${DIRMODULEFILES}%.c
 	@echo "\nCompilation of the C module: "$<
@@ -149,7 +149,7 @@ ${DIRMODULEFILES}%.o: ${DIRMODULEFILES}%.c
 
 ${DIRMODULEFILES}%.o: ${DIRMODULEFILES}%.cpp
 	@echo "\nCompilation of the C++ module: "$<
-	${CC} ${OPTIM} ${CFLAGS-MODULES} -D 'BASENAME=${basename ${notdir $@}}' -c $< -o $@
+	${CPP} ${OPTIM} ${CFLAGS-MODULES} -D 'BASENAME=${basename ${notdir $@}}' -c $< -o $@
 
 %.o: %.c
 	@echo "\nCompilation of the C source: "$<
@@ -157,7 +157,7 @@ ${DIRMODULEFILES}%.o: ${DIRMODULEFILES}%.cpp
 
 %.o: %.cpp
 	@echo "\nCompilation of the C++ source: "$<
-	${CC} ${OPTIM} ${CFLAGS} -c $< -o $@
+	${CPP} ${OPTIM} ${CFLAGS} -c $< -o $@
 	
 %.o: %.f
 	@echo "\nCompilation of the fortran source: "$<

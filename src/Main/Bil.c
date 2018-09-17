@@ -348,6 +348,7 @@ void Bil_PrintUsage(char* path)
   Message_Direct("                       Available methods are:\n") ;
   Message_Direct("                       - crout : CROUT method (default),\n") ;
   Message_Direct("                       - slu   : SuperLU (if installed).\n") ;
+  Message_Direct("                       - ma38  : HSL-MA38 (if installed).\n") ;
   #endif
   
   Message_Direct("  -post \"fmt\"          Generates the post-processing files \n") ;

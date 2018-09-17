@@ -395,10 +395,10 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
         if(IterProcess_ConvergenceIsMet(iterprocess)) break ;
         
         {
-          char*  level = Options_GetPrintLevel(options) ;
-          
-          if(!strcmp(level,"2") && IterProcess_LastIterationIsNotReached(iterprocess)) {
-            IterProcess_PrintCurrentError(iterprocess) ;
+          if(Options_IsToPrintOutAtEachIteration(options)) {
+            if(IterProcess_LastIterationIsNotReached(iterprocess)) {
+              IterProcess_PrintCurrentError(iterprocess) ;
+            }
           }
         }
       }
@@ -537,58 +537,6 @@ int ComputeMatrix(Mesh_t* mesh,double t,double dt,Matrix_t* a)
 }
 
 
-#if 0
-int ComputeMatrix(Mesh_t* mesh,double t,double dt,Matrix_t* a)
-{
-#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
-  int    cole[NE],lige[NE] ;
-  double ke[NE*NE] ;
-  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
-  Element_t* el = Mesh_GetElement(mesh) ;
-  unsigned int    ie ;
-  double zero = 0. ;
-
-  {
-    unsigned int    nnz = Matrix_GetNbOfNonZeroValues(a) ;
-    unsigned int    j ;
-    
-    for(j = 0 ; j < nnz ; j++) Matrix_GetNonZeroValue(a)[j] = zero ;
-    
-    Matrix_SetToInitialState(a) ;
-  }
-  
-  for(ie = 0 ; ie < n_el ; ie++) {
-    int  nn = Element_GetNbOfNodes(el + ie) ;
-    Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-    if(mat) {
-      int    neq = Material_GetNbOfEquations(mat) ;
-      int    i ;
-      
-      Element_FreeBuffer(el + ie) ;
-      i = Element_ComputeMatrix(el + ie,t,dt,ke) ;
-      if(i != 0) return(i) ;
-      
-      /* assembling */
-      for(i = 0 ; i < nn ; i++) {
-        Node_t* node_i = Element_GetNode(el + ie,i) ;
-        int    j ;
-        for(j = 0 ; j < neq ; j++) {
-          int ij = i*neq + j ;
-          int jj_col = Element_GetUnknownPosition(el + ie)[ij] ;
-          int jj_row = Element_GetEquationPosition(el + ie)[ij] ;
-          cole[ij] = (jj_col >= 0) ? Node_GetMatrixColumnIndex(node_i)[jj_col] : -1 ;
-          lige[ij] = (jj_row >= 0) ? Node_GetMatrixRowIndex(node_i)[jj_row] : -1 ;
-        }
-      }
-      Matrix_AssembleElementMatrix_(a,ke,cole,lige,nn*neq) ;
-    }
-  }
-  
-  return(0) ;
-#undef NE
-}
-#endif
 
 
 void ComputeResidu(Mesh_t* mesh,double t,double dt,double* r,Loads_t* loads)

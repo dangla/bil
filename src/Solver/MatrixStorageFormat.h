@@ -3,12 +3,14 @@
 
 
 
-enum MatrixStorageFormat_e {     /* format of the matrix to be stored */
-  MatrixStorageFormat_LDUSKL,    /* LDU Skyline format */
-  MatrixStorageFormat_SuperLU,   /* Harwell-Boeing SuperLU format */
-  MatrixStorageFormat_CCS,       /* Compressed column storage format */
+enum MatrixStorageFormat_e {        /* format of the matrix to be stored */
+  MatrixStorageFormat_LDUSKL,       /* LDU Skyline format */
+  MatrixStorageFormat_SKL,          /* Skyline format */
+  MatrixStorageFormat_SuperLU,      /* Harwell-Boeing SuperLU format */
+  MatrixStorageFormat_CCS,          /* Compressed column storage format */
   MatrixStorageFormat_NC = MatrixStorageFormat_CCS,
-  MatrixStorageFormat_CRS,       /* Compressed row storage format */
+  MatrixStorageFormat_CRS,          /* Compressed row storage format */
+  MatrixStorageFormat_Coordinate,   /* Coordinate format */
   MatrixStorageFormat_NULL
 } ;
 
