@@ -7,7 +7,7 @@
 #include "Solver.h"
 #include "Message.h"
 #include "BilLib.h"
-
+#include "ResolutionMethod.h"
 #include "CroutMethod.h"
 #include "SuperLUMethod.h"
 #include "MA38Method.h"
@@ -32,19 +32,19 @@ Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options,const int n)
     
     if(!strcmp(method,"crout")) {
     
-      Solver_GetResolutionMethod(solver) = ResolutionMethod_CROUT ;
+      Solver_GetResolutionMethod(solver) = ResolutionMethod_Type(CROUT) ;
       Solver_GetSolve(solver) = CroutMethod_Solve ;
     
     #ifdef SUPERLULIB
     } else if(!strcmp(method,"slu")) {
     
-      Solver_GetResolutionMethod(solver) = ResolutionMethod_SLU ;
+      Solver_GetResolutionMethod(solver) = ResolutionMethod_Type(SLU) ;
       Solver_GetSolve(solver) = SuperLUMethod_Solve ;
     #endif
 
     } else if(!strcmp(method,"ma38")) {
     
-      Solver_GetResolutionMethod(solver) = ResolutionMethod_MA38 ;
+      Solver_GetResolutionMethod(solver) = ResolutionMethod_Type(MA38) ;
       Solver_GetSolve(solver) = MA38Method_Solve ;
       
     } else {

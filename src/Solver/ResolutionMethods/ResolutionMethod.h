@@ -16,4 +16,14 @@ typedef enum ResolutionMethod_e  ResolutionMethod_t ;
 
 
 
+#include "Utils.h"
+
+#define ResolutionMethod_Is(RM,KEY) \
+        (RM == Utils_CAT(ResolutionMethod_,KEY))
+
+#define ResolutionMethod_Type(KEY) \
+        ((ResolutionMethod_t) Utils_CAT(ResolutionMethod_,KEY))
+
+
+
 #endif

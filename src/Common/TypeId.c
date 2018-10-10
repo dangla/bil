@@ -5,8 +5,8 @@
 #include "BCond.h"
 #include "GenericData.h"
 #include "Message.h"
-#include "Methods/FEM.h"
-#include "Methods/FVM.h"
+#include "FEM.h"
+#include "FVM.h"
 #include "Exception.h"
 #include "InternationalSystemOfUnits.h"
 
@@ -18,16 +18,16 @@ void  (TypeId_Delete)(TypeId_t typ,void* self)
 {
   switch(typ) {
     case TypeId_undefined       : break ;
-    case TypeId_unsigned_char   : return(free(self));
-    case TypeId_char            : return(free(self));
-    case TypeId_double          : return(free(self));
-    case TypeId_long_double     : return(free(self));
-    case TypeId_float           : return(free(self));
-    case TypeId_unsigned_int    : return(free(self));
-    case TypeId_short_int       : return(free(self));
-    case TypeId_int             : return(free(self));
-    case TypeId_unsigned_long   : return(free(self));
-    case TypeId_long_int        : return(free(self));
+    case TypeId_unsigned_char   : free(self); return ;
+    case TypeId_char            : free(self); return ;
+    case TypeId_double          : free(self); return ;
+    case TypeId_long_double     : free(self); return ;
+    case TypeId_float           : free(self); return ;
+    case TypeId_unsigned_int    : free(self); return ;
+    case TypeId_short_int       : free(self); return ;
+    case TypeId_int             : free(self); return ;
+    case TypeId_unsigned_long   : free(self); return ;
+    case TypeId_long_int        : free(self); return ;
     case TypeId_BCond_t         : break ;
     case TypeId_BConds_t        : break ;
     case TypeId_Buffer_t        : break ;
@@ -44,19 +44,19 @@ void  (TypeId_Delete)(TypeId_t typ,void* self)
     case TypeId_Elements_t      : break ;
     case TypeId_ElementSol_t    : break ;
     case TypeId_ElementsSol_t   : break ;
-    case TypeId_Exception_t     : return(Exception_Delete(self)) ;
-    case TypeId_FEM_t           : return(FEM_Delete(self));
+    case TypeId_Exception_t     : Exception_Delete(self); return ;
+    case TypeId_FEM_t           : FEM_Delete(self); return ;
     case TypeId_Field_t         : break ;
     case TypeId_Fields_t        : break ;
     case TypeId_Function_t      : break ;
     case TypeId_Functions_t     : break ;
-    case TypeId_FVM_t           : return(FVM_Delete(self));
-    case TypeId_GenericData_t   : return(GenericData_Delete(self));
+    case TypeId_FVM_t           : FVM_Delete(self); return ;
+    case TypeId_GenericData_t   : GenericData_Delete(self); return ;
     case TypeId_Geometry_t      : break ;
     case TypeId_Graph_t         : break ;
     case TypeId_ICond_t         : break ;
     case TypeId_IConds_t        : break ;
-    case TypeId_InternationalSystemOfUnits_t : return(InternationalSystemOfUnits_Delete(self)) ;
+    case TypeId_InternationalSystemOfUnits_t : InternationalSystemOfUnits_Delete(self); return ;
     case TypeId_IntFct_t        : break ;
     case TypeId_IntFcts_t       : break ;
     case TypeId_IterProcess_t   : break ;
@@ -67,7 +67,7 @@ void  (TypeId_Delete)(TypeId_t typ,void* self)
     case TypeId_Math_t          : break ;
     case TypeId_Matrix_t        : break ;
     case TypeId_Mesh_t          : break ;
-    case TypeId_Message_t       : return(Message_Delete(self));
+    case TypeId_Message_t       : Message_Delete(self); return ;
     case TypeId_Model_t         : break ;
     case TypeId_Models_t        : break ;
     case TypeId_Module_t        : break ;

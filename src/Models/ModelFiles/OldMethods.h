@@ -40,11 +40,11 @@ int SetModelProp(Model_t* model)
   return(0) ;
 }
 
-#include "../Models.h"
-#include "../../DataSet/Mesh.h"
-#include "../../DataSet/Elements.h"
-#include "../../DataSet/Nodes.h"
-#include "../../DataSet/Loads.h"
+#include "Models.h"
+#include "Mesh.h"
+#include "Elements.h"
+#include "Nodes.h"
+#include "Loads.h"
 
 
 /* Old Methods */

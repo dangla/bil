@@ -27,13 +27,18 @@ DFLAGS = -iquote${BIL_PATH}
 
 # Preprocessor flags
 #-------------------
-IFLAGS = -iprefix ${BIL_PATH}/src/ -iwithprefix . -iwithprefix Common -iwithprefix DataSet -iwithprefix Help -iwithprefix Libraries -iwithprefix Macros -iwithprefix Main -iwithprefix Models -iwithprefix Modules -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools
+IFLAGS-SRC = -iprefix ${BIL_PATH}/src/ -iwithprefix . -iwithprefix Common -iwithprefix DataSet -iwithprefix Help -iwithprefix Libraries -iwithprefix Macros -iwithprefix Main -iwithprefix Models -iwithprefix Modules -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools
+
+IFLAGS-SOLVER = -iprefix ${BIL_PATH}/src/Solver/ -iwithprefix MatrixStorageFormats -iwithprefix ResolutionMethods
 
 # Additional flags for models
-IFLAGS-MODELS = -iprefix ${BIL_PATH}/src/Models/ -iwithprefix .  -iwithprefix DataBases  -iwithprefix Libraries  -iwithprefix Methods
+IFLAGS-MODELS = -iprefix ${BIL_PATH}/src/Models/ -iwithprefix .  -iwithprefix DataBases  -iwithprefix Libraries  -iwithprefix Methods  -iwithprefix ConstitutiveLaws
 
 # Additional flags for modules
 IFLAGS-MODULES =  -iprefix ${BIL_PATH}/src/Modules/ -iwithprefix .
+
+
+IFLAGS = ${IFLAGS-SRC} ${IFLAGS-SOLVER} ${IFLAGS-MODELS} ${IFLAGS-MODULES}
 
 
 # C/CPP compiler flags
@@ -41,10 +46,10 @@ IFLAGS-MODULES =  -iprefix ${BIL_PATH}/src/Modules/ -iwithprefix .
 CFLAGS = -pedantic ${DFLAGS} ${WFLAGS} ${IFLAGS} -fPIC
 
 # C compiler flags for models
-CFLAGS-MODELS = ${CFLAGS} ${IFLAGS-MODELS}
+CFLAGS-MODELS = ${CFLAGS} #${IFLAGS-MODELS}
 
 # C compiler flags for modules
-CFLAGS-MODULES = ${CFLAGS} ${IFLAGS-MODULES}
+CFLAGS-MODULES = ${CFLAGS} #${IFLAGS-MODULES}
 
 
 # Fortran compiler flags

@@ -26,6 +26,9 @@ typedef enum MatrixStorageFormat_e MatrixStorageFormat_t ;
 
 #define MatrixStorageFormat_Is(MSF,KEY) \
         (MSF == Utils_CAT(MatrixStorageFormat_,KEY))
+
+#define MatrixStorageFormat_Type(KEY) \
+        ((MatrixStorageFormat_t) Utils_CAT(MatrixStorageFormat_,KEY))
         
         
 #endif

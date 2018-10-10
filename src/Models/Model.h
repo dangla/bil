@@ -141,7 +141,7 @@ extern Model_t*  (Model_Initialize)(Model_t*,const char*,Geometry_t*,DataFile_t*
 
 
 
-#include "Methods/LocalVariableVectors.h"
+#include "LocalVariableVectors.h"
 
 /* Operations on local variables */
 #define Model_GetNbOfVariables(MOD) \
