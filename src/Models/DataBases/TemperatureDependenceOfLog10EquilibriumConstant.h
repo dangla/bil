@@ -70,6 +70,11 @@
         ((a0) + (b)*((T) - 293.) + (c)*(1/(T) - 1/293.) + (d)*log10((T)/293.) + (e)*(1/((T)*(T)) - 1/(85849.)))
 
 
-//#define TemperatureDependenceOfLog10EquilibriumConstant_293(T,a0,b,c,d,e) ((a0) + TemperatureDependenceOfLog10EquilibriumConstant(T,0,b,c,d,e) - TemperatureDependenceOfLog10EquilibriumConstant(293.,0,b,c,d,e))
+/*
+#define TemperatureDependenceOfLog10EquilibriumConstant_293(T,a0,b,c,d,e) \
+        ((a0) + \
+         TemperatureDependenceOfLog10EquilibriumConstant(T   ,0,b,c,d,e) - \
+         TemperatureDependenceOfLog10EquilibriumConstant(293.,0,b,c,d,e))
+*/
 
 #endif

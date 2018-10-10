@@ -14,13 +14,13 @@
 
 #ifdef SUPERLULIB
 
-  #define val(x) #x
-  #define xval(x) val(x)
+  //#define val(x) #x
+  //#define xval(x) val(x)
   //#include xval(SUPERLULIB/SRC/dsp_defs.h)
   //#include "/home/dangla/Documents/Softwares/getfem-4.0.0/superlu/slu_ddefs.h"
   #include "superlu.h"
-  #undef val
-  #undef xval
+  //#undef val
+  //#undef xval
 
 #endif
 

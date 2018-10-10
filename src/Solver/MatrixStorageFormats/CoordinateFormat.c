@@ -111,6 +111,7 @@ int CoordinateFormat_AssembleElementMatrix(CoordinateFormat_t* a,Element_t* el,d
       
         if(irow < 0) continue ;
       
+        /* Row (and column) indices outside the range 1,nnz are ignored in ma38 */
         if(KE(ie,je) == 0.) irow = -1 ;
         
         val[nnz]    = KE(ie,je) ;

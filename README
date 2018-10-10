@@ -66,6 +66,31 @@ Once installation is completed, running
 will delete all the local files previously created.
 
 
+External libraries
+------------------
+Some functionalities (like solvers ma38 and superlu) require the use of the following libraries:
+BLAS     -  this library is usually supplied by your computer processor vendor,
+            and using a good one is critical to performance.
+            If you are unable to locate a vendor BLAS then you should use either
+            the GotoBLAS, OpenBLAS or ATLAS BLAS (the latter is often available 
+            as part of your linux distribution). If you cannot gain access to any 
+            of these, you can obtain the relevant BLAS routines by visiting the 
+            following URL: http://www.hsl.rl.ac.uk/blas/
+            Such routines obtained from the above url are at least ten times
+            slower than the other BLAS libraries mentioned.
+LAPACK   -  You can obtain the latest LAPACK from http://www.netlib.org/lapack
+SUPERLU  -  You can obtain the relevant C functions by visiting the following
+            URL: https://github.com/xiaoyeli/superlu
+
+These librairies are not included in this package. You need to explicitly specify their location in the file "make.extralibs". You can also choose to disable the use of these libraries and the associated functionalities.
+
+
+External software
+-----------------
+This package contains some fortran routines provided by HSL:
+"HSL, a collection of Fortran codes for large-scale scientific computation. See http://www.hsl.rl.ac.uk/"
+
+
 Usage
 -----
 The bil program prints out the available options when run without any

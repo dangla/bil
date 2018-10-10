@@ -1,3 +1,8 @@
+News in 2.6: The solver of sparse unsymmetric system of linear equations MA38 
+from HSL is introduced in the package and can be selected from the command line.
+The solver SuperLU can also be selected if the external library "libsuperlu.so" 
+was installed (see the file "make.extralibs").
+
 News in 2.5: A new interface "Session.h" is created. Methods like
 Session_Open and Session_Close can be used to open and close  sessions. 
 Sessions are in a stack with the current session at the top. 

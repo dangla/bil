@@ -8,9 +8,7 @@
 #include "Message.h"
 #include "BilLib.h"
 #include "Matrix.h"
-
-
-
+#include "MatrixStorageFormat.h"
 #include "LDUSKLFormat.h"
 #include "NCFormat.h"
 #include "SuperLUFormat.h"
@@ -39,13 +37,13 @@ Matrix_t*   Matrix_Create(Mesh_t* mesh,Options_t* options)
     char* method = Options_GetResolutionMethod(options) ;
     
     if(!strcmp(method,"crout")) {
-      Matrix_GetMatrixStorageFormat(a) = MatrixStorageFormat_LDUSKL ;
+      Matrix_GetMatrixStorageFormat(a) = MatrixStorageFormat_Type(LDUSKL) ;
     
     } else if(!strcmp(method,"slu")) {
-      Matrix_GetMatrixStorageFormat(a) = MatrixStorageFormat_SuperLU ;
+      Matrix_GetMatrixStorageFormat(a) = MatrixStorageFormat_Type(SuperLU) ;
 
     } else if(!strcmp(method,"ma38")) {
-      Matrix_GetMatrixStorageFormat(a) = MatrixStorageFormat_Coordinate ;
+      Matrix_GetMatrixStorageFormat(a) = MatrixStorageFormat_Type(Coordinate) ;
     
     } else {
       arret("Matrix_Create(1): unknown method") ;
