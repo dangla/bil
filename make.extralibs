@@ -33,5 +33,11 @@ endif
 
 
 # Library UEL
-BIL_EXTRALIBS += /home/dangla/Documents/Softwares/bil/Projects/IoannisStefanou/libUEL_64.so
-#BIL_EXTRALIBS += -luel
+# -----------
+UEL_USE := YES
+UEL_DIR := /home/dangla/Documents/Softwares/bil/Projects/IoannisStefanou
+UEL_LIB := ${UEL_DIR}/libUEL_64.so
+
+ifeq (${UEL_USE},YES)
+  BIL_EXTRALIBS += ${UEL_LIB}
+endif
