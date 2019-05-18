@@ -33,6 +33,8 @@ static void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H
 
 static void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_2)(HardenedCementChemistry_t*) ;
 
+static void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_3)(HardenedCementChemistry_t*) ;
+
 
 
 HardenedCementChemistry_t* HardenedCementChemistry_Create(void)
@@ -713,9 +715,17 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O(Harde
   if(HardenedCementChemistry_InputCaOIs(hcc,SI_CH_CSH2)) {
     HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_1(hcc) ;
     return ;
+    
   } else if(HardenedCementChemistry_InputCaOIs(hcc,SI_CH)) {
-    HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_2(hcc) ;
-    return ;
+    if(HardenedCementChemistry_InputSO3Is(hcc,LogC_H2SO4)) {
+      HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_2(hcc) ;
+      return ;
+      
+    } else if(HardenedCementChemistry_InputSO3Is(hcc,LogC_SO4)) {
+      HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_3(hcc) ;
+      return ;
+      
+    }
   }
   
   arret("HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O") ;
@@ -919,6 +929,135 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_2(Har
     CementSolutionChemistry_t* csc = HardenedCementChemistry_GetCementSolutionChemistry(hcc) ;
     double loga_ca     = CementSolutionChemistry_GetLogActivityOf(csc,Ca) ;
     double loga_so4    = CementSolutionChemistry_GetLogActivityOf(csc,SO4) ;
+    double loga_al     = CementSolutionChemistry_GetLogActivityOf(csc,Al) ;
+    double loga_alo4h4 = CementSolutionChemistry_GetLogActivityOf(csc,AlO4H4) ;
+    double loga_h      = CementSolutionChemistry_GetLogActivityOf(csc,H) ;
+    double loga_h2o    = CementSolutionChemistry_GetLogActivityOf(csc,H2O) ;
+    
+    double logq_csh2  = loga_ca + loga_so4 + 2*loga_h2o ;
+    double logk_csh2  = LogKsp(CSH2) ;
+    double logs_csh2  = logq_csh2 - logk_csh2 ;
+    double s_csh2     = pow(10,logs_csh2) ;
+    
+    double logq_afm   = 4*loga_ca + 2*loga_al + loga_so4 + 18*loga_h2o - 12*loga_h ;
+    double logk_afm   = LogKsp(AFm) ;
+    double logs_afm   = logq_afm - logk_afm ;
+    double s_afm      = pow(10,logs_afm) ;
+    
+    double logq_aft   = 6*loga_ca + 2*loga_al + 3*loga_so4 + 38*loga_h2o - 12*loga_h ;
+    double logk_aft   = LogKsp(AFt) ;
+    double logs_aft   = logq_aft - logk_aft ;
+    double s_aft      = pow(10,logs_aft) ;
+    
+    double logq_c3ah6 = 3*loga_ca + 2*loga_al + 12*loga_h2o - 12*loga_h ;
+    double logk_c3ah6 = LogKsp(C3AH6) ;
+    double logs_c3ah6 = logq_c3ah6 - logk_c3ah6 ;
+    double s_c3ah6    = pow(10,logs_c3ah6) ;
+    
+    double logq_c2ah8 = 2*loga_ca + 2*loga_alo4h4 + 2*loga_oh + 3*loga_h2o ;
+    double logk_c2ah8 = LogKsp(C2AH8) ;
+    double logs_c2ah8 = logq_c2ah8 - logk_c2ah8 ;
+    double s_c2ah8    = pow(10,logs_c2ah8) ;
+    
+    double logq_cah10 =   loga_ca + 2*loga_alo4h4 + 6*loga_h2o ;
+    double logk_cah10 = LogKsp(CAH10) ;
+    double logs_cah10 = logq_cah10 - logk_cah10 ;
+    double s_cah10    = pow(10,logs_cah10) ;
+    
+    HardenedCementChemistry_GetSaturationIndexOf(hcc,CSH2)  = s_csh2 ;
+    HardenedCementChemistry_GetSaturationIndexOf(hcc,AFm)   = s_afm ;
+    HardenedCementChemistry_GetSaturationIndexOf(hcc,AFt)   = s_aft ;
+    HardenedCementChemistry_GetSaturationIndexOf(hcc,C3AH6) = s_c3ah6 ;
+    HardenedCementChemistry_GetSaturationIndexOf(hcc,C2AH8) = s_c2ah8 ;
+    HardenedCementChemistry_GetSaturationIndexOf(hcc,CAH10) = s_cah10 ;
+    
+    
+    HardenedCementChemistry_GetLog10SaturationIndexOf(hcc,CSH2)  = logs_csh2 ;
+    HardenedCementChemistry_GetLog10SaturationIndexOf(hcc,AFm)   = logs_afm ;
+    HardenedCementChemistry_GetLog10SaturationIndexOf(hcc,AFt)   = logs_aft ;
+    HardenedCementChemistry_GetLog10SaturationIndexOf(hcc,C3AH6) = logs_c3ah6 ;
+    HardenedCementChemistry_GetLog10SaturationIndexOf(hcc,C2AH8) = logs_c2ah8 ;
+    HardenedCementChemistry_GetLog10SaturationIndexOf(hcc,CAH10) = logs_cah10 ;
+  }
+  
+  /* CSH properties */
+  {
+    double x_csh = CalciumSiliconRatioInCSH(s_ch) ;
+    double z_csh = WaterSiliconRatioInCSH(x_csh) ;
+    
+    HardenedCementChemistry_GetCalciumSiliconRatioInCSH(hcc) = x_csh ;
+    HardenedCementChemistry_GetWaterSiliconRatioInCSH(hcc) = z_csh ;
+  }
+}
+
+
+
+void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_3(HardenedCementChemistry_t* hcc)
+{
+  /* Inputs */
+  /* SI_CH is the saturation index of CH ie log(S_CH) */ 
+  double si_ca      = Input(SI_CH) ;
+  /* SI_CSH is the saturation index of C-S-H ie log(S_SH/S_SHeq) */ 
+  double si_si      = Input(SI_CSH) ;
+  /* SI_AH3 is the saturation index of AH3 ie log(S_AH3) */ 
+  double si_al      = Input(SI_AH3) ;
+  double loga_so4   = Input(LogA_SO4) ;
+  double loga_na    = Input(LogA_Na) ;
+  double loga_k     = Input(LogA_K) ;
+  double loga_oh    = Input(LogA_OH) ;
+  
+  
+  /* The saturation indexes of CH, SH, AH3 */
+  double logs_ch    = Log10SaturationIndexOfCH(si_ca) ;
+  double s_ch       = pow(10,logs_ch) ;
+  double logs_sh    = Log10SaturationIndexOfSH(si_si,s_ch) ;
+  double s_sh       = pow(10,logs_sh) ;
+  double logs_ah3   = Log10SaturationIndexOfAH3(si_al) ;
+  double s_ah3      = pow(10,logs_ah3) ;
+  
+  
+  /* The IAP of CH, SH, AH3 */
+  double logk_ch    = LogKsp(CH) ;
+  double logq_ch    = logs_ch + logk_ch ;
+  double logk_sh    = LogKsp(SH) ;
+  double logq_sh    = logs_sh + logk_sh ;
+  double logk_ah3   = LogKsp(AH3) ;
+  double logq_ah3   = logs_ah3 + logk_ah3 ;
+  
+  /* Solve chemistry in solution */
+  {
+    CementSolutionChemistry_t* csc = HardenedCementChemistry_GetCementSolutionChemistry(hcc) ;
+  
+    CementSolutionChemistry_SetInput(csc,LogQ_CH,logq_ch) ;
+    CementSolutionChemistry_SetInput(csc,LogQ_SH,logq_sh) ;
+    CementSolutionChemistry_SetInput(csc,LogA_SO4,loga_so4) ;
+    CementSolutionChemistry_SetInput(csc,LogA_Na,loga_na) ;
+    CementSolutionChemistry_SetInput(csc,LogA_K,loga_k) ;
+    CementSolutionChemistry_SetInput(csc,LogA_OH,loga_oh) ;
+    CementSolutionChemistry_SetInput(csc,LogQ_AH3,logq_ah3) ;
+  
+    CementSolutionChemistry_ComputeSystem(csc,CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O) ;
+
+    CementSolutionChemistry_UpdateSolution(csc) ;
+  }
+  
+  
+  /* Backup */
+  
+  /* Saturation indexes of solid phases */
+  HardenedCementChemistry_GetSaturationIndexOf(hcc,CH)   = s_ch ;
+  HardenedCementChemistry_GetSaturationIndexOf(hcc,SH)   = s_sh ;
+  HardenedCementChemistry_GetSaturationIndexOf(hcc,AH3)  = s_ah3 ;
+  
+  /* Log10 saturation indexes of solid phases */
+  HardenedCementChemistry_GetLog10SaturationIndexOf(hcc,CH)  = logs_ch ;
+  HardenedCementChemistry_GetLog10SaturationIndexOf(hcc,SH)  = logs_sh ;
+  HardenedCementChemistry_GetLog10SaturationIndexOf(hcc,AH3) = logs_ah3 ;
+  
+  {
+    CementSolutionChemistry_t* csc = HardenedCementChemistry_GetCementSolutionChemistry(hcc) ;
+    double loga_ca     = CementSolutionChemistry_GetLogActivityOf(csc,Ca) ;
+    //double loga_h2so4  = CementSolutionChemistry_GetLogActivityOf(csc,H2SO4) ;
     double loga_al     = CementSolutionChemistry_GetLogActivityOf(csc,Al) ;
     double loga_alo4h4 = CementSolutionChemistry_GetLogActivityOf(csc,AlO4H4) ;
     double loga_h      = CementSolutionChemistry_GetLogActivityOf(csc,H) ;

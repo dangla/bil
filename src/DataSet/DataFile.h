@@ -14,42 +14,16 @@ extern void         (DataFile_Delete)(void*) ;
 extern int          (DataFile_CountNbOfKeyWords)(DataFile_t*,const char*,const char*) ;
 extern void         (DataFile_SetFilePositionAfterKey)(DataFile_t*,const char*,const char*,short int) ;
 extern char*        (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t*) ;
-extern double*      (DataFile_ReadDoublesFromCurrentFilePosition)(DataFile_t*,double*,int) ;
-extern void*        (DataFile_ReadDataFromCurrentFilePosition)(DataFile_t*,void*,int,size_t,const char*) ;
+//extern double*      (DataFile_ReadDoublesFromCurrentFilePosition0)(DataFile_t*,double*,int) ;
+//extern void*        (DataFile_ReadDataFromCurrentFilePosition)(DataFile_t*,void*,int,size_t,const char*) ;
 
-
-
-#include "TextFile.h"
-
-#define DataFile_MaxLengthOfFileName    (TextFile_MaxLengthOfFileName)
-//#define DataFile_MaxLengthOfTextLine    (TextFile_MaxLengthOfTextLine)
-#define DataFile_MaxLengthOfKeyWord     (30)
-
-#define DataFile_MaxNbOfKeyWords        (10)
-#define DataFile_MaxLengthOfKeyWords    (DataFile_MaxNbOfKeyWords*DataFile_MaxLengthOfKeyWord)
-
-
-#define DataFile_GetTextFile(DF)              ((DF)->textfile)
-#define DataFile_GetTextLine(DF)              ((DF)->line)
-#define DataFile_GetInitialization(DF)        ((DF)->initialization)
-#define DataFile_GetFileContent(DF)           ((DF)->filecontent)
-#define DataFile_GetMaxLengthOfTextLine(DF)   ((DF)->linelength)
-
-
-
-#define DataFile_GetFileName(DF) \
-        TextFile_GetFileName(DataFile_GetTextFile(DF))
-
-#define DataFile_GetFileStream(DF) \
-        TextFile_GetFileStream(DataFile_GetTextFile(DF))
-
-#define DataFile_GetFilePosition(DF) \
-        TextFile_GetFilePosition(DataFile_GetTextFile(DF))
 
 
 /*
  *  Function-like macros
  */
+#include "TextFile.h"
+
 #define DataFile_OpenFile(DF,MODE) \
         TextFile_OpenFile(DataFile_GetTextFile(DF),MODE)
 
@@ -69,7 +43,49 @@ extern void*        (DataFile_ReadDataFromCurrentFilePosition)(DataFile_t*,void*
         TextFile_MoveToStoredFilePosition(DataFile_GetTextFile(DF))
 
 #define DataFile_Rewind(DF) \
-        rewind(DataFile_GetFileStream(DF))
+        TextFile_Rewind(DataFile_GetTextFile(DF))
+
+#define DataFile_ScanAdv(DF, ...) \
+        TextFile_ScanAdv(DataFile_GetTextFile(DF),__VA_ARGS__)
+        
+#define DataFile_ReadDataFromCurrentFilePosition(DF, ...) \
+        TextFile_ReadDataFromCurrentFilePosition(DataFile_GetTextFile(DF),__VA_ARGS__)
+        
+#define DataFile_ReadDoublesFromCurrentFilePosition(DF, ...) \
+        DataFile_ReadDataFromCurrentFilePosition(DF,"%le",__VA_ARGS__)
+        
+        
+
+#define DataFile_MaxLengthOfFileName    (TextFile_MaxLengthOfFileName)
+//#define DataFile_MaxLengthOfTextLine    (TextFile_MaxLengthOfTextLine)
+#define DataFile_MaxLengthOfKeyWord     (30)
+
+#define DataFile_MaxNbOfKeyWords        (10)
+#define DataFile_MaxLengthOfKeyWords    (DataFile_MaxNbOfKeyWords*DataFile_MaxLengthOfKeyWord)
+
+
+
+#define DataFile_GetTextFile(DF)              ((DF)->textfile)
+#define DataFile_GetTextLine(DF)              ((DF)->line)
+#define DataFile_GetInitialization(DF)        ((DF)->initialization)
+#define DataFile_GetMaxLengthOfTextLine(DF)   ((DF)->linelength)
+
+
+
+#define DataFile_GetFileName(DF) \
+        TextFile_GetFileName(DataFile_GetTextFile(DF))
+        
+#define DataFile_GetFileContent(DF) \
+        TextFile_GetFileContent(DataFile_GetTextFile(DF))
+
+#define DataFile_GetFileStream(DF) \
+        TextFile_GetFileStream(DataFile_GetTextFile(DF))
+
+#define DataFile_GetFilePosition(DF) \
+        TextFile_GetFilePosition(DataFile_GetTextFile(DF))
+
+#define DataFile_GetCurrentPositionInFileContent(DF) \
+        TextFile_GetCurrentPositionInFileContent(DataFile_GetTextFile(DF))
         
 
 /* Test initialization */
@@ -104,7 +120,6 @@ struct DataFile_s {
   TextFile_t* textfile ;      /* Text file */
   char* line ;                /* memory space for a line */
   int   initialization ;
-  char* filecontent ;
   int   linelength ;          /* Length of the longest line */
 
 } ;

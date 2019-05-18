@@ -1605,7 +1605,7 @@ double* ComputeVariables(Element_t* el,double** u,double* f_n,double dt,int n)
   x[I_N_CHn]  = N_CHn(n) ;
   x[I_V_S0 ]  = V_S0(n) ;
   
-  ComputeSecondaryVariables(el,dt,x) ;
+  ComputeSecondaryVariables(el,0,dt,x) ;
   return(x) ;
 }
 
@@ -1623,7 +1623,7 @@ double* ComputeVariableDerivatives(Element_t* el,double dt,double* x,double du_i
   /* We increment the variable as (x + dx) */
   dx[i] += du_i ;
   
-  ComputeSecondaryVariables(el,dt,dx) ;
+  ComputeSecondaryVariables(el,0,dt,dx) ;
   
   /* The numerical derivative as (f(x + dx) - f(x))/dx */
   for(j = 0 ; j < NbOfVariables ; j++) {
@@ -1636,7 +1636,7 @@ double* ComputeVariableDerivatives(Element_t* el,double dt,double* x,double du_i
 
 
 
-void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
+void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
 {
   double c_co2      = x[U_C_CO2  ] ;
   double zn_ca_s    = x[U_ZN_Ca_S] ;
@@ -1656,6 +1656,7 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
     double logc_na    = log10(c_na) ;
     double logc_k     = log10(c_k) ;
     double logc_cl    = log10(c_cl) ;
+    double logc_oh    = -7 ;
     double psi        = x[U_PSI] ;
   
     HardenedCementChemistry_SetInput(hcc,SI_CH_CC,MIN(zn_ca_s,0)) ;
@@ -1663,7 +1664,7 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
     HardenedCementChemistry_SetInput(hcc,LogC_CO2,logc_co2aq) ;
     HardenedCementChemistry_SetInput(hcc,LogC_Na,logc_na) ;
     HardenedCementChemistry_SetInput(hcc,LogC_K,logc_k) ;
-    HardenedCementChemistry_SetInput(hcc,LogC_OH,-7) ;
+    HardenedCementChemistry_SetInput(hcc,LogC_OH,logc_oh) ;
     HardenedCementChemistry_GetElectricPotential(hcc) = psi ;
     
     HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;

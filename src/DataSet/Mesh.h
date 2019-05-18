@@ -16,6 +16,7 @@ struct Mesh_s         ; typedef struct Mesh_s         Mesh_t ;
 #include "Solver.h"
 
 extern Mesh_t*  (Mesh_Create)(DataFile_t*,Materials_t*,Geometry_t*) ;
+extern char*    (Mesh_Scan)(Mesh_t*,char*) ;
 extern void     (Mesh_SetMatrixPermutationNumbering)(Mesh_t*,BConds_t*,DataFile_t*) ;
 extern void     (Mesh_ResetMatrixNumbering)(Mesh_t*) ;
 extern void     (Mesh_WriteGraph)(Mesh_t*,const char*,const char*) ;
@@ -25,6 +26,13 @@ extern int      (Mesh_LoadCurrentSolution)(Mesh_t*,DataFile_t*,double*) ;
 extern int      (Mesh_StoreCurrentSolution)(Mesh_t*,DataFile_t*,double) ;
 extern void     (Mesh_SetCurrentUnknownsWithBoundaryConditions)(Mesh_t*,BConds_t*,double) ;
 extern void     (Mesh_UpdateCurrentUnknowns)(Mesh_t*,Solver_t*) ;
+extern void     (Mesh_CreateEquationContinuity)(Mesh_t*) ;
+
+
+#include "Mry.h"
+
+#define Mesh_New() \
+        Mry_New(Mesh_t)
 
 
 /* Some constants */

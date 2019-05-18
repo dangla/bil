@@ -251,6 +251,14 @@ void Bil_CLI(Bil_t* bil)
     return ;
   }
   
+  if(Context_GetTest(ctx)) {
+    char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
+    Options_t* options = Context_GetOptions(ctx) ;
+    
+    DataSet_Create1(filename,options) ;
+    return ;
+  }
+  
   if(1) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;

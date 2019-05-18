@@ -14,10 +14,7 @@ static Date_t*  Date_Create(int) ;
 
 Dates_t*  Dates_Create(DataFile_t* datafile)
 {
-  FILE* ficd ;
   Dates_t* dates = (Dates_t*) malloc(sizeof(Dates_t)) ;
-  int n_dates ;
-  int   i ;
   
   if(!dates) arret("Dates_Create") ;
   
@@ -28,24 +25,30 @@ Dates_t*  Dates_Create(DataFile_t* datafile)
   Message_Direct("Enter in %s","Dates") ;
   Message_Direct("\n") ;
   
-  ficd = DataFile_GetFileStream(datafile) ;
-  
-  fscanf(ficd,"%d",&n_dates) ;
-  Dates_GetNbOfDates(dates) = n_dates ;
-
   {
+    int n_dates ;
+    
+    DataFile_ScanAdv(datafile,"%d",&n_dates) ;
+    
+    Dates_GetNbOfDates(dates) = n_dates ;
+
     Date_t* date = Date_Create(n_dates) ;
     
     Dates_GetDate(dates) = date ;
   }
 
-  for(i = 0 ; i < n_dates ; i++) {
-    Date_t* date = Dates_GetDate(dates) + i ;
-    double t ;
+  {
+    int n_dates = Dates_GetNbOfDates(dates) ;
+    int   i ;
     
-    fscanf(ficd,"%lf",&t) ;
+    for(i = 0 ; i < n_dates ; i++) {
+      Date_t* date = Dates_GetDate(dates) + i ;
+      double t ;
+      
+      DataFile_ScanAdv(datafile,"%lf",&t) ;
     
-    Date_GetTime(date) = t ;
+      Date_GetTime(date) = t ;
+    }
   }
   
   return(dates) ;

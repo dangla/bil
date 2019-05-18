@@ -57,6 +57,8 @@ TextFile_t*   (TextFile_Create)(char* filename)
   /* The pointer to the file content, intialized to NULL by default. */
   {
     TextFile_GetFileContent(textfile) = NULL ;
+    TextFile_GetPreviousPositionInString(textfile) = 0 ;
+    TextFile_GetCurrentPositionInString(textfile) = 0 ;
   }
   
     
@@ -145,6 +147,8 @@ void (TextFile_CloseFile)(TextFile_t* textfile)
   fclose(str) ;
   
   TextFile_GetFileStream(textfile) = NULL ;
+  TextFile_GetPreviousPositionInString(textfile) = 0 ;
+  TextFile_GetCurrentPositionInString(textfile) = 0 ;
 }
 
 
@@ -168,6 +172,9 @@ void (TextFile_StoreFilePosition)(TextFile_t* textfile)
   if(fgetpos(str,pos)) {
     arret("TextFile_StoreFilePosition") ;
   }
+  
+  TextFile_GetPreviousPositionInString(textfile) = TextFile_GetCurrentPositionInString(textfile) ;
+  
 }
 
 
@@ -182,6 +189,8 @@ void (TextFile_MoveToStoredFilePosition)(TextFile_t* textfile)
   if(fsetpos(str,pos)) {
     arret("TextFile_MoveToStoredFilePosition") ;
   }
+  
+  TextFile_GetCurrentPositionInString(textfile) = TextFile_GetPreviousPositionInString(textfile) ;
 }
 
 
@@ -208,6 +217,8 @@ char* (TextFile_ReadLineFromCurrentFilePosition)(TextFile_t* textfile,char* line
       return(NULL) ;
     }
     
+    TextFile_GetCurrentPositionInString(textfile) += strlen(line) ;
+    
     /* Eliminate the first blank characters */
     if(*c == ' ') c += strspn(c," ") ;
     
@@ -217,6 +228,33 @@ char* (TextFile_ReadLineFromCurrentFilePosition)(TextFile_t* textfile,char* line
   
   return(c) ;
 }
+
+
+
+long int TextFile_CountNbOfEatenCharacters(TextFile_t* textfile)
+{
+  fpos_t* pos  = TextFile_GetFilePosition(textfile) ;
+  fpos_t* cpos = NULL ;
+  FILE* str = TextFile_OpenFile(textfile,"r") ;
+  long int count = 0 ;
+  char c ;
+  
+  while((cpos != pos) && ((c = fgetc(str)) != EOF)) {
+    
+    /* Store the current file position of the stream in pos */
+    if(fgetpos(str,cpos)) {
+      arret("TextFile_CountNbOfEatenCharacters") ;
+    }
+    
+    count++ ;
+    
+  }
+  
+  TextFile_CloseFile(textfile) ;
+  
+  return(count) ;
+}
+
 
 
 long int TextFile_CountNbOfCharacters(TextFile_t* textfile)

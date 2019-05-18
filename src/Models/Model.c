@@ -18,7 +18,7 @@ extern  Model_SetModelProp_t  Models_ListOfSetModelProp ;
 
 
 
-double* Model_ComputeVariableDerivatives(Element_t* el,double dt,double dxi,int i,int n)
+double* Model_ComputeVariableDerivatives(Element_t* el,double t,double dt,double dxi,int i,int n)
 {
   Model_t* model = Element_GetModel(el) ;
   int NbOfVariables = Model_GetNbOfVariables(model) ;
@@ -41,7 +41,7 @@ double* Model_ComputeVariableDerivatives(Element_t* el,double dt,double dxi,int 
     {
       Model_ComputeSecondaryVariables_t* computesecondaryvariables = Model_GetComputeSecondaryVariables(model) ;
       
-      computesecondaryvariables(el,dt,dx) ;
+      computesecondaryvariables(el,t,dt,dx) ;
     }
   
     for(j = 0 ; j < NbOfVariables ; j++) {

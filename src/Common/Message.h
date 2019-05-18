@@ -45,7 +45,7 @@ extern int    (Message_SetVerbosity)(const int) ;
 
 
 #include <time.h>
-#include <GenericObject.h>
+#include "GenericObject.h"
 
 struct Message_s {            /* message */
   clock_t  launchclock ;      /* Start up processor clock time */

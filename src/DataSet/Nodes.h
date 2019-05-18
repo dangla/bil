@@ -12,6 +12,12 @@ struct Nodes_s        ; typedef struct Nodes_s        Nodes_t ;
 extern void   Nodes_CreateMore(Nodes_t*) ;
 
 
+#include "Mry.h"
+
+#define Nodes_New() \
+        (Nodes_t*) Mry_Malloc(sizeof(Nodes_t))
+
+
 #define Nodes_GetNbOfNodes(NODS)          ((NODS)->n_no)
 #define Nodes_GetNode(NODS)               ((NODS)->no)
 #define Nodes_GetNbOfMatrixRows(NODS)     ((NODS)->n_rows)

@@ -1,0 +1,433 @@
+%{
+#include <string.h>
+#include <stdarg.h>
+#include <time.h>
+#include <assert.h>
+#include "../Common/Message.h"
+#include "../DataSet/Geometry.h"
+#include "../DataSet/DataFile.h"
+#include "../DataSet/DataSet.h"
+#include "Parser.h"
+
+// Global parser variables
+char* Parser_yyname;
+int Parser_yyerrorstate = 0;
+int Parser_yyviewindex = 0;
+
+// Static parser variables (accessible only in this file)
+
+void yyerror(DataSet_t*,const char*);
+void yymsg(int level, const char* fmt, ...);
+void skip_until(const char* skip, const char* until);
+//int PrintListOfDouble(char *format, List_T *list, char *buffer);
+//fullMatrix<double> ListOfListOfDouble2Matrix(List_T *list);
+%}
+
+%union {
+  char* c;
+  int i;
+  unsigned int u;
+  double d;
+  double v[5];
+}
+
+%parse-param {DataSet_t* dataset}
+
+%token <d> tDOUBLE
+%token <i> tINT
+%token <u> tUINT
+%token <c> tSTRING tBIGSTR tANY
+
+%token tEND tAFFECT tDOTS tPi tMPI_Rank tMPI_Size tEuclidian tCoordinates
+%token tExp tLog tLog10 tSqrt tSin tAsin tCos tAcos tTan tRand
+%token tAtan tAtan2 tSinh tCosh tTanh tFabs tFloor tCeil
+%token tLHS tRHS tCMD
+
+
+%token tBIL_MAJOR_VERSION tBIL_MINOR_VERSION tBIL_PATCH_VERSION
+
+
+%token <c> tGeometry
+%token <c> tDimension
+%token <c> tSymmetry
+%token <c> tMesh
+%token <c> tPeriodicity
+%token <c> tModel
+%token <c> tMaterial
+%token <c> tField
+%token <c> tFunction
+%token <c> tInitialization
+%token <c> tBoundaryCondition
+%token <c> tPoint
+%token <c> tDate
+%token <c> tObjectiveVariation
+%token <c> tIterativeProcess
+%token <c> tTimeStep
+
+
+%type <c> BilCommand
+%type <c> BilItem
+
+
+// Operators (with ascending priority): cf. C language
+//
+// Notes: - associativity (%left, %right)
+//        - UNARYPREC is a dummy terminal to resolve ambiguous cases
+//          for + and - (which exist in both unary and binary form)
+
+%right   tAFFECT tAFFECTPLUS tAFFECTMINUS tAFFECTTIMES tAFFECTDIVIDE
+%right   '?' tDOTS
+%left    tOR
+%left    tAND
+%left    tEQUAL tNOTEQUAL
+%left    '<' tLESSOREQUAL  '>' tGREATEROREQUAL
+%left    '+' '-'
+%left    '*' '/' '%'
+%right   '!' tPLUSPLUS tMINUSMINUS UNARYPREC
+%right   '^'
+%left    '(' ')' '[' ']' '.' '#'
+
+%start All
+
+%%
+
+All : 
+    BilFormatItems
+  | error tEND { yyerrok; return 1; }
+;
+
+
+
+//  B I L   F I L E   F O R M A T
+
+BilFormatItems : 
+    /* empty */
+  | BilFormatItems BilFormatItem
+;
+
+
+
+BilFormatItem :
+     BilItem tAFFECT tANY tEND
+    {
+      Message_Direct("Reading %s\n",$1) ;
+    }
+;
+
+
+
+BilCommand :
+     BilItem Affectation tANY tEND
+  |  BilItem Affectation "{"BilCommand"}" tEND
+;
+
+
+
+BilItem :
+    tGeometry
+  | tDimension
+  | tSymmetry
+  | tMesh
+  | tPeriodicity
+  | tModel
+  | tMaterial
+  | tField
+  | tFunction
+  | tInitialization
+  | tBoundaryCondition
+  | tPoint
+  | tDate
+  | tObjectiveVariation
+  | tIterativeProcess
+  | tTimeStep
+;
+
+
+
+// GEOMETRY
+
+Geometry :
+;
+
+
+
+Dimension :
+    {
+/*
+      Geometry_t* geom = DataSet_GetGeometry(dataset) ;
+
+      if(!geom) {
+        geom = (Geometry_t*) malloc(sizeof(Geometry_t)) ;
+      }
+
+      DataSet_GetGeometry(dataset) = geom ;
+
+      Geometry_GetDimension(geom) = $3 ;
+
+      Message_Direct("Reading %s = %s\n","Dimension",$3) ;
+*/
+    }
+;
+
+Symmetry :
+;
+
+
+
+// MESH
+
+Mesh :
+;
+
+
+
+// MODEL
+
+Model :
+;
+
+
+
+// MATERIAL
+
+Material :
+;
+
+
+
+// FIELD
+
+Field :
+;
+
+
+
+// INITIALIZATION
+
+Initialization :
+;
+
+
+
+// FUNCTION
+Function :
+;
+
+
+
+// BOUNDARY CONDITION
+
+BoundaryCondition :
+;
+
+
+
+// LOAD
+
+Load :
+;
+
+
+
+// PERIODICITY
+
+Periodicity :
+;
+
+
+
+// POINT
+
+Point :
+;
+
+
+
+// DATE
+
+Date :
+;
+
+
+
+// OBJECTIVE VARIATION
+
+ObjectiveVariation :
+;
+
+
+
+// ITERATIVE PROCESS
+
+IterativeProcess :
+;
+
+
+
+// TIME STEP
+
+TimeStep :
+;
+
+
+
+
+//  A F F E C T A T I O N
+
+Affectation :
+    tAFFECT
+;
+
+
+
+
+
+
+
+
+
+
+
+
+%%
+
+/*
+int PrintListOfDouble(char *format, List_T *list, char *buffer)
+{
+  int j, k;
+  char tmp1[256], tmp2[256];
+
+  j = 0;
+  buffer[j] = '\0';
+
+  while(j < (int)strlen(format) && format[j] != '%') j++;
+  strncpy(buffer, format, j); 
+  buffer[j]='\0'; 
+  for(int i = 0; i < List_Nbr(list); i++){
+    k = j;
+    j++;
+    if(j < (int)strlen(format)){
+      if(format[j] == '%'){
+	strcat(buffer, "%");
+	j++;
+      }
+      while(j < (int)strlen(format) && format[j] != '%') j++;
+      if(k != j){
+	strncpy(tmp1, &(format[k]), j-k);
+	tmp1[j-k] = '\0';
+	sprintf(tmp2, tmp1, *(double*)List_Pointer(list, i)); 
+	strcat(buffer, tmp2);
+      }
+    }
+    else
+      return List_Nbr(list)-i;
+  }
+  if(j != (int)strlen(format))
+    return -1;
+  return 0;
+}
+
+
+
+fullMatrix<double> ListOfListOfDouble2Matrix(List_T *list)
+{
+  int M = List_Nbr(list);
+  int N = 0;
+  for(int i = 0; i < M; i++){
+    List_T *line = *(List_T**)List_Pointer_Fast(list, i);
+    N = std::max(N, List_Nbr(line));
+  }
+  fullMatrix<double> mat(M, N);
+  for(int i = 0; i < M; i++){
+    List_T *line = *(List_T**)List_Pointer_Fast(list, i);
+    for(int j = 0; j < List_Nbr(line); j++){
+      double val;
+      List_Read(line, j, &val);
+      mat(i, j) = val;
+    }
+  }
+  for(int i = 0; i < List_Nbr(list); i++)
+    List_Delete(*(List_T**)List_Pointer(list, i));
+  List_Delete(list);
+  return mat;
+}
+*/
+
+
+void yyerror(DataSet_t* dataset,const char* s)
+{
+  Message_FatalError("'%s', line %d : %s (%s)", Parser_yyname, Parser_yylineno - 1,s, Parser_yytext);
+  Parser_yyerrorstate++;
+}
+
+
+
+void yymsg(int level, const char* fmt, ...)
+{
+  va_list args;
+  char tmp[1024];
+
+  va_start(args, fmt);
+  vsprintf(tmp, fmt, args);
+  va_end(args);
+
+  if(level == 0){
+    Message_FatalError("'%s', line %d : %s", Parser_yyname, Parser_yylineno - 1, tmp);
+    Parser_yyerrorstate++;
+  }
+  else
+    Message_Warning("'%s', line %d : %s", Parser_yyname, Parser_yylineno - 1, tmp);
+}
+
+
+
+Parser_t* (Parser_Create)(void)
+{
+  Parser_t* parser = (Parser_t*) malloc(sizeof(Parser_t)) ;
+  
+  assert(parser) ;
+  
+  return(parser) ;
+}
+
+
+
+void (Parser_Delete)(void* self)
+{
+  Parser_t** pparser = (Parser_t**) self ;
+  Parser_t*  parser  = *pparser ;
+  
+  free(parser) ;
+  *pparser = NULL ;
+}
+
+
+
+int Parser_ParseFile(DataSet_t* dataset)
+{
+  DataFile_t* datafile = DataSet_GetDataFile(dataset) ;
+  // add 'b' for pure Windows programs: opening in text mode messes up
+  // fsetpos/fgetpos (used e.g. for user-defined functions)
+
+  Parser_yyname       = DataFile_GetFileName(datafile);
+  Parser_yyin         = DataFile_OpenFile(datafile,"rb");
+  Parser_yyerrorstate = 0;
+  Parser_yylineno     = 1;
+  Parser_yyviewindex  = 0;
+
+  while(!feof(Parser_yyin)) {
+    //Parser_yyparse(dataset);
+    Parser_yylex();
+    
+    if(Parser_yyerrorstate > 20){
+      Message_FatalError("Too many errors: aborting...");
+      Parser_yyflush();
+      break;
+    }
+  }
+
+  fclose(Parser_yyin);
+
+  return 1;
+}
+

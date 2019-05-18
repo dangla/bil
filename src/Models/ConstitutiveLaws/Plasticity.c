@@ -9,19 +9,17 @@
 #include "Tools/Math.h"
 #include "Plasticity.h"
 
-typedef double    (Plasticity_Criterion_t)(Plasticity_t*,const double*,const double) ;
-
 
 /* Drucker-Prager */
-static int    pmDruckerPrager(const char* s) ;
-static double Plasticity_CriterionDruckerPrager(Plasticity_t*,const double*,const double,const double,const double,const double,const double,const double) ;
-static double Plasticity_ReturnMappingDruckerPrager(Plasticity_t*,double*,double*,double*,const double,const double,const double,const double,const double) ;
+static Plasticity_ComputeFunctionGradients_t    Plasticity_ComputeFunctionGradientsDruckerPrager ;
+static Plasticity_ReturnMapping_t               Plasticity_ReturnMappingDruckerPrager ;
 
 
 /* Cam-Clay */
-static int    pmCamClay(const char* s) ;
-static double Plasticity_CriterionCamClay(Plasticity_t*,const double*,const double,const double,const double,const double,const double) ;
-static double Plasticity_ReturnMappingCamClay(Plasticity_t*,double*,double*,double*,const double,const double,const double,const double,const double) ;
+static Plasticity_ComputeFunctionGradients_t    Plasticity_ComputeFunctionGradientsCamClay ;
+static Plasticity_ReturnMapping_t               Plasticity_ReturnMappingCamClay ;
+static Plasticity_ComputeFunctionGradients_t    Plasticity_ComputeFunctionGradientsCamClayEp ;
+static Plasticity_ReturnMapping_t               Plasticity_ReturnMappingCamClayEp ;
 
 
 
@@ -105,6 +103,16 @@ Plasticity_t*  (Plasticity_Create)(void)
   /* Elasticity */
   Plasticity_GetElasticity(plasty) = Elasticity_Create() ;
   
+  /* Allocation of space for the parameters */
+  {
+    size_t sz = Plasticity_MaxNbOfParameters*sizeof(double) ;
+    double* c = (double*) malloc(sz) ;
+    
+    assert(c) ;
+    
+    Plasticity_GetParameter(plasty) = c ;
+  }
+  
   return(plasty) ;
 }
 
@@ -156,44 +164,55 @@ void  (Plasticity_Delete)(void* self)
     Elasticity_Delete(&elasty) ;
   }
   
+  {
+    double* c = Plasticity_GetParameter(plasty) ;
+    free(c) ;
+  }
+  
   free(*pplasty) ;
   *pplasty = NULL ;
 }
 
 
 
-
-
-
-
-int pmDruckerPrager(const char* s)
+void Plasticity_SetParameters(Plasticity_t* plasty,...)
 {
-       if(!strcmp(s,"cohesion"))     return (0) ;
-  else if(!strcmp(s,"friction"))     return (1) ;
-  else if(!strcmp(s,"dilatancy"))    return (2) ;
-  else if(!strcmp(s,"alpha"))        return (4) ;
-  else if(!strcmp(s,"gamma_R"))      return (5) ;
-  else return(-1) ;
+  va_list args ;
+  
+  va_start(args,plasty) ;
+  
+  if(Plasticity_IsDruckerPrager(plasty)) {
+    Plasticity_GetFrictionAngle(plasty)            = va_arg(args,double) ;
+    Plasticity_GetDilatancyAngle(plasty)           = va_arg(args,double) ;
+    Plasticity_GetCohesion(plasty)                 = va_arg(args,double) ;
+    Plasticity_GetComputeFunctionGradients(plasty) = Plasticity_ComputeFunctionGradientsDruckerPrager ;
+    Plasticity_GetReturnMapping(plasty)            = Plasticity_ReturnMappingDruckerPrager ;
+    
+  } else if(Plasticity_IsCamClay(plasty)) {
+    Plasticity_GetSlopeSwellingLine(plasty)               = va_arg(args,double) ;
+    Plasticity_GetSlopeVirginConsolidationLine(plasty)    = va_arg(args,double) ;
+    Plasticity_GetSlopeCriticalStateLine(plasty)          = va_arg(args,double) ;
+    Plasticity_GetInitialPreconsolidationPressure(plasty) = va_arg(args,double) ;
+    Plasticity_GetInitialVoidRatio(plasty)                = va_arg(args,double) ;
+    Plasticity_GetComputeFunctionGradients(plasty) = Plasticity_ComputeFunctionGradientsCamClay ;
+    Plasticity_GetReturnMapping(plasty)            = Plasticity_ReturnMappingCamClay ;
+    
+  } else if(Plasticity_IsCamClayEp(plasty)) {
+    Plasticity_GetSlopeSwellingLine(plasty)               = va_arg(args,double) ;
+    Plasticity_GetSlopeVirginConsolidationLine(plasty)    = va_arg(args,double) ;
+    Plasticity_GetSlopeCriticalStateLine(plasty)          = va_arg(args,double) ;
+    Plasticity_GetInitialPreconsolidationPressure(plasty) = va_arg(args,double) ;
+    Plasticity_GetInitialVoidRatio(plasty)                = va_arg(args,double) ;
+    Plasticity_GetComputeFunctionGradients(plasty) = Plasticity_ComputeFunctionGradientsCamClayEp ;
+    Plasticity_GetReturnMapping(plasty)            = Plasticity_ReturnMappingCamClayEp ;
+    
+  } else {
+    Message_RuntimeError("Not known") ;
+  }
+  
+
+  va_end(args) ;
 }
-
-
-
-
-
-
-
-int pmCamClay(const char* s)
-{
-       if(!strcmp(s,"kappa"))        return (0) ;
-  else if(!strcmp(s,"lambda"))       return (1) ;
-  else if(!strcmp(s,"dilatancy"))    return (2) ;
-  else if(!strcmp(s,"M"))            return (4) ;
-  else if(!strcmp(s,"phi"))          return (5) ;
-  else return(-1) ;
-}
-
-
-
 
 
 
@@ -268,35 +287,61 @@ void (Plasticity_ScanProperties)(Plasticity_t* plasty,DataFile_t* datafile,int (
 
 
 
+void Plasticity_CopyElasticTensor(Plasticity_t* plasty,double* c)
+/** Copy the 4th rank elastic tensor in c. */
+{
+  Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+  double* cel = Elasticity_GetStiffnessTensor(elasty) ;
+  
+  /* Elastic stiffness tensor */
+  {
+      int i ;
+        
+      for(i = 0 ; i < 81 ; i++) {
+        c[i] = cel[i] ;
+      }
+  }
+}
+
+
+
+
+
+
+
+
 double Plasticity_UpdateElastoplasticTensor(Plasticity_t* plasty,double* c)
 /** Update the 4th rank elastoplastic tensor in c.
- *  Inputs are: 
+ *  On input c should point to the elastic stiffness tensor. 
+ *  On output c is updated to the tangent elastoplastic stiffness tensor.
+ *  Other inputs, included in plasty, are: 
  *  dfsds is the yield function gradient
  *  dgsds is the potential function gradient
  *  hm    is the hardening modulus
- *  Outputs are:
+ *  Other outputs, saved in plasty, are:
  *  fc(k,l) = dfsds(j,i) * C^el(i,j,k,l)
  *  cg(i,j) = C^el(i,j,k,l) * dgsds(l,k)
- *  fcg = hm + dfsds(j,i) * C^el(i,j,k,l) * dgsds(l,k))
+ *  fcg     = dfsds(j,i) * C^el(i,j,k,l) * dgsds(l,k)
  *  Tensor c is then updated as 
- *  C(i,j,k,l) = C^el(i,j,k,l) + cg(i,j) * fc(k,l) / fcg
- *  Return the inverse of fcg: 1/fcg */
+ *  C(i,j,k,l) = C^el(i,j,k,l) + cg(i,j) * fc(k,l) / det
+ *  with det = hm + dfsds(j,i) * C^el(i,j,k,l) * dgsds(l,k)
+ *  Return the inverse of det: 1/det */
 {
 #define CEP(i,j)  ((c)[(i)*9+(j)])
-#define CEL(i,j)  ((cel)[(i)*9+(j)])
-  Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
-  double* cel    = Elasticity_GetStiffnessTensor(elasty) ;
+#define CEL(i,j)  ((c)[(i)*9+(j)])
+//#define CEL(i,j)  ((cel)[(i)*9+(j)])
+  //Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+  //double* cel    = Elasticity_GetStiffnessTensor(elasty) ;
   double* dfsds  = Plasticity_GetYieldFunctionGradient(plasty) ;
   double* dgsds  = Plasticity_GetPotentialFunctionGradient(plasty) ;
   double* hm     = Plasticity_GetHardeningModulus(plasty) ;
-  double  fcg    = hm[0] ;
-  //double* fc     = Plasticity_GetFjiCijkl(plasty) ;
-  //double* cg     = Plasticity_GetCijklGlk(plasty) ;
+  double* fc     = Plasticity_GetFjiCijkl(plasty) ;
+  double* cg     = Plasticity_GetCijklGlk(plasty) ;
+  double  fcg    = 0 ;
+  double  det ;
   
-  /* Tangent elastoplastic tensor */
+  /* Tangent elastoplastic stiffness tensor */
   {
-      double  fc[9] ;
-      double  cg[9] ;
       int i ;
         
       for(i = 0 ; i < 9 ; i++) {
@@ -313,22 +358,26 @@ double Plasticity_UpdateElastoplasticTensor(Plasticity_t* plasty,double* c)
         }
       }
         
-      if(fcg > 0.) {
-        fcg = 1./fcg ;
+      Plasticity_GetFjiCijklGlk(plasty) = fcg ;
+      
+      det = hm[0] + fcg ;
+        
+      if(det > 0.) {
+        det = 1./det ;
       } else {
             
         printf("\n") ;
-        printf("dfsds = ") ;
+        printf("dF = ") ;
         for(i = 0 ; i < 9 ; i++) {
           printf(" %e",dfsds[i]) ;
         }
         printf("\n") ;
-        printf("dgsds = ") ;
+        printf("dG = ") ;
         for(i = 0 ; i < 9 ; i++) {
           printf(" %e",dgsds[i]) ;
         }
         printf("\n") ;
-        printf("fcg = %e\n",fcg) ;
+        printf("hm + dF(j,i) * C(i,j,k,l) * dG(l,k) = %e\n",det) ;
         printf("\n") ;
         
         arret("Plasticity_UpdateElastoplasticTensor") ;
@@ -339,18 +388,86 @@ double Plasticity_UpdateElastoplasticTensor(Plasticity_t* plasty,double* c)
         int j ;
           
         for(j = 0 ; j < 9 ; j++) {
-          CEP(i,j) = CEL(i,j) - cg[i]*fc[j]*fcg ;
+          CEP(i,j) = CEL(i,j) - cg[i]*fc[j]*det ;
         }
       }
   }
   
-  return(fcg) ;
+  return(det) ;
 #undef CEP
 }
 
 
 
-double Plasticity_CriterionDruckerPrager(Plasticity_t* plasty,const double* sig,const double gam_p,const double young,const double poisson,const double af,const double ad,const double cohesion)
+
+void Plasticity_PrintTangentStiffnessTensor(Plasticity_t* plasty)
+/** Print the 4th rank tangent elastoplastic tensor.
+ **/
+{
+  double* c = Plasticity_GetTangentStiffnessTensor(plasty) ;
+  
+  printf("\n") ;
+  printf("4th rank elastoplastic tensor:\n") ;
+  
+  {
+    int i ;
+    
+    for(i = 0 ; i < 9 ; i++) {
+      int j = i - (i/3)*3 ;
+        
+      printf("C%d%d--:",i/3 + 1,j + 1) ;
+        
+      for (j = 0 ; j < 9 ; j++) {
+        printf(" % e",c[i*9 + j]) ;
+      }
+        
+      printf("\n") ;
+    }
+  }
+}
+
+
+
+
+
+/*
+double Plasticity_ComputeFunctionGradients(Plasticity_t* plasty,const double* stress,const double* hardv)
+{
+  
+  if(Plasticity_IsDruckerPrager(plasty)) {
+    return(Plasticity_ComputeFunctionGradientsDruckerPrager(plasty,stress,hardv)) ;
+  } else if(Plasticity_IsCamClay(plasty)) {
+    return(Plasticity_ComputeFunctionGradientsCamClay(plasty,stress,hardv)) ;
+  } else {
+    Message_RuntimeError("Not known") ;
+  }
+  
+  return(0) ;
+}
+
+
+
+double Plasticity_ReturnMapping(Plasticity_t* plasty,double* stress,double* strain_p,double* hardv)
+{
+  
+  if(Plasticity_IsDruckerPrager(plasty)) {
+    return(Plasticity_ReturnMappingDruckerPrager(plasty,stress,strain_p,hardv)) ;
+  } else if(Plasticity_IsCamClay(plasty)) {
+    return(Plasticity_ReturnMappingCamClay(plasty,stress,strain_p,hardv)) ;
+  } else {
+    Message_RuntimeError("Not known") ;
+  }
+  
+  return(0) ;
+}
+*/
+
+
+
+
+
+/* Local functions */
+double Plasticity_ComputeFunctionGradientsDruckerPrager(Plasticity_t* plasty,const double* sig,const double* hardv)
 /** Drucker-Prager criterion. 
  *  Inputs are: 
  *  the stresses (sig), the cumulative plastic shear strain (gam_p). 
@@ -362,12 +479,19 @@ double Plasticity_CriterionDruckerPrager(Plasticity_t* plasty,const double* sig,
  *  hm    = hardening modulus
  *  Return the value of the yield function. */
 {
+  Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+  double young   = Elasticity_GetYoungModulus(elasty) ;
+  double poisson = Elasticity_GetPoissonRatio(elasty) ;
   double* dfsds  = Plasticity_GetYieldFunctionGradient(plasty) ;
   double* dgsds  = Plasticity_GetPotentialFunctionGradient(plasty) ;
   double* hm     = Plasticity_GetHardeningModulus(plasty) ;
+  double af      = Plasticity_GetFrictionAngle(plasty) ;
+  double ad      = Plasticity_GetDilatancyAngle(plasty) ;
+  double cohesion = Plasticity_GetCohesion(plasty) ;
   double ff      = 6.*sin(af)/(3. - sin(af)) ;
   double dd      = 6.*sin(ad)/(3. - sin(ad)) ;
   double cc0     = 6.*cos(af)/(3. - sin(af))*cohesion ;
+  //double gam_p   = hardv[0] ;
   
   double id[9] = {1,0,0,0,1,0,0,0,1} ;
   double p,q,dev[9] ;
@@ -389,7 +513,7 @@ double Plasticity_CriterionDruckerPrager(Plasticity_t* plasty,const double* sig,
     Yield function
   */ 
   p    = (sig[0] + sig[4] + sig[8])/3. ;
-  q    = sqrt(3*j2(sig)) ;
+  q    = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(sig)) ;
   crit = q + ff*p - cc ;
   
   /*
@@ -473,7 +597,7 @@ double Plasticity_CriterionDruckerPrager(Plasticity_t* plasty,const double* sig,
   /*
   if(gam_p < gam_R) {
     *hm = -2.*(1.-alpha)/gam_R*(1.-(1.-alpha)*gam_p/gam_R)*cc0 ;
-    *hm *= sqrt(2*j2(dgsds)) ;
+    *hm *= sqrt(2*Math_ComputeSecondDeviatoricStressInvariant(dgsds)) ;
   }
   */
   
@@ -483,7 +607,7 @@ double Plasticity_CriterionDruckerPrager(Plasticity_t* plasty,const double* sig,
 
 
 
-double Plasticity_ReturnMappingDruckerPrager(Plasticity_t* plasty,double* sig,double* eps_p,double* gam_p,const double young,const double poisson,const double af,const double ad,const double cohesion)
+double Plasticity_ReturnMappingDruckerPrager(Plasticity_t* plasty,double* sig,double* eps_p,double* gam_p)
 /** Drucker-Prager return mapping.
  *  Parameters are:
  *  the Young modulus (young),
@@ -497,9 +621,15 @@ double Plasticity_ReturnMappingDruckerPrager(Plasticity_t* plasty,double* sig,do
  *  the cumulative plastic shear strain (gam_p).
  *  Return the value of the yield function. */
 {
+  Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+  double young   = Elasticity_GetYoungModulus(elasty) ;
+  double poisson = Elasticity_GetPoissonRatio(elasty) ;
   double dmu     = young/(1.+poisson) ;
   double mu      = dmu/2. ;
   double k       = young/(1. - 2.*poisson)/3. ;
+  double af      = Plasticity_GetFrictionAngle(plasty) ;
+  double ad      = Plasticity_GetDilatancyAngle(plasty) ;
+  double cohesion = Plasticity_GetCohesion(plasty) ;
   double ff      = 6.*sin(af)/(3. - sin(af)) ;
   double dd      = 6.*sin(ad)/(3. - sin(ad)) ;
   double cc0     = 6.*cos(af)/(3. - sin(af))*cohesion ;
@@ -512,7 +642,7 @@ double Plasticity_ReturnMappingDruckerPrager(Plasticity_t* plasty,double* sig,do
     Trial stresses
   */ 
   p_t  = (sig[0] + sig[4] + sig[8])/3. ;
-  q_t  = sqrt(3*j2(sig)) ;
+  q_t  = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(sig)) ;
   {
     int    i ;
     
@@ -564,7 +694,7 @@ double Plasticity_ReturnMappingDruckerPrager(Plasticity_t* plasty,double* sig,do
 	      }
         
 	      /* Cumulative plastic shear strain */
-	      gam_p1 = gam_pn + sqrt(2*j2(deps_p)) ;
+	      gam_p1 = gam_pn + sqrt(2*Math_ComputeSecondDeviatoricStressInvariant(deps_p)) ;
         
 	      /* p, q, cc */
 	      //c1 = (gam_p1 < gam_R) ? 1 - (1 - alpha)*gam_p1/gam_R : alpha ;
@@ -580,7 +710,7 @@ double Plasticity_ReturnMappingDruckerPrager(Plasticity_t* plasty,double* sig,do
         /*
 	      if(gam_p1 < gam_R) {
 	        dccsdl = -2*(1 - alpha)/gam_R*c1*cc0 ;
-	        dccsdl *= 1.5*sqrt(2*j2(sdev_t))/q_t ;
+	        dccsdl *= 1.5*sqrt(2*Math_ComputeSecondDeviatoricStressInvariant(sdev_t))/q_t ;
 	      }
         */
         
@@ -621,7 +751,7 @@ double Plasticity_ReturnMappingDruckerPrager(Plasticity_t* plasty,double* sig,do
       for(i = 0 ; i < 9 ; i++) deps_p[i]  = sdev_t[i]/dmu ;
         
       /* Cumulative plastic shear strain */
-      gam_p1 = gam_pn + sqrt(2*j2(deps_p)) ;
+      gam_p1 = gam_pn + sqrt(2*Math_ComputeSecondDeviatoricStressInvariant(deps_p)) ;
       
       /* p, q, cc */
       //c1 = (gam_p1 < gam_R) ? 1 - (1 - alpha)*gam_p1/gam_R : alpha ;
@@ -659,13 +789,21 @@ double Plasticity_ReturnMappingDruckerPrager(Plasticity_t* plasty,double* sig,do
 
 
 
-double Plasticity_CriterionCamClay(Plasticity_t* plasty,const double* sig,const double pc,const double m,const double kappa,const double lambda,const double phi0)
+double Plasticity_ComputeFunctionGradientsCamClayEp(Plasticity_t* plasty,const double* sig,const double* hardv)
 /** Cam-Clay criterion */
 {
+  double m       = Plasticity_GetSlopeCriticalStateLine(plasty) ;
+  double kappa   = Plasticity_GetSlopeSwellingLine(plasty) ;
+  double lambda  = Plasticity_GetSlopeVirginConsolidationLine(plasty) ;
+  double e0      = Plasticity_GetInitialVoidRatio(plasty) ;
+  double pc0     = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
   double* dfsds  = Plasticity_GetYieldFunctionGradient(plasty) ;
   double* dgsds  = Plasticity_GetPotentialFunctionGradient(plasty) ;
   double* hm     = Plasticity_GetHardeningModulus(plasty) ;
   double m2      = m*m ;
+  double v       = 1./(lambda - kappa) ;
+  double e_p     = hardv[0] ;
+  double pc      = pc0 * exp(-v*e_p) ;
   
   double id[9] = {1,0,0,0,1,0,0,0,1} ;
   double p,q,crit ;
@@ -674,11 +812,222 @@ double Plasticity_CriterionCamClay(Plasticity_t* plasty,const double* sig,const 
      The yield criterion
   */
   p    = (sig[0] + sig[4] + sig[8])/3. ;
-  q    = sqrt(3*j2(sig)) ;
+  q    = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(sig)) ;
   crit = q*q/m2 + p*(p + pc) ;
   
   /*
     Gradients
+    ---------
+    dp/dsig_ij = 1/3 delta_ij
+    dq/dsig_ij = 3/2 dev_ij/q 
+    df/dsig_ij = 1/3 (df/dp) delta_ij + 3/2 (df/dq) dev_ij/q 
+    df/dp      = 2*p + pc
+    df/dq      = 2*q/m2
+    
+    df/dsig_ij = 1/3 (2*p + pc) delta_ij + (3/m2) dev_ij 
+  */
+  {
+    int    i ;
+    
+    for(i = 0 ; i < 9 ; i++) {
+      double dev = sig[i] - p*id[i] ;
+    
+      dfsds[i] = (2*p + pc)*id[i]/3. + 3./m2*dev ;
+      dgsds[i] = dfsds[i] ;
+    }
+  }
+  
+  /* The hardening modulus */
+  {
+    //double v = 1./(lambda - kappa) ;
+    
+    *hm = (1 + e0)*v*p*(2*p + pc)*pc ;
+  }
+  return(crit) ;
+}
+
+
+
+double Plasticity_ReturnMappingCamClayEp(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
+/** Cam-Clay return mapping. Inputs are: 
+ *  the slope of the swelling line (kappa),
+ *  the slope of the virgin consolidation line (lambda),
+ *  the shear modulus (mu),
+ *  the slope of the critical state line (m),
+ *  the initial pre-consolidation pressure (pc),
+ *  the initial void ratio (e0).
+ *  On outputs, the following values are modified:
+ *  the stresses (sig), 
+ *  the plastic strains (eps_p), 
+ *  the plastic void ratio (e_p = hardv[0]).
+ *  Return the value of the yield function. 
+ *  Algorithm from Borja & Lee 1990 modified by Dangla. */
+{
+  Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+  double young   = Elasticity_GetYoungModulus(elasty) ;
+  double poisson = Elasticity_GetPoissonRatio(elasty) ;
+  double dmu     = young/(1.+poisson) ;
+  double mu      = 0.5*dmu ;
+  double m       = Plasticity_GetSlopeCriticalStateLine(plasty) ;
+  double kappa   = Plasticity_GetSlopeSwellingLine(plasty) ;
+  double lambda  = Plasticity_GetSlopeVirginConsolidationLine(plasty) ;
+  double e0      = Plasticity_GetInitialVoidRatio(plasty) ;
+  double pc0     = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
+  double phi0    = e0/(1 + e0) ;
+  double m2      = m*m ;
+  double v       = 1./(lambda - kappa) ;
+  double e_p     = hardv[0] ;
+  double pc      = pc0 * exp(-v*e_p) ;
+  
+  double id[9] = {1,0,0,0,1,0,0,0,1} ;
+  double p,q ;
+  double p_t,q_t ;
+  double crit ;
+  double dl ;
+  
+  /* 
+     The criterion
+  */
+  p    = (sig[0] + sig[4] + sig[8])/3. ;
+  q    = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(sig)) ;
+  crit = q*q/m2 + p*(p + pc) ;
+  
+  /*
+     Closest point projection algorithm.
+   * Only one iterative loop is used to solve
+                    q*q/m2 + p*(p + pc) = 0
+     for p. The other variables (pc,q,dl) are expressed with p.
+   */
+  dl    = 0. ;
+  p_t   = p ;
+  q_t   = q ;
+  
+  if(crit > 0.) {
+    double pc_n  = pc ;
+    double fcrit = crit ;
+    int nf    = 0 ;
+    double tol = 1.e-8 ;
+    
+    while(fabs(fcrit) > tol*pc_n*pc_n) {
+      /*
+       * Flow rule
+       * ---------
+       * df/dp      = 2*p + pc
+       * df/dq      = (2/m2) q
+       * dp/dsig_ij = 1/3 delta_ij
+       * dq/dsig_ij = 3/2 dev_ij/q
+       * df/dsig_ij = 1/3 (2*p + pc) delta_ij + (3/m2) dev_ij 
+       * deps_p     = dl (2*p + pc)
+       * deij_p     = dl (3/m2) dev_ij
+       */
+      double dfsdp  = 2*p + pc ;
+      double dfsdq  = 2*q/m2 ;
+      double dfsdpc = p ;
+      double dpcsdp = -v*kappa*pc/p ;
+      double ddlsdp = ((1 - phi0)*kappa/p - dl*(2+dpcsdp))/dfsdp ;
+      double dqsdp  = -q*6*mu/(m2 + 6*mu*dl)*ddlsdp ;
+      double df     = dfsdp + dfsdq*dqsdp + dfsdpc*dpcsdp ;
+      
+      p     -= fcrit/df ;
+      
+      /* Variables (pc,dl,q) are explicit in p */
+      /* Plastic multiplier (dl):
+       * ------------------------
+       * deps_e = - (1-phi0) kappa ln(p/p_n) ; 
+       * deps   = - (1-phi0) kappa ln(p_t/p_n) ; 
+       * deps_p = - (1-phi0) kappa ln(p_t/p) = dl (2*p + pc)
+       * Hence 
+       * dl = (1-phi0) kappa ln(p/p_t) / (2*p + pc)
+       * Pre-consolidation pressure (pc):
+       * --------------------------------
+       * deps_p = - (1-phi0) kappa ln(p_t/p) = - (1-phi0) (lambda - kappa) ln(pc/pc_n)
+       * Hence 
+       * ln(pc/pc_n) = - v kappa ln(p/p_t)
+       * Deviatoric behavior (q):
+       * ------------------------
+       * dev_ij = dev_ij_t - 2 mu deij_p = dev_ij_t - 6 mu / m2 dl dev_ij
+       * Hence 
+       * dev_ij = dev_ij_t / (1 + 6 mu / m2 dl)
+       * q      = q_t / (1 + 6 mu / m2 dl)
+       */
+       
+      pc     = pc_n*pow(p/p_t,-v*kappa) ;
+      dl     = (1 - phi0)*kappa*log(p/p_t)/(2*p + pc) ;
+      q      = q_t*m2/(m2 + 6*mu*dl) ;
+      fcrit  = q*q/m2 + p*(p + pc) ;
+      
+      if(nf++ > 20) {
+	      printf("no convergence (ReturnMapping_CamClay)") ;
+	      exit(0) ;
+      }
+    }
+  }
+  
+  /*
+    Stresses and plastic strains
+  */
+  
+  {
+    double a = 1./(1 + 6*mu/m2*dl) ;
+    int    i ;
+    
+    for(i = 0 ; i < 9 ; i++) {
+      double dev      = a*(sig[i] - p_t*id[i]) ;
+      double dfsds    = (2*p + pc)*id[i]/3. + 3./m2*dev ;
+    
+      sig[i]    = p*id[i] + dev ;
+      eps_p[i] += dl*dfsds ;
+    }
+  }
+  
+  /* Hardening variable */
+  {
+    double de_p = (1 + e0) * dl * (2*p + pc) ;
+    
+    hardv[0] += de_p ;
+  }
+  
+  return(crit) ;
+}
+
+
+
+
+
+double Plasticity_ComputeFunctionGradientsCamClay(Plasticity_t* plasty,const double* sig,const double* p_co)
+/** Cam-Clay criterion */
+{
+  double m       = Plasticity_GetSlopeCriticalStateLine(plasty) ;
+  double kappa   = Plasticity_GetSlopeSwellingLine(plasty) ;
+  double lambda  = Plasticity_GetSlopeVirginConsolidationLine(plasty) ;
+  double e0      = Plasticity_GetInitialVoidRatio(plasty) ;
+  //double pc0     = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
+  double* dfsds  = Plasticity_GetYieldFunctionGradient(plasty) ;
+  double* dgsds  = Plasticity_GetPotentialFunctionGradient(plasty) ;
+  double* hm     = Plasticity_GetHardeningModulus(plasty) ;
+  double m2      = m*m ;
+  double pc      = p_co[0] ;
+  
+  double id[9] = {1,0,0,0,1,0,0,0,1} ;
+  double p,q,crit ;
+  
+  /* 
+     The yield criterion
+  */
+  p    = (sig[0] + sig[4] + sig[8])/3. ;
+  q    = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(sig)) ;
+  crit = q*q/m2 + p*(p + pc) ;
+  
+  /*
+    Gradients
+    ---------
+    dp/dsig_ij = 1/3 delta_ij
+    dq/dsig_ij = 3/2 dev_ij/q 
+    df/dsig_ij = 1/3 (df/dp) delta_ij + 3/2 (df/dq) dev_ij/q 
+    df/dp      = 2*p + pc
+    df/dq      = 2*q/m2
+    
+    df/dsig_ij = 1/3 (2*p + pc) delta_ij + (3/m2) dev_ij 
   */
   {
     int    i ;
@@ -695,28 +1044,39 @@ double Plasticity_CriterionCamClay(Plasticity_t* plasty,const double* sig,const 
   {
     double v = 1./(lambda - kappa) ;
     
-    *hm = v/(1 - phi0)*p*(2*p + pc)*pc ;
+    *hm = (1 + e0)*v*p*(2*p + pc)*pc ;
   }
   return(crit) ;
 }
 
 
 
-double Plasticity_ReturnMappingCamClay(Plasticity_t* plasty,double* sig,double* eps_p,double* p_co,const double m,const double kappa,const double lambda,const double phi0,const double mu)
+double Plasticity_ReturnMappingCamClay(Plasticity_t* plasty,double* sig,double* eps_p,double* p_co)
 /** Cam-Clay return mapping. Inputs are: 
  *  the slope of the swelling line (kappa),
  *  the slope of the virgin consolidation line (lambda),
  *  the shear modulus (mu),
  *  the slope of the critical state line (M),
  *  the pre-consolidation pressure (p_co),
- *  the porosity or the void ratio (phi0,e0).
+ *  the initial void ratio (e0).
  *  On outputs, the following values are modified:
  *  the stresses (sig), 
  *  the plastic strains (eps_p), 
- *  the hardening variable (p_co).
+ *  the pre-consolidation pressure (p_co).
  *  Return the value of the yield function. 
  *  Algorithm from Borja & Lee 1990 modified by Dangla. */
 {
+  Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+  double young   = Elasticity_GetYoungModulus(elasty) ;
+  double poisson = Elasticity_GetPoissonRatio(elasty) ;
+  double dmu     = young/(1.+poisson) ;
+  double mu      = 0.5*dmu ;
+  double m       = Plasticity_GetSlopeCriticalStateLine(plasty) ;
+  double kappa   = Plasticity_GetSlopeSwellingLine(plasty) ;
+  double lambda  = Plasticity_GetSlopeVirginConsolidationLine(plasty) ;
+  double e0      = Plasticity_GetInitialVoidRatio(plasty) ;
+  //double pc0     = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
+  double phi0    = e0/(1 + e0) ;
   double m2      = m*m ;
   double v       = 1./(lambda - kappa) ;
   
@@ -728,7 +1088,7 @@ double Plasticity_ReturnMappingCamClay(Plasticity_t* plasty,double* sig,double* 
      The criterion
   */
   p    = (sig[0] + sig[4] + sig[8])/3. ;
-  q    = sqrt(3*j2(sig)) ;
+  q    = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(sig)) ;
   pc   = *p_co ;
   crit = q*q/m2 + p*(p + pc) ;
   
@@ -749,17 +1109,48 @@ double Plasticity_ReturnMappingCamClay(Plasticity_t* plasty,double* sig,double* 
     double tol = 1.e-8 ;
     
     while(fabs(fcrit) > tol*pc_n*pc_n) {
+      /*
+       * Flow rule
+       * ---------
+       * df/dp      = 2*p + pc
+       * df/dq      = (2/m2) q
+       * dp/dsig_ij = 1/3 delta_ij
+       * dq/dsig_ij = 3/2 dev_ij/q
+       * df/dsig_ij = 1/3 (2*p + pc) delta_ij + (3/m2) dev_ij 
+       * deps_p     = dl (2*p + pc)
+       * deij_p     = dl (3/m2) dev_ij
+       */
       double dfsdp  = 2*p + pc ;
       double dfsdq  = 2*q/m2 ;
       double dfsdpc = p ;
       double dpcsdp = -v*kappa*pc/p ;
-      double dlsdp  = ((1 - phi0)*kappa/p - dl*(2+dpcsdp))/dfsdp ;
-      double dqsdp  = -q*6*mu/(m2 + 6*mu*dl)*dlsdp ;
+      double ddlsdp = ((1 - phi0)*kappa/p - dl*(2+dpcsdp))/dfsdp ;
+      double dqsdp  = -q*6*mu/(m2 + 6*mu*dl)*ddlsdp ;
       double df     = dfsdp + dfsdq*dqsdp + dfsdpc*dpcsdp ;
       
       p     -= fcrit/df ;
       
       /* Variables (pc,dl,q) are explicit in p */
+      /* Plastic multiplier (dl):
+       * ------------------------
+       * deps_e = - (1-phi0) kappa ln(p/p_n) ; 
+       * deps   = - (1-phi0) kappa ln(p_t/p_n) ; 
+       * deps_p = - (1-phi0) kappa ln(p_t/p) = dl (2*p + pc)
+       * Hence 
+       * dl = (1-phi0) kappa ln(p/p_t) / (2*p + pc)
+       * Pre-consolidation pressure (pc):
+       * --------------------------------
+       * deps_p = - (1-phi0) kappa ln(p_t/p) = - (1-phi0) (lambda - kappa) ln(pc/pc_n)
+       * Hence 
+       * ln(pc/pc_n) = - v kappa ln(p/p_t)
+       * Deviatoric behavior (q):
+       * ------------------------
+       * dev_ij = dev_ij_t - 2 mu deij_p = dev_ij_t - 6 mu / m2 dl dev_ij
+       * Hence 
+       * dev_ij = dev_ij_t / (1 + 6 mu / m2 dl)
+       * q      = q_t / (1 + 6 mu / m2 dl)
+       */
+       
       pc     = pc_n*pow(p/p_t,-v*kappa) ;
       dl     = (1 - phi0)*kappa*log(p/p_t)/(2*p + pc) ;
       q      = q_t*m2/(m2 + 6*mu*dl) ;
@@ -773,7 +1164,7 @@ double Plasticity_ReturnMappingCamClay(Plasticity_t* plasty,double* sig,double* 
   }
   
   /*
-    Plastic stresses and strains
+    Stresses and plastic strains
   */
   
   {
@@ -784,8 +1175,8 @@ double Plasticity_ReturnMappingCamClay(Plasticity_t* plasty,double* sig,double* 
       double dev      = a*(sig[i] - p_t*id[i]) ;
       double dfsds    = (2*p + pc)*id[i]/3. + 3./m2*dev ;
     
-      sig[i]   = p*id[i] + dev ;
-      eps_p[i] = dl*dfsds ;
+      sig[i]    = p*id[i] + dev ;
+      eps_p[i] += dl*dfsds ;
     }
   }
   
@@ -793,6 +1184,3 @@ double Plasticity_ReturnMappingCamClay(Plasticity_t* plasty,double* sig,double* 
   *p_co = pc ;
   return(crit) ;
 }
-
-
-

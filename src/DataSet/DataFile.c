@@ -31,9 +31,7 @@ DataFile_t*  (DataFile_Create)(char* filename)
     size_t sz = n*sizeof(char) ;
     char* line = (char*) malloc(sz) ;
     
-    if(!line) {
-      assert(line) ;
-    }
+    assert(line) ;
     
     DataFile_GetTextLine(datafile) = line ;
     DataFile_GetMaxLengthOfTextLine(datafile) = n ;
@@ -187,36 +185,43 @@ char* (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t* datafile)
 }
 
 
-double* (DataFile_ReadDoublesFromCurrentFilePosition)(DataFile_t* datafile,double* v,int n)
+#if 0
+double* (DataFile_ReadDoublesFromCurrentFilePosition0)(DataFile_t* datafile,double* v,int n)
 /** Reads n doubles from the stream at the current position.
  *  Return the pointer to double. */
 {
-  FILE* str  = DataFile_GetFileStream(datafile) ;
+  //FILE* str  = DataFile_GetFileStream(datafile) ;
   int i ;
   
   for(i = 0 ; i < n ; i++) {
-    fscanf(str,"%le",v + i) ;
+    DataFile_ScanAdv(datafile,"%le",v + i) ;
+    //fscanf(str,"%le",v + i) ;
   }
   
   return(v) ;
 }
+#endif
 
 
+
+#if 0
 void* (DataFile_ReadDataFromCurrentFilePosition)(DataFile_t* datafile,void* v,int n,size_t sz,const char* fmt)
 /** Reads n data of size "sz" with the format "fmt" from the stream 
  *  at the current position. Return the pointer to data. */
 /** NOT YET CHECKED */
 {
-  FILE* str  = DataFile_GetFileStream(datafile) ;
+  //FILE* str  = DataFile_GetFileStream(datafile) ;
   char* c = (char*) v ;
   int i ;
   
   for(i = 0 ; i < n ; i++) {
-    fscanf(str,fmt,c + i*sz) ;
+    DataFile_ScanAdv(datafile,fmt,c + i*sz) ;
+    //fscanf(str,fmt,c + i*sz) ;
   }
   
   return(v) ;
 }
+#endif
 
 
 
@@ -225,7 +230,7 @@ void* (DataFile_ReadDataFromCurrentFilePosition)(DataFile_t* datafile,void* v,in
 
 
 
-#ifdef NOTDEFINED
+#if 0
 static long int     (DataFile_GetPosition)(char*,const char*) ;
 static long int     (DataFile_GetNthPosition)(char*,const char*,short int) ;
 

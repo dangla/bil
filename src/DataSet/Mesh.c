@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include <strings.h>
+#include <assert.h>
 #include "Elements.h"
 #include "Nodes.h"
 #include "Geometry.h"
@@ -28,7 +29,6 @@ extern void   mc43ad_(int*,int*,int*,int*,int*,int*,int*,int*,int*,int*,int*) ;
   }
 #endif
 
-static void   (Mesh_CreateEquationContinuity)(Mesh_t*) ;
 static int*   (Mesh_ReadInversePermutationOfNodes)(DataFile_t*,int) ;
 static int*   (Mesh_ComputeInversePermutationOfNodes)(Mesh_t*,const char*) ;
 static int*   (Mesh_ComputeInversePermutationOfElements)(Mesh_t*,const char*) ;
@@ -36,7 +36,8 @@ static Graph_t*  (Mesh_CreateGraph)(Mesh_t*) ;
 
 
 static void   mail0d(Mesh_t*) ;
-static void   mail1d(Mesh_t*,FILE*) ;
+static void   mail1dold(Mesh_t*,FILE*) ;
+static void   mail1d(Mesh_t*,char*) ;
 static void   maillage(double*,int*,double,int,Node_t*) ;
 static int    mesh1d(double*,double*,int,Node_t**) ;
 static void   lit_mail_m1d(Mesh_t*,const char*) ;
@@ -57,15 +58,16 @@ static int    gmsh_DimElement(int) ;
 /* Extern functions */
 
 
+
 Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geometry)
 {
-  int    dim = Geometry_GetDimension(geometry) ;
-  char   nom_mail[Mesh_MaxLengthOfFileName] ;
-  Mesh_t* mesh = (Mesh_t*) malloc(sizeof(Mesh_t)) ;
-  
-  if(!mesh) arret("Mesh_Create") ;
+  Mesh_t* mesh = Mesh_New() ;
   
   Mesh_GetGeometry(mesh) = geometry ;
+  
+  Mesh_GetElements(mesh) = Elements_New() ;
+  
+  Mesh_GetNodes(mesh) = Nodes_New() ;
   
   DataFile_OpenFile(datafile,"r") ;
   
@@ -76,60 +78,22 @@ Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geo
 
 
   {
-    char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
+    char* line = DataFile_GetCurrentPositionInFileContent(datafile) ;
+    //char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
 
-    /* Mesh file ? */
-    sscanf(line,"%s",nom_mail) ;
+    /* 1. Allocation memory for the mesh i.e. 
+     *    node, coordinates, element and node numbering
+     * ------------------------------------------------*/
+  
+    if(!Mesh_Scan(mesh,line)) {
+      Message_FatalError("Mesh_Create: No such file name") ;
+    }
   }
-
-
-  /* 1. Allocation memory for the mesh i.e. 
-   *    node, coordinates, element and node numbering
-   * ------------------------------------------------*/
   
-  Mesh_GetElements(mesh) = (Elements_t*) malloc(sizeof(Elements_t)) ;
-  if(!Mesh_GetElements(mesh)) arret("Mesh_Create(1)") ;
-  
-  Mesh_GetNodes(mesh) = (Nodes_t*) malloc(sizeof(Nodes_t)) ;
-  if(!Mesh_GetNodes(mesh)) arret("Mesh_Create(2)") ;
-  
-  
-  /* Treatment after filename extension */
-  if(strstr(nom_mail,".msh")) {
-    
-    lit_mail_gmsh(mesh,nom_mail) ;
-    
-  } else if(strstr(nom_mail,".m1d")) {
+  {
     char* filename = DataFile_GetFileName(datafile) ;
     
-    lit_mail_m1d(mesh,nom_mail) ;
-    ecrit_mail_msh_1(mesh,filename) ;
-    
-  } else if(strstr(nom_mail,".ces")) {
-    char* filename = DataFile_GetFileName(datafile) ;
-    
-    lit_mail_cesar(mesh,nom_mail) ;
     ecrit_mail_msh_2(mesh,filename) ;
-    
-  } else if(dim == 1) {
-    char* filename = DataFile_GetFileName(datafile) ;
-    FILE* ficd ;
-    
-    DataFile_MoveToStoredFilePosition(datafile) ;
-    
-    ficd = DataFile_GetFileStream(datafile) ;
-    
-    mail1d(mesh,ficd) ;
-    ecrit_mail_msh_1(mesh,filename) ;
-    
-  } else if(dim == 0) {
-    char* filename = DataFile_GetFileName(datafile) ;
-    
-    mail0d(mesh) ;
-    ecrit_mail_msh_1(mesh,filename) ;
-    
-  } else {
-    arret("Mesh_Create(3): file type not known") ;
   }
   
   DataFile_CloseFile(datafile) ;
@@ -150,6 +114,44 @@ Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geo
 
 
   return(mesh) ;
+}
+
+
+
+char*  Mesh_Scan(Mesh_t* mesh,char* line)
+{
+  char  nom_mail[Mesh_MaxLengthOfFileName] ;
+
+  /* Mesh file ? */
+  sscanf(line,"%s",nom_mail) ;
+  
+  /* Treatment after filename extension */
+  if(strstr(nom_mail,".msh")) {
+    
+    lit_mail_gmsh(mesh,nom_mail) ;
+    
+  } else if(strstr(nom_mail,".m1d")) {
+    
+    lit_mail_m1d(mesh,nom_mail) ;
+    
+  } else if(strstr(nom_mail,".ces")) {
+    
+    lit_mail_cesar(mesh,nom_mail) ;
+    
+  } else {
+    int dim = Mesh_GetDimension(mesh) ;
+    
+    if(dim == 0) {
+      mail0d(mesh) ;
+    } else if(dim == 1) {
+      /* Read directly in the data file */
+      mail1d(mesh,line) ;
+    } else {
+      return(NULL) ;
+    }
+  }
+  
+  return(line) ;
 }
 
 
@@ -1282,7 +1284,7 @@ void mail0d(Mesh_t* mesh)
   
   {
     Node_t** no = (Node_t**) malloc(sizeof(Node_t*)) ; /* pointeurs */
-    if(!no) arret("mail1d : impossible d\'allouer la memoire") ;
+    if(!no) arret("mail0d : impossible d\'allouer la memoire") ;
     
     Element_GetPointerToNode(EL) = no ;
   }
@@ -1293,7 +1295,7 @@ void mail0d(Mesh_t* mesh)
 
 
 
-void mail1d(Mesh_t* mesh,FILE *ficd)
+void mail1dold(Mesh_t* mesh,FILE *ficd)
 /* MAILLAGE 1D */
 {
   int    npt ;
@@ -1329,10 +1331,10 @@ void mail1d(Mesh_t* mesh,FILE *ficd)
 
   /* les noeuds */
   NO = (Node_t*) malloc(N_NO*sizeof(Node_t)) ;
-  if(NO == NULL) arret("mail1d(1) : impossible d\'allouer la memoire") ;
+  if(NO == NULL) arret("mail1dold(1) : impossible d\'allouer la memoire") ;
 
   x = (double*) malloc(N_NO*DIM*sizeof(double)) ;
-  if(x == NULL) arret("mail1d(2) : impossible d\'allouer la memoire") ;
+  if(x == NULL) arret("mail1dold(2) : impossible d\'allouer la memoire") ;
   
   for(i = 0 ; i < (int) N_NO ; i++) {
     Node_GetCoordinate(NO + i) = x + i*DIM ;
@@ -1406,6 +1408,130 @@ void mail1d(Mesh_t* mesh,FILE *ficd)
     }
   }
 }
+
+
+
+void mail1d(Mesh_t* mesh,char* str)
+/* MAILLAGE 1D */
+{
+  int    npt ;
+  double* pt ;
+  int    *ne,imat ;
+  double dx_ini ;
+  double* x ;
+  int    i,j,k ;
+
+  /* nombre de points */
+  str += String_Scan(str,"%d",&npt) ;
+
+  pt = (double*) malloc(npt*sizeof(double)) ;
+  if(pt == NULL) arret("mail1d (1) : impossible d\'allouer la memoire") ;
+
+  ne = (int*) malloc(npt*sizeof(int)) ;
+  if(ne == NULL) arret("mail1d (2) : impossible d\'allouer la memoire") ;
+
+  /* les points */
+  for(i = 0 ; i < npt ; i++) {
+    str += String_Scan(str,"%le",pt + i) ;
+  }
+  
+  /* longueur du premier element */
+  {
+    str += String_Scan(str,"%lf",&dx_ini) ;
+  }
+  
+  /* nombre d'elements de volume */
+  for(i = 0 ; i < npt - 1 ; i++) {
+    str += String_Scan(str,"%d",ne + i) ;
+  }
+
+  N_EL = 0 ;
+  for(i = 0 ; i < npt - 1 ; i++) N_EL += ne[i] ;
+
+  /* nombre de noeuds */
+  if(N_EL > 0) N_NO = N_EL + 1 ; else N_NO = 0 ;
+
+  /* les noeuds */
+  NO = (Node_t*) malloc(N_NO*sizeof(Node_t)) ;
+  if(NO == NULL) arret("mail1d(1) : impossible d\'allouer la memoire") ;
+
+  x = (double*) malloc(N_NO*DIM*sizeof(double)) ;
+  if(x == NULL) arret("mail1d(2) : impossible d\'allouer la memoire") ;
+  
+  for(i = 0 ; i < (int) N_NO ; i++) {
+    Node_GetCoordinate(NO + i) = x + i*DIM ;
+    Node_GetNodeIndex(NO + i) = i ;
+  }
+
+  maillage(pt,ne,dx_ini,npt,NO) ;
+
+  /* les elements */
+  EL = (Element_t*) malloc(N_EL*sizeof(Element_t)) ;
+  if(EL == NULL) {
+    fprintf(stderr,"impossible d\'allouer la memoire") ;
+    exit(EXIT_FAILURE) ;
+  }
+
+  /* Indexes */
+  for(i = 0 ; i < (int) N_EL ; i++) {
+    Element_GetElementIndex(EL + i) = i ;
+  }
+
+  for(k = 0 , i = 0 ; i < npt - 1 ; i++)  {
+    str += String_Scan(str,"%d",&imat) ;
+    
+    for(j = k ; j < k + ne[i] ; j++) {
+      Element_GetMaterialIndex(EL + j) = imat - 1 ;
+      Element_GetRegionIndex(EL + j) = i + 1 ;
+    }
+    k += ne[i] ;
+  }
+
+  free(pt) ;
+  free(ne) ;
+
+  for(i = 0 ; i < (int) N_EL ; i++) {
+    Element_GetNbOfNodes(EL + i) = 2 ;    /* nb de noeuds */
+    Element_GetDimension(EL + i) = 1 ;
+  }
+
+  for(j = 0 , i = 0 ; i < (int) N_EL ; i++) j += Element_GetNbOfNodes(EL + i) ;
+  
+  {
+    Node_t** no = (Node_t**) malloc(j*sizeof(Node_t*)) ; /* pointeurs */
+    if(!no) arret("mail1d : impossible d\'allouer la memoire") ;
+    
+    j = 0 ;
+    for(i = 0 ; i < (int) N_EL ; i++) {
+      Element_GetPointerToNode(EL + i) = no + j ;
+      j += Element_GetNbOfNodes(EL + i) ;
+    }
+  }
+
+  /* numerotation */
+  for(i = 0 ; i < (int) N_EL ; i++) {
+    for(j = 0 ; j < 2 ; j++) {
+      Element_GetNode(EL + i,j) = NO + i + j ;
+    }
+  }
+
+  /* cas d'elements de surface i=0 et i=n_el-1 */
+  if(N_EL > 0) {
+    if(Node_GetCoordinate(NO)[0] == Node_GetCoordinate(NO + 1)[0]) {
+      Element_GetNbOfNodes(EL) = 1 ;
+      Element_GetDimension(EL) = 0 ;
+      Element_GetNode(EL,0) = NO + 1 ;
+    }
+    if(N_EL > 1) {
+      if(Node_GetCoordinate(NO + N_EL - 1)[0] == Node_GetCoordinate(NO + N_EL)[0]) {
+        Element_GetNbOfNodes(EL + N_EL - 1) = 1 ;
+        Element_GetDimension(EL + N_EL - 1) = 0 ;
+        Element_GetNode(EL + N_EL - 1,0) = NO + N_EL - 1 ;
+      }
+    }
+  }
+}
+
 
 
 void lit_mail_m1d(Mesh_t* mesh,const char* nom_m1d)

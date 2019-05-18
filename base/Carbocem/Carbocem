@@ -20,7 +20,8 @@ C_K = 0.012
 frac = 0.8
 phi_r = 0.70
 Curves = desorbCN
-Curves_log = modif-HsS-V-CN
+Curves = relpermCN  s_l = Range{x1 = 0 , x2 = 1 , n = 101} k_r = Mualem_liq(1){m = 0.45}
+Curves = V_CSH
 #Curves_log = cementpaste  p_c = Range{x1 = 1.e5 , x2 = 2.e9 , n = 2000} s_l  = Van-Genuchten(1){ p0 = 5.7643e7 , m = 0.45}
 
 

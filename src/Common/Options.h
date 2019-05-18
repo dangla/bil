@@ -15,7 +15,7 @@ extern void        (Options_Delete)(void*) ;
 
 #define Options_MaxLengthOfKeyWord               (30)
 
-#define Options_GetPrintData(OPT)              ((OPT)->debug)
+#define Options_GetPrintedInfos(OPT)           ((OPT)->debug)
 #define Options_GetResolutionMethod(OPT)       ((OPT)->method)
 #define Options_GetPrintLevel(OPT)             ((OPT)->level)
 #define Options_GetModule(OPT)                 ((OPT)->module)
@@ -28,7 +28,7 @@ extern void        (Options_Delete)(void*) ;
 
 
 #define Options_GetDebug(OPT) \
-        Options_GetPrintData(OPT)
+        Options_GetPrintedInfos(OPT)
         
 
 #include <string.h>
@@ -47,7 +47,7 @@ extern void        (Options_Delete)(void*) ;
 
 
 struct Options_s {            /* options */
-  char*   debug ;             /* data to be printed */
+  char*   debug ;             /* what to be printed */
   char*   method ;            /* resolution method */
   /* Print level
    *   0:  minimal, 

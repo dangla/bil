@@ -105,7 +105,7 @@ void (GenericData_Initialize_)(GenericData_t* gdat,int n,void* data,TypeId_t typ
   GenericData_GetData(gdat) = data ;
     
   {
-    int len = MAX(strlen(name),GenericData_MaxLengthOfKeyWord) ;
+    int len = MIN(strlen(name),GenericData_MaxLengthOfKeyWord) ;
       
     strncpy(GenericData_GetName(gdat),name,len) ;
     GenericData_GetName(gdat)[len] = '\0' ;

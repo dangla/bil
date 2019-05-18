@@ -8,6 +8,8 @@ UNAME = Linux
 CC     := gcc -x c   -std=c11
 CPP    := gcc -x c++ -std=c++11
 F77    := gfortran
+LEX    := flex #-d
+YACC   := bison #-t
 
 
 # Compiler and preprocessor flags (recommended by GSL)
@@ -27,7 +29,7 @@ DFLAGS = -iquote${BIL_PATH}
 
 # Preprocessor flags
 #-------------------
-IFLAGS-SRC = -iprefix ${BIL_PATH}/src/ -iwithprefix . -iwithprefix Common -iwithprefix DataSet -iwithprefix Help -iwithprefix Libraries -iwithprefix Macros -iwithprefix Main -iwithprefix Models -iwithprefix Modules -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools
+IFLAGS-SRC = -iprefix ${BIL_PATH}/src/ -iwithprefix . -iwithprefix Common -iwithprefix DataSet -iwithprefix Help -iwithprefix Libraries -iwithprefix Macros -iwithprefix Main -iwithprefix Models -iwithprefix Modules -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools -iwithprefix Parser
 
 IFLAGS-SOLVER = -iprefix ${BIL_PATH}/src/Solver/ -iwithprefix MatrixStorageFormats -iwithprefix ResolutionMethods
 

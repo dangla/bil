@@ -233,7 +233,7 @@
 static int     pm(const char *s) ;
 static void    GetProperties(Element_t*) ;
 
-static double* ComputeComponents(Element_t*,double**,double*,double,int) ;
+static double* ComputeComponents(Element_t*,double**,double*,double,double,int) ;
 static Model_ComputeSecondaryVariables_t    ComputeSecondaryComponents ;
 
 static void    ComputeTransferCoefficients(FVM_t*,double**,double*) ;
@@ -572,7 +572,7 @@ int ComputeInitialState(Element_t *el)
   /* Mass contents */
   for(i = 0 ; i < 2 ; i++) {
     /* Components */
-    double *x = ComputeComponents(el,u,f,0,i) ;
+    double *x = ComputeComponents(el,u,f,0,0,i) ;
 
     M_T(i)   = x[I_M_T] ;
     M_A(i)   = x[I_M_A] ;
@@ -614,7 +614,7 @@ int  ComputeExplicitTerms(Element_t *el,double t)
     int i ;
     
     for(i = 0 ; i < 2 ; i++) {
-      ComputeComponents(el,u,f,0,i) ;
+      ComputeComponents(el,u,f,t,0,i) ;
     }
     
     ComputeTransferCoefficients(fvm,u,f) ;
@@ -644,7 +644,7 @@ int  ComputeImplicitTerms(Element_t *el,double t,double dt)
   /* Mass contents */
   for(i = 0 ; i < 2 ; i++) {
     /* Components */
-    double *x = ComputeComponents(el,u,f_n,dt,i) ;
+    double *x = ComputeComponents(el,u,f_n,t,dt,i) ;
 
     M_T(i)   = x[I_M_T] ;
     M_A(i)   = x[I_M_A] ;
@@ -807,13 +807,13 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
 
   /* quantites exploitees */
   for(i = 0 ; i < 2 ; i++) {
-    ComputeComponents(el,u,f,0,i) ;
+    ComputeComponents(el,u,f,t,0,i) ;
   }
   
   {
     int    j = FVM_FindLocalCellIndex(fvm,s) ;
     /* Components */
-    //double* x    = ComputeComponents(el,u,f,0,j) ;
+    //double* x    = ComputeComponents(el,u,f,t,0,j) ;
     double* x    = Model_GetVariable(model,j) ;
     /* Fluxes */
     double* w    = FVM_ComputeVariableFluxes(fvm,ComputeFluxes,0,1) ;
@@ -872,7 +872,7 @@ void ComputeTransferCoefficients(FVM_t* fvm,double **u,double *f)
   /* Transfer coefficients */
   for(i = 0 ; i < 2 ; i++) {
     /* Components */
-    //double *x = ComputeComponents(el,u,f,0,i) ;
+    //double *x = ComputeComponents(el,u,f,0,0,i) ;
     double *x = Model_GetVariable(model,i) ;
     
     double p_l    = x[I_P_L] ;
@@ -1196,7 +1196,7 @@ int TangentCoefficients(FVM_t* fvm,double dt,double *c)
     double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
     
     for(i = 0 ; i < nn ; i++) {
-      ComputeComponents(el,u,f_n,dt,i) ;
+      ComputeComponents(el,u,f_n,0,dt,i) ;
     }
   }
   
@@ -1209,7 +1209,7 @@ int TangentCoefficients(FVM_t* fvm,double dt,double *c)
   
   for(i = 0 ; i < nn ; i++) {
     /* Components */
-    //double *x         = ComputeComponents(el,u,f_n,dt,i) ;
+    //double *x         = ComputeComponents(el,u,f_n,t,dt,i) ;
     //double *x = Model_GetVariable(model,i) ;
     int k ;
   
@@ -1219,7 +1219,7 @@ int TangentCoefficients(FVM_t* fvm,double dt,double *c)
     
     for(k = 0 ; k < NEQ ; k++) {
       double dxk    = dxi[k] ;
-      double *dx    = Model_ComputeVariableDerivatives(el,dt,dxk,k,i) ;
+      double *dx    = Model_ComputeVariableDerivatives(el,0,dt,dxk,k,i) ;
       
       /* Content terms at node i */
       {
@@ -1257,7 +1257,7 @@ int TangentCoefficients(FVM_t* fvm,double dt,double *c)
 
 
 
-double* ComputeComponents(Element_t* el,double **u,double *f_n,double dt,int n)
+double* ComputeComponents(Element_t* el,double **u,double *f_n,double t,double dt,int n)
 {
   Model_t* model = Element_GetModel(el) ;
   double *x = Model_GetVariable(model,n) ;
@@ -1269,13 +1269,13 @@ double* ComputeComponents(Element_t* el,double **u,double *f_n,double dt,int n)
   
   /* Needed variables to compute secondary components */
     
-  ComputeSecondaryComponents(el,dt,x) ;
+  ComputeSecondaryComponents(el,t,dt,x) ;
   return(x) ;
 }
 
 
 
-void  ComputeSecondaryComponents(Element_t *el,double dt,double *x)
+void  ComputeSecondaryComponents(Element_t *el,double t,double dt,double *x)
 {
   double c_s    = x[U_C_s] ; 
   double h_r    = x[U_H_r] ;

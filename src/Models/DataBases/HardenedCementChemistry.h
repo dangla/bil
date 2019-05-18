@@ -143,6 +143,8 @@ extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemi
 #define HardenedCementChemistry_SO3          (8)
 #define HardenedCementChemistry_LogA_H2SO4   (8)
 #define HardenedCementChemistry_LogC_H2SO4   (8)
+#define HardenedCementChemistry_LogA_SO4 \
+        (8 + HardenedCementChemistry_NbOfPrimaryVariables)
 #define HardenedCementChemistry_LogC_SO4 \
         (8 + HardenedCementChemistry_NbOfPrimaryVariables)
 
@@ -166,6 +168,9 @@ extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemi
         
 #define HardenedCementChemistry_InputCaOIs(HCC,V) \
         HardenedCementChemistry_InputIs(HCC,CaO,V)
+        
+#define HardenedCementChemistry_InputSO3Is(HCC,V) \
+        HardenedCementChemistry_InputIs(HCC,SO3,V)
         
 /* Inputs: implementation
  * ---------------------- */

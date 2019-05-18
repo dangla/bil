@@ -31,6 +31,7 @@ extern void          (Context_Delete)(void*) ;
 #define Context_GetNodalOrdering(CTX)      ((CTX)->norder)
 #define Context_GetCommandLine(CTX)        ((CTX)->commandline)
 #define Context_GetOptions(CTX)            ((CTX)->options)
+#define Context_GetTest(CTX)               ((CTX)->test)
 
 
 
@@ -57,6 +58,7 @@ struct Context_s {        /* Context */
   void*   misc ;
   void*   eorder ;
   void*   norder ;
+  void*   test ;
 } ;
 
 

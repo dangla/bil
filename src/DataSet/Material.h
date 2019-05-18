@@ -65,6 +65,9 @@ extern void        (Material_ScanProperties2)(Material_t*,FILE*,Model_ComputePro
 
 #define Material_FindCurve(MAT,S) \
         Curves_FindCurve(Material_GetCurves(MAT),S)
+        
+#define Material_GetPropertyValue(MAT,S) \
+        (Material_GetProperty(MAT) + Model_GetComputePropertyIndex(Material_GetModel(MAT))(S))[0]
 
 /*
 ** #define Material_ReadProperties(MAT,datafile) \
@@ -94,20 +97,24 @@ extern void        (Material_ScanProperties2)(Material_t*,FILE*,Model_ComputePro
 #include "TypeId.h"
 
 /* GenericData */
-#define Material_AppendGenericData(MAT,gdat) \
+#define Material_AppendGenericData(MAT,GD) \
         do { \
           if(Material_GetGenericData(MAT)) { \
-            GenericData_Append(Material_GetGenericData(MAT),gdat) ; \
+            GenericData_Append(Material_GetGenericData(MAT),GD) ; \
           } else { \
-            Material_GetGenericData(MAT) = gdat ; \
+            Material_GetGenericData(MAT) = GD ; \
           } \
         } while(0)
         
-#define Material_FindGenericData(MAT,T,N) \
-        GenericData_Find(Material_GetGenericData(MAT),T,N)
+#define Material_FindGenericData(MAT,...) \
+        GenericData_Find(Material_GetGenericData(MAT),__VA_ARGS__)
         
-#define Material_FindData(MAT,T,N) \
-        GenericData_FindData(Material_GetGenericData(MAT),T,N)
+#define Material_FindData(MAT,...) \
+        GenericData_FindData(Material_GetGenericData(MAT),__VA_ARGS__)
+        
+#define Material_AppendData(MAT,...) \
+        Material_AppendGenericData(MAT,GenericData_Create(__VA_ARGS__))
+
 
 
 

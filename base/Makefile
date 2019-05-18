@@ -2,8 +2,9 @@
 SHELL = /bin/sh
 
 ifndef BIL_PATH
-CURDIR = ${shell pwd}
-BIL_PATH = ${word 1,${subst /base, ,${CURDIR}}}
+#CURDIR = ${shell pwd}
+#BIL_PATH = ${word 1,${subst /base, ,${CURDIR}}}
+BIL_PATH = ${shell realpath ../}
 endif
 
 BASEDIR = ${BIL_PATH}/base
@@ -113,8 +114,8 @@ plotdifft11:
 	cd $$i && \
 	gnuplot -e "call '${BASEDIR}/diff.gp' \"$$i.t1\" \"toto.t1\" " \
 	); done
-	
-	
+
+
 plotdifft21:
 	for i in ${BASE1}; do (\
 	echo "Plot $$i.t1 and toto.t1" && \
@@ -136,7 +137,7 @@ list:
 	echo "List $$i" && \
 	less $$i/$$i \
 	); done
-	
+
 
 work1:
 	for i in ${BASE_DIRS}; do (\
@@ -152,8 +153,8 @@ grep:
 	echo "$$i" && \
 	grep "Geometry" $$i \
 	); done
-	
-	
+
+
 test:
 	@echo "ALL_BASE_DIRS = " ${ALL_BASE_DIRS}
 	@echo ""

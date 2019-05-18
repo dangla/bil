@@ -10,6 +10,16 @@ struct DataSet_s      ; typedef struct DataSet_s      DataSet_t ;
 #include "Options.h"
 
 extern DataSet_t*  (DataSet_Create)(char*,Options_t*) ;
+extern DataSet_t*  (DataSet_Create1)(char*,Options_t*) ;
+
+
+#include "Mry.h"
+
+#define DataSet_New() \
+        Mry_New(DataSet_t)
+
+
+
 
 #define DataSet_GetDataFile(DS)       ((DS)->datafile)
 #define DataSet_GetGeometry(DS)       ((DS)->geometry)

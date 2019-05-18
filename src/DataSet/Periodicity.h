@@ -7,6 +7,9 @@
 struct Periodicity_s         ; typedef struct Periodicity_s        Periodicity_t ;
 
 
+extern Periodicity_t* (Periodicity_New)(const int) ;
+extern void           (Periodicity_Delete)(void*) ;
+
 
 #define Periodicity_GetMasterRegion(P)         ((P)->masterreg)
 #define Periodicity_GetSlaveRegion(P)          ((P)->slavereg)
