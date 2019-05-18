@@ -17,7 +17,7 @@ static Models_t* (Models_Create)(Geometry_t*) ;
 static void      (Models_Delete)(void*) ;
 
 
-Models_t* Models_Create(Geometry_t* geom)
+Models_t* Models_New(const int n_models)
 /** Create the models found in "ListOfModels.h"  */
 {
   Models_t* models = (Models_t*) malloc(sizeof(Models_t)) ;
@@ -25,13 +25,22 @@ Models_t* Models_Create(Geometry_t* geom)
   assert(models) ;
   
   {
-    int n = Models_NbOfModels ;
-    
-    Models_GetMaxNbOfModels(models) = n ;
-    Models_GetModel(models) = Model_Create(n) ;
+    Models_GetMaxNbOfModels(models) = n_models ;
+    Models_GetModel(models) = Model_Create(n_models) ;
+    Models_GetNbOfModels(models) = 0 ;
   }
   
+  return(models) ;
+}
 
+
+
+
+Models_t* Models_Create(Geometry_t* geom)
+/** Create the models found in "ListOfModels.h"  */
+{
+  Models_t* models = Models_New(Models_NbOfModels) ;
+  
   {
     int n = Models_NbOfModels ;
     const char* modelnames[] = {Models_ListOfNames} ;

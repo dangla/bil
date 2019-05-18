@@ -15,6 +15,11 @@ extern void     (Elements_DefineProperties)(Elements_t*) ;
 extern int      (Elements_ComputeNbOfMatrixEntries)(Elements_t*) ;
 
 
+#include "Mry.h"
+
+#define Elements_New() \
+        (Elements_t*) Mry_Malloc(sizeof(Elements_t))
+
 
 /* Accessors */
 #define Elements_GetNbOfElements(ELTS)           ((ELTS)->n_el)
@@ -23,6 +28,8 @@ extern int      (Elements_ComputeNbOfMatrixEntries)(Elements_t*) ;
 #define Elements_GetIntFcts(ELTS)                ((ELTS)->intfcts)
 #define Elements_GetMaximumSizeOfElements(ELTS)  ((ELTS)->hmax)
 #define Elements_GetMinimumSizeOfElements(ELTS)  ((ELTS)->hmin)
+
+
 
 
 

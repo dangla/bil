@@ -36,7 +36,12 @@ Material_t* (Material_Create)(int n_mat)
       Material_GetCodeNameOfModel(mat) = name ;
     }
     
-    /* The properties */
+    /* The generic data */
+    {
+      Material_GetGenericData(mat) = NULL ;
+    }
+    
+    /* The properties (also part of the generic data) */
     {
       double* pr = (double*) calloc(Material_MaxNbOfProperties,sizeof(double)) ;
     
@@ -44,15 +49,14 @@ Material_t* (Material_Create)(int n_mat)
     
       Material_GetNbOfProperties(mat) = 0 ;
       Material_GetProperty(mat) = pr ;
-    }
-    
-    /* The generic data */
-    {
-      Material_GetGenericData(mat) = NULL ;
+      
+      Material_AppendData(mat,Material_MaxNbOfProperties,pr,double,"Parameters") ;
     }
 
     /* Curves */
-    Material_GetCurves(mat) = Curves_Create(Material_MaxNbOfCurves) ;
+    {
+      Material_GetCurves(mat) = Curves_Create(Material_MaxNbOfCurves) ;
+    }
     
     /* for compatibility with former coding of Material_t structure */
     mat->nc = Material_GetNbOfCurves(mat) ;
@@ -98,22 +102,23 @@ int  (Material_ReadProperties)(Material_t* material,DataFile_t* datafile)
 void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(const char*))
 /** Read the material properties in the stream file ficd */
 {
-  FILE *ficd = DataFile_GetFileStream(datafile) ;
+  //FILE *ficd = DataFile_GetFileStream(datafile) ;
   int    nd = Material_GetNbOfProperties(mat) ;
   short int    cont = 1 ;
   
-  if(!ficd) return ;
+  //if(!ficd) return ;
 
   while(cont) {
     char   mot[Material_MaxLengthOfKeyWord] = {'\n'} ;
     char*  line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
-    char* equal = (line) ? strchr(line,'=') : NULL ;
+    //char* equal = (line) ? strchr(line,'=') : NULL ;
     
     //if(!equal) continue ;
     
     if(!line) break ;
     
     sscanf(line," %[^= ]",mot) ;
+    //sscanf(line,"%*[ ]%[^=]",mot) ;
 
     /* Reading some curves */
     if(!strncmp(mot,"Courbes",6) || !strncmp(mot,"Curves",5)) {
@@ -127,7 +132,7 @@ void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(co
 
     /* Reading the method */
     } else if(!strncmp(mot,"Method",6)) {
-      char   *p = strchr(line,'=') ;
+      char* p = strchr(line,'=') ;
       
       if(p) {
         char* cr = strchr(p,'\n') ;

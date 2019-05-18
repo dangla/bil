@@ -7,8 +7,8 @@ News in 2.5: A new interface "Session.h" is created. Methods like
 Session_Open and Session_Close can be used to open and close  sessions. 
 Sessions are in a stack with the current session at the top. 
 Open a session = push it, close a session = pop and delete it.
-If needed instances like Message, Exception, etc... are created once in all 
-sessions of the stack. Only those of the top session are currently used.
+If needed instances like Message, Exception, etc... are created once in each 
+session of the stack. Only those of the top session are currently used.
 
 News in 2.4: Two new database interfaces: "HardenedCementChemistry.h" and
 "CementSolutionDiffusion.h" to be used for cement-based materials. 

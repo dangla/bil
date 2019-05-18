@@ -193,6 +193,9 @@ void (Context_Initialize)(Context_t* ctx,int argc,char** argv)
 
     } else if(strncmp(argv[i],"-miscellaneous",strlen(argv[i])) == 0) {
       Context_GetMiscellaneous(ctx) = (char**) argv + i ;
+
+    } else if(strncmp(argv[i],"-test",strlen(argv[i])) == 0) {
+      Context_GetTest(ctx) = (char**) argv + i ;
       
     } else {
       Message_FatalError("Unknown option") ;

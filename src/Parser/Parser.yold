@@ -1,0 +1,706 @@
+%{
+//
+
+#include <string.h>
+#include <stdarg.h>
+#include <time.h>
+#include <assert.h>
+#include "../Common/Message.h"
+#include "../DataSet/Geometry.h"
+#include "../DataSet/DataFile.h"
+#include "Parser.h"
+
+// Global parser variables
+char* Parser_yyname;
+int Parser_yyerrorstate = 0;
+int Parser_yyviewindex = 0;
+
+// Static parser variables (accessible only in this file)
+
+void yyerror(const char* s);
+void yymsg(int level, const char* fmt, ...);
+void skip_until(const char* skip, const char* until);
+//int PrintListOfDouble(char *format, List_T *list, char *buffer);
+//fullMatrix<double> ListOfListOfDouble2Matrix(List_T *list);
+%}
+
+%union {
+  char* c;
+  int i;
+  unsigned int u;
+  double d;
+  double v[5];
+}
+
+%token <d> tDOUBLE
+%token <c> tSTRING tBIGSTR
+
+%token tEND tAFFECT tDOTS tPi tMPI_Rank tMPI_Size tEuclidian tCoordinates
+%token tExp tLog tLog10 tSqrt tSin tAsin tCos tAcos tTan tRand
+%token tAtan tAtan2 tSinh tCosh tTanh tFabs tFloor tCeil
+%token tFmod tModulo tHypot 
+%token tPrintf tSprintf tStrCat tStrPrefix tStrRelative
+%token tBoundingBox tDraw tToday tSyncModel tCreateTopology tDistanceFunction
+%token tPoint tCircle tEllipse tLine tSphere tPolarSphere tSurface tSpline tVolume
+%token tCharacteristic tLength tParametric tElliptic
+%token tPlane tRuled tTransfinite tComplex tPhysical tCompound tPeriodic
+%token tUsing tPlugin tDegenerated
+%token tRotate tTranslate tSymmetry tDilate tExtrude tLevelset
+%token tLoop tRecombine tSmoother tSplit tDelete tCoherence tIntersect
+%token tLayers tHole tAlias tAliasWithOptions
+%token tText2D tText3D tInterpolationScheme  tTime tCombine
+%token tBSpline tBezier tNurbs tNurbsOrder tNurbsKnots
+%token tColor tColorTable tFor tIn tEndFor tIf tEndIf tExit
+%token tField tReturn tCall tFunction tShow tHide tGetValue tGetEnv tGetString
+%token tBIL_MAJOR_VERSION tBIL_MINOR_VERSION tBIL_PATCH_VERSION
+
+
+%type <d> FExpr FExpr_Single 
+%type <v> VExpr VExpr_Single
+%type <c> StringExpr StringExprVar
+%type <i> NumericAffectation NumericIncrement
+
+
+%token tDimension tSymmetry
+
+// Operators (with ascending priority): cf. C language
+//
+// Notes: - associativity (%left, %right)
+//        - UNARYPREC is a dummy terminal to resolve ambiguous cases
+//          for + and - (which exist in both unary and binary form)
+
+%right   tAFFECT tAFFECTPLUS tAFFECTMINUS tAFFECTTIMES tAFFECTDIVIDE
+%right   '?' tDOTS
+%left    tOR
+%left    tAND
+%left    tEQUAL tNOTEQUAL
+%left    '<' tLESSOREQUAL  '>' tGREATEROREQUAL
+%left    '+' '-'
+%left    '*' '/' '%'
+%right   '!' tPLUSPLUS tMINUSMINUS UNARYPREC
+%right   '^'
+%left    '(' ')' '[' ']' '.' '#'
+
+%start All
+
+%%
+
+All : 
+    BilFormatItems
+  | error tEND { yyerrok; return 1; }
+;
+
+
+
+//  B I L   F I L E   F O R M A T
+
+BilFormatItems : 
+    // nothing
+  | BilFormatItems BilFormatItem
+;
+
+BilFormatItem :
+    Dimension             { return 1; }
+  | Symmetry              { return 1; }
+  | Mesh                  { return 1; }
+  | Model                 { return 1; }
+  | Material              { return 1; }
+  | Field                 { return 1; }
+  | Initialization        { return 1; }
+  | Function              { return 1; }
+  | BoundaryCondition     { return 1; }
+  | Load                  { return 1; }
+  | Periodicity           { return 1; }
+  | Date                  { return 1; }
+  | ObjectiveVariation    { return 1; }
+  | IterativeProcess      { return 1; }
+  | TimeStep              { return 1; }
+;
+
+
+
+// GEOMETRY
+
+Dimension :
+    tDimension tAFFECT FExpr tEND
+    {
+      Message_Direct("Reading %s\n","Dimension") ;
+    }
+;
+
+Symmetry :
+    tSymmetry tAFFECT FExpr tEND
+    {
+      Message_Direct("Reading %s\n","Symmetry") ;
+    }
+;
+
+
+
+// MESH
+
+Mesh :
+;
+
+
+
+// MODEL
+
+Model :
+;
+
+
+
+// MATERIAL
+
+Material :
+;
+
+
+
+// FIELD
+
+Field :
+;
+
+
+
+// INITIALIZATION
+
+Initialization :
+;
+
+
+
+// FUNCTION
+Function :
+;
+
+
+
+// BOUNDARY CONDITION
+
+BoundaryCondition :
+;
+
+
+
+// LOAD
+
+Load :
+;
+
+
+
+// PERIODICITY
+
+Periodicity :
+;
+
+
+
+// DATE
+
+Date :
+;
+
+
+
+// OBJECTIVE VARIATION
+
+ObjectiveVariation :
+;
+
+
+
+// ITERATIVE PROCESS
+
+IterativeProcess :
+;
+
+
+
+// TIME STEP
+
+TimeStep :
+;
+
+
+
+//  A F F E C T A T I O N
+
+NumericAffectation :
+    tAFFECT        { $$ = 0; }
+  | tAFFECTPLUS    { $$ = 1; }
+  | tAFFECTMINUS   { $$ = 2; }
+  | tAFFECTTIMES   { $$ = 3; }
+  | tAFFECTDIVIDE  { $$ = 4; }
+;
+
+NumericIncrement :
+    tPLUSPLUS      { $$ = 1; }
+  | tMINUSMINUS    { $$ = -1; }
+;
+
+
+
+
+
+
+
+
+
+
+
+//  G E N E R A L
+
+FExpr :
+    FExpr_Single                     { $$ = $1;           }
+  | '(' FExpr ')'                    { $$ = $2;           }
+  | '-' FExpr %prec UNARYPREC        { $$ = -$2;          }
+  | '+' FExpr %prec UNARYPREC        { $$ = $2;           }
+  | '!' FExpr                        { $$ = !$2;          }
+  | FExpr '-' FExpr                  { $$ = $1 - $3;      }
+  | FExpr '+' FExpr                  { $$ = $1 + $3;      }
+  | FExpr '*' FExpr                  { $$ = $1 * $3;      }
+  | FExpr '/' FExpr
+    { 
+      if(!$3)
+	yymsg(0, "Division by zero in '%g / %g'", $1, $3);
+      else
+	$$ = $1 / $3;     
+    }
+  | FExpr '%' FExpr                  { $$ = (int)$1 % (int)$3;  }
+  | FExpr '^' FExpr                  { $$ = pow($1, $3);  }
+  | FExpr '<' FExpr                  { $$ = $1 < $3;      }
+  | FExpr '>' FExpr                  { $$ = $1 > $3;      }
+  | FExpr tLESSOREQUAL FExpr         { $$ = $1 <= $3;     }
+  | FExpr tGREATEROREQUAL FExpr      { $$ = $1 >= $3;     }
+  | FExpr tEQUAL FExpr               { $$ = $1 == $3;     }
+  | FExpr tNOTEQUAL FExpr            { $$ = $1 != $3;     }
+  | FExpr tAND FExpr                 { $$ = $1 && $3;     }
+  | FExpr tOR FExpr                  { $$ = $1 || $3;     }
+  | FExpr '?' FExpr tDOTS FExpr      { $$ = $1 ? $3 : $5; }
+  | tExp    '(' FExpr ')'            { $$ = exp($3);      }
+  | tLog    '(' FExpr ')'            { $$ = log($3);      }
+  | tLog10  '(' FExpr ')'            { $$ = log10($3);    }
+  | tSqrt   '(' FExpr ')'            { $$ = sqrt($3);     }
+  | tSin    '(' FExpr ')'            { $$ = sin($3);      }
+  | tAsin   '(' FExpr ')'            { $$ = asin($3);     }
+  | tCos    '(' FExpr ')'            { $$ = cos($3);      }
+  | tAcos   '(' FExpr ')'            { $$ = acos($3);     }
+  | tTan    '(' FExpr ')'            { $$ = tan($3);      }
+  | tAtan   '(' FExpr ')'            { $$ = atan($3);     }
+  | tAtan2  '(' FExpr ',' FExpr ')'  { $$ = atan2($3, $5);}
+  | tSinh   '(' FExpr ')'            { $$ = sinh($3);     }
+  | tCosh   '(' FExpr ')'            { $$ = cosh($3);     }
+  | tTanh   '(' FExpr ')'            { $$ = tanh($3);     }
+  | tFabs   '(' FExpr ')'            { $$ = fabs($3);     }
+  | tFloor  '(' FExpr ')'            { $$ = floor($3);    }
+  | tCeil   '(' FExpr ')'            { $$ = ceil($3);     }
+  | tFmod   '(' FExpr ',' FExpr ')'  { $$ = fmod($3, $5); }
+  | tModulo '(' FExpr ',' FExpr ')'  { $$ = fmod($3, $5); }
+  | tHypot  '(' FExpr ',' FExpr ')'  { $$ = sqrt($3 * $3 + $5 * $5); }
+  | tRand   '(' FExpr ')'            { $$ = $3 * (double)rand() / (double)RAND_MAX; }
+  // The following is for GetDP compatibility
+  | tExp    '[' FExpr ']'            { $$ = exp($3);      }
+  | tLog    '[' FExpr ']'            { $$ = log($3);      }
+  | tLog10  '[' FExpr ']'            { $$ = log10($3);    }
+  | tSqrt   '[' FExpr ']'            { $$ = sqrt($3);     }
+  | tSin    '[' FExpr ']'            { $$ = sin($3);      }
+  | tAsin   '[' FExpr ']'            { $$ = asin($3);     }
+  | tCos    '[' FExpr ']'            { $$ = cos($3);      }
+  | tAcos   '[' FExpr ']'            { $$ = acos($3);     }
+  | tTan    '[' FExpr ']'            { $$ = tan($3);      }
+  | tAtan   '[' FExpr ']'            { $$ = atan($3);     }
+  | tAtan2  '[' FExpr ',' FExpr ']'  { $$ = atan2($3, $5);}
+  | tSinh   '[' FExpr ']'            { $$ = sinh($3);     }
+  | tCosh   '[' FExpr ']'            { $$ = cosh($3);     }
+  | tTanh   '[' FExpr ']'            { $$ = tanh($3);     }
+  | tFabs   '[' FExpr ']'            { $$ = fabs($3);     }
+  | tFloor  '[' FExpr ']'            { $$ = floor($3);    }
+  | tCeil   '[' FExpr ']'            { $$ = ceil($3);     }
+  | tFmod   '[' FExpr ',' FExpr ']'  { $$ = fmod($3, $5); }
+  | tModulo '[' FExpr ',' FExpr ']'  { $$ = fmod($3, $5); }
+  | tHypot  '[' FExpr ',' FExpr ']'  { $$ = sqrt($3 * $3 + $5 * $5); }
+  | tRand   '[' FExpr ']'            { $$ = $3 * (double)rand() / (double)RAND_MAX; }
+;
+
+// FIXME: add +=, -=, *= et /=
+
+FExpr_Single :
+
+  // Constants
+
+    tDOUBLE   { $$ = $1; }
+  | tPi       { $$ = 3.141592653589793; }
+
+  // Variables
+
+  | tSTRING
+    {
+      if(!Parser_yysymbols.count($1)){
+	yymsg(0, "Unknown variable '%s'", $1);
+	$$ = 0.;
+      }
+      else{
+        if(Parser_yysymbols[$1].empty()){
+          yymsg(0, "Uninitialized variable '%s'", $1);
+          $$ = 0.;
+        }
+        else
+          $$ = Parser_yysymbols[$1][0];
+      }
+      Free($1);
+    }
+  | tSTRING '[' FExpr ']'
+    {
+      int index = (int)$3;
+      if(!Parser_yysymbols.count($1)){
+	yymsg(0, "Unknown variable '%s'", $1);
+	$$ = 0.;
+      }
+      else if((int)Parser_yysymbols[$1].size() < index + 1){
+	yymsg(0, "Uninitialized variable '%s[%d]'", $1, index);
+	$$ = 0.;
+      }
+      else
+	$$ = Parser_yysymbols[$1][index];
+      Free($1);
+    }
+  | '#' tSTRING '[' ']'
+    {
+      if(!Parser_yysymbols.count($2)){
+	yymsg(0, "Unknown variable '%s'", $2);
+	$$ = 0.;
+      }
+      else
+	$$ = Parser_yysymbols[$2].size();
+      Free($2);
+    }
+  | tSTRING NumericIncrement
+    {
+      if(!Parser_yysymbols.count($1)){
+	yymsg(0, "Unknown variable '%s'", $1);
+	$$ = 0.;
+      }
+      else{
+        if(Parser_yysymbols[$1].empty()){
+          yymsg(0, "Uninitialized variable '%s'", $1);
+          $$ = 0.;
+        }
+        else
+          $$ = (Parser_yysymbols[$1][0] += $2);
+      }
+      Free($1);
+    }
+  | tSTRING '[' FExpr ']' NumericIncrement
+    {
+      int index = (int)$3;
+      if(!Parser_yysymbols.count($1)){
+	yymsg(0, "Unknown variable '%s'", $1);
+	$$ = 0.;
+      }
+      else if((int)Parser_yysymbols[$1].size() < index + 1){
+	yymsg(0, "Uninitialized variable '%s[%d]'", $1, index);
+	$$ = 0.;
+      }
+      else
+	$$ = (Parser_yysymbols[$1][index] += $5);
+      Free($1);
+    }
+;
+
+VExpr :
+    VExpr_Single
+    {
+      memcpy($$, $1, 5*sizeof(double));
+    }
+  | '-' VExpr %prec UNARYPREC
+    {
+      for(int i = 0; i < 5; i++) $$[i] = -$2[i];
+    }
+  | '+' VExpr %prec UNARYPREC
+    { 
+      for(int i = 0; i < 5; i++) $$[i] = $2[i];
+    }
+  | VExpr '-' VExpr
+    { 
+      for(int i = 0; i < 5; i++) $$[i] = $1[i] - $3[i];
+    }
+  | VExpr '+' VExpr
+    {
+      for(int i = 0; i < 5; i++) $$[i] = $1[i] + $3[i];
+    }
+;
+
+VExpr_Single :
+    '{' FExpr ',' FExpr ',' FExpr ',' FExpr ',' FExpr  '}'
+    { 
+      $$[0] = $2;  $$[1] = $4;  $$[2] = $6;  $$[3] = $8; $$[4] = $10;
+    }
+  | '{' FExpr ',' FExpr ',' FExpr ',' FExpr '}'
+    { 
+      $$[0] = $2;  $$[1] = $4;  $$[2] = $6;  $$[3] = $8; $$[4] = 1.0;
+    }
+  | '{' FExpr ',' FExpr ',' FExpr '}'
+    {
+      $$[0] = $2;  $$[1] = $4;  $$[2] = $6;  $$[3] = 0.0; $$[4] = 1.0;
+    }
+  | '(' FExpr ',' FExpr ',' FExpr ')'
+    {
+      $$[0] = $2;  $$[1] = $4;  $$[2] = $6;  $$[3] = 0.0; $$[4] = 1.0;
+    }
+;
+
+
+
+
+StringExprVar :
+    StringExpr
+    {
+      $$ = $1;
+    }
+  | tSTRING
+    {
+      if(!Parser_yystringsymbols.count($1)){
+	yymsg(0, "Unknown string variable '%s'", $1);
+	$$ = $1;
+      }
+      else{
+	std::string val = Parser_yystringsymbols[$1];
+	$$ = (char *)Malloc((val.size() + 1) * sizeof(char));
+	strcpy($$, val.c_str());
+	Free($1);
+      }
+    }
+  | tSTRING '.' tSTRING
+    { 
+      std::string out;
+      StringOption(GMSH_GET, $1, 0, $3, out);
+      $$ = (char*)Malloc((out.size() + 1) * sizeof(char));
+      strcpy($$, out.c_str());
+      Free($1); Free($3);
+    }
+  | tSTRING '[' FExpr ']' '.' tSTRING
+    { 
+      std::string out;
+      StringOption(GMSH_GET, $1, (int)$3, $6, out);
+      $$ = (char*)Malloc((out.size() + 1) * sizeof(char));
+      strcpy($$, out.c_str());
+      Free($1); Free($6);
+    }
+;
+
+StringExpr :
+    tBIGSTR
+    {
+      $$ = $1;
+    }
+  | tToday
+    {
+      $$ = (char *)Malloc(32 * sizeof(char));
+      time_t now;
+      time(&now);
+      strcpy($$, ctime(&now));
+      $$[strlen($$) - 1] = '\0';
+    }
+  | tGetEnv '(' StringExprVar ')'
+    { 
+      const char *env = GetEnvironmentVar($3);
+      if(!env) env = "";
+      $$ = (char *)Malloc((sizeof(env) + 1) * sizeof(char));
+      strcpy($$, env);
+      Free($3);
+    }
+  | tGetString '(' StringExprVar ',' StringExprVar ')'
+    { 
+      std::string s = Msg::GetString($3, $5);
+      $$ = (char *)Malloc((s.size() + 1) * sizeof(char));
+      strcpy($$, s.c_str());
+      Free($3);
+      Free($5);
+    }
+  | tStrCat '(' StringExprVar ',' StringExprVar ')'
+    {
+      $$ = (char *)Malloc((strlen($3) + strlen($5) + 1) * sizeof(char));
+      strcpy($$, $3);
+      strcat($$, $5);
+      Free($3);
+      Free($5);
+    }
+  | tStrPrefix '(' StringExprVar ')'
+    {
+      $$ = (char *)Malloc((strlen($3) + 1) * sizeof(char));
+      int i;
+      for(i = strlen($3) - 1; i >= 0; i--){
+	if($3[i] == '.'){
+	  strncpy($$, $3, i);
+	  $$[i]='\0';
+	  break;
+	}
+      }
+      if(i <= 0) strcpy($$, $3);
+      Free($3);
+    }
+  | tStrRelative '(' StringExprVar ')'
+    {
+      $$ = (char *)Malloc((strlen($3) + 1) * sizeof(char));
+      int i;
+      for(i = strlen($3) - 1; i >= 0; i--){
+	if($3[i] == '/' || $3[i] == '\\')
+	  break;
+      }
+      if(i <= 0)
+	strcpy($$, $3);
+      else
+	strcpy($$, &$3[i+1]);
+      Free($3);
+    }
+  | tSprintf '(' StringExprVar ')'
+    {
+      $$ = $3;
+    }
+;
+
+
+%%
+
+/*
+int PrintListOfDouble(char *format, List_T *list, char *buffer)
+{
+  int j, k;
+  char tmp1[256], tmp2[256];
+
+  j = 0;
+  buffer[j] = '\0';
+
+  while(j < (int)strlen(format) && format[j] != '%') j++;
+  strncpy(buffer, format, j); 
+  buffer[j]='\0'; 
+  for(int i = 0; i < List_Nbr(list); i++){
+    k = j;
+    j++;
+    if(j < (int)strlen(format)){
+      if(format[j] == '%'){
+	strcat(buffer, "%");
+	j++;
+      }
+      while(j < (int)strlen(format) && format[j] != '%') j++;
+      if(k != j){
+	strncpy(tmp1, &(format[k]), j-k);
+	tmp1[j-k] = '\0';
+	sprintf(tmp2, tmp1, *(double*)List_Pointer(list, i)); 
+	strcat(buffer, tmp2);
+      }
+    }
+    else
+      return List_Nbr(list)-i;
+  }
+  if(j != (int)strlen(format))
+    return -1;
+  return 0;
+}
+
+
+
+fullMatrix<double> ListOfListOfDouble2Matrix(List_T *list)
+{
+  int M = List_Nbr(list);
+  int N = 0;
+  for(int i = 0; i < M; i++){
+    List_T *line = *(List_T**)List_Pointer_Fast(list, i);
+    N = std::max(N, List_Nbr(line));
+  }
+  fullMatrix<double> mat(M, N);
+  for(int i = 0; i < M; i++){
+    List_T *line = *(List_T**)List_Pointer_Fast(list, i);
+    for(int j = 0; j < List_Nbr(line); j++){
+      double val;
+      List_Read(line, j, &val);
+      mat(i, j) = val;
+    }
+  }
+  for(int i = 0; i < List_Nbr(list); i++)
+    List_Delete(*(List_T**)List_Pointer(list, i));
+  List_Delete(list);
+  return mat;
+}
+*/
+
+
+void yyerror(const char* s)
+{
+  Message_FatalError("'%s', line %d : %s (%s)", Parser_yyname, Parser_yylineno - 1,s, Parser_yytext);
+  Parser_yyerrorstate++;
+}
+
+
+
+void yymsg(int level, const char* fmt, ...)
+{
+  va_list args;
+  char tmp[1024];
+
+  va_start(args, fmt);
+  vsprintf(tmp, fmt, args);
+  va_end(args);
+
+  if(level == 0){
+    Message_FatalError("'%s', line %d : %s", Parser_yyname, Parser_yylineno - 1, tmp);
+    Parser_yyerrorstate++;
+  }
+  else
+    Message_Warning("'%s', line %d : %s", Parser_yyname, Parser_yylineno - 1, tmp);
+}
+
+
+
+Parser_t* (Parser_Create)(void)
+{
+  Parser_t* parser = (Parser_t*) malloc(sizeof(Parser_t)) ;
+  
+  assert(parser) ;
+  
+  return(parser) ;
+}
+
+
+
+void (Parser_Delete)(void* self)
+{
+  Parser_t** pparser = (Parser_t**) self ;
+  Parser_t*  parser  = *pparser ;
+  
+  free(parser) ;
+  *pparser = NULL ;
+}
+
+
+
+int Parser_ParseFile(DataFile_t* datafile)
+{
+  // add 'b' for pure Windows programs: opening in text mode messes up
+  // fsetpos/fgetpos (used e.g. for user-defined functions)
+
+  Parser_yyname       = DataFile_GetFileName(datafile);
+  Parser_yyin         = DataFile_OpenFile(datafile,"rb");
+  Parser_yyerrorstate = 0;
+  Parser_yylineno     = 1;
+  Parser_yyviewindex  = 0;
+
+  while(!feof(Parser_yyin)) {
+    Parser_yyparse();
+    
+    if(Parser_yyerrorstate > 20){
+      Message_FatalError("Too many errors: aborting...");
+      Parser_yyflush();
+      break;
+    }
+  }
+
+  fclose(Parser_yyin);
+
+  return 1;
+}
+

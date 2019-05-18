@@ -3,6 +3,7 @@
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>
+#include <assert.h>
 #include "Message.h"
 #include "DataFile.h"
 #include "Materials.h"
@@ -12,48 +13,46 @@
 
 /* Extern functions */
 
-Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom)
+Materials_t* (Materials_New)(const int n_mats)
 {
   Materials_t* materials   = (Materials_t*) malloc(sizeof(Materials_t)) ;
   
-  if(!materials) arret("Materials_Create(0)") ;
+  assert(materials) ;
 
-  /* Nb of materials */
+
+  Materials_GetNbOfMaterials(materials) = n_mats ;
+
+  /* Allocate the materials */
   {
-    int n_mats = DataFile_CountNbOfKeyWords(datafile,"MATE,Material",",") ;
-    
-    Materials_GetNbOfMaterials(materials) = n_mats ;
-
-    /* Allocate the materials */
     Materials_GetMaterial(materials) = Material_Create(n_mats) ;
   }
   
   
   /* Allocate the space for the models used by the materials */
   {
-    Models_t* usedmodels = (Models_t*) malloc(sizeof(Models_t)) ;
-    
-    if(!usedmodels) arret("Materials_Create(1)") ;
-    
     /* We create the space for n_mats models max */
-    {
-      int n_mats = Materials_GetNbOfMaterials(materials) ;
-      int n_models = n_mats ;
-      
-      Models_GetModel(usedmodels) = Model_Create(n_models) ;
-      Models_GetMaxNbOfModels(usedmodels) = n_models ;
-      Models_GetNbOfModels(usedmodels) = 0 ;
-    }
+    int n_models = n_mats ;
+    Models_t* usedmodels = Models_New(n_models) ;
     
     Materials_GetUsedModels(materials) = usedmodels ;
   }
+  
+  
+  return(materials) ;
+}
+
+
+
+Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom)
+{
+  int n_mats = DataFile_CountNbOfKeyWords(datafile,"MATE,Material",",") ;
+  Materials_t* materials = Materials_New(n_mats) ;
   
   
   DataFile_OpenFile(datafile,"r") ;
 
   /* Initialization */
   {
-    int n_mats = Materials_GetNbOfMaterials(materials) ;
     int i ;
     
     for(i = 0 ; i < n_mats ; i++) {
@@ -123,45 +122,6 @@ Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom)
   }
   
   DataFile_CloseFile(datafile) ;
-  
-  
-  /* Used models */
-  #if 0
-  {
-    Models_t* usedmodels = (Models_t*) malloc(sizeof(Models_t)) ;
-    
-    if(!usedmodels) arret("Materials_Create (2)") ;
-    
-    Materials_GetUsedModels(materials) = usedmodels ;
-    
-    /* We allocate space memory for n_mats models */
-    {
-      Model_t* usedmodel  = (Model_t*) calloc(n_mats,sizeof(Model_t)) ;
-    
-      if(!usedmodel)  arret("Materials_Create (3)") ;
-      
-      Models_GetModel(usedmodels) = usedmodel ;
-    
-      /* We initialize */   
-      Models_GetNbOfModels(usedmodels) = 0 ;
-    }
-    
-    for(i = 0 ; i < n_mats ; i++) {
-      Material_t* mat = Materials_GetMaterial(materials) + i ;
-      Model_t* model_i = Material_GetModel(mat) ;
-      char* codename_i = Material_GetCodeNameOfModel(mat) ;
-      
-      if(!Models_FindModel(usedmodels,codename_i)) {
-        int n_usedmodels = Models_GetNbOfModels(usedmodels) ;
-        Model_t* usedmodel = Models_GetModel(usedmodels) ;
-        
-        usedmodel[n_usedmodels] = *model_i ;
-        n_usedmodels += 1 ;
-        Models_GetNbOfModels(usedmodels) = n_usedmodels ;
-      }
-    }
-  }
-  #endif
   
   return(materials) ;
 }

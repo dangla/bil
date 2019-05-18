@@ -2,12 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdarg.h>
+#include <math.h>
 
+#include "Message.h"
 #include "Elasticity.h"
 
 
-static double* Elasticity_ComputeIsotropicStiffnessTensor(Elasticity_t* elasty,const double,const double) ;
-static double* Elasticity_ComputeTransverselyIsotropicStiffnessTensor(Elasticity_t* elasty,const double,const double,const double,const double,const double,const short int) ;
+static double* Elasticity_ComputeIsotropicStiffnessTensor(Elasticity_t*,double*) ;
+static double* Elasticity_ComputeTransverselyIsotropicStiffnessTensor(Elasticity_t*,double*) ;
 
 
 
@@ -27,6 +30,28 @@ Elasticity_t*  (Elasticity_Create)(void)
     Elasticity_GetStiffnessTensor(elasty) = c ;
   }
   
+  /* Allocation of space for the type */
+  {
+    size_t sz = Elasticity_MaxLengthOfKeyWord*sizeof(char) ;
+    char* c = (char*) malloc(sz) ;
+    
+    assert(c) ;
+    
+    Elasticity_GetType(elasty) = c ;
+    /* Default = isotropy */
+    Elasticity_SetToIsotropy(elasty) ;
+  }
+  
+  /* Allocation of space for the parameters */
+  {
+    size_t sz = Elasticity_MaxNbOfParameters*sizeof(double) ;
+    double* c = (double*) malloc(sz) ;
+    
+    assert(c) ;
+    
+    Elasticity_GetParameter(elasty) = c ;
+  }
+  
   return(elasty) ;
 }
 
@@ -37,10 +62,9 @@ void  (Elasticity_Delete)(void* self)
   Elasticity_t** pelasty = (Elasticity_t**) self ;
   Elasticity_t*  elasty  = *pelasty ;
   
-  {
-    double* c = Elasticity_GetStiffnessTensor(elasty) ;
-    free(c) ;
-  }
+  free(Elasticity_GetStiffnessTensor(elasty)) ;
+  free(Elasticity_GetType(elasty)) ;
+  free(Elasticity_GetParameter(elasty)) ;
   
   free(*pelasty) ;
   *pelasty = NULL ;
@@ -48,13 +72,90 @@ void  (Elasticity_Delete)(void* self)
 
 
 
+void Elasticity_SetParameters(Elasticity_t* elasty,...)
+{
+  va_list args ;
+  
+  va_start(args,elasty) ;
+  
+  if(Elasticity_IsIsotropic(elasty)) {
+    Elasticity_GetYoungModulus(elasty)  = va_arg(args,double) ;
+    Elasticity_GetPoissonRatio(elasty)  = va_arg(args,double) ;
+    
+  } else if(Elasticity_IsTransverselyIsotropic(elasty)) {
+    Elasticity_GetYoungModulus(elasty)  = va_arg(args,double) ;
+    Elasticity_GetPoissonRatio(elasty)  = va_arg(args,double) ;
+    Elasticity_GetYoungModulus3(elasty) = va_arg(args,double) ;
+    Elasticity_GetPoissonRatio3(elasty) = va_arg(args,double) ;
+    Elasticity_GetShearModulus3(elasty) = va_arg(args,double) ;
+    Elasticity_GetAxis3(elasty)         = va_arg(args,double) ;
+    
+  } else {
+    Message_RuntimeError("Not known") ;
+  }
+  
+  va_end(args) ;
+}
 
-double* Elasticity_ComputeIsotropicStiffnessTensor(Elasticity_t* elasty,const double Young,const double Poisson)
+
+
+
+double* Elasticity_ComputeStiffnessTensor(Elasticity_t* elasty,double* c)
+{
+  //double* c = Elasticity_GetStiffnessTensor(elasty) ;
+  
+  if(Elasticity_IsIsotropic(elasty)) {
+    return(Elasticity_ComputeIsotropicStiffnessTensor(elasty,c)) ;
+  } else if(Elasticity_IsTransverselyIsotropic(elasty)) {
+    return(Elasticity_ComputeTransverselyIsotropicStiffnessTensor(elasty,c)) ;
+  } else {
+    Message_RuntimeError("Not known") ;
+  }
+  
+  return(NULL) ;
+}
+
+
+
+
+void Elasticity_PrintStiffnessTensor(Elasticity_t* elasty)
+/** Print the 4th rank elastic tensor.
+ **/
+{
+  double* c = Elasticity_GetStiffnessTensor(elasty) ;
+  
+  printf("\n") ;
+  printf("4th rank elastic tensor:\n") ;
+  
+  {
+    int i ;
+    
+    for(i = 0 ; i < 9 ; i++) {
+      int j = i - (i/3)*3 ;
+        
+      printf("C%d%d--:",i/3 + 1,j + 1) ;
+        
+      for (j = 0 ; j < 9 ; j++) {
+        printf(" % e",c[i*9 + j]) ;
+      }
+        
+      printf("\n") ;
+    }
+  }
+}
+
+
+
+
+/* Local functions */
+double* Elasticity_ComputeIsotropicStiffnessTensor(Elasticity_t* elasty,double* c)
 /** Compute the 4th rank isotropic elastic tensor in c.
  *  Return c  */
 {
 #define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
-  double* c = Elasticity_GetStiffnessTensor(elasty) ;
+  //double* c = Elasticity_GetStiffnessTensor(elasty) ;
+  double Young   = Elasticity_GetYoungModulus(elasty) ;
+  double Poisson = Elasticity_GetPoissonRatio(elasty) ;
   double twomu   = Young/(1 + Poisson) ;
   double mu      = 0.5*twomu ;
   double lame    = twomu*Poisson/(1 - 2*Poisson) ;
@@ -81,48 +182,7 @@ double* Elasticity_ComputeIsotropicStiffnessTensor(Elasticity_t* elasty,const do
 
 
 
-double Elasticity_ComputeYoungModulus(Elasticity_t* elasty)
-{
-#define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
-  double* c = Elasticity_GetStiffnessTensor(elasty) ;
-  double mu     = C(0,1,0,1) ;
-  double lame   = C(0,0,0,0) - 2 * mu ;
-  double poisson = 0.5 * lame / (mu + lame) ;
-  double young  = 2 * mu * (1 + poisson) ;
-  
-  return(young) ;
-#undef C
-}
-
-
-
-double Elasticity_ComputePoissonRatio(Elasticity_t* elasty)
-{
-#define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
-  double* c = Elasticity_GetStiffnessTensor(elasty) ;
-  double mu     = C(0,1,0,1) ;
-  double lame   = C(0,0,0,0) - 2 * mu ;
-  double poisson = 0.5 * lame / (mu + lame) ;
-  
-  return(poisson) ;
-#undef C
-}
-
-
-
-double Elasticity_ComputeShearModulus(Elasticity_t* elasty)
-{
-#define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
-  double* c = Elasticity_GetStiffnessTensor(elasty) ;
-  double mu = C(0,1,0,1) ;
-  
-  return(mu) ;
-#undef C
-}
-
-
-
-double* Elasticity_ComputeTransverselyIsotropicStiffnessTensor(Elasticity_t* elasty,const double Young,const double Young3,const double Poisson,const double Poisson3,const double Shear3,const short int axis_3)
+double* Elasticity_ComputeTransverselyIsotropicStiffnessTensor(Elasticity_t* elasty,double* c)
 /** Compute the 4th rank transversely isotropic elastic tensor in c.
  *  Inputs are:
  *  axis_3 = direction of orthotropy: 0,1 or 2
@@ -130,7 +190,14 @@ double* Elasticity_ComputeTransverselyIsotropicStiffnessTensor(Elasticity_t* ela
 {
 #define AXIS(I)      (axis_##I)
 #define C(i,j,k,l)   (c[((AXIS(i)*3+AXIS(j))*3+AXIS(k))*3+AXIS(l)])
-  double* c = Elasticity_GetStiffnessTensor(elasty) ;
+  //double* c = Elasticity_GetStiffnessTensor(elasty) ;
+  double Young      = Elasticity_GetYoungModulus(elasty) ;
+  double Poisson    = Elasticity_GetPoissonRatio(elasty) ;
+  double Young3     = Elasticity_GetYoungModulus3(elasty) ;
+  double Poisson3   = Elasticity_GetPoissonRatio3(elasty) ;
+  double Shear3     = Elasticity_GetShearModulus3(elasty) ;
+  double Axis3      = Elasticity_GetAxis3(elasty) ;
+  short int axis_3  = floor(Axis3) ;
   short int axis_1  = (axis_3 + 1) % 3 ;
   short int axis_2  = (axis_3 + 2) % 3 ;
   double twomu1     = Young/(1 + Poisson) ;
@@ -183,32 +250,3 @@ double* Elasticity_ComputeTransverselyIsotropicStiffnessTensor(Elasticity_t* ela
 #undef AXIS
 }
 
-
-
-#if 0
-void Elasticity_PrintStiffnessTensor(Elasticity_t* elasty)
-/** Print the 4th rank elastic tensor.
- **/
-{
-  double* c = Elasticity_GetStiffnessTensor(elasty) ;
-  
-  printf("\n") ;
-  printf("4th rank elastic tensor:\n") ;
-  
-  {
-    int i ;
-    
-    for(i = 0 ; i < 9 ; i++) {
-      int j = i - (i/3)*3 ;
-        
-      printf("C%d%d--:",i/3 + 1,j + 1) ;
-        
-      for (j = 0 ; j < 9 ; j++) {
-        printf(" % e",c[i*9 + j]) ;
-      }
-        
-      printf("\n") ;
-    }
-  }
-}
-#endif

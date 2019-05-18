@@ -86,7 +86,7 @@ int calcul(DataSet_t* jdd)
       OutputFiles_Delete(&outputfiles) ;
     }
       
-  /* 3. Store for future resume */
+  /* 3. Store for future resumption */
     {
       Solution_t* sol = Solutions_GetSolution(sols) ;
       double t =  Solution_GetTime(sol) ;
@@ -308,7 +308,7 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
           ComputeResidu(mesh,T_1,DT_1,rhs,loads) ;
           
           {
-            char*  debug = Options_GetDebug(options) ;
+            char*  debug = Options_GetPrintedInfos(options) ;
             
             if(!strcmp(debug,"residu")) {
               Solver_Print(solver,debug) ;
@@ -344,7 +344,7 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
           }
           
           {
-            char*  debug = Options_GetDebug(options) ;
+            char*  debug = Options_GetPrintedInfos(options) ;
             
             if(!strncmp(debug,"matrix",4)) {
               Solver_Print(solver,debug) ;
@@ -439,7 +439,7 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
   }
   
   /*
-   * 4. Store for future resume
+   * 4. Store for future resumption
    */
    /*
   if(IterProcess_ConvergenceIsMet(iterprocess)) {

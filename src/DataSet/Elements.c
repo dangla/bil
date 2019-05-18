@@ -21,6 +21,7 @@ static double   (Element_ComputeSize)(Element_t*) ;
 static int      (Element_ComputeNbOfMatrixEntries)(Element_t*) ;
 
 
+
 void Elements_CreateMore(Elements_t* elements,Materials_t* materials)
 {
   int n_el = Elements_GetNbOfElements(elements) ;

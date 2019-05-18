@@ -100,7 +100,7 @@ OBJALL1 = ${filter-out ${OBJMAIN},${OBJALL}}
 
 #=======================================================================
 # Default target executed when no arguments are given to make.
-entry: models modules ${LIBBIL}
+entry: parser models modules ${LIBBIL}
 
 
 
@@ -205,6 +205,15 @@ clean:
 	rm -f ${wildcard ${addsuffix *~,${DIRSOTHER}}}
 	cd ${DIRMODELFILES} && ${MAKE} clean
 	cd ${DIRMODULEFILES} && ${MAKE} clean
+
+
+
+#=======================================================================
+# Target rules for building the parser
+
+parser:
+	@echo "\nBuilding the parser"
+	( ${MAKE} -C Parser )
 
 
 

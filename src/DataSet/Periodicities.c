@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <math.h>
 #include "Tools/Math.h"
 #include "DataFile.h"
@@ -123,6 +124,44 @@ Periodicities_t* (Periodicities_Create)(DataFile_t* datafile)
   DataFile_CloseFile(datafile) ;
   
   return(periodicities) ;
+}
+
+
+
+
+Periodicities_t* (Periodicities_New)(const int n)
+{
+  Periodicities_t* periodicities = (Periodicities_t*) malloc(sizeof(Periodicities_t)) ;
+  
+  assert(periodicities) ;
+  
+  Periodicities_GetNbOfPeriodicities(periodicities) = 0 ;
+  Periodicities_GetPeriodicity(periodicities) = NULL ;
+
+  if(n > 0) {
+    Periodicities_GetNbOfPeriodicities(periodicities) = n ;
+    Periodicities_GetPeriodicity(periodicities) = Periodicity_New(n) ;
+  }
+  
+  return(periodicities) ;
+}
+
+
+
+
+void Periodicities_Delete(void* self)
+{
+  Periodicities_t** pperiodicities = (Periodicities_t**) self ;
+  Periodicities_t*   periodicities = *pperiodicities ;
+  
+  {
+    Periodicity_t* periodicity = Periodicities_GetPeriodicity(periodicities) ;
+    
+    free(Periodicity_GetPeriodVector(periodicity)) ;
+  }
+  free(periodicities) ;
+  
+  *pperiodicities = NULL ;
 }
 
 

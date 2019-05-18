@@ -6,6 +6,7 @@
 #include "Context.h"
 #include "CommonModel.h"
 #include "FEM.h"
+#include "Plasticity.h"
 
 #define TITLE "Plasticity with hardening (2017)"
 #define AUTHORS "Dangla"
@@ -30,12 +31,12 @@
 #define SIG           (vim + 0)
 #define F_MASS        (vim + 9)
 #define EPS_P         (vim + 12)
-#define GAM_P         (vim[21])
-#define CRIT          (vim[22])
+#define HARDV         (vim + 21)[0]
+#define CRIT          (vim + 22)[0]
 
 #define SIG_n         (vim_n + 0)
 #define EPS_P_n       (vim_n + 12)
-#define GAM_P_n       (vim_n[21])
+#define HARDV_n       (vim_n + 21)[0]
 
 /* We define some names for explicit terms */
 
@@ -46,48 +47,44 @@
 /* Functions */
 static Model_ComputePropertyIndex_t  pm ;
 static void   GetProperties(Element_t*,double) ;
-static double* IsotropicElasticTensor(double,double,double*) ;
-//static double* MicrostructureElasticTensor(char*,double*) ;
-
-//static void  StressAveraging(Mesh_t*,double*) ;
-//static void  ComputeMicrostructure(DataSet_t*,double*,double*) ;
 
 static int    ComputeTangentCoefficients(FEM_t*,double,double*) ;
-static double UpdateElastoplasticTensor(double*,double*,double*,double*,double,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double**,double*,double,double,int) ;
 static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
-//static double* ComputeVariablesDerivatives(Element_t*,double,double*,double,int) ;
-
-typedef double ReturnMapping_t(double*,double*,double*) ;
-typedef double Criterion_t(const double*,const double,double*,double*,double*) ;
-
-static ReturnMapping_t ReturnMapping_DruckerPrager ;
-static Criterion_t     Criterion_DruckerPrager ;
+//static double* ComputeVariablesDerivatives(Element_t*,double,double,double*,double,int) ;
 
 static double* MacroGradient(Element_t*,double) ;
 static double* MacroStrain(Element_t*,double) ;
 
 
+#define ComputeFunctionGradients(...)  Plasticity_ComputeFunctionGradients(plasty,__VA_ARGS__)
+#define ReturnMapping(...)             Plasticity_ReturnMapping(plasty,__VA_ARGS__)
+#define CopyElasticTensor(...)         Plasticity_CopyElasticTensor(plasty,__VA_ARGS__)
+#define UpdateElastoplasticTensor(...) Plasticity_UpdateElastoplasticTensor(plasty,__VA_ARGS__)
 
-#define Criterion       Criterion_DruckerPrager
-#define ReturnMapping   ReturnMapping_DruckerPrager
-
-//static double (*ReturnMapping[])(double*,double*,double*) = {ReturnMapping_DruckerPrager,ReturnMapping_CamClay} ;
 
 /* Material parameters */
 static double  gravity ;
 static double  rho_s ;
-static double  young,poisson ;
 static double* sig0 ;
-static double  cohesion,af,ad ;
-static double  alpha,gam_R ;
+static double  hardv0 ;
 static double  macrogradient[9] ;
 static double  macrostrain[9] ;
 static double* cijkl ;
+static Plasticity_t* plasty ;
+static int     plasticmodel ;
+
+#define  SetPlasticModel(I) \
+         do { \
+           if(plasticmodel < 0) { \
+             plasticmodel = I ; \
+           } else if(plasticmodel != I) { \
+             Message_FatalError("Incompatible model") ; \
+           } \
+         } while(0)
 
 
-//#define GetProperty(a)   (Element_GetProperty(el)[pm(a)])
 #define GetProperty(a)      Element_GetPropertyValue(el,a)
 
 #define ItIsPeriodic  (Geometry_IsPeriodic(Element_GetGeometry(el)))
@@ -106,10 +103,10 @@ static double  Variable[NbOfVariables] ;
 #define I_EPS_n        (30)
 #define I_EPS_P_n      (39)
 #define I_Fmass        (48)
-#define I_GAM_P        (51)
+#define I_HARDV        (51)
 #define I_CRIT         (52)
 #define I_SIG_n        (53)
-#define I_GAM_P_n      (62)
+#define I_HARDV_n      (62)
 
 
 
@@ -130,47 +127,60 @@ int pm(const char* s)
     int j = (strlen(s) > 6) ? s[6] - '1' : 0 ;
     
     return(4 + 3*i + j) ;
-  } else if(!strcmp(s,"macro-gradient")) {
+    
+    /* Pay attention below! 
+     * This is the location of the initial hardening variable (hardv0)
+     * (eg the initial pre-consolidation pressure). */
+  } else if(!strcmp(s,"hardv0")) {
     return(13) ;
+    
+    /* Model 1: Drucker-Prager */
+  } else if(!strcmp(s,"initial cumulative plastic shear strain")) {
+    SetPlasticModel(1) ;
+    return(13) ;
+  } else if(!strcmp(s,"cohesion")) {
+    SetPlasticModel(1) ;
+    return(14) ;
+  } else if(!strcmp(s,"friction")) {
+    SetPlasticModel(1) ;
+    return(15) ;
+  } else if(!strcmp(s,"dilatancy")) {
+    SetPlasticModel(1) ;
+    return(16) ;
+    
+    /* Model 2: Cam-clay */
+  } else if(!strcmp(s,"initial pre-consolidation pressure")) {
+    SetPlasticModel(2) ;
+    return(13) ;
+  } else if(!strcmp(s,"slope of swelling line")) {
+    SetPlasticModel(2) ;
+    return(14) ;
+  } else if(!strcmp(s,"slope of virgin consolidation line")) {
+    SetPlasticModel(2) ;
+    return(15) ;
+  } else if(!strcmp(s,"slope of critical state line"))  {
+    SetPlasticModel(2) ;
+    return(16) ;
+  } else if(!strcmp(s,"initial void ratio")) {
+    SetPlasticModel(2) ;
+    return(17) ;
+    
+  } else if(!strcmp(s,"macro-gradient")) {
+    return(18) ;
   } else if(!strncmp(s,"macro-gradient_",15)) {
     int i = (strlen(s) > 15) ? s[15] - '1' : 0 ;
     int j = (strlen(s) > 16) ? s[16] - '1' : 0 ;
     
-    return(13 + 3*i + j) ;
-  } else if(!strcmp(s,"Cijkl")) {
-    return(22) ;
-  } else if(!strcmp(s,"criterion")) {
-    return(103) ;
-    
-    /* Drucker-Prager */
-  } else if(!strcmp(s,"cohesion")) {
-    return(104) ;
-  } else if(!strcmp(s,"frottement")) {
-    return(105) ;
-  } else if(!strcmp(s,"dilatance"))  {
-    return(106) ;
-  } else if(!strcmp(s,"alpha"))      {
-    return(107) ;
-  } else if(!strcmp(s,"gamma_R"))    {
-    return(108) ;
-    
-    /* Cam-clay */
-  } else if(!strcmp(s,"kappa")) {
-    return(104) ;
-  } else if(!strcmp(s,"lambda")) {
-    return(105) ;
-  } else if(!strcmp(s,"M"))  {
-    return(106) ;
-  } else if(!strcmp(s,"phi"))      {
-    return(107) ;
+    return(18 + 3*i + j) ;
     
   } else if(!strcmp(s,"macro-fctindex")) {
-    return(109) ;
+    return(27) ;
   } else if(!strncmp(s,"macro-fctindex_",15)) {
     int i = (strlen(s) > 15) ? s[15] - '1' : 0 ;
     int j = (strlen(s) > 16) ? s[16] - '1' : 0 ;
     
-    return(109 + 3*i + j) ;
+    return(27 + 3*i + j) ;
+    
   } else return(-1) ;
 }
 
@@ -237,16 +247,14 @@ void GetProperties(Element_t* el,double t)
   gravity = GetProperty("gravity") ;
   rho_s   = GetProperty("rho_s") ;
   sig0    = &GetProperty("sig0") ;
-
-  cijkl   = &GetProperty("Cijkl") ;
-  young   = GetProperty("young") ;
-  poisson = GetProperty("poisson") ;
+  hardv0  = GetProperty("hardv0") ;
   
-  cohesion       = GetProperty("cohesion") ;
-  af      = GetProperty("frottement")*M_PI/180. ;
-  ad      = GetProperty("dilatance")*M_PI/180. ;
-  alpha   = GetProperty("alpha") ;
-  gam_R   = GetProperty("gamma_R") ;
+  plasty = Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
+  {
+    Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+    
+    cijkl   = Elasticity_GetStiffnessTensor(elasty) ;
+  }
 }
 
 
@@ -288,50 +296,74 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 /** Read the material properties in the stream file ficd 
  *  Return the nb of (scalar) properties of the model */
 {
-  int NbOfProp = 118 ;
+  int NbOfProp = 36 ;
   int i ;
 
   /* Par defaut tout a 0 */
   for(i = 0 ; i < NbOfProp ; i++) Material_GetProperty(mat)[i] = 0. ;
-
+  
+  plasticmodel = -1 ;
+  
   Material_ScanProperties(mat,datafile,pm) ;
   
-  /* The 4th rank elastic tensor */
+  
+  
+  /* Plasticity */
   {
-    double* c = Material_GetProperty(mat) + pm("Cijkl") ;
-    char* method = Material_GetMethod(mat) ;
-    
-    /* obtained from a microstructure */
-    if(!strncmp(method,"Microstructure",14)) {
-      char* p = strstr(method," ") ;
-      char* cellname = p + strspn(p," ") ;
+    plasty = Plasticity_Create() ;
       
-      //MicrostructureElasticTensor(cellname,c) ;
-      
-    /* isotropic Hooke's law */
-    } else {
-      young = Material_GetProperty(mat)[pm("young")] ;
-      poisson = Material_GetProperty(mat)[pm("poisson")] ;
+    Material_AppendData(mat,1,plasty,Plasticity_t,"Plasticity") ;
+  }
+  
+  /* Elastic and plastic properties */
+  {
+    Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
     
-      IsotropicElasticTensor(young,poisson,c) ;
+    {
+      /* Elasticity */
+      {
+        double young   = Material_GetPropertyValue(mat,"young") ;
+        double poisson = Material_GetPropertyValue(mat,"poisson") ;
+        
+        Elasticity_SetToIsotropy(elasty) ;
+        Elasticity_SetParameters(elasty,young,poisson) ;
+      
+        {
+          double* c = Elasticity_GetStiffnessTensor(elasty) ;
+    
+          Elasticity_ComputeStiffnessTensor(elasty,c) ;
+        }
+      }
+      
+      /* Drucker-Prager */
+      if(plasticmodel == 1) {
+        double cohesion = Material_GetPropertyValue(mat,"cohesion") ;
+        double af       = Material_GetPropertyValue(mat,"friction")*M_PI/180. ;
+        double ad       = Material_GetPropertyValue(mat,"dilatancy")*M_PI/180. ;
+        
+        Plasticity_SetToDruckerPrager(plasty) ;
+        Plasticity_SetParameters(plasty,af,ad,cohesion) ;
+      
+      /* Cam-Clay */
+      } else if(plasticmodel == 2) {
+        double kappa  = Material_GetPropertyValue(mat,"slope of swelling line") ;
+        double lambda = Material_GetPropertyValue(mat,"slope of virgin consolidation line") ;
+        double M      = Material_GetPropertyValue(mat,"slope of critical state line") ;
+        double pc0    = Material_GetPropertyValue(mat,"initial pre-consolidation pressure") ;
+        double e0     = Material_GetPropertyValue(mat,"initial void ratio") ;
+        
+        Plasticity_SetToCamClay(plasty) ;
+        Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0) ;
+        
+      } else {
+        Message_FatalError("Unknown model") ;
+      }
       
     }
 
 #if 0
-    {
-      printf("4th rank elastic tensor:\n") ;
-      
-      for(i = 0 ; i < 9 ; i++) {
-        int j = i - (i/3)*3 ;
-        
-        printf("C%d%d--:",i/3 + 1,j + 1) ;
-        
-        for (j = 0 ; j < 9 ; j++) {
-          printf(" % e",c[i*9 + j]) ;
-        }
-        
-        printf("\n") ;
-      }
+    {      
+      Elasticity_PrintStiffnessTensor(elasty) ;
     }
 #endif
   }
@@ -365,9 +397,9 @@ Example of input data\n\n") ;
   fprintf(ficd,"rho_s = 2350      # masse volumique du squelette sec\n") ;
   fprintf(ficd,"young = 5.8e+09   # module d\'Young\n") ;
   fprintf(ficd,"poisson = 0.3     # coefficient de Poisson\n") ;
-  fprintf(ficd,"cohesion = 1e+06  # cohesion\n") ;
-  fprintf(ficd,"frottement = 25   # frottement\n") ;
-  fprintf(ficd,"dilatance = 25    # dilatance \n") ;
+  fprintf(ficd,"cohesion = 1e+06  # cohesion (Drucker-Prager model) \n") ;
+  fprintf(ficd,"friction = 25     # friction angle (Drucker-Prager model) \n") ;
+  fprintf(ficd,"dilatancy = 25    # dilatancy angle (Drucker-Prager model) \n") ;
   fprintf(ficd,"sig0_ij = -11.5e6 # contrainte initiale sig0_ij\n") ;
   
   return(0) ;
@@ -441,18 +473,17 @@ int ComputeInitialState(Element_t* el,double t)
       double* v0   = v00 + p*NV0 ;
       int    i ;
       
-      /* Initial stresses */
+      /* Initial stresses, hardening variable */
       if(DataFile_ContextIsPartialInitialization(datafile)) {
         for(i = 0 ; i < 9 ; i++) SIG0[i] = SIG[i] ;
       } else {
         for(i = 0 ; i < 9 ; i++) SIG0[i] = sig0[i] ;
         for(i = 0 ; i < 9 ; i++) SIG[i]  = sig0[i] ;
+        HARDV = hardv0 ;
       }
       
       /* Initial plastic strains */
       for(i = 0 ; i < 9 ; i++) EPS_P[i]  = 0 ;
-    
-      GAM_P = 0 ;
     }
   }
   
@@ -474,7 +505,7 @@ int ComputeInitialState(Element_t* el,double t)
       for(i = 0 ; i < 9 ; i++) EPS_P[i]  = x[I_EPS_P + i] ;
     
       CRIT = x[I_CRIT] ;
-      GAM_P = x[I_GAM_P] ;
+      HARDV = x[I_HARDV] ;
     }
   }
   
@@ -526,7 +557,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
       for(i = 0 ; i < 9 ; i++) EPS_P[i]  = x[I_EPS_P + i] ;
     
       CRIT = x[I_CRIT] ;
-      GAM_P = x[I_GAM_P] ;
+      HARDV = x[I_HARDV] ;
     }
   }
   
@@ -675,7 +706,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     /* strains */
     double eps_p[9] = {0,0,0,0,0,0,0,0,0} ;
     double sig[9] = {0,0,0,0,0,0,0,0,0} ;
-    double gam_p = 0 ;
+    double hardv = 0 ;
     double crit = 0 ;
     int    i ;
     
@@ -704,7 +735,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       
       for(j = 0 ; j < 9 ; j++) eps_p[j] += EPS_P[j]/np ;
       
-      gam_p += GAM_P/np ;
+      hardv += HARDV/np ;
       
       crit += CRIT/np ;
     }
@@ -714,7 +745,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     Result_Store(r + i++,sig   ,"Stresses",9) ;
     Result_Store(r + i++,pdis  ,"Perturbated-displacements",3) ;
     Result_Store(r + i++,eps_p ,"Plastic-strains",9) ;
-    Result_Store(r + i++,&gam_p,"Cumulative-plastic-shear-strain",1) ;
+    Result_Store(r + i++,&hardv,"Hardening variable",1) ;
     Result_Store(r + i++,&crit ,"Yield function",1) ;
   }
   
@@ -770,11 +801,9 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
     /* Mechanics */
     {
       double* c1 = c0 ;
-      int i ;
-        
-      for(i = 0 ; i < 81 ; i++) {
-        c1[i] = cijkl[i] ;
-      }
+      
+      CopyElasticTensor(c1) ;
+      
       
       /* Tangent stiffness matrix */
       {
@@ -782,15 +811,8 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
         double crit = CRIT ;
         
         if(crit >= 0.) {
-          
-          /* Yield and potential function gradients */
-          double dfsds[9] ;
-          double dgsds[9] ;
-          double fc[9] ;
-          double cg[9] ;
-          double hm ;
-          double crit1 = Criterion(SIG,GAM_P,dfsds,dgsds,&hm) ;
-          double fcg = UpdateElastoplasticTensor(dfsds,dgsds,fc,cg,hm,c1) ;
+          double crit1 = ComputeFunctionGradients(SIG,&HARDV) ;
+          double fcg = UpdateElastoplasticTensor(c1) ;
           
           if(fcg < 0) return(-1) ;
         }
@@ -811,7 +833,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   FEM_t*    fem    = FEM_GetInstance(el) ;
-  Model_t*  model  = Element_GetModel(el) ;
+//  Model_t*  model  = Element_GetModel(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
 //  double*   x      = Model_GetVariable(model,p) ;
   double*   x      = Variable ;
@@ -873,20 +895,20 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
         x[I_EPS_P_n + i] = EPS_P_n[i] ;
       }
       
-      x[I_GAM_P_n] = GAM_P_n ;
+      x[I_HARDV_n] = HARDV_n ;
       
       FEM_FreeBufferFrom(fem,eps_n) ;
     }
   }
     
-  ComputeSecondaryVariables(el,dt,x) ;
+  ComputeSecondaryVariables(el,t,dt,x) ;
   
   return(x) ;
 }
 
 
 
-void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
+void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
 {
   int dim = Element_GetDimensionOfSpace(el) ;
   /* Strains */
@@ -902,7 +924,7 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
   {
     double* sig   = x + I_SIG ;
     double* sig_n = x + I_SIG_n ;
-    double  gam_p = x[I_GAM_P_n] ;
+    double  hardv = x[I_HARDV_n] ;
     
     
     {
@@ -930,10 +952,10 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
     
       /* Projection */
       {
-        double crit = ReturnMapping(sig,eps_p,&gam_p) ;
+        double crit = ReturnMapping(sig,eps_p,&hardv) ;
         
         x[I_CRIT]  = crit ;
-        x[I_GAM_P] = gam_p ;
+        x[I_HARDV] = hardv ;
       }
     }
   }
@@ -956,7 +978,7 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
 
 
 #if 0
-double* ComputeVariablesDerivatives(Element_t* el,double dt,double* x,double dxi,int i)
+double* ComputeVariablesDerivatives(Element_t* el,double t,double dt,double* x,double dxi,int i)
 {
   double* dx = dVariable ;
   int j ;
@@ -969,7 +991,7 @@ double* ComputeVariablesDerivatives(Element_t* el,double dt,double* x,double dxi
   /* We increment the variable as (x + dx) */
   dx[i] += dxi ;
   
-  ComputeSecondaryVariables(el,dt,dx) ;
+  ComputeSecondaryVariables(el,t,dt,dx) ;
   
   /* The numerical derivative as (f(x + dx) - f(x))/dx */
   for(j = 0 ; j < NbOfVariables ; j++) {
@@ -983,6 +1005,7 @@ double* ComputeVariablesDerivatives(Element_t* el,double dt,double* x,double dxi
 
 
 
+#if 0
 double UpdateElastoplasticTensor(double* dfsds,double* dgsds,double* fc,double* cg,double fcg0,double* c)
 /** Update the 4th rank elastoplastic tensor in c.
  *  Inputs are: 
@@ -1056,7 +1079,7 @@ double UpdateElastoplasticTensor(double* dfsds,double* dgsds,double* fc,double* 
 
 
 
-double Criterion_DruckerPrager(const double* sig,const double gam_p,double* dfsds,double* dgsds,double* hm)
+double Criterion_DruckerPrager(const double* sig,const double* pgam_p,double* dfsds,double* dgsds,double* hm)
 /** Drucker-Prager criterion. 
  *  Inputs are: 
  *  the stresses (sig), the cumulative plastic shear strain (gam_p). 
@@ -1072,6 +1095,7 @@ double Criterion_DruckerPrager(const double* sig,const double gam_p,double* dfsd
   double p,q,dev[9] ;
   double crit ;
   double ff,dd,cc,cc0 ;
+  double gam_p = pgam_p[0] ;
   int    i ;
   
   /*
@@ -1352,12 +1376,12 @@ double ReturnMapping_DruckerPrager(double* sig,double* eps_p,double* gam_p)
 
 
 
-#if 0
-double Criterion_CamClay(double* sig,double pc,double* dfsds,double* dgsds,double* hm,Element_t *el)
+double Criterion_CamClay(double* sig,double* ppc,double* dfsds,double* dgsds,double* hm,Element_t *el)
 /** Cam-Clay criterion */
 {
   double id[9] = {1,0,0,0,1,0,0,0,1} ;
   double p,q,crit,m2 ;
+  double pc = ppc[0] ;
   int    i ;
   /*
     Donnees
@@ -1483,8 +1507,8 @@ double ReturnMapping_CamClay(double* sig,double* eps_p,double* p_co,Element_t *e
     double dev      = a*(sig[i] - p_t*id[i]) ;
     double dfsds    = (2*p + pc)*id[i]/3. + 3./m2*dev ;
     
-    sig[i]   = p*id[i] + dev ;
-    eps_p[i] = dl*dfsds ;
+    sig[i]    = p*id[i] + dev ;
+    eps_p[i] += dl*dfsds ;
   }
   
   /* Consolidation pressure */
@@ -1493,35 +1517,3 @@ double ReturnMapping_CamClay(double* sig,double* eps_p,double* p_co,Element_t *e
 }
 #endif
 
-
-
-
-
-double* IsotropicElasticTensor(double Young,double Poisson,double* c)
-/** Compute the 4th rank isotropic elastic tensor in c.
- *  Return c  */
-{
-#define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
-  double twomu   = Young/(1 + Poisson) ;
-  double mu      = twomu/2 ;
-  double lame    = twomu*Poisson/(1 - 2*Poisson) ;
-   
-  {
-    int    i ;
-
-    for(i = 0 ; i < 81 ; i++) c[i] = 0. ;
-    
-    for(i = 0 ; i < 3 ; i++) {
-      int j ;
-      
-      for(j = 0 ; j < 3 ; j++) {
-        C(i,i,j,j) += lame ;
-        C(i,j,i,j) += mu ;
-        C(i,j,j,i) += mu ;
-      }
-    }
-  }
-  
-  return(c) ;
-#undef C
-}

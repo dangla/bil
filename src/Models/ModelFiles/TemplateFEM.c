@@ -26,11 +26,11 @@
 
 
 /* Indices of equations */
-#define IE_Eq1    (0)
-#define IE_Eq2    (1)
+#define E_Eq1    (0)
+#define E_Eq2    (1)
 /* Indices of unknowns */
-#define IU_Unk1    (0)
-#define IU_Unk2    (1)
+#define U_Unk1    (0)
+#define U_Unk2    (1)
 
 
 /* Value of the nodal unknown (u and el must be used as pointers below) */
@@ -38,8 +38,8 @@
 
 
 /* We define some names for nodal unknowns */
-#define Unk1(n)          (UNKNOWN(n,IU_Unk1))
-#define Unk2(n)          (UNKNOWN(n,IU_Unk2))
+#define Unk1(n)          (UNKNOWN(n,U_Unk1))
+#define Unk2(n)          (UNKNOWN(n,U_Unk2))
 
 
 /* We define some names for implicit terms (vi must be used as pointer below) */
@@ -97,8 +97,8 @@ static double dVariables[NbOfVariables] ;
 
 
 /* We define some indices for the local variables */
-#define I_U            (IU_Unk1)
-#define I_P            (IU_Unk2)
+#define I_U            (U_Unk1)
+#define I_P            (U_Unk2)
 #define I_EPS          (NEQ+0)
 #define I_SIG          (NEQ+9)
 /* etc... */
@@ -139,12 +139,12 @@ int SetModelProp(Model_t* model)
   Model_GetNbOfEquations(model) = NEQ ;
   
   /** Names of these equations */
-  Model_CopyNameOfEquation(model,IE_Eq1,"first") ;
-  Model_CopyNameOfEquation(model,IE_Eq2,"second") ;
+  Model_CopyNameOfEquation(model,E_Eq1,"first") ;
+  Model_CopyNameOfEquation(model,E_Eq2,"second") ;
   
   /** Names of the main (nodal) unknowns */
-  Model_CopyNameOfUnknown(model,IU_Unk1,"x") ;
-  Model_CopyNameOfUnknown(model,IU_Unk2,"y") ;
+  Model_CopyNameOfUnknown(model,U_Unk1,"x") ;
+  Model_CopyNameOfUnknown(model,U_Unk2,"y") ;
   
   return(0) ;
 }
@@ -475,10 +475,25 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   FEM_t*    fem    = FEM_GetInstance(el) ;
-  Model_t*  model  = Element_GetModel(el) ;
   int dim = Element_GetDimensionOfSpace(el) ; 
   /* Variables is a locally defined array of array */
-  double*   x      = Variables[p] ;
+  Model_t*  model  = Element_GetModel(el) ;
+  double*   x      = Model_GetVariable(model,p) ;
+
+  /*
+   * The variables are stored in the array x by using some indexes.
+   * Two sets of indexes are used:
+   * 1. The first set is used for the primary nodal unknowns. The
+   *    notation used for these indexes begins with "U_", e.g. "U_u", 
+   *    "U_p", etc.... E.g if displacements, pressure and temperature 
+   *    are the nodal unknowns used in this order at each interpolation
+   *    point then "U_u = 0, U_p = 3, U_T = 4". They are used to extract
+   *    the value of the primary unknowns which will be used to
+   *    compute the secondary variables.
+   * 2. The second set is used for the secondary variables. The 
+   *    notation used for these indexes begins with "I_". These
+   *    secondary variables are stored in the x at these locations.
+   */
   
     
   /* Load the primary variables in x */
@@ -503,6 +518,20 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       }
       
       FEM_FreeBufferFrom(fem,eps) ;
+    }
+    
+    /* Pressure */
+    x[I_P_L] = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l) ;
+    
+    /* Pressure gradient */
+    {
+      double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_p_l) ;
+    
+      for(i = 0 ; i < 3 ; i++) {
+        x[I_GRD_P_L + i] = grd[i] ;
+      }
+      
+      FEM_FreeBufferFrom(fem,grd) ;
     }
   }
   

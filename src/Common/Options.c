@@ -27,7 +27,7 @@ Options_t*  (Options_Create)(Context_t* ctx)
   
     assert(c) ;
 
-    Options_GetPrintData(options)         = c ;
+    Options_GetPrintedInfos(options)      = c ;
     Options_GetResolutionMethod(options)  = (c += max_mot_debug) ;
     Options_GetPrintLevel(options)        = (c += max_mot_debug) ;
     Options_GetModule(options)            = (c += max_mot_debug) ;
@@ -51,7 +51,7 @@ void Options_Delete(void* self)
   Options_t** options = (Options_t**) self ;
   
   Context_Delete(&(Options_GetContext(*options))) ;
-  free(Options_GetPrintData(*options)) ;
+  free(Options_GetPrintedInfos(*options)) ;
   free(*options) ;
   *options = NULL ;
 }
@@ -66,7 +66,7 @@ void Options_SetDefault(Options_t* options)
   const char*  modulenames[NB_MODULES] = {MODULENAMES} ;
   const char*  defaultmodule = modulenames[0] ;
   
-  strcpy(Options_GetPrintData(options),"\0") ;
+  strcpy(Options_GetPrintedInfos(options),"\0") ;
   strcpy(Options_GetResolutionMethod(options),"crout") ;
   strcpy(Options_GetPrintLevel(options),"1") ;
   strcpy(Options_GetModule(options),defaultmodule) ;
@@ -85,7 +85,7 @@ void Options_Initialize(Options_t* options)
   }
   
   if(Context_GetDebug(ctx)) {
-    Options_GetPrintData(options) = ((char**) Context_GetDebug(ctx))[1] ;
+    Options_GetPrintedInfos(options) = ((char**) Context_GetDebug(ctx))[1] ;
   }
   
   if(Context_GetGraph(ctx)) {

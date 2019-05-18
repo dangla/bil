@@ -8,7 +8,7 @@
 @setfilename        bil.info
 @include edition.texi
 @include versions.texi
-@set BIL-WEB        @uref{http://perso.lcpc.fr/dangla.patrick/bil}
+@set BIL-WEB        @uref{http://bil.ifsttar.fr}
 @set COPYRIGHT      @copyright{} 2002-2006 Patrick Dangla
 @c @set BIL            Bil-@value{BIL-VERSION} @c Not used
 @c
@@ -296,7 +296,7 @@ Bil produces some files and sometimes can read and use some other files. The nam
 
 @sp 1
 @multitable @columnfractions 0.35 0.65
-@item @strong{fichier} @tab @strong{description}
+@item @strong{file}              @tab @strong{description}
 
 @item @file{my_file.t@var{i}}    @tab output files related to date index @var{i}
 @item @file{my_file.p@var{i}}    @tab output files related to point index @var{i}
@@ -320,7 +320,7 @@ The files @file{my_file.cont} and @file{my_file.conti} allow to continue a previ
 @node Models, How to develop a new model?, Other files, Top
 @chapter Models
 
-Mostly the concept of model refers to the constitutive equations or complementary laws that are needed to mathematically end up with a well-posed problem. However we need more informations, here, regarding the numerical methods that are used to handle complex problems and geometries. These methods will be implemented in a single file whose basename will identify the code name of the model. The concept of model will then be extended to fit with the set of informations pertaining to:
+Mostly the concept of model refers to the constitutive equations or complementary laws that are needed to mathematically end up with a well-posed problem. However we need more informations, here, regarding the numerical methods that are used to handle complex problems and geometries. These methods are implemented in a single file whose basename identifies the code name of the model. Therefore the concept of model should be extended to fit with the set of informations pertaining to:
 @sp 1
 @itemize @bullet
 @item The number and kind of equations to be solved
@@ -386,7 +386,7 @@ To help you in creating this new file, it is recommended to learn from already e
 @node Drainage of a column, , Examples, Examples
 @section Drainage of a column
 
-This problem is governed by the Richards' equation. A 1 meter high sand column is initially satured. The liquid pressure is initialized as: @math{p_l = p_{atm} - g(x - 1)}. At @math{t=0} we drained the column from the bottom by imposing the pressure to @math{p_l=p_{atm}}. The input data file is given below.
+This problem is governed by the Richards' equation. A 1 meter high sand column is initially saturated. The liquid pressure is initialized as: @math{p_l = p_{atm} - g(x - 1)}. At @math{t=0} we drained the column from the bottom by imposing the pressure to @math{p_l=p_{atm}}. The input data file is given below.
 
 @sp 1
 @multitable @columnfractions 0.45 0.55

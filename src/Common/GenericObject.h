@@ -28,6 +28,8 @@ typedef void (GenericObject_Delete_t)(void*) ;
 #define GenericObject_Delete(OBJ) \
         (*(OBJ))->Delete(OBJ)
 
+
+
 #endif
 #if 0
 

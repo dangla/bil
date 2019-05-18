@@ -59,7 +59,7 @@ extern GenericData_t* (GenericData_Find_)        (GenericData_t*,TypeId_t,char c
         
         
 #define GenericData_FindData(GD,T,N) \
-        GenericData_GetData(GenericData_Find(GD,T,N))
+        (GenericData_Find(GD,T,N) ? GenericData_GetData(GenericData_Find(GD,T,N)) : NULL)
         
         
 #define GenericData_Merge(A,B) \

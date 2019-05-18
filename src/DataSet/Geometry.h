@@ -12,7 +12,10 @@ struct Geometry_s     ; typedef struct Geometry_s     Geometry_t ;
  * -------------*/
 #include "DataFile.h"
 
-extern Geometry_t*  Geometry_Create(DataFile_t*) ;
+extern Geometry_t*  (Geometry_Create)(DataFile_t*) ;
+extern void         (Geometry_Delete)(void*) ;
+extern Geometry_t*  (Geometry_New)   (void) ;
+
 
 #define Geometry_GetDimension(GEO)              ((GEO)->dim)
 #define Geometry_GetSymmetry(GEO)               ((GEO)->symmetry)

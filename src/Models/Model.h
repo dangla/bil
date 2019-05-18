@@ -20,18 +20,22 @@ struct Model_s        ; typedef struct Model_s        Model_t ;
 /*  Typedef names of Methods */
 #include <stdio.h>
 
-typedef int    (Model_SetModelProp_t)(Model_t*) ;
+typedef int    (Model_SetModelProp_t)        (Model_t*) ;
 typedef int    (Model_ComputePropertyIndex_t)(const char*) ;
-typedef int    (Model_PrintModelProp_t)(Model_t*,FILE*) ;
+typedef int    (Model_PrintModelProp_t)      (Model_t*,FILE*) ;
 
 #include "Element.h"
 
-typedef int    (Model_ComputeInitialState_t)(Element_t*,double) ;
+typedef int    (Model_ComputeInitialState_t) (Element_t*,double) ;
 typedef int    (Model_ComputeExplicitTerms_t)(Element_t*,double) ;
 typedef int    (Model_ComputeImplicitTerms_t)(Element_t*,double,double) ;
-typedef int    (Model_ComputeMatrix_t)(Element_t*,double,double,double*) ;
-typedef int    (Model_ComputeResidu_t)(Element_t*,double,double,double*) ;
-typedef void   (Model_ComputeSecondaryVariables_t)(Element_t*,double,double*) ;
+typedef int    (Model_ComputeMatrix_t)       (Element_t*,double,double,double*) ;
+typedef int    (Model_ComputeResidu_t)       (Element_t*,double,double,double*) ;
+
+typedef double* (Model_ComputeVariables_t)(Element_t*,double**,double**,double*,double,double,int) ;
+//typedef double*   (Model_ComputeVariableFluxes_t)(Element_t* el,double** u,double t,double dt,int i,int j,...) ;
+typedef void    (Model_ComputeSecondaryVariables_t)(Element_t*,double,double,double*) ;
+typedef double* (Model_ComputeVariableDerivatives_t)(Element_t*,double,double,double,int,int) ;
 
 #include "IntFcts.h"
 
@@ -56,7 +60,7 @@ typedef int    (Model_ReadMaterialProperties_t)(Material_t*,DataFile_t*) ;
 #include "Geometry.h"
 #include "DataFile.h"
 
-extern double*   (Model_ComputeVariableDerivatives)(Element_t*,double,double,int,int) ;
+extern double*   (Model_ComputeVariableDerivatives)(Element_t*,double,double,double,int,int) ;
 extern Model_t*  (Model_Create)(int) ;
 extern void      (Model_Delete)(void*) ;
 extern Model_t*  (Model_Initialize)(Model_t*,const char*,Geometry_t*,DataFile_t*) ;

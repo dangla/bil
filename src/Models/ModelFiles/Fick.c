@@ -92,9 +92,9 @@
 static int     pm(const char *s) ;
 static void    GetProperties(Element_t*) ;
 
-static double* ComputeVariables(Element_t*,double**,double*,double,int) ;
+static double* ComputeVariables(Element_t*,double**,double*,double,double,int) ;
 static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
-static double* ComputeVariableDerivatives(Element_t*,double,double*,double,int) ;
+static double* ComputeVariableDerivatives(Element_t*,double,double,double*,double,int) ;
 
 static void    ComputeTransferCoefficients(Element_t*,double**,double*) ;
 static double* ComputeVariableFluxes(Element_t*,double**,int,int) ;
@@ -271,7 +271,7 @@ int ComputeInitialState(Element_t* el)
     
     for(i = 0 ; i < nn ; i++) {
       /* Variables */
-      double* x       = ComputeVariables(el,u,f,0,i) ;
+      double* x       = ComputeVariables(el,u,f,0,0,i) ;
     
       /* Back up */
       N_Na(i) = x[I_N_Na] ;
@@ -348,7 +348,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
     
     for(i = 0 ; i < nn ; i++) {
       /* Variables */
-      double* x      = ComputeVariables(el,u,f_n,dt,i) ;
+      double* x      = ComputeVariables(el,u,f_n,t,dt,i) ;
     
       /* Back up */
       N_Na(i) = x[I_N_Na] ;
@@ -499,7 +499,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   {
     int j = FVM_FindLocalCellIndex(fvm,s) ;
     /* molarites */
-    double* x = ComputeVariables(el,u,f,0,j) ;
+    double* x = ComputeVariables(el,u,f,t,0,j) ;
 
     double x_na    	  = x[I_C_Na] ;
 
@@ -531,7 +531,7 @@ void ComputeTransferCoefficients(Element_t* el,double** u,double* f)
   
   
   for(i = 0 ; i < nn ; i++) {
-    double* x = ComputeVariables(el,u,f,0,i) ;
+    double* x = ComputeVariables(el,u,f,0,0,i) ;
     
     /* Liquid tortuosity */
     {
@@ -628,7 +628,7 @@ int TangentCoefficients(Element_t* el,double dt,double* c)
   
   
   for(i = 0 ; i < nn ; i++) {
-    double* xi         = ComputeVariables(el,u,f_n,dt,i) ;
+    double* xi         = ComputeVariables(el,u,f_n,0,dt,i) ;
     int k ;
     
     dui[U_C_Na   ] =  1.e-3*ObVal_GetValue(obval + U_C_Na) ;
@@ -640,7 +640,7 @@ int TangentCoefficients(Element_t* el,double dt,double* c)
 
     for(k = 0 ; k < NEQ ; k++) {
       double dui_k    = dui[k] ;
-      double* dxi    = ComputeVariableDerivatives(el,dt,xi,dui_k,k) ;
+      double* dxi    = ComputeVariableDerivatives(el,0,dt,xi,dui_k,k) ;
     
       /* Content terms at node i */
       {
@@ -674,7 +674,7 @@ int TangentCoefficients(Element_t* el,double dt,double* c)
 
 
 
-double* ComputeVariables(Element_t* el,double** u,double* f_n,double dt,int n)
+double* ComputeVariables(Element_t* el,double** u,double* f_n,double t,double dt,int n)
 {
   double* v0 = Element_GetConstantTerm(el) ;
   double* x = Variables[n] ;
@@ -684,12 +684,12 @@ double* ComputeVariables(Element_t* el,double** u,double* f_n,double dt,int n)
   
   /* Needed variables to compute secondary components */
   
-  ComputeSecondaryVariables(el,dt,x) ;
+  ComputeSecondaryVariables(el,t,dt,x) ;
   return(x) ;
 }
 
 
-double* ComputeVariableDerivatives(Element_t* el,double dt,double* x,double dui,int i)
+double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,double dui,int i)
 {
   double* dx = dVariables ;
   int j ;
@@ -704,7 +704,7 @@ double* ComputeVariableDerivatives(Element_t* el,double dt,double* x,double dui,
   /* We increment the variable as (x + dx) */
   dx[i] += dui ;
   
-  ComputeSecondaryVariables(el,dt,dx) ;
+  ComputeSecondaryVariables(el,t,dt,dx) ;
   
   /* The numerical derivative as (f(x + dx) - f(x))/dx */
   for(j = 0 ; j < NbOfVariables ; j++) {
@@ -717,7 +717,7 @@ double* ComputeVariableDerivatives(Element_t* el,double dt,double* x,double dui,
 
 
 
-void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
+void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
 {
   double x_na       = x[U_C_Na   ] ;
   

@@ -7,6 +7,7 @@
 #include "FEM.h"
 #include "DataSet.h"
 #include "Modules.h"
+#include "Elasticity.h"
 
 #define TITLE   "Elasticity"
 #define AUTHORS " "
@@ -38,7 +39,6 @@
 /* Functions */
 static Model_ComputePropertyIndex_t  pm ;
 static void    GetProperties(Element_t*,double) ;
-static double* IsotropicElasticTensor(double,double,double*) ;
 static double* MicrostructureElasticTensor(DataSet_t*,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double*,double,double,int) ;
@@ -59,9 +59,8 @@ static double* sig0 ;
 static double  macrogradient[9] ;
 static double  macrostrain[9] ;
 static double* cijkl ;
+static Elasticity_t* elasty ;
 
-//#define GetProperty(a)   (Element_GetProperty(el)[pm(a)])
-#define GetProperty(a)      Element_GetPropertyValue(el,a)
 
 #define ItIsPeriodic  (Geometry_IsPeriodic(Element_GetGeometry(el)))
 
@@ -114,7 +113,7 @@ double* MacroGradient(Element_t* el,double t)
     Functions_t* fcts = Material_GetFunctions(Element_GetMaterial(el)) ;
     Function_t*  fct = Functions_GetFunction(fcts) ;
     int nf = Functions_GetNbOfFunctions(fcts) ;
-    double* fctindex = &GetProperty("macro-fctindex") ;
+    double* fctindex = &Element_GetPropertyValue(el,"macro-fctindex") ;
     int i ;
     
     for(i = 0 ; i < 9 ; i++) {
@@ -129,7 +128,7 @@ double* MacroGradient(Element_t* el,double t)
   }
   
   {
-    double* g = &GetProperty("macro-gradient") ;
+    double* g = &Element_GetPropertyValue(el,"macro-gradient") ;
     int i ;
     
     for(i = 0 ; i < 9 ; i++) {
@@ -162,10 +161,12 @@ double* MacroStrain(Element_t* el,double t)
 
 void GetProperties(Element_t* el,double t)
 {
-  gravity = GetProperty("gravity") ;
-  rho_s   = GetProperty("rho_s") ;
-  sig0    = &GetProperty("sig0") ;
-  cijkl   = &GetProperty("Cijkl") ;
+  gravity = Element_GetPropertyValue(el,"gravity") ;
+  rho_s   = Element_GetPropertyValue(el,"rho_s") ;
+  sig0    = &Element_GetPropertyValue(el,"sig0") ;
+  
+  elasty  = Element_FindMaterialData(el,Elasticity_t,"Elasticity") ;
+  cijkl   = Elasticity_GetStiffnessTensor(elasty) ;
 }
 
 
@@ -214,17 +215,27 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 
   Material_ScanProperties(mat,datafile,pm) ;
   
+  
+  /* Elasticity */
+  {
+    elasty = Elasticity_Create() ;
+      
+    Material_AppendData(mat,1,elasty,Elasticity_t,"Elasticity") ;
+  }
+  
   /* The 4th rank elastic tensor */
   {
-    double* c = Material_GetProperty(mat) + pm("Cijkl") ;
     char* method = Material_GetMethod(mat) ;
     
+    elasty = Material_FindData(mat,Elasticity_t,"Elasticity") ;
+
     /* obtained from a microstructure */
     if(!strncmp(method,"Microstructure",14)) {
       char* p = strstr(method," ") ;
       char* cellname = p + strspn(p," ") ;
       Options_t* options = Options_Create(NULL) ;
       DataSet_t* jdd = DataSet_Create(cellname,options) ;
+      double* c = Elasticity_GetStiffnessTensor(elasty) ;
       
       CheckMicrostructureDataSet(jdd) ;
       
@@ -232,29 +243,22 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       
     /* isotropic Hooke's law */
     } else {
-      double young = Material_GetProperty(mat)[pm("young")] ;
-      double poisson = Material_GetProperty(mat)[pm("poisson")] ;
+      double young = Material_GetPropertyValue(mat,"young") ;
+      double poisson = Material_GetPropertyValue(mat,"poisson") ;
     
-      IsotropicElasticTensor(young,poisson,c) ;
-
+      Elasticity_SetToIsotropy(elasty) ;
+      Elasticity_SetParameters(elasty,young,poisson) ;
+      
+      {
+        double* c = Elasticity_GetStiffnessTensor(elasty) ;
+    
+        Elasticity_ComputeStiffnessTensor(elasty,c) ;
+      }
     }
 
 #if 0
     {
-      printf("\n") ;
-      printf("4th rank elastic tensor:\n") ;
-      
-      for(i = 0 ; i < 9 ; i++) {
-        int j = i - (i/3)*3 ;
-        
-        printf("C%d%d--:",i/3 + 1,j + 1) ;
-        
-        for (j = 0 ; j < 9 ; j++) {
-          printf(" % e",c[i*9 + j]) ;
-        }
-        
-        printf("\n") ;
-      }
+      Elasticity_PrintStiffnessTensor(elasty) ;
     }
 #endif
   }
@@ -659,14 +663,14 @@ double* ComputeVariables(Element_t* el,double** u,double* f_n,double t,double dt
   
   /* Needed variables to compute secondary components */
     
-  ComputeSecondaryVariables(el,dt,x) ;
+  ComputeSecondaryVariables(el,t,dt,x) ;
   
   return(x) ;
 }
 
 
 
-void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
+void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
 {
   /* Strains */
   double* eps =  x + I_EPS ;
@@ -698,37 +702,6 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x)
       
     fmass[dim-1] = (rho_s)*gravity ;
   }
-}
-
-
-
-double* IsotropicElasticTensor(double Young,double Poisson,double* c)
-/** Compute the 4th rank isotropic elastic tensor in c.
- *  Return c  */
-{
-#define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
-  double twomu   = Young/(1 + Poisson) ;
-  double mu      = twomu/2 ;
-  double lame    = twomu*Poisson/(1 - 2*Poisson) ;
-   
-  {
-    int    i ;
-
-    for(i = 0 ; i < 81 ; i++) c[i] = 0. ;
-    
-    for(i = 0 ; i < 3 ; i++) {
-      int j ;
-      
-      for(j = 0 ; j < 3 ; j++) {
-        C(i,i,j,j) += lame ;
-        C(i,j,i,j) += mu ;
-        C(i,j,j,i) += mu ;
-      }
-    }
-  }
-  
-  return(c) ;
-#undef C
 }
 
 

@@ -1128,7 +1128,7 @@ int TangentCoefficients(Element_t* el,double t,double dt,double* c)
   
   
   for(i = 0 ; i < NEQ ; i++) {
-    dxi[i] =  1.e-2*ObVal_GetValue(obval + i) ;
+    dxi[i] =  1.e-4*ObVal_GetValue(obval + i) ;
   }
 
   

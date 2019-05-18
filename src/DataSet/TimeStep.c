@@ -177,20 +177,28 @@ double TimeStep_ComputeTimeStep(TimeStep_t* timestep,Nodes_t* nodes,double tn,do
     
     rs = TimeStep_GetMaximumCommonRatio(timestep) ;
     if(varmax > zero) rs = 1./varmax ;
-    if(rs > TimeStep_GetMaximumCommonRatio(timestep)) rs = TimeStep_GetMaximumCommonRatio(timestep) ;
+    if(rs > TimeStep_GetMaximumCommonRatio(timestep)) {
+      rs = TimeStep_GetMaximumCommonRatio(timestep) ;
+    }
     
     dt = dtn * rs ;
 
-    if(dt > TimeStep_GetMaximumTimeStep(timestep)) dt = TimeStep_GetMaximumTimeStep(timestep) ;
+    if(dt > TimeStep_GetMaximumTimeStep(timestep)) {
+      dt = TimeStep_GetMaximumTimeStep(timestep) ;
+    }
     
-    if(dt < TimeStep_GetMinimumTimeStep(timestep) && dt > zero) dt = TimeStep_GetMinimumTimeStep(timestep) ;
+    if(dt < TimeStep_GetMinimumTimeStep(timestep) && dt > zero) {
+      dt = TimeStep_GetMinimumTimeStep(timestep) ;
+    }
 
     Message_Direct("(%s[%d])",ObVal_GetNameOfUnknown(TimeStep_GetObVal(timestep) + obvalindex),nodeindex) ;
     //Message_Direct("(%s)",ObVal_GetNameOfUnknown(TimeStep_GetObVal(timestep) + obvalindex)) ;
   }
   
   /* tn + dt should not be greater than the next date */
-  if(tn + dt > t2) dt = t2 - tn ;
+  if(tn + dt > t2) {
+    dt = t2 - tn ;
+  }
 
   //if(tn + dt == t2) step = fin ; 
   /* End of the current date step */

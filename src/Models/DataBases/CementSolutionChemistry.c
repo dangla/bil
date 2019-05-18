@@ -664,6 +664,9 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(CementSolut
   if(CementSolutionChemistry_InputIs(csc,SO3,LogA_H2SO4)) {
     CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1(csc) ;
     return ;
+  } else if(CementSolutionChemistry_InputIs(csc,SO3,LogA_SO4)) {
+    CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_2(csc) ;
+    return ;
   }
   
   arret("CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O") ;
@@ -693,6 +696,83 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1(CementSol
   double loga_hso4  = loga_h2so4 - loga_h + logk_h2so4 ;
   double logk_hso4  = LogKeq(HSO4) ;
   double loga_so4   = loga_hso4 - loga_h + logk_hso4 ;
+  
+  
+  /* Chemical reactions involving compounds of type II. */
+  
+  /* Calcium-sulfur compounds */
+  double loga_ca     = LogActivity(Ca) ;
+  double logk_cahso4 = LogKeq(CaHSO4) ;
+  double loga_cahso4 = loga_ca + loga_hso4 - logk_cahso4 ;
+  double logk_caso4  = LogKeq(CaSO4) ;
+  double loga_caso4  = loga_ca + loga_so4  - logk_caso4 ;
+  
+  /* Sodium-sulfur compounds */
+  
+  
+  /* Backup activities */
+  {
+    LogActivity(H2SO4)  = loga_h2so4 ;
+    LogActivity(HSO4)   = loga_hso4 ;
+    LogActivity(SO4)    = loga_so4 ;
+  
+    LogActivity(CaHSO4) = loga_cahso4 ;
+    LogActivity(CaSO4)  = loga_caso4 ;
+  }
+  
+  /* Backup concentrations */
+  {
+    /* Translate into concentrations providing ideality */
+    double logc0             = LogC0_ref ;
+    
+    double logc_h2so4        = loga_h2so4  + logc0 ;
+    double logc_hso4         = loga_hso4   + logc0 ;
+    double logc_so4          = loga_so4    + logc0 ;
+   
+    double logc_cahso4       = loga_cahso4 + logc0 ;
+    double logc_caso4        = loga_caso4  + logc0 ;
+    
+    Concentration(H2SO4)     = pow(10,logc_h2so4) ;
+    Concentration(HSO4)      = pow(10,logc_hso4) ;
+    Concentration(SO4)       = pow(10,logc_so4) ;
+  
+    Concentration(CaHSO4)    = pow(10,logc_cahso4) ;
+    Concentration(CaSO4)     = pow(10,logc_caso4) ;
+  
+  
+    LogConcentration(H2SO4)  = logc_h2so4 ;
+    LogConcentration(HSO4)   = logc_hso4 ;
+    LogConcentration(SO4)    = logc_so4 ;
+
+    LogConcentration(CaHSO4) = logc_cahso4 ;
+    LogConcentration(CaSO4)  = logc_caso4 ;
+  }
+}
+
+
+
+
+
+void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_2(CementSolutionChemistry_t* csc)
+{
+  /* Compute the system CaO-SiO2-Na2O-K2O */
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
+  
+  /* Supplement with SO3 */
+  double loga_so4 = Input(LogA_SO4) ;
+  
+
+  /* Water */
+  double loga_h  = LogActivity(H) ;
+  
+  
+  /* Chemical reactions involving compounds of type I. */
+
+  /* Sulfur compounds */
+  double logk_h2so4 = LogKeq(H2SO4) ;
+  double logk_hso4  = LogKeq(HSO4) ;
+  double loga_hso4  = loga_so4  + loga_h - logk_hso4 ;
+  double loga_h2so4 = loga_hso4 + loga_h - logk_h2so4 ;
   
   
   /* Chemical reactions involving compounds of type II. */
@@ -1566,6 +1646,7 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
 /* Solve ax^4 + bx^3 + cx^2 + dx + e = 0 
  * for x in the range defined by x*a_h < 1 and a_oh/x < 1 (a_oh < x < 1/a_h)
  * because a_h and a_oh should be < 1 (ie 0 < pH < -logKw) 
+ * The new values of a_h and a_oh are: x*a_h and a_oh/x.
  * Return the solution which is the closest to 1. */
 {
   double tol = 1e-4 ;
@@ -1590,7 +1671,7 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
       if(y1 < x1) x = y[i] ;
     }
 
-
+    /* Too constraining
     if((x*a_h > 1) || (a_oh/x > 1)) {
       printf("\n") ;
       printf("n    = %d\n",n) ;
@@ -1598,10 +1679,11 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
       printf("x    = %e\n",x) ;
       printf("a_h  = %e\n",a_h) ;
       printf("a_oh = %e\n",a_oh) ;
-      /* Raise an interrupt signal instead of exit */
+      // Raise an interrupt signal instead of exit
       Message_Warning("poly4: a_h = %e > 1 or a_oh = %e > 1!",x*a_h,a_oh/x) ;
       Exception_Interrupt ;
     }
+    */
   }
   
   y[0] = a ;

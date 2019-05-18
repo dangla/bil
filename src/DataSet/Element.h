@@ -179,6 +179,12 @@ extern int*     (Element_ComputeMatrixRowAndColumnIndices)      (Element_t*) ;
 /* Material properties */
 #define Element_GetProperty(ELT) \
         Material_GetProperty(Element_GetMaterial(ELT))
+        
+#define Element_GetPropertyValue(ELT,S) \
+        Material_GetPropertyValue(Element_GetMaterial(ELT),S)
+        
+#define Element_GetGenericProperty(ELT) \
+        Material_GetGenericData(Element_GetMaterial(ELT))
 
 #define Element_GetCurves(ELT) \
         Material_GetCurves(Element_GetMaterial(ELT))
@@ -188,9 +194,6 @@ extern int*     (Element_ComputeMatrixRowAndColumnIndices)      (Element_t*) ;
         
 #define Element_GetModel(ELT) \
         Material_GetModel(Element_GetMaterial(ELT))
-        
-#define Element_GetPropertyValue(ELT,S) \
-        (Element_GetProperty(ELT)[Model_GetComputePropertyIndex(Element_GetModel(ELT))(S)])
 
 #define Element_FindCurve(ELT,S) \
         Material_FindCurve(Element_GetMaterial(ELT),S)
