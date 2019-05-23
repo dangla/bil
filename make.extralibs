@@ -3,8 +3,8 @@ SHELL = /bin/sh
 
 # Do you use these libraries: BLAS, LAPACK, SuperLU or others (YES/NO) ?
 BLAS_USE   := YES
-SLU_USE    := YES
-LAPACK_USE := YES
+LAPACK_USE := NO
+SLU_USE    := NO
 
 # if YES, where are these libraries ?
 # Change if needed  (${HOME} is root when sudo so I removed it)
@@ -34,10 +34,15 @@ endif
 
 # Library UEL
 # -----------
-UEL_USE := YES
+UEL_USE := NO
 UEL_DIR := /home/dangla/Documents/Softwares/bil/Projects/IoannisStefanou
 UEL_LIB := ${UEL_DIR}/libUEL_64.so
 
 ifeq (${UEL_USE},YES)
   BIL_EXTRALIBS += ${UEL_LIB}
 endif
+
+
+
+#welcome:
+#       read -p "Do you use BLAS library (Y/N)?:" BLAS_USE

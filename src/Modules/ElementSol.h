@@ -44,7 +44,7 @@ extern ElementSol_t* (ElementSol_GetDeepElementSol)(ElementSol_t*,unsigned int) 
         GenericData_GetData(ElementSol_GetConstantGenericData(ES))
 
 
-/* Add generic data */
+/* Add (im/ex)plicit and constant generic data */
 #define ElementSol_AddImplicitGenericData(ES,GD) \
         GenericData_Append(ElementSol_GetImplicitGenericData(ES),GD)
         
@@ -53,6 +53,30 @@ extern ElementSol_t* (ElementSol_GetDeepElementSol)(ElementSol_t*,unsigned int) 
         
 #define ElementSol_AddConstantGenericData(ES,GD) \
         GenericData_Append(ElementSol_GetConstantGenericData(ES),GD)
+
+
+
+/* Find (im/ex)plicit and constant generic data */
+#define ElementSol_FindImplicitGenericData(ES,...) \
+        GenericData_Find(ElementSol_GetImplicitGenericData(ES),__VA_ARGS__)
+        
+#define ElementSol_FindExplicitGenericData(ES,...) \
+        GenericData_Find(ElementSol_GetExplicitGenericData(ES),__VA_ARGS__)
+        
+#define ElementSol_FindConstantGenericData(ES,...) \
+        GenericData_Find(ElementSol_GetConstantGenericData(ES),__VA_ARGS__)
+
+
+
+/* Find (im/ex)plicit and constant data */
+#define ElementSol_FindImplicitData(ES,...) \
+        GenericData_FindData(ElementSol_GetImplicitGenericData(ES),__VA_ARGS__)
+        
+#define ElementSol_FindExplicitData(ES,...) \
+        GenericData_FindData(ElementSol_GetExplicitGenericData(ES),__VA_ARGS__)
+        
+#define ElementSol_FindConstantData(ES,...) \
+        GenericData_FindData(ElementSol_GetConstantGenericData(ES),__VA_ARGS__)
 
 
 #include "GenericData.h"

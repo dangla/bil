@@ -125,6 +125,24 @@ extern int*     (Element_ComputeMatrixRowAndColumnIndices)      (Element_t*) ;
 
 
 
+/* Access to data */
+#define Element_FindCurrentImplicitData(ELT,...) \
+        ElementSol_FindImplicitData(Element_GetElementSol(ELT),__VA_ARGS__)
+        
+#define Element_FindCurrentExplicitData(ELT,...) \
+        ElementSol_FindExplicitData(Element_GetElementSol(ELT),__VA_ARGS__)
+        
+#define Element_FindPreviousImplicitData(ELT,...) \
+        ElementSol_FindImplicitData(Element_GetPreviousElementSol(ELT),__VA_ARGS__)
+        
+#define Element_FindPreviousExplicitData(ELT,...) \
+        ElementSol_FindExplicitData(Element_GetPreviousElementSol(ELT),__VA_ARGS__)
+        
+#define Element_FindConstantData(ELT,...) \
+        ElementSol_FindConstantData(Element_GetElementSol(ELT),__VA_ARGS__)
+
+
+
 /* Access to nodes and node coordinates */
 #define Element_GetNode(ELT,i) \
         (Element_GetPointerToNode(ELT)[i])

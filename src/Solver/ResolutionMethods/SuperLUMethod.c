@@ -4,28 +4,24 @@
 #include <assert.h>
 #include <math.h>
 #include "BilLib.h"
-#include "SuperLUMethod.h"
 #include "Solver.h"
 #include "Message.h"
 #include "Matrix.h"
+
+#ifdef SUPERLULIB
+
+#include "SuperLUMethod.h"
 #include "SuperLUFormat.h"
 
+//#define val(x) #x
+//#define xval(x) val(x)
+//#include xval(SUPERLULIB/SRC/dsp_defs.h)
+//#include "/home/dangla/Documents/Softwares/getfem-4.0.0/superlu/slu_ddefs.h"
+#include "superlu.h"
+//#undef val
+//#undef xval
 
 
-#ifdef SUPERLULIB
-
-  //#define val(x) #x
-  //#define xval(x) val(x)
-  //#include xval(SUPERLULIB/SRC/dsp_defs.h)
-  //#include "/home/dangla/Documents/Softwares/getfem-4.0.0/superlu/slu_ddefs.h"
-  #include "superlu.h"
-  //#undef val
-  //#undef xval
-
-#endif
-
-
-#ifdef SUPERLULIB
 
 int   SuperLUMethod_Solve(Solver_t* solver)
 /** Resolution of a.x = b by SuperLU's method */
