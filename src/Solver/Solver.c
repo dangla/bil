@@ -9,7 +9,9 @@
 #include "BilLib.h"
 #include "ResolutionMethod.h"
 #include "CroutMethod.h"
-#include "SuperLUMethod.h"
+#ifdef SUPERLULIB
+  #include "SuperLUMethod.h"
+#endif
 #include "MA38Method.h"
 
 

@@ -11,8 +11,11 @@
 #include "MatrixStorageFormat.h"
 #include "LDUSKLFormat.h"
 #include "NCFormat.h"
-#include "SuperLUFormat.h"
 #include "CoordinateFormat.h"
+
+#ifdef SUPERLULIB
+  #include "SuperLUFormat.h"
+#endif
 
 
 /* Extern functions */

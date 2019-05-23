@@ -2,10 +2,8 @@
 #define SUPERLUMETHOD_H
 
 
-#ifdef SUPERLULIB
-  #include "Solver.h"
+#include "Solver.h"
 
-  extern int        SuperLUMethod_Solve(Solver_t*) ;
-#endif
+extern int        SuperLUMethod_Solve(Solver_t*) ;
 
 #endif

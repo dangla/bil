@@ -299,21 +299,13 @@ int PrintModelProp(Model_t* model,FILE *ficd)
 }
 
 
-//#define ElementSol_GetSolutions(ES) \
-        ((Solutions_t*) GenericData_GetData(GenericData_GetNextGenericData(ElementSol_GetImplicitGenericData(ES))))
-#define ElementSol_GetSolutions(ES) \
-        ((Solutions_t*) GenericData_FindData(ElementSol_GetImplicitGenericData(ES),Solutions_t,"Solutions"))
-
 
 /* The current and the previous solutions */
-#define Element_GetSolutions(EL) \
-        Element_GetCurrentSolutions(EL)
-
 #define Element_GetCurrentSolutions(EL) \
-        ElementSol_GetSolutions(Element_GetElementSol(EL))
-        
+        ((Solutions_t*) Element_FindCurrentImplicitData(EL,Solutions_t,"Solutions"))
+
 #define Element_GetPreviousSolutions(EL) \
-        ElementSol_GetSolutions(Element_GetPreviousElementSol(EL))
+        ((Solutions_t*) Element_FindPreviousImplicitData(EL,Solutions_t,"Solutions"))
         
         
 
@@ -403,7 +395,7 @@ int ComputeInitialState(Element_t* el,double t)
   double** u   = Element_ComputePointerToNodalUnknowns(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-  Solutions_t* sols = Element_GetSolutions(el) ;
+  Solutions_t* sols = Element_GetCurrentSolutions(el) ;
   int    p ;
   
   /* We skip if the element is a submanifold */

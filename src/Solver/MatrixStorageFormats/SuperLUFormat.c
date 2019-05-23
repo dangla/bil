@@ -8,9 +8,12 @@
 #include "Mesh.h"
 #include "Message.h"
 
-
-#include "SuperLUFormat.h"
 #include "NCFormat.h"
+
+#ifdef SUPERLULIB
+#include "SuperLUFormat.h"
+#endif
+
 
 
 
