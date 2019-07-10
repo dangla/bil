@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "Help.h"
 #include "BilVersion.h"
@@ -11,17 +10,16 @@
 #include "Modules.h"
 #include "Message.h"
 #include "Context.h"
+#include "Mry.h"
 
 
-static void          (Context_Initialize)(Context_t*,int,char**) ;
+static void          (Context_Initialize)(Context_t*) ;
 
 
 /* Global functions */
 Context_t* (Context_Create)(int argc,char** argv)
 {
-  Context_t* ctx = (Context_t*) calloc(1,sizeof(Context_t)) ;
-  
-  assert(ctx) ;
+  Context_t* ctx = (Context_t*) Mry_New(Context_t) ;
   
   
   {
@@ -32,7 +30,7 @@ Context_t* (Context_Create)(int argc,char** argv)
   
   /* Initialization */
   if(argc > 0 && argv) {
-    Context_Initialize(ctx,argc,argv) ;
+    Context_Initialize(ctx) ;
   }
   /*
   Context_GetHelpOnline(ctx) = NULL ;
@@ -77,8 +75,11 @@ void Context_Delete(void* self)
 
 
 
-void (Context_Initialize)(Context_t* ctx,int argc,char** argv)
+void (Context_Initialize)(Context_t* ctx)
 {
+  CommandLine_t* cmd = Context_GetCommandLine(ctx) ;
+  int    argc = CommandLine_GetNbOfArg(cmd) ;
+  char** argv = CommandLine_GetArg(cmd) ;
   int i ;
   
 

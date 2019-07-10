@@ -7,6 +7,7 @@
 #include "LocalVariableVectors.h"
 #include "Message.h"
 #include "Tools/Math.h"
+#include "Mry.h"
 
 
 
@@ -16,9 +17,7 @@ static void                       LocalVariableVector_Delete(void*) ;
 
 LocalVariableVectors_t* LocalVariableVectors_Create(int NbOfVariables)
 {
-  LocalVariableVectors_t* lvvs = (LocalVariableVectors_t*) malloc(sizeof(LocalVariableVectors_t)) ;
-  
-  if(!lvvs) arret("LocalVariableVectors_Create") ;
+  LocalVariableVectors_t* lvvs = (LocalVariableVectors_t*) Mry_New(LocalVariableVectors_t) ;
   
   //LocalVariableVectors_GetNbOfVariableVectors(lvvs) = 0 ;
   
@@ -59,18 +58,13 @@ void LocalVariableVectors_Delete(void* self)
 
 LocalVariableVector_t* LocalVariableVector_Create(int NbOfVectors,int NbOfVariables)
 {
-  LocalVariableVector_t* lvv = (LocalVariableVector_t*) malloc(NbOfVectors*sizeof(LocalVariableVector_t)) ;
-  
-  if(!lvv) arret("LocalVariableVector_Create(1)") ;
+  LocalVariableVector_t* lvv = (LocalVariableVector_t*) Mry_New(LocalVariableVector_t,NbOfVectors) ;
   
   
   /* Space allocation for the variables */
   {
     int i ;
-    size_t sz = NbOfVectors*NbOfVariables*sizeof(double) ;
-    double* val = (double*) malloc(sz) ;
-  
-    if(!val) arret("LocalVariableVector_Create(2)") ;
+    double* val = (double*) Mry_New(double,NbOfVectors*NbOfVariables) ;
     
     for(i = 0 ; i < NbOfVectors ; i++) {
       LocalVariableVector_GetVariable(lvv + i) = val + i*NbOfVariables ;
@@ -81,10 +75,7 @@ LocalVariableVector_t* LocalVariableVector_Create(int NbOfVectors,int NbOfVariab
   /* Space allocation for the variable derivatives */
   {
     int i ;
-    size_t sz = NbOfVectors*NbOfVariables*sizeof(double) ;
-    double* val = (double*) malloc(sz) ;
-  
-    if(!val) arret("LocalVariableVector_Create(3)") ;
+    double* val = (double*) Mry_New(double,NbOfVectors*NbOfVariables) ;
     
     for(i = 0 ; i < NbOfVectors ; i++) {
       LocalVariableVector_GetVariableDerivative(lvv + i) = val + i*NbOfVariables ;

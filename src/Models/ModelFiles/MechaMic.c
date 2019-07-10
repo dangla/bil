@@ -955,8 +955,6 @@ int ComputeMicrostructureMatrix(Mesh_t* mesh,Solver_t* solver,double t,double dt
 
 
 
-
-
 double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,Solutions_t* sols_n,double t,double dt,int p)
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;

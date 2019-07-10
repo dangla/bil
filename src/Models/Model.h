@@ -32,10 +32,10 @@ typedef int    (Model_ComputeImplicitTerms_t)(Element_t*,double,double) ;
 typedef int    (Model_ComputeMatrix_t)       (Element_t*,double,double,double*) ;
 typedef int    (Model_ComputeResidu_t)       (Element_t*,double,double,double*) ;
 
-typedef double* (Model_ComputeVariables_t)(Element_t*,double**,double**,double*,double,double,int) ;
+typedef void*  (Model_ComputeVariables_t)(Element_t*,void*,void*,void*,const double,const double,const int) ;
 //typedef double*   (Model_ComputeVariableFluxes_t)(Element_t* el,double** u,double t,double dt,int i,int j,...) ;
-typedef void    (Model_ComputeSecondaryVariables_t)(Element_t*,double,double,double*) ;
-typedef double* (Model_ComputeVariableDerivatives_t)(Element_t*,double,double,double,int,int) ;
+typedef void   (Model_ComputeSecondaryVariables_t)(Element_t*,const double,const double,double*) ;
+typedef void*  (Model_ComputeVariableDerivatives_t)(Element_t*,const double,const double,void*,const double,const int) ;
 
 #include "IntFcts.h"
 

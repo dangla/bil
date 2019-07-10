@@ -615,7 +615,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       double* f  = Function_GetFValue(FN + i) ;
       int j ;
       
-      fprintf(stdout,"Function(%d):\n",i) ;
+      fprintf(stdout,"Time Function(%d):\n",i) ;
       fprintf(stdout,"\t Nb of points = %d\n",nb_pts) ;
       
       for(j = 0 ; j < nb_pts ; j++) {

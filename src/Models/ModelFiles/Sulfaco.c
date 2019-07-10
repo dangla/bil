@@ -468,13 +468,80 @@ static CementSolutionDiffusion_t* csd = NULL ;
 static HardenedCementChemistry_t* hcc = NULL ;
 
 
+enum {
+I_ZN_Ca_S = NEQ,
+I_ZN_Si_S,
+I_ZN_Al_S,
+
+I_N_Q,
+I_N_S,
+I_N_Ca,
+I_N_Si,
+I_N_K,
+I_N_Cl,
+I_N_Al,
+
+I_N_CH,
+I_N_CSH2,
+I_N_AH3,
+I_N_AFm,
+I_N_AFt,
+I_N_C3AH6,
+I_N_CSH,
 
 
-#define NbOfVariables    (NEQ+56)
+I_V_Cem,
+
+I_PHI,
+I_PHI_C,
+
+I_V_CSH,
+
+
+
+I_N_CHn,
+I_N_CSH2n,
+I_N_AH3n,
+I_N_AFmn,
+I_N_AFtn,
+I_N_C3AH6n,
+I_N_CSHn,
+
+I_V_Cem0,
+
+
+I_PHIn,
+I_PHI_Cn,
+
+
+I_C_OHn,
+
+I_Radius,
+I_Radiusn,
+
+I_S_C,
+
+I_P_C,
+
+I_Beta_p,
+I_Beta_pn,
+
+I_Strain,
+I_Strain_n,
+
+I_Straind,
+I_Straind_n,
+
+I_Last
+} ;
+
+//#define NbOfVariables    (NEQ+56)
+#define NbOfVariables    (I_Last)
 static double Variables[Element_MaxNbOfNodes][NbOfVariables] ;
 static double dVariables[NbOfVariables] ;
 
 
+#if 0
 #define I_ZN_Ca_S      (NEQ+0)
 #define I_ZN_Si_S      (NEQ+1)
 #define I_ZN_Al_S      (NEQ+2)
@@ -537,6 +604,7 @@ static double dVariables[NbOfVariables] ;
 
 #define I_Straind      (NEQ+54)
 #define I_Straind_n    (NEQ+55)
+#endif
 
 
 

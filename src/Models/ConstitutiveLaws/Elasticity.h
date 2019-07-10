@@ -11,9 +11,10 @@ struct Elasticity_s     ; typedef struct Elasticity_s     Elasticity_t ;
 
 extern Elasticity_t*  (Elasticity_Create)(void) ;
 extern void           (Elasticity_Delete)(void*) ;
-extern void           (Elasticity_SetParameters)(Elasticity_t*,...) ;
-extern double*        (Elasticity_ComputeStiffnessTensor)(Elasticity_t*,double*) ;
-extern void           (Elasticity_PrintStiffnessTensor)(Elasticity_t*) ;
+extern void           (Elasticity_SetParameters)           (Elasticity_t*,...) ;
+extern void           (Elasticity_SetParameter)            (Elasticity_t*,const char*,double) ;
+extern double*        (Elasticity_ComputeStiffnessTensor)  (Elasticity_t*,double*) ;
+extern void           (Elasticity_PrintStiffnessTensor)    (Elasticity_t*) ;
 
 
 /* Accessors */
@@ -23,15 +24,10 @@ extern void           (Elasticity_PrintStiffnessTensor)(Elasticity_t*) ;
 
 
 #define Elasticity_MaxLengthOfKeyWord     (100)
-#define Elasticity_MaxNbOfParameters      (6)
+#define Elasticity_MaxNbOfParameters      (8)
 
 
 #include "Tools/Math.h"
-
-
-
-#define Elasticity_CopyType(EL,typ) \
-        memcpy(Elasticity_GetType(EL),typ,MAX(strlen(typ),Elasticity_MaxLengthOfKeyWord))
 
 
 /* Isotropy */
@@ -46,6 +42,12 @@ extern void           (Elasticity_PrintStiffnessTensor)(Elasticity_t*) ;
 
 #define Elasticity_GetPoissonRatio(EL) \
         Elasticity_GetParameter(EL)[1]
+        
+#define Elasticity_GetBulkModulus(EL) \
+        Elasticity_GetParameter(EL)[2]
+
+#define Elasticity_GetShearModulus(EL) \
+        Elasticity_GetParameter(EL)[3]
 
 
 /* Transversely isotropy */
@@ -56,16 +58,22 @@ extern void           (Elasticity_PrintStiffnessTensor)(Elasticity_t*) ;
         Elasticity_CopyType(EL,"transiso")
         
 #define Elasticity_GetYoungModulus3(EL) \
-        Elasticity_GetParameter(EL)[2]
+        Elasticity_GetParameter(EL)[4]
 
 #define Elasticity_GetPoissonRatio3(EL) \
-        Elasticity_GetParameter(EL)[3]
+        Elasticity_GetParameter(EL)[5]
         
 #define Elasticity_GetShearModulus3(EL) \
-        Elasticity_GetParameter(EL)[4]
+        Elasticity_GetParameter(EL)[6]
         
 #define Elasticity_GetAxis3(EL) \
-        Elasticity_GetParameter(EL)[5]
+        Elasticity_GetParameter(EL)[7]
+        
+        
+
+/* Implementation */
+#define Elasticity_CopyType(EL,typ) \
+        memcpy(Elasticity_GetType(EL),typ,MAX(strlen(typ),Elasticity_MaxLengthOfKeyWord))
 
 
 

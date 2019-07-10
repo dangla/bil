@@ -18,7 +18,7 @@ extern int      (Elements_ComputeNbOfMatrixEntries)(Elements_t*) ;
 #include "Mry.h"
 
 #define Elements_New() \
-        (Elements_t*) Mry_Malloc(sizeof(Elements_t))
+        (Elements_t*) Mry_New(Elements_t)
 
 
 /* Accessors */

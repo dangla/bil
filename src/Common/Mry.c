@@ -6,7 +6,7 @@
 
 
 
-void* Mry_Malloc(size_t size)
+void* Mry_Allocate(size_t size)
 {
   void* ptr ;
 
@@ -21,7 +21,7 @@ void* Mry_Malloc(size_t size)
 
 
 
-void* Mry_Calloc(size_t num, size_t size)
+void* Mry_AllocateZeroed(size_t num, size_t size)
 {
   void* ptr;
 

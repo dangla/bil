@@ -9,16 +9,15 @@
 
 #include "Message.h"
 #include "Buffer.h"
+#include "Mry.h"
 #include "TextFile.h"
 
 
-TextFile_t*   (TextFile_Create)(char* filename)
+TextFile_t*   (TextFile_Create)(const char* filename)
 {
-  TextFile_t* textfile   = (TextFile_t*) malloc(sizeof(TextFile_t)) ;
+  TextFile_t* textfile   = (TextFile_t*) Mry_New(TextFile_t) ;
   
-  if(!textfile) assert(textfile) ;
-  
-  
+
   /* Initialization */
   {
     TextFile_GetFileStream(textfile) = NULL ;
@@ -27,11 +26,7 @@ TextFile_t*   (TextFile_Create)(char* filename)
 
   /* Memory space for the file name */
   {
-    char* name = (char*) malloc(TextFile_MaxLengthOfFileName*sizeof(char)) ;
-    
-    if(!name) {
-      assert(name) ;
-    }
+    char* name = (char*) Mry_New(char[TextFile_MaxLengthOfFileName]) ;
     
     if(filename) {
       if(strlen(filename) > TextFile_MaxLengthOfFileName) {
@@ -46,9 +41,7 @@ TextFile_t*   (TextFile_Create)(char* filename)
   
   /* Memory space for the file positions */
   {
-    fpos_t* pos = (fpos_t*) malloc(sizeof(fpos_t)) ;
-    
-    if(!pos) assert(pos) ;
+    fpos_t* pos = (fpos_t*) Mry_New(fpos_t) ;
     
     TextFile_GetFilePosition(textfile) = pos ;
   }
@@ -60,26 +53,6 @@ TextFile_t*   (TextFile_Create)(char* filename)
     TextFile_GetPreviousPositionInString(textfile) = 0 ;
     TextFile_GetCurrentPositionInString(textfile) = 0 ;
   }
-  
-    
-  /* Space allocation for buffer */
-  /*
-  TextFile_GetBuffer(textfile) = Buffer_Create(TextFile_SizeOfBuffer) ;
-  */
-  
-  
-  /* Memory space for the text line to be read */
-  /*
-  {
-    int n = TextFile_CountTheMaxNbOfCharactersPerLine(textfile) ;
-    char* line = (char*) malloc(n*sizeof(char)) ;
-    
-    if(!line) assert(line) ;
-    
-    TextFile_GetTextLine(textfile) = line ;
-    TextFile_GetMaxNbOfCharactersPerLine(textfile) = n ;
-  }
-  */
   
   return(textfile) ;
 }

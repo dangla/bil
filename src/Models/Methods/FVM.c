@@ -628,6 +628,12 @@ double* FVM_ComputeCellSurfaceAreas(FVM_t* fvm)
   
   /* 0D */
   if(dim == 0) {
+    if(nn == 1) {
+      /* No areas */
+      return(area) ;
+    } else {
+      arret("FVM_ComputeCellSurfaceAreas (0)") ;
+    }
     
   /* 1D */
   } else if(dim == 1) {

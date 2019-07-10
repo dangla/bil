@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "Model.h"
 #include "Models.h"
@@ -11,6 +10,7 @@
 #include "DataFile.h"
 #include "ObVals.h"
 #include "Views.h"
+#include "Mry.h"
 
 
 extern  Model_SetModelProp_t  Models_ListOfSetModelProp ;
@@ -60,9 +60,7 @@ Model_t* Model_Create(int n_models)
 /** Create models */
 {
   int i ;
-  Model_t* model = (Model_t*) calloc(n_models,sizeof(Model_t)) ;
-  
-  assert(model) ;
+  Model_t* model = (Model_t*) Mry_New(Model_t,n_models) ;
   
   
   for(i = 0 ; i < n_models ; i++) {
@@ -70,19 +68,13 @@ Model_t* Model_Create(int n_models)
   
     /* Allocation of space for name of equations */
     {
-      size_t sz = Model_MaxNbOfEquations*sizeof(char*) ;
-      char** names = (char**) malloc(sz) ;
-      
-      if(!names) arret("Model_Create(4)") ;
+      char** names = (char**) Mry_New(char*,Model_MaxNbOfEquations) ;
       
       Model_GetNameOfEquation(model_i) = names ;
     }
       
     {
-      size_t sz = Model_MaxLengthOfKeyWord*Model_MaxNbOfEquations*sizeof(char) ;
-      char* name = (char*) malloc(sz) ;
-        
-      if(!name) arret("Model_Create(6)") ;
+      char* name = (char*) Mry_New(char,Model_MaxLengthOfKeyWord*Model_MaxNbOfEquations) ;
     
       {
         int j ;
@@ -96,19 +88,13 @@ Model_t* Model_Create(int n_models)
     
     /* Allocation of space for name of unknowns */
     {
-      size_t sz = Model_MaxNbOfEquations*sizeof(char*) ;
-      char** names = (char**) malloc(sz) ;
-      
-      if(!names) arret("Model_Create(5)") ;
+      char** names = (char**) Mry_New(char*,Model_MaxNbOfEquations) ;
     
       Model_GetNameOfUnknown(model_i) = names ;
     }
       
     {
-      size_t sz = Model_MaxLengthOfKeyWord*Model_MaxNbOfEquations*sizeof(char) ;
-      char* name = (char*) malloc(sz) ;
-        
-      if(!name) arret("Model_Create(7)") ;
+      char* name = (char*) Mry_New(char,Model_MaxLengthOfKeyWord*Model_MaxNbOfEquations) ;
     
       {
         int j ;
@@ -122,10 +108,7 @@ Model_t* Model_Create(int n_models)
     
     /* Allocation of space for code name of the model */
     {
-      size_t sz = Model_MaxLengthOfKeyWord*sizeof(char) ;
-      char* name = (char*) malloc(sz) ;
-      
-      if(!name) arret("Model_Create(9)") ;
+      char* name = (char*) Mry_New(char,Model_MaxLengthOfKeyWord) ;
       
       Model_GetCodeNameOfModel(model_i) = name ;
     }
@@ -133,10 +116,7 @@ Model_t* Model_Create(int n_models)
     
     /* Allocation of space for short title of the model */
     {
-      size_t sz = Model_MaxLengthOfShortTitle*sizeof(char) ;
-      char* name = (char*) malloc(sz) ;
-      
-      if(!name) arret("Model_Create(10)") ;
+      char* name = (char*) Mry_New(char,Model_MaxLengthOfShortTitle) ;
       
       Model_GetShortTitle(model_i) = name ;
     
@@ -146,10 +126,7 @@ Model_t* Model_Create(int n_models)
     
     /* Allocation of space for name of authors */
     {
-      size_t sz = Model_MaxLengthOfAuthorNames*sizeof(char) ;
-      char* name = (char*) malloc(sz) ;
-      
-      if(!name) arret("Model_Create(11)") ;
+      char* name = (char*) Mry_New(char,Model_MaxLengthOfAuthorNames) ;
     
       Model_GetNameOfAuthors(model_i) = name ;
       
@@ -159,11 +136,7 @@ Model_t* Model_Create(int n_models)
     
     /* Allocation of space for objective values */
     {
-      size_t sz = Model_MaxNbOfEquations*sizeof(ObVal_t) ;
-      ObVal_t* obval = (ObVal_t*) malloc(sz) ;
-      
-      if(!obval) arret("Model_Create(12)") ;
-      
+      ObVal_t* obval = (ObVal_t*) Mry_New(ObVal_t,Model_MaxNbOfEquations) ;
     
       Model_GetObjectiveValue(model_i) = obval ;
     }
@@ -172,8 +145,6 @@ Model_t* Model_Create(int n_models)
     /* Allocation of space for views */
     {
       Views_t* views = Views_Create(Model_MaxNbOfViews) ;
-      
-      if(!views) arret("Model_Create (14)") ;
       
       Model_GetViews(model_i) = views ;
     }

@@ -16,7 +16,7 @@ extern DataSet_t*  (DataSet_Create1)(char*,Options_t*) ;
 #include "Mry.h"
 
 #define DataSet_New() \
-        Mry_New(DataSet_t)
+        (DataSet_t*) Mry_New(DataSet_t)
 
 
 

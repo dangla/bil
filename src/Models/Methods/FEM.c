@@ -144,7 +144,7 @@ FEM_t*  (FEM_GetInstance)(Element_t* el)
 
 
 
-double*  FEM_ComputeElasticMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec)
+double*  FEM_ComputeElasticMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
 /** Return a pointer on a FE elastic matrix (Ndof*Ndof)
  *  with Ndof = N * dim and N = nb of nodes */
 {
@@ -269,7 +269,7 @@ double*  FEM_ComputeElasticMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec)
 
 
 
-double*  FEM_ComputeBiotMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec)
+double*  FEM_ComputeBiotMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
 /** Return a pointer on a Biot-like coupling matrix (Ndof*N) 
  *  with Ndof = N * dim and N = nb of nodes */
 {
@@ -354,7 +354,7 @@ double*  FEM_ComputeBiotMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec)
 
 
 
-double* FEM_ComputeMassMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec)
+double* FEM_ComputeMassMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
 /** Return a pointer on a FE mass matrix (N*N) 
  *  with N = nb of nodes*/
 {
@@ -423,7 +423,7 @@ double* FEM_ComputeMassMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec)
 
 
 
-double*  FEM_ComputeConductionMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec)
+double*  FEM_ComputeConductionMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
 /** Return a pointer on a FE conduction matrix (N*N) 
  *  with N = nb of nodes */
 {
@@ -497,7 +497,7 @@ double*  FEM_ComputeConductionMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec)
 
 
 
-double*  FEM_ComputePoroelasticMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec,int n_dif)
+double*  FEM_ComputePoroelasticMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int dec,const int n_dif)
 /** Return a pointer on a FE poroelastic matrix  (Ndof*Ndof) 
  *  with Ndof = N*Neq, N = nb of nodes and Neq = dim + n_dif 
  *  The inputs c should be given in the following order 
@@ -547,7 +547,7 @@ double*  FEM_ComputePoroelasticMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec,
   /* 1.2 Biot-like Coupling terms */
   for(i = 0 ; i < n_dif ; i++) {
     int I_h = I_H + i ;
-    double* c1 = c + 81 +i*9 ;
+    const double* c1 = c + 81 +i*9 ;
     double* kb = FEM_ComputeBiotMatrix(fem,fi,c1,dec) ;
     
     for(n = 0 ; n < nn ; n++) for(m = 0 ; m < nn ; m++) {
@@ -567,7 +567,7 @@ double*  FEM_ComputePoroelasticMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec,
     
     /* 2.1 Coupling terms */
     {
-      double* c1 = c + 81 + n_dif*9 + i*(9 + n_dif) ;
+      const double* c1 = c + 81 + n_dif*9 + i*(9 + n_dif) ;
       double* kb = FEM_ComputeBiotMatrix(fem,fi,c1,dec) ;
     
       for(n = 0 ; n < nn ; n++) for(m = 0 ; m < nn ; m++) {
@@ -580,7 +580,7 @@ double*  FEM_ComputePoroelasticMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec,
     /* 2.2 Accumulations */
     for(j = 0 ; j < n_dif ; j++) {
       int I_h = I_H + j ;
-      double* c2 = c + 81 + n_dif*9 + i*(9 + n_dif) + 9 + j ;
+      const double* c2 = c + 81 + n_dif*9 + i*(9 + n_dif) + 9 + j ;
       double* ka = FEM_ComputeMassMatrix(fem,fi,c2,dec) ;
       
       for(n = 0 ; n < nn ; n++) for(m = 0 ; m < nn ; m++) {
@@ -600,7 +600,7 @@ double*  FEM_ComputePoroelasticMatrix(FEM_t* fem,IntFct_t* fi,double* c,int dec,
 
 
 
-void FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t* fem,int inc,int equ,double* k)
+void FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t* fem,const int inc,const int equ,double* k)
 {
 #define K(i,j)     (k[(i)*nn*neq+(j)])
   Element_t* el = FEM_GetElement(fem) ;
@@ -682,7 +682,7 @@ void FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t* fem,int inc,int equ,double
 
 
 
-double*   FEM_ComputeBodyForceResidu(FEM_t* fem,IntFct_t* intfct,double* f,int dec)
+double*   FEM_ComputeBodyForceResidu(FEM_t* fem,IntFct_t* intfct,const double* f,const int dec)
 /* Compute the residu due to a force */
 {
   Element_t* el = FEM_GetElement(fem) ;
@@ -746,7 +746,7 @@ double*   FEM_ComputeBodyForceResidu(FEM_t* fem,IntFct_t* intfct,double* f,int d
 
 
 
-double*   FEM_ComputeStrainWorkResidu(FEM_t* fem,IntFct_t* intfct,double* sig,int dec)
+double*   FEM_ComputeStrainWorkResidu(FEM_t* fem,IntFct_t* intfct,const double* sig,const int dec)
 /* Compute the residu due to strain work */
 {
 #define DH(n,i)     (dh[(n)*dim + (i)])
@@ -822,7 +822,7 @@ double*   FEM_ComputeStrainWorkResidu(FEM_t* fem,IntFct_t* intfct,double* sig,in
 
 
 
-double*   FEM_ComputeFluxResidu(FEM_t* fem,IntFct_t* intfct,double* f,int dec)
+double*   FEM_ComputeFluxResidu(FEM_t* fem,IntFct_t* intfct,const double* f,const int dec)
 /* Compute the residu due to flux */
 {
 #define DH(n,i)     (dh[(n)*dim+(i)])
@@ -879,7 +879,7 @@ double*   FEM_ComputeFluxResidu(FEM_t* fem,IntFct_t* intfct,double* f,int dec)
 }
 
 
-double* FEM_ComputeSurfaceLoadResidu(FEM_t* fem,IntFct_t* intfct,Load_t* load,double t,double dt)
+double* FEM_ComputeSurfaceLoadResidu(FEM_t* fem,IntFct_t* intfct,Load_t* load,const double t,const double dt)
 /* Compute the residu force due to surface loads (r) */
 {
   Element_t* el = FEM_GetElement(fem) ;
@@ -1087,7 +1087,7 @@ double* FEM_ComputeSurfaceLoadResidu(FEM_t* fem,IntFct_t* intfct,Load_t* load,do
 
 
 
-void FEM_TransformResiduFromDegree2IntoDegree1(FEM_t* fem,int equ,double* r)
+void FEM_TransformResiduFromDegree2IntoDegree1(FEM_t* fem,const int equ,double* r)
 {
   Element_t* el = FEM_GetElement(fem) ;
   int    nn = Element_GetNbOfNodes(el) ;
@@ -1238,204 +1238,6 @@ double   FEM_ComputeVolume(Mesh_t* mesh)
   
   return(vol) ;
 }
-
-
-
-/* FEM_Compute functions in the form (FEM_t*,IntFct_t*,double**,int) */
-
-/* NOT USED */
-
-#ifdef NOTDEFINED
-double* FEM_ComputeUnknowns(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
-/** Compute the unknowns at the interpolation points located at "inc" */
-{
-#define U(n)   (u[n][Element_GetNodalUnknownPosition(element,n,inc)])
-  Element_t* element = FEM_GetElement(fem) ;
-  int np = IntFct_GetNbOfPoints(intfct) ;
-  size_t SizeNeeded = np*sizeof(double) ;
-  double* unk = (double*) FEM_AllocateInBuffer(fem,SizeNeeded) ;
-  
-  
-  {
-    int nn = IntFct_GetNbOfFunctions(intfct) ;
-    int p ;
-    
-    for(p = 0 ; p < np ; p++) {
-      /* interpolation functions */
-      double* h  = IntFct_GetFunctionAtPoint(intfct,p) ;
-    
-      /* Unknown */
-      {
-        double par = 0. ;
-        int i ;
-        
-        for(i = 0 ; i < nn ; i++) {
-          par += h[i]*U(i) ;
-        }
-        
-        unk[p] = par ;
-      }
-    }
-  }
-  
-  return(unk) ;
-#undef U
-}
-
-
-
-double* FEM_ComputeUnknownGradients(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
-/** Compute the unknown gradients at the interpolation points located at "inc" */
-{
-#define U(n)   (u[n][Element_GetNodalUnknownPosition(element,n,inc)])
-#define DH(n,i)  (dh[(n)*dim+(i)])
-#define CJ(i,j)  (cj[(i)*dim+(j)])
-  Element_t* element = FEM_GetElement(fem) ;
-  int    dim  = Element_GetDimension(element) ;
-  int np = IntFct_GetNbOfPoints(intfct) ;
-  size_t SizeNeeded = np*3*sizeof(double) ;
-  double* ugrd = (double*) FEM_AllocateInBuffer(fem,SizeNeeded) ;
-  
-
-  {
-    int nn = IntFct_GetNbOfFunctions(intfct) ;
-    int p ;
-    
-    for(p = 0 ; p < np ; p++) {
-      /* interpolation functions */
-      double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
-      /* inverse jacobian matrix (cj) */
-      double* cj = FEM_ComputeInverseJacobianMatrix(element,dh,nn) ;
-      double gu[3] ;
-      int i ;
-  
-      /* initialisation of gu */
-      for(i = 0 ; i < 3 ; i++)  gu[i] = 0. ;
-  
-      /* the parameter gradient (gu) */
-      for(i = 0 ; i < dim ; i++) {
-        int k,l ;
-        
-        for(k = 0 ; k < nn ; k++) for(l = 0 ; l < dim ; l++) {
-          gu[i] += U(k)*DH(k,l)*CJ(l,i) ;
-        }
-      }
-      
-      {
-        double* grad = ugrd + 3*p ;
-        
-        for(i = 0 ; i < 3 ; i++) grad[i] = gu[i] ;
-      }
-      
-      Element_FreeBufferFrom(element,cj) ;
-    }
-  }
-  
-  return(ugrd) ;
-  
-#undef U
-#undef DH
-#undef CJ
-}
-
-
-
-double* FEM_ComputeLinearStrainTensors(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
-/** Compute the 3D linearized strain tensors for the displacement vectors 
- *  located at "inc" and at the interpolation points */
-{
-#define U(n,i)   (u[n][Element_GetNodalUnknownPosition(element,n,inc + (i))])
-#define DH(n,i)  (dh[(n)*dim+(i)])
-#define EPS(i,j) (eps[(i)*3+(j)])
-#define CJ(i,j)  (cj[(i)*dim+(j)])
-  Element_t* element = FEM_GetElement(fem) ;
-  Symmetry_t sym = Element_GetSymmetry(element) ;
-  int    dim  = Element_GetDimension(element) ;
-  int np = IntFct_GetNbOfPoints(intfct) ;
-  size_t SizeNeeded = np*9*sizeof(double) ;
-  double* strains = (double*) FEM_AllocateInBuffer(fem,SizeNeeded) ;
-  
-  
-  {
-    int nn = IntFct_GetNbOfFunctions(intfct) ;
-    int p ;
-    
-    for(p = 0 ; p < np ; p++) {
-      /* interpolation functions */
-      double* h  = IntFct_GetFunctionAtPoint(intfct,p) ;
-      double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
-      /* inverse jacobian matrix (cj) */
-      double* cj = FEM_ComputeInverseJacobianMatrix(element,dh,nn) ;
-      double  gu[3][3] ;
-      int     i ;
-  
-  
-      /* initialisation of gu */
-      for(i = 0 ; i < 3 ; i++) {
-        int j ;
-        
-        for(j = 0 ; j < 3 ; j++)  {
-          gu[i][j] = 0. ;
-        }
-      }
-  
-      /* displacement gradient (gu) */
-      for(i = 0 ; i < dim ; i++) {
-        int j ;
-        
-        for(j = 0 ; j < dim ; j++) {
-          int k ;
-          
-          for(k = 0 ; k < nn ; k++) {
-            int l ;
-          
-            for(l = 0 ; l < dim ; l++) {
-              gu[i][j] += U(k,i)*DH(k,l)*CJ(l,j) ;
-            }
-          }
-        }
-      }
-      
-      {
-        double* eps = strains + 9*p ;
-  
-        /* Linearized strain tensor */
-        for(i = 0 ; i < 3 ; i++) {
-          int j ;
-        
-          for(j = 0 ; j < 3 ; j++) {
-            EPS(i,j) = (gu[i][j] + gu[j][i])*0.5 ;
-          }
-        }
-  
-        /* symmetric cases : axisymmetrical or spherical */
-        if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-          double rayon = 0. ;
-          double u_r   = 0. ;
-        
-          for(i = 0 ; i < nn ; i++) {
-            double* x = Element_GetNodeCoordinate(element,i) ;
-          
-            rayon += h[i]*x[0] ;
-            u_r   += h[i]*U(i,0) ;
-          }
-          EPS(2,2) += u_r/rayon ;
-          if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/rayon ;
-        }
-      }
-      
-      Element_FreeBufferFrom(element,cj) ;
-    }
-  }
-  
-  return(strains) ;
-#undef U
-#undef DH
-#undef EPS
-#undef CJ
-}
-#endif
-/* End */
 
 
 
@@ -2286,3 +2088,202 @@ double* FEM_ComputeJacobianMatrix(Element_t* element,double* dh,int nn)
 #undef DH
 #undef JC
 }
+
+
+
+
+/* FEM_Compute functions in the form (FEM_t*,IntFct_t*,double**,int) */
+
+/* NOT USED */
+
+#ifdef NOTDEFINED
+double* FEM_ComputeUnknowns(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
+/** Compute the unknowns at the interpolation points located at "inc" */
+{
+#define U(n)   (u[n][Element_GetNodalUnknownPosition(element,n,inc)])
+  Element_t* element = FEM_GetElement(fem) ;
+  int np = IntFct_GetNbOfPoints(intfct) ;
+  size_t SizeNeeded = np*sizeof(double) ;
+  double* unk = (double*) FEM_AllocateInBuffer(fem,SizeNeeded) ;
+  
+  
+  {
+    int nn = IntFct_GetNbOfFunctions(intfct) ;
+    int p ;
+    
+    for(p = 0 ; p < np ; p++) {
+      /* interpolation functions */
+      double* h  = IntFct_GetFunctionAtPoint(intfct,p) ;
+    
+      /* Unknown */
+      {
+        double par = 0. ;
+        int i ;
+        
+        for(i = 0 ; i < nn ; i++) {
+          par += h[i]*U(i) ;
+        }
+        
+        unk[p] = par ;
+      }
+    }
+  }
+  
+  return(unk) ;
+#undef U
+}
+
+
+
+double* FEM_ComputeUnknownGradients(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
+/** Compute the unknown gradients at the interpolation points located at "inc" */
+{
+#define U(n)   (u[n][Element_GetNodalUnknownPosition(element,n,inc)])
+#define DH(n,i)  (dh[(n)*dim+(i)])
+#define CJ(i,j)  (cj[(i)*dim+(j)])
+  Element_t* element = FEM_GetElement(fem) ;
+  int    dim  = Element_GetDimension(element) ;
+  int np = IntFct_GetNbOfPoints(intfct) ;
+  size_t SizeNeeded = np*3*sizeof(double) ;
+  double* ugrd = (double*) FEM_AllocateInBuffer(fem,SizeNeeded) ;
+  
+
+  {
+    int nn = IntFct_GetNbOfFunctions(intfct) ;
+    int p ;
+    
+    for(p = 0 ; p < np ; p++) {
+      /* interpolation functions */
+      double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
+      /* inverse jacobian matrix (cj) */
+      double* cj = FEM_ComputeInverseJacobianMatrix(element,dh,nn) ;
+      double gu[3] ;
+      int i ;
+  
+      /* initialisation of gu */
+      for(i = 0 ; i < 3 ; i++)  gu[i] = 0. ;
+  
+      /* the parameter gradient (gu) */
+      for(i = 0 ; i < dim ; i++) {
+        int k,l ;
+        
+        for(k = 0 ; k < nn ; k++) for(l = 0 ; l < dim ; l++) {
+          gu[i] += U(k)*DH(k,l)*CJ(l,i) ;
+        }
+      }
+      
+      {
+        double* grad = ugrd + 3*p ;
+        
+        for(i = 0 ; i < 3 ; i++) grad[i] = gu[i] ;
+      }
+      
+      Element_FreeBufferFrom(element,cj) ;
+    }
+  }
+  
+  return(ugrd) ;
+  
+#undef U
+#undef DH
+#undef CJ
+}
+
+
+
+double* FEM_ComputeLinearStrainTensors(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
+/** Compute the 3D linearized strain tensors for the displacement vectors 
+ *  located at "inc" and at the interpolation points */
+{
+#define U(n,i)   (u[n][Element_GetNodalUnknownPosition(element,n,inc + (i))])
+#define DH(n,i)  (dh[(n)*dim+(i)])
+#define EPS(i,j) (eps[(i)*3+(j)])
+#define CJ(i,j)  (cj[(i)*dim+(j)])
+  Element_t* element = FEM_GetElement(fem) ;
+  Symmetry_t sym = Element_GetSymmetry(element) ;
+  int    dim  = Element_GetDimension(element) ;
+  int np = IntFct_GetNbOfPoints(intfct) ;
+  size_t SizeNeeded = np*9*sizeof(double) ;
+  double* strains = (double*) FEM_AllocateInBuffer(fem,SizeNeeded) ;
+  
+  
+  {
+    int nn = IntFct_GetNbOfFunctions(intfct) ;
+    int p ;
+    
+    for(p = 0 ; p < np ; p++) {
+      /* interpolation functions */
+      double* h  = IntFct_GetFunctionAtPoint(intfct,p) ;
+      double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
+      /* inverse jacobian matrix (cj) */
+      double* cj = FEM_ComputeInverseJacobianMatrix(element,dh,nn) ;
+      double  gu[3][3] ;
+      int     i ;
+  
+  
+      /* initialisation of gu */
+      for(i = 0 ; i < 3 ; i++) {
+        int j ;
+        
+        for(j = 0 ; j < 3 ; j++)  {
+          gu[i][j] = 0. ;
+        }
+      }
+  
+      /* displacement gradient (gu) */
+      for(i = 0 ; i < dim ; i++) {
+        int j ;
+        
+        for(j = 0 ; j < dim ; j++) {
+          int k ;
+          
+          for(k = 0 ; k < nn ; k++) {
+            int l ;
+          
+            for(l = 0 ; l < dim ; l++) {
+              gu[i][j] += U(k,i)*DH(k,l)*CJ(l,j) ;
+            }
+          }
+        }
+      }
+      
+      {
+        double* eps = strains + 9*p ;
+  
+        /* Linearized strain tensor */
+        for(i = 0 ; i < 3 ; i++) {
+          int j ;
+        
+          for(j = 0 ; j < 3 ; j++) {
+            EPS(i,j) = (gu[i][j] + gu[j][i])*0.5 ;
+          }
+        }
+  
+        /* symmetric cases : axisymmetrical or spherical */
+        if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
+          double rayon = 0. ;
+          double u_r   = 0. ;
+        
+          for(i = 0 ; i < nn ; i++) {
+            double* x = Element_GetNodeCoordinate(element,i) ;
+          
+            rayon += h[i]*x[0] ;
+            u_r   += h[i]*U(i,0) ;
+          }
+          EPS(2,2) += u_r/rayon ;
+          if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/rayon ;
+        }
+      }
+      
+      Element_FreeBufferFrom(element,cj) ;
+    }
+  }
+  
+  return(strains) ;
+#undef U
+#undef DH
+#undef EPS
+#undef CJ
+}
+#endif
+/* End */

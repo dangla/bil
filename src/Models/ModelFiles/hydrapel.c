@@ -8,45 +8,56 @@
 #include "FEM.h"
 #include "Plasticity.h"
 
-#define TITLE "Unsaturated soils (2019)"
-#define AUTHORS "Dangla"
+#define TITLE "hydration of expansive pellet mixtures (2019)"
+#define AUTHORS "Darde"
 
 #include "PredefinedMethods.h"
 
 
 /* Nb of equations */
-#define NEQ     (1+dim)
+#define NEQ     (2+dim)
 /* Nb of (im/ex)plicit terms and constant terms */
-#define NVI     (27)
+#define NVI     (31)
 #define NVE     (1)
 #define NV0     (0)
 
 /* Equation index */
-#define E_liq   (0)
-#define E_mec   (1)
+#define E_liq    (1+dim)
+#define E_liq1   (0+dim)
+#define E_mec    (0)
 
 /* Unknown index */
-#define U_p_l   (0)
-#define U_u     (1)
+#define U_p_l2   (1+dim)
+#define U_p_l1   (0+dim)
+#define U_u      (0)
 
 /* We define some names for implicit terms */
 #define M_L           (vim   + 0)[0]
 #define M_L_n         (vim_n + 0)[0]
 
-#define W_L           (vim   + 1)
+#define M_L1          (vim   + 1)[0]
+#define M_L1_n        (vim_n + 1)[0]
 
-#define SIG           (vim   + 4)
-#define SIG_n         (vim_n + 4)
+#define W_L           (vim   + 2)
 
-#define F_MASS        (vim   + 13)
+#define SIG           (vim   + 5)
+#define SIG_n         (vim_n + 5)
 
-#define EPS_P         (vim   + 16)
-#define EPS_P_n       (vim_n + 16)
+#define F_MASS        (vim   + 14)
 
-#define HARDV         (vim   + 25)[0]
-#define HARDV_n       (vim_n + 25)[0]
+#define EPS_P         (vim   + 17)
+#define EPS_P_n       (vim_n + 17)
 
-#define CRIT          (vim   + 26)[0]
+#define HARDV         (vim   + 26)[0]
+#define HARDV_n       (vim_n + 26)[0]
+
+#define CRIT          (vim   + 28)[0]
+
+#define EPSV_1        (vim   + 29)[0]
+#define EPSV_1n       (vim_n + 29)[0]
+
+#define EPSV_2        (vim   + 30)[0]
+#define EPSV_2n       (vim_n + 30)[0]
 
 
 /* We define some names for explicit terms */
@@ -69,8 +80,8 @@ static void  ComputeSecondaryVariables(Element_t*,double,double,double*,double*)
 //static double* ComputeVariablesDerivatives(Element_t*,double,double*,double,int) ;
 
 
-static double pie(double,double,Curve_t*) ;
-static double dpiesdpl(double,double,Curve_t*) ;
+//static double pie(double,double,Curve_t*) ;
+//static double dpiesdpl(double,double,Curve_t*) ;
 
 
 #define ComputeFunctionGradients(...)  Plasticity_ComputeFunctionGradients(plasty,__VA_ARGS__)
@@ -80,18 +91,21 @@ static double dpiesdpl(double,double,Curve_t*) ;
 
 
 /* Material properties */
-#define SATURATION_CURVE        (Element_GetCurve(el))
-#define SaturationDegree(pc)    (Curve_ComputeValue(SATURATION_CURVE,pc))
-#define dSaturationDegree(pc)   (Curve_ComputeDerivative(SATURATION_CURVE,pc))
+//#define SATURATION_CURVE        (Element_GetCurve(el))
+//#define SaturationDegree(pc)    (Curve_ComputeValue(SATURATION_CURVE,pc))
+//#define dSaturationDegree(pc)   (Curve_ComputeDerivative(SATURATION_CURVE,pc))
 
 #define RELATIVEPERM_CURVE                (Element_GetCurve(el) + 1)
 #define RelativePermeabilityToLiquid(pc)  (Curve_ComputeValue(RELATIVEPERM_CURVE,pc))
 
-#define CAPIHARDENING_CURVE     (Element_GetCurve(el) + 2)
-#define CapillaryHardening(pc)  (Curve_ComputeValue(CAPIHARDENING_CURVE,pc))
+//#define CAPIHARDENING_CURVE     (Element_GetCurve(el) + 2)
+//#define CapillaryHardening(pc)  (Curve_ComputeValue(CAPIHARDENING_CURVE,pc))
 
-#define EquivalentPressure(pl,pg)   (pie(pl,pg,SATURATION_CURVE))
-#define dEquivalentPressure(pl,pg)  (dpiesdpl(pl,pg,SATURATION_CURVE))
+#define LOADINGCOLLAPSEFACTOR_CURVE     (Element_GetCurve(el) + 0)
+#define LoadingCollapseFactor(s)  (Curve_ComputeValue(LOADINGCOLLAPSEFACTOR_CURVE,s))
+
+//#define EquivalentPressure(pl,pg)   (pie(pl,pg,SATURATION_CURVE))
+//#define dEquivalentPressure(pl,pg)  (dpiesdpl(pl,pg,SATURATION_CURVE))
 
 
 
@@ -105,11 +119,25 @@ static double  rho_l0 ;
 static double  p_g = 0 ;
 static double  k_int ;
 static double  mu_l ;
-static double  kappa ;
-static double  mu ;
+static double  kappa_m ;
+static double  kappa_M ;
+static double  kappa_s ;
+static double  poisson ;
+static double  alpha ;
+static double  beta ;
+//static double  lambda_M0 ;
+static double  p_c ;
 static double  p_co0 ;
 static double  e0 ;
-static double  phi0 ;
+static double  A_a ;
+static double  B_a ;
+static double  A_b ;
+static double  B_b ;
+static double  A_m ;
+static double  B_m ;
+static double  p_l0 ;
+static double  p_limit ;
+static double  k_s ;
 static Elasticity_t* elasty ;
 static Plasticity_t* plasty ;
 
@@ -118,20 +146,24 @@ static Plasticity_t* plasty ;
 /* Variable indexes */
 enum {
   I_U     = 0,
-  I_P_L   = I_U     + 3,
+  I_P_L1  = I_U     + 3,
+  I_P_L2,
   I_EPS,
   I_SIG   = I_EPS   + 9,
   I_EPS_P = I_SIG   + 9,
   I_Fmass = I_EPS_P + 9,
   I_M_L   = I_Fmass + 3,
+  I_M_L1,
+  I_EPSV_1,
+  I_EPSV_2,
   I_W_L,
   I_HARDV = I_W_L   + 3,
   I_CRIT,
   I_RHO_L,
   I_PHI,
   I_K_H,
-  I_GRD_P_L,
-  I_Last  = I_GRD_P_L + 3
+  I_GRD_P_L2,
+  I_Last  = I_GRD_P_L2 + 3
 } ;
 
 #define NbOfVariables     (I_Last)
@@ -147,7 +179,7 @@ int pm(const char *s)
     return (0) ;
   } else if(!strcmp(s,"rho_s"))      { 
     return (1) ;
-  } else if(!strcmp(s,"shear_modulus")) { 
+  } else if(!strcmp(s,"Poisson")) { 
     return (2) ;
   } else if(!strcmp(s,"rho_l"))      { 
     return (3) ;
@@ -155,7 +187,7 @@ int pm(const char *s)
     return (4) ;
   } else if(!strcmp(s,"mu_l"))       { 
     return (5) ;
-  } else if(!strcmp(s,"p_l0"))       {
+  } else if(!strcmp(s,"initial_liquid_pressure"))       {
     return (6) ;
   } else if(!strcmp(s,"initial_stress"))       {
     return(7) ;
@@ -166,16 +198,42 @@ int pm(const char *s)
     return(7 + 3*i + j) ;
     
     /* Cam-clay */
-  } else if(!strcmp(s,"slope_of_swelling_line")) {
+  } else if(!strcmp(s,"kappa_m")) {
     return(16) ;
-  } else if(!strcmp(s,"slope_of_virgin_consolidation_line")) {
+  } else if(!strcmp(s,"kappa_M")) {
     return(17) ;
-  } else if(!strcmp(s,"slope_of_critical_state_line"))  {
+  } else if(!strcmp(s,"kappa_s"))  {
     return(18) ;
   } else if(!strcmp(s,"initial_pre-consolidation_pressure")) {
     return(19) ;
   } else if(!strcmp(s,"initial_void_ratio")) {
     return(20) ;
+  } else if(!strcmp(s,"p_c")) {
+    return(21) ;
+  } else if(!strcmp(s,"limit_liquid_pressure")) {
+    return(22) ;
+  } else if(!strcmp(s,"A_a")) {
+    return(23) ;
+  } else if(!strcmp(s,"B_a")) {
+    return(24) ;
+  } else if(!strcmp(s,"A_b")) {
+    return(25) ;
+  } else if(!strcmp(s,"B_b")) {
+    return(26) ;
+  } else if(!strcmp(s,"A_m")) {
+    return(27) ;
+  } else if(!strcmp(s,"B_m")) {
+    return(28) ;
+  } else if(!strcmp(s,"slope_of_critical_state_line"))  {
+    return(29) ;
+  } else if(!strcmp(s,"k_s"))  {
+    return(30) ;
+  } else if(!strcmp(s,"alpha"))  {
+    return(31) ;
+  } else if(!strcmp(s,"beta"))  {
+    return(32) ;
+  } else if(!strcmp(s,"lambda_M0"))  {
+    return(33) ;
   } else return(-1) ;
 }
 
@@ -188,11 +246,25 @@ void GetProperties(Element_t* el)
   mu_l    = Element_GetPropertyValue(el,"mu_l") ;
   rho_l0  = Element_GetPropertyValue(el,"rho_l") ;
   sig0    = &Element_GetPropertyValue(el,"initial_stress") ;
-  kappa   = Element_GetPropertyValue(el,"slope_of_swelling_line") ;
-  mu      = Element_GetPropertyValue(el,"shear_modulus") ;
   p_co0   = Element_GetPropertyValue(el,"initial_pre-consolidation_pressure") ;
   e0      = Element_GetPropertyValue(el,"initial_void_ratio") ;
-  phi0    = e0/(1 + e0) ;
+  kappa_m = Element_GetPropertyValue(el,"kappa_m") ;
+  kappa_M = Element_GetPropertyValue(el,"kappa_M") ;
+  kappa_s = Element_GetPropertyValue(el,"kappa_s") ;
+  poisson = Element_GetPropertyValue(el,"Poisson") ;
+  alpha   = Element_GetPropertyValue(el,"alpha") ;
+  beta    = Element_GetPropertyValue(el,"beta") ;
+//  lambda_M0 = Element_GetPropertyValue(el,"lambda_M0") ;
+  p_c     = Element_GetPropertyValue(el,"p_c") ;
+  A_a     = Element_GetPropertyValue(el,"A_a") ;
+  B_a     = Element_GetPropertyValue(el,"B_a") ;
+  A_b     = Element_GetPropertyValue(el,"A_b") ;
+  B_b     = Element_GetPropertyValue(el,"B_b") ;
+  A_m     = Element_GetPropertyValue(el,"A_m") ;
+  B_m     = Element_GetPropertyValue(el,"B_m") ;
+  p_l0    = Element_GetPropertyValue(el,"initial_liquid_pressure") ;
+  p_limit = Element_GetPropertyValue(el,"limit_liquid_pressure") ;
+  k_s     = Element_GetPropertyValue(el,"k_s") ;
   
   plasty  = Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
   elasty  = Plasticity_GetElasticity(plasty) ;
@@ -213,12 +285,14 @@ int SetModelProp(Model_t* model)
   
   /** Names of these equations */
   Model_CopyNameOfEquation(model,E_liq,"liq") ;
+  Model_CopyNameOfEquation(model,E_liq1,"pellet") ;
   for(i = 0 ; i < dim ; i++) {
     Model_CopyNameOfEquation(model,E_mec + i,name_eqn[i]) ;
   }
   
   /** Names of the main (nodal) unknowns */
-  Model_CopyNameOfUnknown(model,U_p_l,"p_l") ;
+  Model_CopyNameOfUnknown(model,U_p_l1,"p_l1") ;
+  Model_CopyNameOfUnknown(model,U_p_l2,"p_l2") ;
   for(i = 0 ; i < dim ; i++) {
     Model_CopyNameOfUnknown(model,U_u + i,name_unk[i]) ;
   }
@@ -237,7 +311,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 /** Read the material properties in the stream file ficd 
  *  Return the nb of (scalar) properties of the model */
 {
-  int  NbOfProp = 21 ;
+  int  NbOfProp = 34 ;
   int i ;
 
   /* Par defaut tout a 0 */
@@ -269,17 +343,17 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       }
     }
     {
-      /* Cam-Clay */
+      /* Cam-Clay with offset*/
       {
-        double lambda = Material_GetPropertyValue(mat,"slope_of_virgin_consolidation_line") ;
+        double lambda_M0 = Material_GetPropertyValue(mat,"lambda_M0") ;
         double M      = Material_GetPropertyValue(mat,"slope_of_critical_state_line") ;
         double pc0    = Material_GetPropertyValue(mat,"initial_pre-consolidation_pressure") ;
         
         e0     = Material_GetPropertyValue(mat,"initial_void_ratio") ;
-        kappa  = Material_GetPropertyValue(mat,"slope_of_swelling_line") ;
+        kappa_M  = Material_GetPropertyValue(mat,"kappa_M") ;
         
-        Plasticity_SetToCamClay(plasty) ;
-        Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0) ;
+        Plasticity_SetToCamClayOffset(plasty) ;
+        Plasticity_SetParameters(plasty,kappa_M,lambda_M0,M,pc0,e0) ;
       }
     }
 
@@ -481,8 +555,8 @@ int  ComputeExplicitTerms(Element_t* el,double t)
     double rho_l = x[I_RHO_L] ;
     
     /* pressures */
-    double p_l = x[I_P_L] ;
-    double pc = p_g - p_l ;
+    double p_l2 = x[I_P_L2] ;
+    double pc = p_g - p_l2 ;
     
     /* permeability */
     double k_h = rho_l*k_int/mu_l*RelativePermeabilityToLiquid(pc) ;
@@ -586,64 +660,21 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     double c[IntFct_MaxNbOfIntPoints*100] ;
     int dec = ComputeTangentCoefficients(fem,dt,c) ;
     double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,1) ;
-    /* The matrix kp is stored as (u for displacement, p for pressure)
-     * | Kuu Kup |
-     * | Kpu Kpp |
+    /* The matrix kp is stored as (u for displacement, s1,s2 for pressure)
+     * | Kuu  Kup2  Kup1  |
+     * | Kp2u Kp2p2 Kp2p1 |
+     * | Kp1u Kp1p2 Kp1p1 |
      * i.e. the displacements u are in the positions 0 to dim-1 and
      * the pressure p is in the position dim.
      * So we need to store the matrix by accounting for the right indexes.
      */
-    #define KP(i,j)   (kp[(i)*ndof + (j)])
-    
-    if(E_mec == 0) {
+    {
       int i ;
       
       for(i = 0 ; i < ndof*ndof ; i++) {
         k[i] = kp[i] ;
       }
-    } else {
-      int n ;
-      
-      for(n = 0 ; n < nn ; n++) {
-        int m ;
-        
-        for(m = 0 ; m < nn ; m++) {
-          
-          /* Mechanics */
-          {
-            int i ;
-      
-            /* Stiffness matrix */
-            for(i = 0 ; i < dim ; i++) {
-              int j ;
-            
-              for(j = 0 ; j < dim ; j++) {
-                K(E_mec + i + n*NEQ,U_u + j + m*NEQ) = KP(0 + i + n*NEQ,0 + j + m*NEQ) ;
-              }
-            }
-          
-            /* Coupling matrix */
-            for(i = 0 ; i < dim ; i++) {
-              K(E_mec + i + n*NEQ,U_p_l + m*NEQ) = KP(0 + i + n*NEQ,dim + m*NEQ) ;
-            }
-          }
-          
-          /* Hydraulics */
-          {
-            int j ;
-            
-            /* Coupling matrix */
-            for(j = 0 ; j < dim ; j++) {
-              K(E_liq + n*NEQ,U_u + j + m*NEQ) = KP(dim + n*NEQ,0 + j + m*NEQ) ;
-            }
-          
-            /* Storage matrix */
-            K(E_liq + n*NEQ,U_p_l + m*NEQ) = KP(dim + n*NEQ,dim + m*NEQ) ;
-          }
-        }
-      }
     }
-    #undef KP
   }
   
   /*
@@ -659,7 +690,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
       int    j ;
       
       for(j = 0 ; j < nn ; j++) {
-        K(E_liq + i*NEQ,U_p_l + j*NEQ) += dt*kc[i*nn + j] ;
+        K(E_liq + i*NEQ,U_p_l1 + j*NEQ) += dt*kc[i*nn + j] ;
       }
     }
   }
@@ -719,7 +750,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   }
   
   
-  /* 2. Hydraulics */
+  /* 2. Conservation of total mass */
   
   /* 2.1 Accumulation Terms */
   {
@@ -743,6 +774,27 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     for(i = 0 ; i < nn ; i++) R(i,E_liq) -= -dt*rf[i] ;
   }
   
+  
+  /* 3. Conservation of mass in pellets */
+  
+  /* 3.1 Accumulation Terms */
+  {
+    double* vim = vim_1 ;
+    double g1[IntFct_MaxNbOfIntPoints] ;
+    
+    for(i = 0 ; i < np ; i++ , vim += NVI , vim_n += NVI) g1[i] = M_L1 - M_L1_n ;
+    
+    {
+      double* ra = FEM_ComputeBodyForceResidu(fem,intfct,g1,1) ;
+    
+      for(i = 0 ; i < nn ; i++) R(i,E_liq1) -= ra[i] ;
+    }
+    
+    /* */
+    {
+    }
+  }
+  
   return(0) ;
 #undef R
 }
@@ -752,7 +804,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 /** Compute the outputs (r) */
 {
-  int NbOfOutputs = 9 ;
+  int NbOfOutputs = 8 ;
   double* vex  = Element_GetExplicitTerm(el) ;
   double* vim  = Element_GetCurrentImplicitTerm(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
@@ -781,12 +833,9 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     /* Interpolation functions at s */
     double* a = Element_ComputeCoordinateInReferenceFrame(el,s) ;
     int p = IntFct_ComputeFunctionIndexAtPointOfReferenceFrame(intfct,a) ;
-    /* Pressure */
-    double p_l = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l) ;
-    double pc  = p_g - p_l ;
-    double pp  = EquivalentPressure(p_l,p_g) ;
-    /* saturation */
-    double sl = SaturationDegree(pc) ;
+    /* Pressures */
+    double p_l1 = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l1) ;
+    double p_l2 = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l2) ;
     /* Displacement */
     double dis[3] = {0,0,0} ;
     /* strains */
@@ -825,12 +874,11 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     e   = (1 + e0) * tre ;
       
     i = 0 ;
-    Result_Store(r + i++,&p_l     ,"Pore pressure",1) ;
+    Result_Store(r + i++,&p_l1    ,"Pore pressure in pellets",1) ;
+    Result_Store(r + i++,&p_l2    ,"Pore pressure in powder",1) ;
     Result_Store(r + i++,dis      ,"Displacements",3) ;
     Result_Store(r + i++,w_l      ,"Fluid mass flow",3) ;
     Result_Store(r + i++,sig      ,"Stresses",9) ;
-    Result_Store(r + i++,&sl      ,"Saturation degree",1) ;
-    Result_Store(r + i++,&pp      ,"Equivalent pressure",1) ;
     Result_Store(r + i++,&e       ,"Void ratio variation",1) ;
     Result_Store(r + i++,eps_p    ,"Plastic strains",9) ;
     Result_Store(r + i++,&hardv   ,"Hardening variable",1) ;
@@ -856,6 +904,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
 //  double*  vex0  = Element_GetExplicitTerm(el) ;
   double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
 //  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
+  int dim = Element_GetDimensionOfSpace(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
   
@@ -884,11 +933,11 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
     /* Variables */
     //double* x = ComputeVariables(el,u,u_n,vim_n,t,dt,p) ;
     
-    /* Pressure */
-    double p_l = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l) ;
-    //double p_l = x[I_P_L] ;
-    double pp = EquivalentPressure(p_l,p_g) ;
-    double pc = p_g - p_l ;
+    /* Pressures */
+    double p_l1 = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l1) ;
+    double p_l2 = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l2) ;
+    double s1 = p_g - p_l1 ;
+    double s2 = p_g - p_l2 ;
 
 
     /* initialization */
@@ -906,10 +955,6 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
     
       for(i = 0 ; i < 9 ; i++) sig[i] = SIG[i] ;
     
-      /* Effective stresses */
-      sig[0] += pp ;
-      sig[4] += pp ;
-      sig[8] += pp ;
       
       /* Tangent stiffness matrix */
       {
@@ -918,10 +963,9 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
         
         {
           double sigm    = (sig[0] + sig[4] + sig[8])/3. ;
-          double bulk    = -(1 + e0)*sigm/kappa ;
-          double lame    = bulk - 2*mu/3. ;
-          double poisson = 0.5 * lame / (lame + mu) ;
-          double young   = 2 * mu * (1 + poisson) ;
+          /* A CALCULER */
+          double bulk    = 0 ; //-(1 + e0)*sigm..... ;
+          double young   = 3 * bulk * (1 - 2*poisson) ;
           
           Elasticity_SetParameters(elasty,young,poisson) ;
         }
@@ -931,10 +975,12 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
         {
           /* Criterion */
           if(crit >= 0.) {
-            double hc    = CapillaryHardening(pc) ;
-            double p_co  = HARDV ;
-            double pp_co = p_co * hc ;
-            double crit1 = ComputeFunctionGradients(sig,&pp_co) ;
+            double lcf   = LoadingCollapseFactor(s2) ;
+            double logp_co = log(p_c) + log(HARDV/p_c) * lcf ;
+            double p_co    = exp(logp_co) ;
+            double p_s     = k_s * s2 ;
+            double hardv[2] = {p_co,p_s} ;
+            double crit1 = ComputeFunctionGradients(sig,hardv) ;
             double fcg   = UpdateElastoplasticTensor(c1) ;
           
             if(fcg < 0) return(-1) ;
@@ -943,35 +989,43 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
       }
       
       
-      /* Coupling matrix */
+      /* Coupling matrix (s1) */
       {
         double* c1 = c0 + 81 ;
         
-        for(i = 0 ; i < 3 ; i++) B1(i,i) = - dEquivalentPressure(p_l,p_g) ;
+        //for(i = 0 ; i < 3 ; i++) B1(i,i) = - xxxx ;
+      }
+      
+      
+      /* Coupling matrix (s2) */
+      {
+        double* c1 = c0 + 81 + 9 ;
+        
+        //for(i = 0 ; i < 3 ; i++) B1(i,i) = - xxxx ;
       }
     }
     
     
-    /* Hydraulics */
+    /* Conservation of total mass */
+    #if 0
     {
       /* Fluid mass density */
       double rho_l = rho_l0 ;
-      double sl = SaturationDegree(pc) ;
     
     
       /* Coupling matrix */
       {
-        double* c1 = c0 + 81 + 9 ;
+        double* c1 = c0 + 81 + 9 + 9 ;
         int i ;
         
-        for(i = 0 ; i < 3 ; i++) B1(i,i) = rho_l*sl ;
+        //for(i = 0 ; i < 3 ; i++) B1(i,i) = xxx ;
       }
       
       
       /* Storage matrix */
       {
-        double* c1 = c0 + 81 + 9 + 9 ;
-        //double dxk   = dxi[U_p_l] ;
+        double* c1 = c0 + 81 + 9 + 9 + 9 ;
+        //double dxk   = dxi[U_p_l1] ;
         //int    k     = I_P_L ;
         //double* dx   = ComputeVariablesDerivatives(el,t,dt,x,dxk,k) ;
         /* Porosity */
@@ -982,6 +1036,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
         c1[0] = - rho_l*phi*dSaturationDegree(pc) ;
       }
     }
+    #endif
   }
   
   return(dec) ;
@@ -1074,15 +1129,16 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
       FEM_FreeBufferFrom(fem,eps) ;
     }
     
-    /* Pressure */
-    x[I_P_L] = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l) ;
+    /* Pressures */
+    x[I_P_L1] = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l1) ;
+    x[I_P_L2] = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l2) ;
     
     /* Pressure gradient */
     {
-      double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_p_l) ;
+      double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_p_l2) ;
     
       for(i = 0 ; i < 3 ; i++) {
-        x[I_GRD_P_L + i] = grd[i] ;
+        x[I_GRD_P_L2 + i] = grd[i] ;
       }
       
       FEM_FreeBufferFrom(fem,grd) ;
@@ -1110,8 +1166,9 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
       FEM_FreeBufferFrom(fem,eps_n) ;
     }
     
-    /* Pressure at previous time step */
-    x_n[I_P_L] = FEM_ComputeUnknown(fem,u_n,intfct,p,U_p_l) ;
+    /* Pressures at previous time step */
+    x_n[I_P_L1] = FEM_ComputeUnknown(fem,u_n,intfct,p,U_p_l1) ;
+    x_n[I_P_L2] = FEM_ComputeUnknown(fem,u_n,intfct,p,U_p_l2) ;
     
     /* Transfer coefficient */
     {
@@ -1141,9 +1198,16 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   double* sig_n =  x_n + I_SIG ;
   /* Plastic strains */
   double* eps_pn = x_n + I_EPS_P ;
-  /* Pressure */
-  double  p_l   = x[I_P_L] ;
-  double  p_ln  = x_n[I_P_L] ;
+  /* Pressures */
+  double  p_l1   = x[I_P_L1] ;
+  double  p_l1n  = x_n[I_P_L1] ;
+  double  p_l2   = x[I_P_L2] ;
+  double  p_l2n  = x_n[I_P_L2] ;
+  /* Suctions */
+  double s1  = p_g - p_l1 ;
+  double s1n = p_g - p_l1n ;
+  double s2  = p_g - p_l2 ;
+  double s2n = p_g - p_l2n ;
     
 
   /* Outputs 
@@ -1153,26 +1217,22 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   {
     double* sig   = x + I_SIG ;
     double* eps_p = x + I_EPS_P ;
-    double  pp    = EquivalentPressure(p_l,p_g) ;
-    double  pp_n  = EquivalentPressure(p_ln,p_g) ;
     
     {
-      double sigeff_n[9] ;
       double deps[9] ;
       int    i ;
       
       /* Incremental deformations */
       for(i = 0 ; i < 9 ; i++) deps[i] =  eps[i] - eps_n[i] ;
       
-      /* Effective stresses at t_n */
-      for(i = 0 ; i < 9 ; i++) sigeff_n[i] = sig_n[i] ;
-      
-      sigeff_n[0] += pp_n ;
-      sigeff_n[4] += pp_n ;
-      sigeff_n[8] += pp_n ;
+      /* Stresses at t_n */
+      for(i = 0 ; i < 9 ; i++) sig[i] = sig_n[i] ;
     
-      /* Elastic trial effective stresses at t */
+      /* Elastic trial stresses at t */
       {
+        /* A FAIRE */
+      }
+      /*{
         double sigm_n    = (sig_n[0] + sig_n[4] + sig_n[8])/3. ;
         double sigmeff_n = sigm_n + pp_n ;
         double trde      = deps[0] + deps[4] + deps[8] ;
@@ -1184,32 +1244,42 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
         sig[0] += dsigmeff - 2*mu*trde/3. ;
         sig[4] += dsigmeff - 2*mu*trde/3. ;
         sig[8] += dsigmeff - 2*mu*trde/3. ;
-      }
+      }*/
     
       /* Plastic strains */
       for(i = 0 ; i < 9 ; i++) eps_p[i] = eps_pn[i] ;
     
       /* Return mapping */
       {
-        double pc    = p_g - p_l;
-        double hc    = CapillaryHardening(pc) ;
-        double p_co  = x_n[I_HARDV] ;
-        double pp_co = p_co * hc ;
-        double crit  = ReturnMapping(sig,eps_p,&pp_co) ;
+        double s2    = p_g - p_l2 ;
+        double p_con = x_n[I_HARDV] ;
+        double lcf   = LoadingCollapseFactor(s2) ;
+        double logp_co = log(p_c) + log(p_con/p_c) * lcf ;
+        double p_co    = exp(logp_co) ;
+        double p_s     = k_s * s2 ;
+        double hardv[2] = {p_co,p_s} ;
+        double crit  = ReturnMapping(sig,eps_p,hardv) ;
+        
+        p_co = p_c * exp(log(hardv[0]/p_c) / lcf) ;
         
         x[I_CRIT]  = crit ;
-        x[I_HARDV] = pp_co/hc ;
+        x[I_HARDV] = p_co ;
       }
-    
-      /* Total stresses */
-      sig[0] -= pp ;
-      sig[4] -= pp ;
-      sig[8] -= pp ;
     }
+  }
+  
+  /* Backup microscopic volumetric strains epsv1 and epsv2 */
+  {
+    double* sig  = x + I_SIG ;
+    double sigm = (sig[0] + sig[4] + sig[8])/3. ;
+    
+    //x[I_EPSV_1] = xxxxx ;
+    //x[I_EPSV_2] = xxxxx ;
   }
   
   
   /* Backup mass flow */
+  #if 0
   {
     /* Porosity */
     double tre   = eps[0] + eps[4] + eps[8] ;
@@ -1224,7 +1294,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       double k_h = x[I_K_H] ;
     
       /* Pressure gradient */
-      double* gpl = x + I_GRD_P_L ;
+      double* gpl = x + I_GRD_P_L2 ;
     
       /* Mass flow */
       double* w_l = x + I_W_L ;
@@ -1234,11 +1304,9 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       w_l[dim - 1] += k_h*rho_l*gravity ;
     }
     
-    /* Liquid mass content, body force */
+    /* Total liquid mass content and body force */
     {
-      double  pc    = p_g - p_l;
-    /* saturation */
-      double  sl  = SaturationDegree(pc) ;
+      double  pc  = p_g - p_l ;
       double  m_l = rho_l*phi*sl ;
       double* f_mass = x + I_Fmass ;
       int i ;
@@ -1250,7 +1318,13 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       for(i = 0 ; i < 3 ; i++) f_mass[i] = 0 ;
       f_mass[dim - 1] = (rho_s + m_l)*gravity ;
     }
+    
+    /* Liquid mass content in pellets */
+    {
+      //x[I_M_L1]   = xxxx ;
+    }
   }
+  #endif
 }
 
 

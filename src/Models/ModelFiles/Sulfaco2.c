@@ -384,14 +384,21 @@
 
 /* Crystal growth kinetics */
 #define PoreCrystalGrowthRate(s_c,beta,beta_p) \
-        ((s_c) * (((beta_p < beta) ? ap_AFt : dp_AFt) * (1 - (beta_p)/(beta))))
+        ((s_c) * CrystalGrowthRate(ap_AFt,dp_AFt,(beta_p)/(beta)))
+
 #define dPoreCrystalGrowthRate(s_c,beta,beta_p) \
-        ((s_c) * (((beta_p < beta) ? ap_AFt : dp_AFt) * (-1./(beta))))
+        ((s_c) * dCrystalGrowthRate(ap_AFt,dp_AFt,(beta_p)/(beta)) / (beta))
 
 #define InterfaceCrystalGrowthRate(s_c,beta,beta_i) \
-        (((beta_i < beta) ? ai_AFt : 0) * (1 - (beta_i)/(beta)))
+        (CrystalGrowthRate(ai_AFt,0,(beta_i)/(beta)))
+        
 #define dInterfaceCrystalGrowthRate(s_c,beta,beta_i) \
-        (((beta_i < beta) ? ai_AFt : 0) * (-1./(beta)))
+        (dCrystalGrowthRate(ai_AFt,0,(beta_i)/(beta)) / (beta))
+
+#define CrystalGrowthRate(crys,diss,ateb) \
+        ((((ateb) < 1) ? (crys) : (diss)) * (1 - (ateb)))
+#define dCrystalGrowthRate(crys,diss,ateb) \
+        ((((ateb) < 1) ? (crys) : (diss)) * (-1))
 
 
 /* Crystal - liquid interface
@@ -442,7 +449,7 @@ static void    GetProperties(Element_t*) ;
 
 
 static double* ComputeVariables(Element_t*,double**,double**,double*,double,double,int) ;
-static void    ComputeSecondaryVariables(Element_t*,double,double,double*) ;
+static void    ComputeSecondaryVariables(Element_t*,double,double,double*,double*) ;
 static double* ComputeVariableDerivatives(Element_t*,double,double,double*,double,int) ;
 
 
@@ -475,6 +482,7 @@ static double DamageStrain(double,double) ;
 
 /* Parameters */
 static double phi0 ;
+static double phimin = 0.01 ;
 static double r_afm,r_aft,r_c3ah6,r_csh2 ;
 static double n_ca_ref,n_si_ref,n_al_ref ;
 static double n_afm_0,n_aft_0,n_c3ah6_0,n_csh2_0 ;
@@ -506,97 +514,78 @@ void ComputePhysicoChemicalProperties(void)
 static CementSolutionDiffusion_t* csd = NULL ;
 static HardenedCementChemistry_t* hcc = NULL ;
 
+enum VariableIndexes_e {
+I_ZN_Ca_S = NEQ,
+I_ZN_Si_S,
+I_ZN_Al_S,
+
+I_N_Q,
+I_N_S,
+I_N_Ca,
+I_N_Si,
+I_N_K,
+I_N_Cl,
+I_N_Al,
+
+I_N_CH,
+I_N_CSH2,
+I_N_AH3,
+I_N_AFm,
+I_N_AFt,
+I_N_C3AH6,
+I_N_CSH,
+
+I_PHI,
+I_PHI_C,
+
+I_V_CSH,
+I_V_Cem,
+I_V_Cem0,
+
+I_C_OH,
+
+I_Radius,
+
+I_S_C,
+
+I_P_C,
+
+I_Beta_p,
+
+I_Strain,
+
+I_Straind,
+
+I_VarPHI_C,
+
+I_Last
+} ;
 
 
-
-#define NbOfVariables    (NEQ+58)
-static double Variables[Element_MaxNbOfNodes][NbOfVariables] ;
+//#define NbOfVariables    (NEQ+31)
+#define NbOfVariables    (I_Last)
+static double Variables[Element_MaxNbOfNodes][2*NbOfVariables] ;
+#define Variables_n(x)   ((x) + NbOfVariables)
 static double dVariables[NbOfVariables] ;
 
 
-#define I_ZN_Ca_S      (NEQ+0)
-#define I_ZN_Si_S      (NEQ+1)
-#define I_ZN_Al_S      (NEQ+2)
 
-#define I_N_Q          (NEQ+4)
-#define I_N_S          (NEQ+5)
-#define I_N_Ca         (NEQ+6)
-#define I_N_Si         (NEQ+7)
-#define I_N_K          (NEQ+8)
-#define I_N_Cl         (NEQ+9)
-#define I_N_Al         (NEQ+10)
-
-#define I_N_CH         (NEQ+11)
-#define I_N_CSH2       (NEQ+12)
-#define I_N_AH3        (NEQ+13)
-#define I_N_AFm        (NEQ+14)
-#define I_N_AFt        (NEQ+15)
-#define I_N_C3AH6      (NEQ+16)
-#define I_N_CSH        (NEQ+17)
-
-
-#define I_V_Cem        (NEQ+21)
-
-#define I_PHI          (NEQ+22)
-#define I_PHI_C        (NEQ+23)
-
-#define I_V_CSH        (NEQ+24)
-
-
-
-#define I_N_CHn        (NEQ+31)
-#define I_N_CSH2n      (NEQ+32)
-#define I_N_AH3n       (NEQ+33)
-#define I_N_AFmn       (NEQ+34)
-#define I_N_AFtn       (NEQ+35)
-#define I_N_C3AH6n     (NEQ+36)
-#define I_N_CSHn       (NEQ+37)
-
-#define I_V_Cem0       (NEQ+41)
-
-
-#define I_PHIn         (NEQ+42)
-#define I_PHI_Cn       (NEQ+43)
-
-
-#define I_C_OHn        (NEQ+45)
-
-#define I_Radius       (NEQ+46)
-#define I_Radiusn      (NEQ+47)
-
-#define I_S_C          (NEQ+48)
-
-#define I_P_C          (NEQ+49)
-
-#define I_Beta_p       (NEQ+50)
-#define I_Beta_pn      (NEQ+51)
-
-#define I_Strain       (NEQ+52)
-#define I_Strain_n     (NEQ+53)
-
-#define I_Straind      (NEQ+54)
-#define I_Straind_n    (NEQ+55)
-
-#define I_VarPHI_C     (NEQ+56)
-#define I_VarPHI_Cn    (NEQ+57)
-
-
-
-
+enum VariableFluxIndexes_e {
+I_W_S,
+I_W_Ca,
+I_W_Si,
+I_W_K,
+I_W_Cl,
+I_W_q,
+I_W_Al,
+I_W_Last
+} ;
   
   
-
-#define NbOfVariableFluxes    (7)
+#define NbOfVariableFluxes    (I_W_Last)
 static double VariableFluxes[Element_MaxNbOfNodes][NbOfVariableFluxes] ;
 //static double dVariableFluxes[NbOfVariableFluxes] ;
 
-#define I_W_S           (0)
-#define I_W_Ca          (1)
-#define I_W_Si          (2)
-#define I_W_K           (3)
-#define I_W_Cl          (4)
-#define I_W_q           (5)
-#define I_W_Al          (6)
 
 
 int pm(const char *s)
@@ -1167,7 +1156,9 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
         if(x[I_N_Si_S]  < 0.) test = -1 ;
         if(x[I_N_Al_S]  < 0.) test = -1 ;
         */
+        /*
         if(x[I_PHI]     < 0.) test = -1 ;
+        */
       
         if(test < 0) {
           double c_h2so4 = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,H2SO4) ;
@@ -1536,7 +1527,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   int    nso = 59 ;
   double zero = 0 ;
-  double one = 1 ;
+  //double one = 1 ;
   int    i ;
 
   /* if(Element_IsSubmanifold(el)) return(0) ; */
@@ -1560,6 +1551,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double* x = ComputeVariables(el,u,u,f,t,0,j) ;
     /* Concentrations */
 #define ptC(CPD)   &(HardenedCementChemistry_GetAqueousConcentrationOf(hcc,CPD))
+#define ptE(CPD)   &(HardenedCementChemistry_GetElementAqueousConcentrationOf(hcc,CPD))
 #define ptS(CPD)   &(HardenedCementChemistry_GetSaturationIndexOf(hcc,CPD))
 #define ptPSI      &(HardenedCementChemistry_GetElectricPotential(hcc))
 #define ptX_CSH    &(HardenedCementChemistry_GetCalciumSiliconRatioInCSH(hcc))
@@ -1572,10 +1564,10 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       
       Result_Store(r + i++,&ph,"ph",1) ;
     }
-    
+/*
     Result_Store(r + i++,ptC(OH),"c_oh",1) ;
     Result_Store(r + i++,ptC(H ),"c_h",1) ;
-    
+*/
     Result_Store(r + i++,ptC(Ca  ),"c_ca",1) ;
     Result_Store(r + i++,ptC(CaOH),"c_caoh",1) ;
     
@@ -1598,10 +1590,18 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 
     Result_Store(r + i++,ptC(K  ),"c_k",1) ;
     Result_Store(r + i++,ptC(KOH),"c_koh",1) ;
-    
+
+/*
     Result_Store(r + i++,(x + I_ZN_Ca_S),"zn_ca_s",1) ;
     Result_Store(r + i++,&one           ,"zn_si_s",1) ;
     Result_Store(r + i++,(x + I_ZN_Al_S),"zn_al_s",1) ;
+*/
+    
+    Result_Store(r + i++,ptE(Ca),"C_Ca",1) ;
+    Result_Store(r + i++,ptE(Si),"C_Si",1) ;
+    Result_Store(r + i++,ptE(S ),"C_S",1) ;
+    Result_Store(r + i++,ptE(Al),"C_Al",1) ;
+    Result_Store(r + i++,ptE(K ),"C_K",1) ;
     
     Result_Store(r + i++,ptS(CH   ),"s_ch",1) ;
     Result_Store(r + i++,ptS(CSH2 ),"s_csh2",1) ;
@@ -1839,7 +1839,8 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
   Model_t* model = Element_GetModel(el) ;
   double* x      = Model_GetVariable(model,n) ;
   */
-  double* x = Variables[n] ;
+  double* x   = Variables[n] ;
+  double* x_n = Variables_n(x) ;
   
   /* Primary Variables */
   #if defined (U_C_H2SO4)
@@ -1857,19 +1858,19 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
 #endif
   
   /* Needed variables to compute secondary components */
-  x[I_N_CHn  ]  = N_CHn(n) ;
-  x[I_N_CSH2n]  = N_CSH2n(n) ;
-  x[I_N_AFmn ]  = N_AFmn(n) ;
-  x[I_N_AFtn ]  = N_AFtn(n) ;
-  x[I_N_C3AH6n] = N_C3AH6n(n) ;
-  x[I_PHIn   ]  = PHIn(n) ;
-  x[I_PHI_Cn ]  = PHI_Cn(n) ;
-  x[I_C_OHn  ]  = C_OHn(n) ;
-  x[I_Radiusn]  = PoreRadiusn(n) ;
-  x[I_Beta_pn]  = Beta_pn(n) ;
-  x[I_Strain_n] = Strain_n(n);
-  x[I_Straind_n] = Straind_n(n);
-  x[I_VarPHI_Cn] = VarPHI_Cn(n) ;
+  x_n[I_N_CH  ]  = N_CHn(n) ;
+  x_n[I_N_CSH2]  = N_CSH2n(n) ;
+  x_n[I_N_AFm ]  = N_AFmn(n) ;
+  x_n[I_N_AFt ]  = N_AFtn(n) ;
+  x_n[I_N_C3AH6] = N_C3AH6n(n) ;
+  x_n[I_PHI   ]  = PHIn(n) ;
+  x_n[I_PHI_C ]  = PHI_Cn(n) ;
+  x_n[I_C_OH  ]  = C_OHn(n) ;
+  x_n[I_Radius]  = PoreRadiusn(n) ;
+  x_n[I_Beta_p]  = Beta_pn(n) ;
+  x_n[I_Strain]  = Strain_n(n);
+  x_n[I_Straind] = Straind_n(n);
+  x_n[I_VarPHI_C] = VarPHI_Cn(n) ;
 
   {
     double* v0   = Element_GetConstantTerm(el) ;
@@ -1877,13 +1878,13 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
     x[I_V_Cem0 ]  = V_Cem0(n) ;
   }
   
-  ComputeSecondaryVariables(el,t,dt,x) ;
+  ComputeSecondaryVariables(el,t,dt,x_n,x) ;
   return(x) ;
 }
 
 
 
-void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
+void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,double* x)
 {
   /* Primary variables */
   double zn_si_s    = 1 ;
@@ -1904,7 +1905,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
 #if defined (U_C_OH)
     double logc_oh    = x[U_C_OH] ;
 #else
-    double logc_oh    = log10(x[I_C_OHn]) ;
+    double logc_oh    = log10(x_n[I_C_OH]) ;
 #endif
   
     HardenedCementChemistry_SetInput(hcc,SI_CH,MIN(zn_ca_s,0)) ;
@@ -1958,21 +1959,21 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
   double s_c3ah6 = HardenedCementChemistry_GetSaturationIndexOf(hcc,C3AH6) ;
   
   double c_so4  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,SO4) ;
-  double c_oh   = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,OH) ;
+  //double c_oh   = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,OH) ;
        
     
     
   /* Compute the crystal saturation as a function of s_aft */
-  double r_n = x[I_Radiusn] ;
+  double r_n = x_n[I_Radius] ;
   double r   = Radius(r_n,s_aft,dt,el) ;
   double s_l = LiquidSaturationDegree(r) ;
   double s_c = 1 - s_l ;
   
   /* Compute the saturation index at the pore wall, beta_p */
-  double beta_pn   = x[I_Beta_pn] ;
-  double varphi_cn = x[I_VarPHI_Cn] ;
-  double strain_n  = x[I_Strain_n] ;
-  double straind_n = x[I_Straind_n] ;
+  double beta_pn   = x_n[I_Beta_p] ;
+  double varphi_cn = x_n[I_VarPHI_C] ;
+  double strain_n  = x_n[I_Strain] ;
+  double straind_n = x_n[I_Straind] ;
   double beta_p = PoreWallEquilibriumSaturationIndex(beta_pn,varphi_cn,strain_n,straind_n,s_aft,s_c,dt) ;
   
   /* Compute the crystal pore deformation */
@@ -1988,15 +1989,15 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
   /* ... as components: CH, CSH2, CSH, AH3, AFm, AFt, C3AH6 */
   //double n_chn      = x[I_N_CHn] ;
   double n_ch       = CHSolidContent(zn_ca_s) ;
-  double n_csh2n    = x[I_N_CSH2n] ;
+  double n_csh2n    = x_n[I_N_CSH2] ;
   double n_csh2     = CSH2SolidContent(n_csh2n,s_csh2,dt) ;
   double n_ah3      = AH3SolidContent(zn_al_s) ;
-  double n_afmn     = x[I_N_AFmn] ;
+  double n_afmn     = x_n[I_N_AFm] ;
   double n_afm      = AFmSolidContent(n_afmn,s_afm,dt) ;
   //double n_aftn     = x[I_N_AFtn] ;
   //double n_aft      = AFtSolidContent(n_aftn,s_aft,dt) ;
   double n_aft      = (phi0*s_c + varphi_c)/V_AFt ;
-  double n_c3ah6n   = x[I_N_C3AH6n] ;
+  double n_c3ah6n   = x_n[I_N_C3AH6] ;
   double n_c3ah6    = C3AH6SolidContent(n_c3ah6n,s_c3ah6,dt) ;
   double n_csh      = CSHSolidContent(zn_si_s) ;
   double n_so4ads   = n_csh * AdsorbedSulfatePerUnitMoleOfCSH(c_so4,c_oh) ;
@@ -2026,13 +2027,13 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
   double varphi     = strain ;
   double phi_c      = phi_con + varphi ;
   //double phi_t      = phi_con - v_csh2 ;
-  double phi_t      = phi_c ;
+  double phi_t      = MAX(phi_c,phimin) ;
   
 
 #if (U_PHI == IMPLICIT)
   double phi_l        = phi_t ;
 #else
-  double phi_l        = x[I_PHIn] ;
+  double phi_l        = x_n[I_PHI] ;
 #endif
     
     
@@ -2114,7 +2115,8 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
 
 double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,double dui,int i)
 {
-  double* dx = dVariables ;
+  double* dx  = dVariables ;
+  double* x_n = Variables_n(x) ;
   int j ;
   
   /* Primary Variables */
@@ -2125,7 +2127,7 @@ double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,do
   /* We increment the variable as (x + dx) */
   dx[i] += dui ;
   
-  ComputeSecondaryVariables(el,t,dt,dx) ;
+  ComputeSecondaryVariables(el,t,dt,x_n,dx) ;
   
   /* The numerical derivative as (f(x + dx) - f(x))/dx */
   for(j = 0 ; j < NbOfVariables ; j++) {
@@ -2265,11 +2267,11 @@ double Radius(double r_n,double s_aft,double dt,Element_t* el)
   
   {
     double s_ln     = LiquidSaturationDegree(r_n) ;
-    double beta_in  = InterfaceEquilibriumSaturationIndex(r_n) ;
+    //double beta_in  = InterfaceEquilibriumSaturationIndex(r_n) ;
     double beta_min = InterfaceEquilibriumSaturationIndex(r_max) ;
-    double beta_inf = (s_aft > beta_min) ? s_aft : beta_min ;
+    //double beta_inf = (s_aft > beta_min) ? s_aft : beta_min ;
     double r_inf = (s_aft > beta_min) ? InverseOfInterfaceEquilibriumSaturationIndex(s_aft) : r_max ;
-    double s_linf  = LiquidSaturationDegree(r_inf) ;
+    //double s_linf  = LiquidSaturationDegree(r_inf) ;
     int iterations = 40 ;
     double tol = 1.e-6 ;
     int i ;
@@ -2410,8 +2412,8 @@ double PoreWallEquilibriumSaturationIndex(double beta_pn,double varphi_cn,double
 
 double DamageStrain(double strain,double straind)
 {
-  double Y = 0.5*strain*K_bulk*strain ;
-  double K = 0.5*straind*K_bulk*straind ;
+  //double Y = 0.5*strain*K_bulk*strain ;
+  //double K = 0.5*straind*K_bulk*straind ;
   //double crit = Y - K ;
   double crit = strain - straind ;
   
@@ -2438,11 +2440,12 @@ double ElasticDamageStress(double strain,double straind_n)
 double dElasticDamageStress(double strain,double straind_n)
 {
   double dstrain = 1.e-4 * strain ;
-  double strain2 = strain - dstrain ;
+  double a       = 0.5 ;
+  double strain2 = strain - (1 - a) * dstrain ;
   double stress2 = ElasticDamageStress(strain2,straind_n) ;
-  double strain1 = strain + dstrain ;
+  double strain1 = strain + a * dstrain ;
   double stress1 = ElasticDamageStress(strain1,straind_n) ;
-  double dstress = (stress1 - stress2) * 0.5 / dstrain ;
+  double dstress = (stress1 - stress2) / dstrain ;
   
   return(dstress) ;
 }

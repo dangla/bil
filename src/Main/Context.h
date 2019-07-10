@@ -35,6 +35,49 @@ extern void          (Context_Delete)(void*) ;
 
 
 
+
+
+/* All possible contexts that can be read from the command line */
+#define Context_IsHelpOnline(CTX) \
+        Context_GetHelpOnline(CTX)
+
+#define Context_IsPrintInfo(CTX) \
+        Context_GetPrintInfo(CTX)
+
+#define Context_IsPrintModel(CTX)  \
+        Context_GetPrintModel(CTX)
+
+#define Context_IsPrintModule(CTX) \
+        Context_GetPrintModule(CTX)
+
+#define Context_IsPrintUsage(CTX) \
+        Context_GetPrintUsage(CTX)
+
+#define Context_IsReadOnly(CTX) \
+        Context_GetReadOnly(CTX)
+
+#define Context_IsInversePermutation(CTX) \
+        Context_GetInversePermutation(CTX)
+
+#define Context_IsPostProcessing(CTX) \
+        Context_GetPostProcessing(CTX)
+
+#define Context_IsGraph(CTX) \
+        Context_GetGraph(CTX)
+
+#define Context_IsMiscellaneous(CTX) \
+        Context_GetMiscellaneous(CTX)
+
+#define Context_IsElementOrdering(CTX) \
+        Context_GetElementOrdering(CTX)
+
+#define Context_IsNodalOrdering(CTX) \
+        Context_GetNodalOrdering(CTX)
+
+#define Context_IsTest(CTX) \
+        Context_GetTest(CTX)
+
+
 #include "CommandLine.h"
 #include "Options.h"
 

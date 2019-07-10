@@ -99,24 +99,24 @@ void Bil_CLI(Bil_t* bil)
 
   Message_Info("Started on %s",Message_LaunchDate()) ;
   
-  if(Context_GetPrintUsage(ctx)) {
+  if(Context_IsPrintUsage(ctx)) {
     char** argv = (char**) Context_GetPrintUsage(ctx) ;
     
     Bil_PrintUsage(argv[0]) ;
     return ;
   }
   
-  if(Context_GetPrintInfo(ctx)) {
+  if(Context_IsPrintInfo(ctx)) {
     Bil_PrintInfo() ;
     return ;
   }
   
-  if(Context_GetHelpOnline(ctx)) {
+  if(Context_IsHelpOnline(ctx)) {
     Help_HelpOnline() ;
     return ;
   }
   
-  if(Context_GetPrintModel(ctx)) {
+  if(Context_IsPrintModel(ctx)) {
     char** argv = (char**) Context_GetPrintModel(ctx) ;
     
     /* The standard requires that argv[argc] be a null pointer */
@@ -133,7 +133,7 @@ void Bil_CLI(Bil_t* bil)
     return ;
   }
   
-  if(Context_GetPrintModule(ctx)) {
+  if(Context_IsPrintModule(ctx)) {
     char** argv = (char**) Context_GetPrintModule(ctx) ;
     
     /* The standard requires that argv[argc] be a null pointer */
@@ -148,7 +148,7 @@ void Bil_CLI(Bil_t* bil)
     return ;
   }
   
-  if(Context_GetReadOnly(ctx)) {
+  if(Context_IsReadOnly(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
     
@@ -156,7 +156,7 @@ void Bil_CLI(Bil_t* bil)
     return ;
   }
   
-  if(Context_GetGraph(ctx)) {
+  if(Context_IsGraph(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* jdd =  DataSet_Create(filename,options) ;
@@ -168,7 +168,7 @@ void Bil_CLI(Bil_t* bil)
     return ;
   }
   
-  if(Context_GetInversePermutation(ctx)) {
+  if(Context_IsInversePermutation(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* jdd =  DataSet_Create(filename,options) ;
@@ -180,7 +180,7 @@ void Bil_CLI(Bil_t* bil)
     return ;
   }
   
-  if(Context_GetNodalOrdering(ctx)) {
+  if(Context_IsNodalOrdering(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* jdd =  DataSet_Create(filename,options) ;
@@ -192,7 +192,7 @@ void Bil_CLI(Bil_t* bil)
     return ;
   }
   
-  if(Context_GetElementOrdering(ctx)) {
+  if(Context_IsElementOrdering(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* jdd =  DataSet_Create(filename,options) ;
@@ -204,7 +204,7 @@ void Bil_CLI(Bil_t* bil)
     return ;
   }
   
-  if(Context_GetPostProcessing(ctx)) {
+  if(Context_IsPostProcessing(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* jdd =  DataSet_Create(filename,options) ;
@@ -231,7 +231,7 @@ void Bil_CLI(Bil_t* bil)
     return ;
   }
   
-  if(Context_GetMiscellaneous(ctx)) {
+  if(Context_IsMiscellaneous(ctx)) {
     double temp = atof(((char**) Context_GetMiscellaneous(ctx))[1]) ;
     
     {
@@ -251,7 +251,7 @@ void Bil_CLI(Bil_t* bil)
     return ;
   }
   
-  if(Context_GetTest(ctx)) {
+  if(Context_IsTest(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
     

@@ -308,6 +308,7 @@
  * ------------------------------------------- */
 #define M_CaO          MolarMassOfMolecule(CaO)
 #define M_SiO2         MolarMassOfMolecule(SiO2)
+#define MolarMassOfCSH(x,z)     (M_CaO*(x) + M_SiO2 + M_H2O*(z))
 #define MOLARVOLUMEOFCSH_CURVE           (molarvolumeofcshcurve)
 #define MolarVolumeOfCSH(x_ch)           (Curve_ComputeValue(MOLARVOLUMEOFCSH_CURVE,x_ch))
 //#define MolarVolumeOfCSH(s_ch)           (Curve_ComputeValue(Element_GetCurve(el) + 4,s_ch))
@@ -1993,8 +1994,8 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
   /* ... as mass */
   //double z_csh      = WaterSiliconRatioInCSH(s_ch) ;
   double z_csh      = HardenedCementChemistry_GetWaterSiliconRatioInCSH(hcc) ;
-  double m_csh      = (M_CaO*x_csh + M_SiO2 + M_H2O*z_csh)*n_si_s ;
-  double m_s        = M_CaOH2*n_ch + M_CaCO3*n_cc + m_csh ;
+  double m_csh      = MolarMassOfCSH(x_csh,z_csh) ;
+  double m_s        = M_CaOH2*n_ch + M_CaCO3*n_cc + m_csh*n_si_s ;
   
   /* ... as volume */
   double v_csh      = MolarVolumeOfCSH(x_csh) ;
