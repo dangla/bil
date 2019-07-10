@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "Models.h"
 #include "Model.h"
@@ -11,6 +10,7 @@
 #include "DataFile.h"
 #include "ObVals.h"
 #include "Views.h"
+#include "Mry.h"
 
 
 static Models_t* (Models_Create)(Geometry_t*) ;
@@ -20,9 +20,7 @@ static void      (Models_Delete)(void*) ;
 Models_t* Models_New(const int n_models)
 /** Create the models found in "ListOfModels.h"  */
 {
-  Models_t* models = (Models_t*) malloc(sizeof(Models_t)) ;
-  
-  assert(models) ;
+  Models_t* models = (Models_t*) Mry_New(Models_t) ;
   
   {
     Models_GetMaxNbOfModels(models) = n_models ;

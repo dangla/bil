@@ -17,10 +17,12 @@ typedef double  (Plasticity_ReturnMapping_t)(Plasticity_t*,double*,double*,doubl
 
 extern Plasticity_t*  (Plasticity_Create)(void) ;
 extern void           (Plasticity_Delete)(void*) ;
-extern void           (Plasticity_SetParameters)(Plasticity_t*,...) ;
-extern void           (Plasticity_CopyElasticTensor)(Plasticity_t*,double*) ;
-extern double         (Plasticity_UpdateElastoplasticTensor)(Plasticity_t*,double*) ;
-extern void           (Plasticity_PrintTangentStiffnessTensor)(Plasticity_t*) ;
+extern void           (Plasticity_Initialize)                  (Plasticity_t*) ;
+extern void           (Plasticity_SetParameters)               (Plasticity_t*,...) ;
+extern void           (Plasticity_SetParameter)                (Plasticity_t*,const char*,double) ;
+extern void           (Plasticity_CopyElasticTensor)           (Plasticity_t*,double*) ;
+extern double         (Plasticity_UpdateElastoplasticTensor)   (Plasticity_t*,double*) ;
+extern void           (Plasticity_PrintTangentStiffnessTensor) (Plasticity_t*) ;
 //extern Plasticity_ComputeFunctionGradients_t     Plasticity_Criterion ;
 //extern Plasticity_ReturnMapping_t                Plasticity_ReturnMapping ;
 
@@ -49,14 +51,6 @@ extern void           (Plasticity_PrintTangentStiffnessTensor)(Plasticity_t*) ;
 #include "Elasticity.h"
 #include "GenericData.h"
 #include "Tools/Math.h"
-
-
-
-#define Plasticity_CopyCodeName(PL,TYP) \
-        memcpy(Plasticity_GetCodeNameOfModel(PL),TYP,MAX(strlen(TYP),Plasticity_MaxLengthOfKeyWord))
-
-#define Plasticity_Is(PL,TYP) \
-        (!strcmp(Plasticity_GetCodeNameOfModel(PL),TYP))
         
         
 
@@ -68,6 +62,7 @@ extern void           (Plasticity_PrintTangentStiffnessTensor)(Plasticity_t*) ;
 #define Plasticity_SetToDruckerPrager(PL) \
         do { \
           Plasticity_CopyCodeName(PL,"Drucker-Prager") ; \
+          Plasticity_Initialize(PL) ; \
         } while(0)
         
 #define Plasticity_GetFrictionAngle(PL) \
@@ -87,14 +82,7 @@ extern void           (Plasticity_PrintTangentStiffnessTensor)(Plasticity_t*) ;
 #define Plasticity_SetToCamClay(PL) \
         do { \
           Plasticity_CopyCodeName(PL,"Cam-clay") ; \
-        } while(0)
-        
-#define Plasticity_IsCamClayEp(PL) \
-        Plasticity_Is(PL,"Cam-clayEp")
-
-#define Plasticity_SetToCamClayEp(PL) \
-        do { \
-          Plasticity_CopyCodeName(PL,"Cam-clayEp") ; \
+          Plasticity_Initialize(PL) ; \
         } while(0)
         
 #define Plasticity_GetSlopeSwellingLine(PL) \
@@ -112,6 +100,28 @@ extern void           (Plasticity_PrintTangentStiffnessTensor)(Plasticity_t*) ;
 #define Plasticity_GetInitialVoidRatio(PL) \
         Plasticity_GetParameter(PL)[4]
         
+/* Cam-clayEp
+ * ---------- */
+#define Plasticity_IsCamClayEp(PL) \
+        Plasticity_Is(PL,"Cam-clayEp")
+
+#define Plasticity_SetToCamClayEp(PL) \
+        do { \
+          Plasticity_CopyCodeName(PL,"Cam-clayEp") ; \
+          Plasticity_Initialize(PL) ; \
+        } while(0)
+        
+/* Cam-clayOffset
+ * -------------- */
+#define Plasticity_IsCamClayOffset(PL) \
+        Plasticity_Is(PL,"Cam-clayOffset")
+
+#define Plasticity_SetToCamClayOffset(PL) \
+        do { \
+          Plasticity_CopyCodeName(PL,"Cam-clayOffset") ; \
+          Plasticity_Initialize(PL) ; \
+        } while(0)
+        
         
         
 /* Shorthands */
@@ -123,6 +133,15 @@ extern void           (Plasticity_PrintTangentStiffnessTensor)(Plasticity_t*) ;
 
 #define Plasticity_ComputeElasticTensor(PL,...) \
         Elasticity_ComputeStiffnessTensor(Plasticity_GetElasticity(PL),__VA_ARGS__)
+        
+
+
+/* Implementation */
+#define Plasticity_CopyCodeName(PL,TYP) \
+        memcpy(Plasticity_GetCodeNameOfModel(PL),TYP,MAX(strlen(TYP),Plasticity_MaxLengthOfKeyWord))
+
+#define Plasticity_Is(PL,TYP) \
+        (!strcmp(Plasticity_GetCodeNameOfModel(PL),TYP))
 
 
 

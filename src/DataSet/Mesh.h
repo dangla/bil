@@ -32,7 +32,7 @@ extern void     (Mesh_CreateEquationContinuity)(Mesh_t*) ;
 #include "Mry.h"
 
 #define Mesh_New() \
-        Mry_New(Mesh_t)
+        (Mesh_t*) Mry_New(Mesh_t)
 
 
 /* Some constants */

@@ -72,6 +72,45 @@ void  (Elasticity_Delete)(void* self)
 
 
 
+void Elasticity_SetParameter(Elasticity_t* elasty,const char* str,double v)
+{
+  
+  if(Elasticity_IsIsotropic(elasty)) {
+    if(0) {
+    } else if(!strcmp(str,"Young's modulus")) {
+      Elasticity_GetYoungModulus(elasty)  = v ;
+    } else if(!strcmp(str,"Poisson's ratio")) {
+      Elasticity_GetPoissonRatio(elasty)  = v ;
+    } else if(!strcmp(str,"bulk modulus")) {
+      Elasticity_GetBulkModulus(elasty)   = v ;
+    } else if(!strcmp(str,"shear modulus")) {
+      Elasticity_GetShearModulus(elasty)  = v ;
+    }
+    
+  } else if(Elasticity_IsTransverselyIsotropic(elasty)) {
+    if(0) {
+    } else if(!strcmp(str,"Young's modulus")) {
+      Elasticity_GetYoungModulus(elasty)  = v ;
+    } else if(!strcmp(str,"Poisson's ratio")) {
+      Elasticity_GetPoissonRatio(elasty)  = v ;
+    } else if(!strcmp(str,"Young's modulus 3")) {
+      Elasticity_GetYoungModulus3(elasty) = v ;
+    } else if(!strcmp(str,"Poisson's ratio 3")) {
+      Elasticity_GetPoissonRatio3(elasty) = v ;
+    } else if(!strcmp(str,"shear modulus 3")) {
+      Elasticity_GetShearModulus3(elasty) = v ;
+    } else if(!strcmp(str,"axis 3")) {
+      Elasticity_GetAxis3(elasty)         = v ;
+    }
+    
+  } else {
+    Message_RuntimeError("Not known") ;
+  }
+
+}
+
+
+
 void Elasticity_SetParameters(Elasticity_t* elasty,...)
 {
   va_list args ;
@@ -79,8 +118,15 @@ void Elasticity_SetParameters(Elasticity_t* elasty,...)
   va_start(args,elasty) ;
   
   if(Elasticity_IsIsotropic(elasty)) {
-    Elasticity_GetYoungModulus(elasty)  = va_arg(args,double) ;
-    Elasticity_GetPoissonRatio(elasty)  = va_arg(args,double) ;
+    double Young   = va_arg(args,double) ;
+    double Poisson = va_arg(args,double) ;
+    double shear   = Young/(2 + 2*Poisson) ;
+    double bulk    = Young/(3 - 6*Poisson) ;
+    
+    Elasticity_GetYoungModulus(elasty)  = Young ;
+    Elasticity_GetPoissonRatio(elasty)  = Poisson ;
+    Elasticity_GetBulkModulus(elasty)   = bulk ;
+    Elasticity_GetShearModulus(elasty)  = shear ;
     
   } else if(Elasticity_IsTransverselyIsotropic(elasty)) {
     Elasticity_GetYoungModulus(elasty)  = va_arg(args,double) ;
@@ -154,11 +200,17 @@ double* Elasticity_ComputeIsotropicStiffnessTensor(Elasticity_t* elasty,double* 
 {
 #define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
   //double* c = Elasticity_GetStiffnessTensor(elasty) ;
-  double Young   = Elasticity_GetYoungModulus(elasty) ;
-  double Poisson = Elasticity_GetPoissonRatio(elasty) ;
-  double twomu   = Young/(1 + Poisson) ;
-  double mu      = 0.5*twomu ;
-  double lame    = twomu*Poisson/(1 - 2*Poisson) ;
+  //double Young   = Elasticity_GetYoungModulus(elasty) ;
+  //double Poisson = Elasticity_GetPoissonRatio(elasty) ;
+  double bulk    = Elasticity_GetBulkModulus(elasty) ;
+  double shear   = Elasticity_GetShearModulus(elasty) ;
+  //double twomu   = Young/(1 + Poisson) ;
+  //double mu      = (shear > 0) ? shear : Young/(2 + 2*Poisson) ;
+  //double k       = (bulk  > 0) ? bulk  : Young/(3 - 6*Poisson) ;
+  //double lame    = (Young > 0) ? twomu*Poisson/(1 - 2*Poisson) : k - 2./3.*mu ;
+  double mu      = shear ;
+  double k       = bulk  ;
+  double lame    = k - 2./3.*mu ;
    
   {
     int    i ;
@@ -197,7 +249,7 @@ double* Elasticity_ComputeTransverselyIsotropicStiffnessTensor(Elasticity_t* ela
   double Poisson3   = Elasticity_GetPoissonRatio3(elasty) ;
   double Shear3     = Elasticity_GetShearModulus3(elasty) ;
   double Axis3      = Elasticity_GetAxis3(elasty) ;
-  short int axis_3  = floor(Axis3) ;
+  short int axis_3  = floor(Axis3 + 0.5) ;
   short int axis_1  = (axis_3 + 1) % 3 ;
   short int axis_2  = (axis_3 + 2) % 3 ;
   double twomu1     = Young/(1 + Poisson) ;

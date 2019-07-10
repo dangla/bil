@@ -19,19 +19,19 @@ extern FEM_t*   (FEM_GetInstance)(Element_t*) ;
 extern void     (FEM_Delete)(void*) ;
 
 /* Matrices */
-extern double*  FEM_ComputeElasticMatrix(FEM_t*,IntFct_t*,double*,int) ;
-extern double*  FEM_ComputeMassMatrix(FEM_t*,IntFct_t*,double*,int) ;
-extern double*  FEM_ComputeConductionMatrix(FEM_t*,IntFct_t*,double*,int) ;
-extern double*  FEM_ComputeBiotMatrix(FEM_t*,IntFct_t*,double*,int) ;
-extern double*  FEM_ComputePoroelasticMatrix(FEM_t*,IntFct_t*,double*,int,int) ;
-extern void     FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t*,int,int,double*) ;
+extern double*  FEM_ComputeElasticMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  FEM_ComputeMassMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  FEM_ComputeConductionMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  FEM_ComputeBiotMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  FEM_ComputePoroelasticMatrix(FEM_t*,IntFct_t*,const double*,const int,const int) ;
+extern void     FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t*,const int,const int,double*) ;
 
 /* Residus */
-extern double*  FEM_ComputeSurfaceLoadResidu(FEM_t*,IntFct_t*,Load_t*,double,double) ;
-extern double*  FEM_ComputeBodyForceResidu(FEM_t*,IntFct_t*,double*,int) ;
-extern double*  FEM_ComputeStrainWorkResidu(FEM_t*,IntFct_t*,double*,int) ;
-extern double*  FEM_ComputeFluxResidu(FEM_t*,IntFct_t*,double*,int) ;
-extern void     FEM_TransformResiduFromDegree2IntoDegree1(FEM_t*,int,double*) ;
+extern double*  FEM_ComputeSurfaceLoadResidu(FEM_t*,IntFct_t*,Load_t*,const double,const double) ;
+extern double*  FEM_ComputeBodyForceResidu(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  FEM_ComputeStrainWorkResidu(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  FEM_ComputeFluxResidu(FEM_t*,IntFct_t*,const double*,const int) ;
+extern void     FEM_TransformResiduFromDegree2IntoDegree1(FEM_t*,const int,double*) ;
 
 /* Compute Shape functions */
 extern double*  FEM_ComputeIsoShapeFctInActualSpace(FEM_t*,double*) ;

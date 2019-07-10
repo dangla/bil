@@ -1,9 +1,9 @@
 #ifndef NEW_H
 #define NEW_H
 
-#include <stdlib.h>
+#include "Mry.h"
 
-#define New(N,T) \
-        ((T*) malloc((N) * sizeof(T)))
+#define New(T) \
+        Mry_New(T)
         
 #endif

@@ -15,7 +15,7 @@ extern void   Nodes_CreateMore(Nodes_t*) ;
 #include "Mry.h"
 
 #define Nodes_New() \
-        (Nodes_t*) Mry_Malloc(sizeof(Nodes_t))
+        (Nodes_t*) Mry_New(Nodes_t)
 
 
 #define Nodes_GetNbOfNodes(NODS)          ((NODS)->n_no)

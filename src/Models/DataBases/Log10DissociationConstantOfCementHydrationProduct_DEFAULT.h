@@ -12,9 +12,6 @@
 #include "TemperatureDependenceOfLog10EquilibriumConstant.h"
 #include "PiecewiseLinearTemperatureDependence.h"
 
-#undef  LOGK
-#define LOGK(...)   PiecewiseLinearTemperatureDependence(__VA_ARGS__)
-
 
 
 /* Calcium Hydroxide: 
@@ -90,7 +87,8 @@
 
 /* C3AH6 + 12H[+] = 3Ca[2+] + 2Al[+] + 12H2O (ref [6]) */
 #define Log10DissociationConstantOfCementHydrationProduct_C3AH6_12H__3Ca_2Al_12H2O(T) \
-        (80.32) //(LOGK(T,89.6883,80.32,69.5665,59.7469,50.0831,42.4618,36.2972,31.2083))
+        (80.32)
+//(PiecewiseLinearTemperatureDependence(T,89.6883,80.32,69.5665,59.7469,50.0831,42.4618,36.2972,31.2083))
 
 /* C2AH8 = 2Ca[2+] + 2Al(OH)4[-] + 2OH[-] + 3H2O (ref [4]) */
 #define Log10DissociationConstantOfCementHydrationProduct_C2AH8__2Ca_2AlO4H4_2OH_3H2O(T) \

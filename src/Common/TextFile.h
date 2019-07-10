@@ -10,7 +10,7 @@ struct TextFile_s       ; typedef struct TextFile_s       TextFile_t ;
 
 #include <stdio.h>
 
-extern TextFile_t*     (TextFile_Create)(char*) ;
+extern TextFile_t*     (TextFile_Create)(const char*) ;
 extern void            (TextFile_Delete)(void*) ;
 extern FILE*           (TextFile_OpenFile)(TextFile_t*,const char*) ;
 extern void            (TextFile_CloseFile)(TextFile_t*) ;
@@ -62,13 +62,23 @@ extern char*           (TextFile_StoreFileContent)(TextFile_t*) ;
  *  the current position in the string and advance accordingly. */
 #define TextFile_ReadDataFromCurrentFilePosition(TF,FMT,V,N) \
         do { \
-          size_t TextFile_sz = sizeof(V) ; \
+          int TextFile_i ; \
+          for(TextFile_i = 0 ; TextFile_i < (N) ; TextFile_i++) { \
+            TextFile_ScanAdv(TF,FMT,(V) + TextFile_i) ; \
+          } \
+        } while(0)
+
+/*
+#define TextFile_ReadDataFromCurrentFilePosition(TF,FMT,V,N) \
+        do { \
+          size_t TextFile_sz = sizeof(*(V)) ; \
           char*  TextFile_c  = (char*) (V) ; \
           int TextFile_i ; \
           for(TextFile_i = 0 ; TextFile_i < (N) ; TextFile_i++) { \
             TextFile_ScanAdv(TF,FMT,TextFile_c + TextFile_i*TextFile_sz) ; \
           } \
         } while(0)
+*/
         
 
 
@@ -88,14 +98,14 @@ extern char*           (TextFile_StoreFileContent)(TextFile_t*) ;
 #define TextFile_GetCurrentPositionInString(TF)    ((TF)->curstrpos)
 
 
-
+/* Not used
 #define TextFile_GetTextLine(TF)          ((TF)->line)
 #define TextFile_GetBuffer(TF)            ((TF)->buffer)
 #define TextFile_GetNbOfCharacters(TF)    ((TF)->ccount)
 #define TextFile_GetNbOfWords(TF)         ((TF)->wcount)
 #define TextFile_GetNbOfLines(TF)         ((TF)->lcount)
 #define TextFile_GetMaxNbOfCharactersPerLine(TF)    ((TF)->linelength)
-        
+*/
 
 #define TextFile_GetCurrentPositionInFileContent(TF) \
         (TextFile_GetFileContent(TF) + TextFile_GetCurrentPositionInString(TF))

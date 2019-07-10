@@ -42,8 +42,8 @@ diff1:
 	rm -f ${DIFF_FILE}.t1
 	for i in ${BASE_DIRS} ; do (\
 	cd $$i &&\
-	echo "-- diff sur $$i.t1 --" &&\
-	echo "-- diff sur $$i.t1 --" >> ${BASEDIR}/${DIFF_FILE}.t1 &&\
+	echo "-- diff on $$i.t1 --" &&\
+	echo "-- diff on $$i.t1 --" >> ${BASEDIR}/${DIFF_FILE}.t1 &&\
 	${DIFF} $$i.t1 toto.t1 >> ${BASEDIR}/${DIFF_FILE}.t1 \
 	); done
 
@@ -53,8 +53,8 @@ diff2:
 	rm -f ${DIFF_FILE}.t2
 	for i in ${BASE_DIRS} ; do (\
 	cd $$i &&\
-	echo "-- diff sur $$i.t2 --" &&\
-	echo "-- diff sur $$i.t2 --" >> ${BASEDIR}/${DIFF_FILE}.t2 &&\
+	echo "-- diff on $$i.t2 --" &&\
+	echo "-- diff on $$i.t2 --" >> ${BASEDIR}/${DIFF_FILE}.t2 &&\
 	${DIFF} $$i.t2 toto.t2 >> ${BASEDIR}/${DIFF_FILE}.t2 \
 	); done
 
@@ -62,7 +62,7 @@ diff2:
 exec: clean
 	for i in ${BASE_DIRS}; do (\
 	cd $$i && \
-	echo "Execution de $$i" && \
+	echo "Execution of $$i" && \
 	cp $$i toto && \
 	bil -i toto && \
 	bil toto \
@@ -71,7 +71,7 @@ exec: clean
 ref:
 	for i in ${BASE_DIRS}; do (\
 	cd $$i && \
-	echo "Execution de $$i" && \
+	echo "Execution of $$i" && \
 	bil $$i \
 	); done
 

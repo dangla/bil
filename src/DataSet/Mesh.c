@@ -15,6 +15,7 @@
 #include "Graph.h"
 #include "Solutions.h"
 #include "Context.h"
+#include "TextFile.h"
 #include "Mesh.h"
 
 
@@ -142,12 +143,18 @@ char*  Mesh_Scan(Mesh_t* mesh,char* line)
     int dim = Mesh_GetDimension(mesh) ;
     
     if(dim == 0) {
+      
       mail0d(mesh) ;
+      
     } else if(dim == 1) {
+      
       /* Read directly in the data file */
       mail1d(mesh,line) ;
+      
     } else {
+      
       return(NULL) ;
+      
     }
   }
   
@@ -976,23 +983,27 @@ int (Mesh_LoadCurrentSolution)(Mesh_t* mesh,DataFile_t* datafile,double* t)
     /* From the highest to the lowest priority */
     if(ires == 0) {
       sprintf(nom_cont,"%s.cont",nom) ;
-      fic_cont = fopen(nom_cont,"rb") ;
+      {
+        fic_cont = fopen(nom_cont,"rb") ;
     
-      if(fic_cont) {
-        ires = 2 ;
-        /* Set initialization context to no initialization */
-        DataFile_ContextSetToNoInitialization(datafile) ;
+        if(fic_cont) {
+          ires = 2 ;
+          /* Set initialization context to no initialization */
+          DataFile_ContextSetToNoInitialization(datafile) ;
+        }
       }
     }
     
     if(ires == 0) {
       sprintf(nom_cont,"%s.conti",nom) ;
-      fic_cont = fopen(nom_cont,"rb") ;
+      {
+        fic_cont = fopen(nom_cont,"rb") ;
     
-      if(fic_cont) {
-        ires = 1 ;
-        /* Set initialization context to partial initialization */
-        DataFile_ContextSetToPartialInitialization(datafile) ;
+        if(fic_cont) {
+          ires = 1 ;
+          /* Set initialization context to partial initialization */
+          DataFile_ContextSetToPartialInitialization(datafile) ;
+        }
       }
     }
   }

@@ -1,14 +1,12 @@
-#include <stdlib.h>
-#include "Message.h"
+//#include <stdlib.h>
+#include "Mry.h"
 #include "Temperature.h"
 
 
 
 Temperature_t* (Temperature_Create)(void)
 {
-  Temperature_t* temperature = (Temperature_t*) malloc(sizeof(Temperature_t)) ;
-  
-  if(!temperature) arret("Temperature_Create") ;
+  Temperature_t* temperature = (Temperature_t*) Mry_New(Temperature_t) ;
   
   {
     Temperature_GetRoomValue(temperature) = Temperature_DefaultValue ;

@@ -17,24 +17,6 @@
 #include "PiecewiseLinearTemperatureDependence.h"
 
 
-#undef  LOGK
-#define LOGK(...)   PiecewiseLinearTemperatureDependence(__VA_ARGS__)
-
-#if 0
-#define LINEAR(T,T1,T2,L1,L2)    ((((T)-(T1))*(L2) + ((T2)-(T))*(L1))/((T2)-(T1)))
-
-#define LOGK(T,L1,L2,L3,L4,L5,L6,L7,L8)    LOGKC(((T)-273.15),L1,L2,L3,L4,L5,L6,L7,L8)
-#define LOGKC(T,L1,L2,L3,L4,L5,L6,L7,L8)   (((T) < 0  ) ? (L1)                    : LOGKGT0(T,L1,L2,L3,L4,L5,L6,L7,L8))
-#define LOGKGT0(T,L1,L2,L3,L4,L5,L6,L7,L8) (((T) < 25 ) ? LINEAR(T,0,25,L1,L2)    : LOGKGT25(T,L2,L3,L4,L5,L6,L7,L8))
-#define LOGKGT25(T,L2,L3,L4,L5,L6,L7,L8)   (((T) < 60 ) ? LINEAR(T,25,60,L2,L3)   : LOGKGT60(T,L3,L4,L5,L6,L7,L8))
-#define LOGKGT60(T,L3,L4,L5,L6,L7,L8)      (((T) < 100) ? LINEAR(T,60,100,L3,L4)  : LOGKGT100(T,L4,L5,L6,L7,L8))
-#define LOGKGT100(T,L4,L5,L6,L7,L8)        (((T) < 150) ? LINEAR(T,100,150,L4,L5) : LOGKGT150(T,L5,L6,L7,L8))
-#define LOGKGT150(T,L5,L6,L7,L8)           (((T) < 200) ? LINEAR(T,150,200,L5,L6) : LOGKGT200(T,L6,L7,L8))
-#define LOGKGT200(T,L6,L7,L8)              (((T) < 250) ? LINEAR(T,200,250,L6,L7) : LOGKGT250(T,L7,L8))
-#define LOGKGT250(T,L7,L8)                 (((T) < 300) ? LINEAR(T,250,300,L7,L8) : (L8))
-#endif
-
-
 
 /* Calcium Hydroxide: 
  * CH = Ca[2+] + 2OH[-] */
@@ -109,7 +91,8 @@
 
 /* C3AH6 + 12H[+] = 3Ca[2+] + 2Al[+] + 12H2O (ref [6]) */
 #define Log10DissociationConstantOfCementHydrationProduct_C3AH6_12H__3Ca_2Al_12H2O(T) \
-        (80.32) //(LOGK(T,89.6883,80.32,69.5665,59.7469,50.0831,42.4618,36.2972,31.2083))
+        (80.32)
+//(PiecewiseLinearTemperatureDependence(T,89.6883,80.32,69.5665,59.7469,50.0831,42.4618,36.2972,31.2083))
 
 /* C2AH8 = 2Ca[2+] + 2Al(OH)4[-] + 2OH[-] + 3H2O (ref [4]) */
 #define Log10DissociationConstantOfCementHydrationProduct_C2AH8__2Ca_2AlO4H4_2OH_3H2O(T) \

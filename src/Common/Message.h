@@ -19,11 +19,11 @@ extern double (Message_CPUTime)(void) ;
 extern int    (Message_SetVerbosity)(const int) ;
 
 
-#define Message_GetLaunchClock(message)           ((message)->launchclock)
-#define Message_GetLaunchTime(message)            ((message)->launchtime)
-#define Message_GetLaunchDate(message)            ((message)->launchdate)
-#define Message_GetVerbosity(message)             ((message)->verbosity)
-#define Message_GetDelete(message)                ((message)->Delete)
+#define Message_GetLaunchClock(MSG)           ((MSG)->launchclock)
+#define Message_GetLaunchTime(MSG)            ((MSG)->launchtime)
+#define Message_GetLaunchDate(MSG)            ((MSG)->launchdate)
+#define Message_GetVerbosity(MSG)             ((MSG)->verbosity)
+#define Message_GetDelete(MSG)                ((MSG)->Delete)
 
 
 #include <stdlib.h>
