@@ -963,7 +963,7 @@ void CementSolutionChemistry_UpdateSolution(CementSolutionChemistry_t* csc)
 
 
 
-double CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t* csc)
+int CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t* csc)
 /** Solve the electroneutrality equation, SUM(z_i c_i) = 0,
  ** for c_h or c_oh, as root of a 4th order polynomial:
  ** ax^4 + bx^3 + cx^2 + dx + e = 0
@@ -1092,12 +1092,20 @@ double CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t*
       double tol = 1.e-4 ;
   
       x = poly4(a2,a1,a0+b0,b1,b2,a_h,a_oh) ;
-      x = Math_PolishPolynomialEquationRoot(y,5,x,tol*x,20) ;
+      
+      {
+        int k = Math_PolishPolynomialEquationRoot(y,5,&x,tol*x,20) ;
+        
+        if(k < 0) return(-1) ;
+      }
     }
   
   
     if(x < 0) {
       double y = 1/x ;
+      
+      /* Raise an interrupt signal instead of exit */
+      Message_Warning("CementSolutionChemistry_SolveElectroneutrality: c_h < 0") ;
     
       printf("c_h   = %e\n",c_h*x) ;
       printf("c_oh  = %e\n",c_oh*y) ;
@@ -1107,9 +1115,9 @@ double CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t*
       printf("a0    = %e\n",a0) ;
       printf("b1    = %e\n",b1) ;
       printf("b2    = %e\n",b2) ;
-      /* Raise an interrupt signal instead of exit */
-      Message_Warning("CementSolutionChemistry_SolveElectroneutrality: c_h < 0") ;
-      Exception_Interrupt ;
+      
+      if(x < 0) return(-1) ;
+      //Exception_Interrupt ;
       //arret("CementSolutionChemistry_SolveElectroneutrality: c_h<0") ;
     }
   }
@@ -1221,14 +1229,14 @@ double CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t*
   
   CementSolutionChemistry_UpdateSolution(csc) ;
   
-  return(CementSolutionChemistry_GetChargeDensity(csc)) ;
+  return(0) ;
 }
 
 
 
 
 
-double CementSolutionChemistry_SolveExplicitElectroneutrality(CementSolutionChemistry_t* csc)
+int CementSolutionChemistry_SolveExplicitElectroneutrality(CementSolutionChemistry_t* csc)
 /** Solve the electroneutrality equation, SUM(z_i c_i) = 0,
  ** for c_h or c_oh, as root of a 2th order polynomial:
  ** ax^2 + bx + c = 0, keeping constant all other ion concentrations.
@@ -1256,7 +1264,7 @@ double CementSolutionChemistry_SolveExplicitElectroneutrality(CementSolutionChem
   LogConcentration(OH) = log10(c_oh) ;
     
   
-  return(CementSolutionChemistry_ComputeChargeDensity(csc)) ;
+  return(0) ;
 }
 
 
@@ -1692,13 +1700,18 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
   y[3] = d ;
   y[4] = e ;
   
-  x = Math_PolishPolynomialEquationRoot(y,4,x,tol*x,20) ;
+  {
+    int k = Math_PolishPolynomialEquationRoot(y,4,&x,tol*x,20) ;
+    
+    if(k < 0) return(-1) ;
+  }
   
   return(x) ;
 }
 
 
 
+/* Not used */
 #if 0
 double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh)
 /* Solve ax^4 + bx^3 + cx^2 + dx + e = 0 
@@ -1744,7 +1757,11 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
   y[3] = d ;
   y[4] = e ;
   
-  x = Math_PolishPolynomialEquationRoot(y,4,x,tol*x,20) ;
+  {
+    int k = Math_PolishPolynomialEquationRoot(y,4,&x,tol*x,20) ;
+    
+    if(k < 0) return(-1) ;
+  }
   
   return(x) ;
 }
@@ -1752,6 +1769,8 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
 
 
 
+
+/* Not used */
 #if 0
 void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_1(CementSolutionChemistry_t* csc)
 {

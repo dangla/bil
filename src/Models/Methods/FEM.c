@@ -101,7 +101,7 @@ void FEM_Delete(void* self)
 
 
 #if 0
-//FEM_t* FEM_GetInstance0(Element_t* el)
+FEM_t* FEM_GetInstance0(Element_t* el)
 {
   if(!instancefem) {
     instancefem = FEM_Create() ;
@@ -328,13 +328,13 @@ double*  FEM_ComputeBiotMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int
     for(j = 0 ; j < nn ; j++) for(i = 0 ; i < dim ; i++) for(l = 0 ; l < nn ; l++) for(k = 0 ; k < dim ; k++) {
       KC(j*dim+i,l) += a*DH(j,k)*jc[k][i]*h[l] ;
     }
-    /* cas axisymetrique */
+    /* cas axisymetrique: (r,z,theta) */
     if(Symmetry_IsCylindrical(sym)) {
       /* KC(j,0,l) = H(j)/r*C(theta,theta)*H(l) */
       for(j = 0 ; j < nn ; j++) for(l = 0 ; l < nn ; l++) {
         KC(j*dim,l) += a*h[j]/rayon*C(2,2)*h[l] ;
       }
-    /* cas spherique */
+    /* cas spherique: (r,theta,phi) */
     } else if(Symmetry_IsSpherical(sym)) {
       /* KC(j,0,l) = H(j)/r*(C(theta,theta)+C(phi,phi))*H(l) */
       for(j = 0 ; j < nn ; j++) for(l = 0 ; l < nn ; l++) {

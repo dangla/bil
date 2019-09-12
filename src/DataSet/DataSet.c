@@ -18,7 +18,8 @@
 #include "Parser.h"
 
 
-static void   (DataSet_PrintData)(DataSet_t*,char*) ;
+static void   (DataSet_PrintData)  (DataSet_t*,char*) ;
+static void   (DataSet_LinkUp)     (DataSet_t*) ;
 
 
 
@@ -29,10 +30,11 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   DataSet_t* jdd = DataSet_New() ;
   char*   debug  = Options_GetPrintedInfos(opt) ;
   
-  //assert(jdd) ;
   
   DataSet_GetOptions(jdd) = opt ;
   
+  
+  /* DataFile */
   {
     DataFile_t* datafile = DataFile_Create(filename) ;
   
@@ -62,14 +64,36 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   
     DataSet_GetGeometry(jdd) = Geometry_Create(datafile) ;
   }
+  if(!strcmp(debug,"geom")) DataSet_PrintData(jdd,debug) ;
+  
+  
+  /* Fields */
+  {
+    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
+    Geometry_t*    geometry = DataSet_GetGeometry(jdd) ;
+  
+    DataSet_GetFields(jdd) = Fields_Create(datafile,geometry) ;
+  }
+  if(!strcmp(debug,"field")) DataSet_PrintData(jdd,debug) ;
+  
+  
+  /* Functions */
+  {
+    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
+  
+    DataSet_GetFunctions(jdd) = Functions_Create(datafile) ;
+  }
+  if(!strcmp(debug,"func")) DataSet_PrintData(jdd,debug) ;
   
   
   /* Materials */
   {
     DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
     Geometry_t*    geometry = DataSet_GetGeometry(jdd) ;
+    Fields_t*      fields = DataSet_GetFields(jdd) ;
+    Functions_t*   functions = DataSet_GetFunctions(jdd) ;
   
-    DataSet_GetMaterials(jdd) = Materials_Create(datafile,geometry) ;
+    DataSet_GetMaterials(jdd) = Materials_Create(datafile,geometry,fields,functions) ;
   }
   if(!strcmp(debug,"mate")) DataSet_PrintData(jdd,debug) ;
   
@@ -82,31 +106,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   
     DataSet_GetMesh(jdd) = Mesh_Create(datafile,materials,geometry) ;
   }
-  if(!strcmp(debug,"geom")) DataSet_PrintData(jdd,debug) ;
   if(!strcmp(debug,"mesh")) DataSet_PrintData(jdd,debug) ;
   if(!strcmp(debug,"continuity")) DataSet_PrintData(jdd,debug) ;
   if(!strcmp(debug,"inter")) DataSet_PrintData(jdd,debug) ;
-  
-  
-  /* Fields */
-  {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    Geometry_t*    geometry = DataSet_GetGeometry(jdd) ;
-    Materials_t*   materials = DataSet_GetMaterials(jdd) ;
-  
-    DataSet_GetFields(jdd) = Fields_Create(datafile,materials,geometry) ;
-  }
-  if(!strcmp(debug,"field")) DataSet_PrintData(jdd,debug) ;
-  
-  
-  /* Functions */
-  {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    Materials_t*   materials = DataSet_GetMaterials(jdd) ;
-  
-    DataSet_GetFunctions(jdd) = Functions_Create(datafile,materials) ;
-  }
-  if(!strcmp(debug,"func")) DataSet_PrintData(jdd,debug) ;
   
   
   /* Initial conditions */
@@ -208,6 +210,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   if(!strcmp(debug,"module")) DataSet_PrintData(jdd,debug) ;
   
   
+  //DataSet_LinkUp(jdd) ;
+  
+  
   if(!strcmp(debug,"all")) DataSet_PrintData(jdd,debug) ;
 
 
@@ -250,11 +255,154 @@ DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
 
 
 
+void DataSet_LinkUp(DataSet_t* dataset)
+{
+
+  /* Material - Fields */
+  {
+    Materials_t* materials = DataSet_GetMaterials(dataset) ;
+    Fields_t* fields = DataSet_GetFields(dataset) ;
+    
+    if(materials && fields) {
+      int n_mats = Materials_GetNbOfMaterials(materials) ;
+      int i ;
+
+      for(i = 0 ; i < n_mats ; i++) {
+        Material_t* mat = Materials_GetMaterial(materials) + i ;
+        Material_GetFields(mat) = fields ;
+      }
+    }
+  }
+    
+
+  /* BCond - Fields */
+  {
+    BConds_t* bconds = DataSet_GetBConds(dataset) ;
+    Fields_t* fields = DataSet_GetFields(dataset) ;
+    
+    if(bconds && fields) {
+      BCond_t* bcond = BConds_GetBCond(bconds) ;
+      Field_t* field = Fields_GetField(fields) ;
+      int n_bconds = BConds_GetNbOfBConds(bconds) ;
+      int n_fields = Fields_GetNbOfFields(fields) ;
+      int i ;
+    
+      for(i = 0 ; i < n_bconds ; i++) {
+        BCond_t* bc = bcond + i ;
+        
+        {
+          int ifld = BCond_GetFieldIndex(bc) ;
+        
+          if(ifld < 0) {
+            BCond_GetField(bc) = NULL ;
+          } else if(ifld < n_fields) {
+            BCond_GetField(bc) = field + ifld ;
+          } else {
+            arret("DataSet_LinkUp: undefined field") ;
+          }
+        }
+        
+        BCond_GetFields(bc) = fields ;
+      }
+    }
+  }
+    
+    
+  /* BCond - Functions */
+  {
+    BConds_t* bconds = DataSet_GetBConds(dataset) ;
+    Functions_t* functions = DataSet_GetFunctions(dataset) ;
+    
+    if(bconds && functions) {
+      BCond_t* bcond = BConds_GetBCond(bconds) ;
+      Function_t* function = Functions_GetFunction(functions) ;
+      int n_functions = Functions_GetNbOfFunctions(functions) ;
+      int n_bconds = BConds_GetNbOfBConds(bconds) ;
+      int i ;
+    
+      for(i = 0 ; i < n_bconds ; i++) {
+        BCond_t* bc = bcond + i ;
+        
+        {
+          int ifct = BCond_GetFunctionIndex(bc) ;
+          
+          if(ifct < 0) {
+            BCond_GetFunction(bc) = NULL ;
+          } else if(ifct < n_functions) {
+            BCond_GetFunction(bc) = function + ifct ;
+          } else {
+            arret("DataSet_LinkUp: undefined function") ;
+          }
+        }
+        
+        BCond_GetFunctions(bc) = functions ;
+      }
+    }
+  }
+
+
+  /* Element - Material */
+  {
+    Mesh_t* mesh = DataSet_GetMesh(dataset) ;
+    Materials_t* materials = DataSet_GetMaterials(dataset) ;
+  
+    if(mesh && materials) {
+      Elements_t* elements = Mesh_GetElements(mesh) ;
+      Element_t* el = Elements_GetElement(elements) ;
+      Material_t* material = Materials_GetMaterial(materials) ;
+      int n_el = Elements_GetNbOfElements(elements) ;
+      int ie ;
+    
+      for(ie = 0 ; ie < n_el ; ie++) {
+        int imat = Element_GetMaterialIndex(el + ie) ;
+    
+        if(imat >= 0) {
+          Element_GetMaterial(el + ie) = material + imat ;
+        } else {
+          Element_GetMaterial(el + ie) = NULL ;
+        }
+      }
+    }
+  }
+  
+  
+  /* Initial conditions */
+  {
+  }
+  
+  
+  /* Loads */
+  {
+  }
+  
+
+  /* Point - Element */
+  {
+    Points_t*  points = DataSet_GetPoints(dataset) ;
+    Mesh_t*  mesh = DataSet_GetMesh(dataset) ;
+    
+    if(points && mesh) {
+      int n_points = Points_GetNbOfPoints(points) ;
+      int i ;
+    
+      /* The enclosing element */
+      for(i = 0 ; i < n_points ; i++) {
+        Point_t* point_i = Points_GetPoint(points) + i ;
+    
+        Point_SetEnclosingElement(point_i,mesh) ;
+      }
+    }
+  }
+}
+
+
+
 /* Local functions */
 
 
 #define DATASET       (jdd)
 #define DATAFILE      DataSet_GetDataFile(DATASET)
+#define GEOMETRY      DataSet_GetGeometry(DATASET)
 #define MESH          DataSet_GetMesh(DATASET)
 #define MATERIALS     DataSet_GetMaterials(DATASET)
 #define FIELDS        DataSet_GetFields(DATASET)
@@ -276,15 +424,19 @@ DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
 
 #define NOM           DataFile_GetFileName(DATAFILE)
 
-#define DIM           Mesh_GetDimension(MESH)
-#define SYMMETRY      Mesh_GetSymmetry(MESH) 
-#define COORSYS       Mesh_GetCoordinateSystem(MESH)
+//#define DIM           Mesh_GetDimension(MESH)
+//#define SYMMETRY      Mesh_GetSymmetry(MESH) 
+//#define COORSYS       Mesh_GetCoordinateSystem(MESH)
+
+#define DIM           Geometry_GetDimension(GEOMETRY)
+#define SYMMETRY      Geometry_GetSymmetry(GEOMETRY) 
+#define COORSYS       Geometry_GetCoordinateSystem(GEOMETRY)
 
 #define N_NO          Mesh_GetNbOfNodes(MESH)
 #define NO            Mesh_GetNode(MESH)
 
-#define N_MAT         (Materials_GetNbOfMaterials(MATERIALS))
-#define MAT           (Materials_GetMaterial(MATERIALS))
+#define N_MAT         Materials_GetNbOfMaterials(MATERIALS)
+#define MAT           Materials_GetMaterial(MATERIALS)
 
 #define N_CH          Fields_GetNbOfFields(FIELDS)
 #define CH            Fields_GetField(FIELDS)
@@ -312,113 +464,128 @@ DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
 #define OBJ           ObVals_GetObVal(OBVALS)
 
 
+#define PRINT(...) \
+        fprintf(stdout,__VA_ARGS__)
+        //Message_Direct(__VA_ARGS__)
+
+
 void DataSet_PrintData(DataSet_t* jdd,char* mot)
 {
   static int i_debug=0 ;
   
   if(!strcmp(mot,"\0")) return ;
 
-  fprintf(stdout,"\n") ;
-  fprintf(stdout,"debug(%d)\n",i_debug++) ;
-  fprintf(stdout,"-----\n") ;
+  PRINT("\n") ;
+  PRINT("debug(%d)\n",i_debug++) ;
+  PRINT("-----\n") ;
+  
+  /* File content
+   * ------------ */
+  if(DataFile_GetFileContent(DataSet_GetDataFile(jdd)) && (!strncmp(mot,"data file content",4) || !strncmp(mot,"all",3))) {
+    PRINT("\n") ;
+    PRINT("Data file content:\n") ;
+    
+    PRINT("%s",DataFile_GetFileContent(DataSet_GetDataFile(jdd))) ;
+    PRINT("\n") ;
+  }
 
   /* Geometry
    * -------- */
-  if(DataSet_GetGeometry(jdd) && (!strcmp(mot,"geom") || !strcmp(mot,"all"))) {
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"Geometry:\n") ;
+  if(DataSet_GetGeometry(jdd) && (!strncmp(mot,"geometry",4) || !strncmp(mot,"all",3))) {
+    PRINT("\n") ;
+    PRINT("Geometry:\n") ;
     
-    fprintf(stdout,"\t Dimension = %dD\n",DIM) ;
-    fprintf(stdout,"\t Symmetry = ") ;
+    PRINT("\t Dimension = %dD\n",DIM) ;
+    PRINT("\t Symmetry = ") ;
     
     if(0) {
       
     } else if(Symmetry_IsCylindrical(SYMMETRY)) {
-      fprintf(stdout,"Axisymmetrical\n") ;
+      PRINT("Axisymmetrical\n") ;
       
     } else if(Symmetry_IsSpherical(SYMMETRY)) {
-      fprintf(stdout,"Spherical\n") ;
+      PRINT("Spherical\n") ;
 
     } else if(Symmetry_IsPlane(SYMMETRY)) {
-      fprintf(stdout,"Plane\n") ;
+      PRINT("Plane\n") ;
 
     } else {
-      fprintf(stdout,"No symmetry\n") ;
+      PRINT("No symmetry\n") ;
     }
   }
 
   /* Mesh
    * ---- */
-  if(DataSet_GetMesh(jdd) && (!strcmp(mot,"mesh") || !strcmp(mot,"all"))) {
+  if(DataSet_GetMesh(jdd) && (!strncmp(mot,"mesh",4) || !strncmp(mot,"all",3))) {
     int i ;
     int c1 = 14 ;
     int c2 = 30 ;
     int c3 = 45 ;
     
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"Mesh:\n") ;
+    PRINT("\n") ;
+    PRINT("Mesh:\n") ;
     
-    fprintf(stdout,"\t Nodes:\n") ;
-    fprintf(stdout,"\t Nb of nodes = %d\n",N_NO) ;
+    PRINT("\t Nodes:\n") ;
+    PRINT("\t Nb of nodes = %d\n",N_NO) ;
     
     for(i = 0 ; i < (int) N_NO ; i++) {
       Node_t* node_i = NO + i ;
-      int n = fprintf(stdout,"\t no(%d)",i) ;
+      int n = PRINT("\t no(%d)",i) ;
       int j ;
       
-      while(n < c1) n += fprintf(stdout," ") ;
+      while(n < c1) n += PRINT(" ") ;
       
-      n += fprintf(stdout,":") ;
+      n += PRINT(":") ;
       
       for(j = 0 ; j < DIM ; j++) {
-        n += fprintf(stdout," % e",Node_GetCoordinate(node_i)[j]) ;
+        n += PRINT(" % e",Node_GetCoordinate(node_i)[j]) ;
       }
       
-      fprintf(stdout,"\n") ;
+      PRINT("\n") ;
     }
     
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"\t Elements:\n") ;
-    fprintf(stdout,"\t Nb of elements = %d\n",N_EL) ;
+    PRINT("\n") ;
+    PRINT("\t Elements:\n") ;
+    PRINT("\t Nb of elements = %d\n",N_EL) ;
     
     for(i = 0 ; i < (int) N_EL ; i++) {
       Element_t* elt_i = EL + i ;
       int nn = Element_GetNbOfNodes(elt_i) ;
-      int n = fprintf(stdout,"\t el(%d)",i) ;
+      int n = PRINT("\t el(%d)",i) ;
       int j ;
       
-      while(n < c1) n += fprintf(stdout," ") ;
+      while(n < c1) n += PRINT(" ") ;
       
-      n += fprintf(stdout,":") ;
+      n += PRINT(":") ;
       
-      n += fprintf(stdout,"  reg(%d)",Element_GetRegionIndex(elt_i)) ;
+      n += PRINT("  reg(%d)",Element_GetRegionIndex(elt_i)) ;
       
-      while(n < c2) n += fprintf(stdout," ") ;
+      while(n < c2) n += PRINT(" ") ;
       
-      n += fprintf(stdout,"  mat(%d)",Element_GetMaterialIndex(elt_i)) ;
+      n += PRINT("  mat(%d)",Element_GetMaterialIndex(elt_i)) ;
       
-      while(n < c3) n += fprintf(stdout," ") ;
+      while(n < c3) n += PRINT(" ") ;
       
-      n += fprintf(stdout,"  no(") ;
+      n += PRINT("  no(") ;
       
       for(j = 0 ; j < nn ; j++) {
-        n += fprintf(stdout,"%d",Node_GetNodeIndex(Element_GetNode(elt_i,j))) ;
-        n += fprintf(stdout,((j < nn - 1) ? "," : ")")) ;
+        n += PRINT("%d",Node_GetNodeIndex(Element_GetNode(elt_i,j))) ;
+        n += PRINT(((j < nn - 1) ? "," : ")")) ;
       }
       
       
       
-      fprintf(stdout,"\n") ;
+      PRINT("\n") ;
     }
   }
 
   /* Materials
    * --------- */
-  if(DataSet_GetMaterials(jdd) && (!strcmp(mot,"mate") || !strcmp(mot,"all"))) {
+  if(DataSet_GetMaterials(jdd) && (!strncmp(mot,"material",3) || !strncmp(mot,"all",3))) {
     int i ;
     int c2 = 40 ;
     
-    fprintf(stdout,"\n") ;
+    PRINT("\n") ;
     
     for(i = 0 ; i < (int) N_MAT ; i++) {
       int nb_pr = Material_GetNbOfProperties(MAT + i) ;
@@ -429,69 +596,69 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       Curve_t* cv = Material_GetCurve(MAT + i) ;
       int j ;
       
-      fprintf(stdout,"Material(%d):\n",i) ;
+      PRINT("Material(%d):\n",i) ;
       
-      fprintf(stdout,"\t Model = %s\n",Material_GetCodeNameOfModel(MAT + i)) ;
+      PRINT("\t Model = %s\n",Material_GetCodeNameOfModel(MAT + i)) ;
       
-      fprintf(stdout,"\n") ;
+      PRINT("\n") ;
       
-      fprintf(stdout,"\t Equations:\n") ;
-      fprintf(stdout,"\t Nb of equations = %d\n",nb_eqn) ;
+      PRINT("\t Equations:\n") ;
+      PRINT("\t Nb of equations = %d\n",nb_eqn) ;
       
       for(j = 0 ; j < nb_eqn ; j++) {
-        int n = fprintf(stdout,"\t equation(%d): (%s)",j + 1,name_eqn[j]) ;
+        int n = PRINT("\t equation(%d): (%s)",j + 1,name_eqn[j]) ;
       
-        while(n < c2) n += fprintf(stdout," ") ;
+        while(n < c2) n += PRINT(" ") ;
         
-        n += fprintf(stdout,"unknown(%d): (%s)",j + 1,name_unk[j]) ;
+        n += PRINT("unknown(%d): (%s)",j + 1,name_unk[j]) ;
         
-        fprintf(stdout,"\n") ;
+        PRINT("\n") ;
       }
       
-      fprintf(stdout,"\n") ;
+      PRINT("\n") ;
       
-      fprintf(stdout,"\t Properties:\n") ;
-      fprintf(stdout,"\t Nb of properties = %d\n",nb_pr) ;
+      PRINT("\t Properties:\n") ;
+      PRINT("\t Nb of properties = %d\n",nb_pr) ;
       
       for(j = 0 ; j < nb_pr ; j++) {
-        fprintf(stdout,"\t prop(%d) = %e\n",j,Material_GetProperty(MAT + i)[j]) ;
+        PRINT("\t prop(%d) = %e\n",j,Material_GetProperty(MAT + i)[j]) ;
       }
       
-      fprintf(stdout,"\n") ;
+      PRINT("\n") ;
       
-      fprintf(stdout,"\t Curves:\n") ;
-      fprintf(stdout,"\t Nb of curves = %d\n",nb_cv) ;
+      PRINT("\t Curves:\n") ;
+      PRINT("\t Nb of curves = %d\n",nb_cv) ;
       
       for(j = 0 ; j < nb_cv ; j++) {
-        fprintf(stdout,"\t curve(%d): np = %d\n",j + 1,Curve_GetNbOfPoints(cv + j)) ;
+        PRINT("\t curve(%d): np = %d\n",j + 1,Curve_GetNbOfPoints(cv + j)) ;
       }
     }
     
       
-    fprintf(stdout,"\n") ;
+    PRINT("\n") ;
     {
       Models_t* usedmodels = Materials_GetUsedModels(MATERIALS) ;
       int n_usedmodels = Models_GetNbOfModels(usedmodels) ;
       
-      fprintf(stdout,"Nb of used models = %d\n",n_usedmodels) ;
+      PRINT("Nb of used models = %d\n",n_usedmodels) ;
     
       for(i = 0 ; i < n_usedmodels ; i++) {
         Model_t* usedmodel = Models_GetModel(usedmodels) + i ;
       
-        fprintf(stdout,"\t Used model(%d): %s\n",i,Model_GetCodeNameOfModel(usedmodel)) ;
+        PRINT("\t Used model(%d): %s\n",i,Model_GetCodeNameOfModel(usedmodel)) ;
       }
     }
   }
 
   /* Continuity
    * ---------- */
-  if(DataSet_GetMesh(jdd) && (!strcmp(mot,"continuity"))) {
+  if(DataSet_GetMesh(jdd) && (!strncmp(mot,"continuity",3))) {
     int i ;
     
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"Continuity:\n") ;
+    PRINT("\n") ;
+    PRINT("Continuity:\n") ;
     
-    fprintf(stdout,"\t Positions of unknowns and equations at nodes of elements\n") ;
+    PRINT("\t Positions of unknowns and equations at nodes of elements\n") ;
     
     for(i = 0 ; i < (int) N_EL ; i++) {
       Element_t* elt_i = EL + i ;
@@ -501,39 +668,39 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       char** name_eqn = Element_GetNameOfEquation(elt_i) ;
       int j ;
       
-      fprintf(stdout,"\t el(%d): %d nodes\n",i,nn) ;
+      PRINT("\t el(%d): %d nodes\n",i,nn) ;
       
-      fprintf(stdout,"\t    %d unknowns\n",neq) ;
+      PRINT("\t    %d unknowns\n",neq) ;
       
       for(j = 0 ; j < nn ; j++) {
         int k ;
         
-        fprintf(stdout,"\t    no(%d):",j) ;
+        PRINT("\t    no(%d):",j) ;
         
         for(k = 0 ; k < neq ; k++) {
-          fprintf(stdout," %s(%d)",name_unk[k],Element_GetUnknownPosition(elt_i)[j*neq + k]) ;
+          PRINT(" %s(%d)",name_unk[k],Element_GetUnknownPosition(elt_i)[j*neq + k]) ;
         }
         
-        fprintf(stdout,"\n") ;
+        PRINT("\n") ;
       }
       
-      fprintf(stdout,"\t    %d equations\n",neq) ;
+      PRINT("\t    %d equations\n",neq) ;
       
       for(j = 0 ; j < nn ; j++) {
         int k ;
         
-        fprintf(stdout,"\t    no(%d):",j) ;
+        PRINT("\t    no(%d):",j) ;
         
         for(k = 0 ; k < neq ; k++) {
-          fprintf(stdout," %s(%d)",name_eqn[k],Element_GetEquationPosition(elt_i)[j*neq + k]) ;
+          PRINT(" %s(%d)",name_eqn[k],Element_GetEquationPosition(elt_i)[j*neq + k]) ;
         }
         
-        fprintf(stdout,"\n") ;
+        PRINT("\n") ;
       }
     }
     
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"\t Equations and unknowns at nodes:\n") ;
+    PRINT("\n") ;
+    PRINT("\t Equations and unknowns at nodes:\n") ;
     
     for(i = 0 ; i < (int) N_NO ; i++) {
       Node_t* node_i = NO + i ;
@@ -541,37 +708,37 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       int nb_eqn = Node_GetNbOfEquations(node_i) ;
       int j ;
       
-      fprintf(stdout,"\t no(%d):\n",i) ;
-      fprintf(stdout,"\t    %d unknowns:",nb_unk) ;
+      PRINT("\t no(%d):\n",i) ;
+      PRINT("\t    %d unknowns:",nb_unk) ;
       
       for(j = 0 ; j < nb_unk ; j++) {
         char* name = Node_GetNameOfUnknown(node_i)[j] ;
         
-        fprintf(stdout," %s",name) ;
+        PRINT(" %s",name) ;
       }
       
-      fprintf(stdout,"\n") ;
-      fprintf(stdout,"\t    %d equations:",nb_eqn) ;
+      PRINT("\n") ;
+      PRINT("\t    %d equations:",nb_eqn) ;
       
       for(j = 0 ; j < nb_eqn ; j++) {
         char* name = Node_GetNameOfEquation(node_i)[j] ;
         
-        fprintf(stdout," %s",name) ;
+        PRINT(" %s",name) ;
       }
-      fprintf(stdout,"\n") ;
+      PRINT("\n") ;
     }
   }
 
   /* Matrix numbering
    * ---------------- */
-  if(DataSet_GetMesh(jdd) && !strcmp(mot,"numbering")) {
+  if(DataSet_GetMesh(jdd) && !strncmp(mot,"numbering",3)) {
     int i ;
     
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"Matrix numbering:\n") ;
+    PRINT("\n") ;
+    PRINT("Matrix numbering:\n") ;
     
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"\t Matrix indexes of equations and unknowns at nodes:\n") ;
+    PRINT("\n") ;
+    PRINT("\t Matrix indexes of equations and unknowns at nodes:\n") ;
     
     for(i = 0 ; i < (int) N_NO ; i++) {
       Node_t* node_i = NO + i ;
@@ -579,35 +746,35 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       int nb_eqn = Node_GetNbOfEquations(node_i) ;
       int j ;
       
-      fprintf(stdout,"\t no(%d):\n",i) ;
-      fprintf(stdout,"\t    %d unknowns(col):",nb_unk) ;
+      PRINT("\t node(%d):\n",i) ;
+      PRINT("\t    %d unknowns(col):",nb_unk) ;
       
       for(j = 0 ; j < nb_unk ; j++) {
         char* name = Node_GetNameOfUnknown(node_i)[j] ;
         int icol = Node_GetMatrixColumnIndex(node_i)[j] ;
         
-        fprintf(stdout," %s(%d)",name,icol) ;
+        PRINT(" %s(%d)",name,icol) ;
       }
       
-      fprintf(stdout,"\n") ;
-      fprintf(stdout,"\t    %d equations(row):",nb_eqn) ;
+      PRINT("\n") ;
+      PRINT("\t    %d equations(row):",nb_eqn) ;
       
       for(j = 0 ; j < nb_eqn ; j++) {
         char* name = Node_GetNameOfEquation(node_i)[j] ;
         int irow = Node_GetMatrixRowIndex(node_i)[j] ;
         
-        fprintf(stdout," %s(%d)",name,irow) ;
+        PRINT(" %s(%d)",name,irow) ;
       }
-      fprintf(stdout,"\n") ;
+      PRINT("\n") ;
     }
   }
 
   /* Functions
    * --------- */
-  if(DataSet_GetFunctions(jdd) && (!strcmp(mot,"func") || !strcmp(mot,"all"))) {
+  if(DataSet_GetFunctions(jdd) && (!strncmp(mot,"function",4) || !strncmp(mot,"all",3))) {
     int i ;
     
-    fprintf(stdout,"\n") ;
+    PRINT("\n") ;
     
     for(i = 0 ; i < (int) N_FN ; i++) {
       int nb_pts = Function_GetNbOfPoints(FN + i) ;
@@ -615,27 +782,27 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       double* f  = Function_GetFValue(FN + i) ;
       int j ;
       
-      fprintf(stdout,"Time Function(%d):\n",i) ;
-      fprintf(stdout,"\t Nb of points = %d\n",nb_pts) ;
+      PRINT("Time Function(%d):\n",i) ;
+      PRINT("\t Nb of points = %d\n",nb_pts) ;
       
       for(j = 0 ; j < nb_pts ; j++) {
-        fprintf(stdout,"\t F(%e) = %e\n",t[j],f[j]) ;
+        PRINT("\t F(%e) = %e\n",t[j],f[j]) ;
       }
     }
   }
 
   /* Fields
    * ------ */
-  if(DataSet_GetFields(jdd) && (!strcmp(mot,"field") || !strcmp(mot,"all"))) {
+  if(DataSet_GetFields(jdd) && (!strncmp(mot,"field",4) || !strncmp(mot,"all",3))) {
     int i ;
     
-    fprintf(stdout,"\n") ;
+    PRINT("\n") ;
     
     for(i = 0 ; i < (int) N_CH ; i++) {
       char* type = Field_GetType(CH + i) ;
       
-      fprintf(stdout,"Field(%d):\n",i) ;
-      fprintf(stdout,"\t Type: %s\n",type) ;
+      PRINT("Field(%d):\n",i) ;
+      PRINT("\t Type: %s\n",type) ;
 
       if(!strcmp(type,"affine")) {
         FieldAffine_t* affine =  (FieldAffine_t*) Field_GetFieldFormat(CH + i) ;
@@ -643,25 +810,25 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
         double x[3] = {0.,0.,0.} ;
         int j ;
         
-        fprintf(stdout,"\t Value    = %e\n",FieldAffine_GetValue(affine)) ;
+        PRINT("\t Value    = %e\n",FieldAffine_GetValue(affine)) ;
         
-        fprintf(stdout,"\t Gradient = ") ;
+        PRINT("\t Gradient = ") ;
         
         for(j = 0 ; j < DIM ; j++) {
           g[j] = FieldAffine_GetGradient(affine)[j] ;
         }
         
-        fprintf(stdout,"(%e,%e,%e)",g[0],g[1],g[2]) ;
+        PRINT("(%e,%e,%e)",g[0],g[1],g[2]) ;
         
-        fprintf(stdout,"\n") ;
+        PRINT("\n") ;
         
-        fprintf(stdout,"\t Point    = ") ;
+        PRINT("\t Point    = ") ;
         
         for(j = 0 ; j < DIM ; j++) x[j] = FieldAffine_GetCoordinate(affine)[j] ;
         
-        fprintf(stdout,"(%e,%e,%e)",x[0],x[1],x[2]) ;
+        PRINT("(%e,%e,%e)",x[0],x[1],x[2]) ;
         
-        fprintf(stdout,"\n") ;
+        PRINT("\n") ;
         
       } else if(!strncmp(type,"grid",3)) {
         FieldGrid_t* grille =  (FieldGrid_t*) Field_GetFieldFormat(CH + i) ;
@@ -682,7 +849,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
             for(k = 0 ; k < n_z ; k++) {
               double* v = FieldGrid_GetValue(grille) ;
               
-              fprintf(stdout,"\t v(%e,%e,%e) = %e\n",x[u],y[j],z[k],v[(u) + (j)*n_x + (k)*n_x*n_y]) ;
+              PRINT("\t v(%e,%e,%e) = %e\n",x[u],y[j],z[k],v[(u) + (j)*n_x + (k)*n_x*n_y]) ;
             }
           }
         }
@@ -690,9 +857,9 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       } else if(!strcmp(type,"constant")) {
         FieldConstant_t* cst =  (FieldConstant_t*) Field_GetFieldFormat(CH + i) ;
         
-        fprintf(stdout,"\t Value    = %e\n",FieldConstant_GetValue(cst)) ;
+        PRINT("\t Value    = %e\n",FieldConstant_GetValue(cst)) ;
         
-        fprintf(stdout,"\n") ;
+        PRINT("\n") ;
         
       } else {
         arret("DataSet_PrintData: type de champ non connu") ;
@@ -702,11 +869,11 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Initial conditions
    * ------------------ */
-  if(DataSet_GetIConds(jdd) && (!strcmp(mot,"init") || !strcmp(mot,"all"))) {
+  if(DataSet_GetIConds(jdd) && (!strncmp(mot,"initialization",3) || !strncmp(mot,"all",3))) {
     int i ;
     int c1 = 14 ;
     
-    fprintf(stdout,"\n") ;
+    PRINT("\n") ;
     
     if(N_IC < 0) {
       char* nom = IConds_GetFileNameOfNodalValues(ICONDS) ;
@@ -716,27 +883,27 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
         arret("DataSet_PrintData: can't open file") ;
       }
     
-      fprintf(stdout,"\n") ;
-      fprintf(stdout,"Initialization of nodal unknowns from %s:\n",nom) ;
+      PRINT("\n") ;
+      PRINT("Initialization of nodal unknowns from %s:\n",nom) ;
     
       for(i = 0 ; i < (int) N_NO ; i++) {
         Node_t* node_i = NO + i ;
         int neq = Node_GetNbOfEquations(node_i) ;
-        int n = fprintf(stdout,"\t no(%d)",i) ;
+        int n = PRINT("\t no(%d)",i) ;
         int j ;
       
-        while(n < c1) n += fprintf(stdout," ") ;
+        while(n < c1) n += PRINT(" ") ;
       
-        n += fprintf(stdout,":") ;
+        n += PRINT(":") ;
       
         for(j = 0 ; j < neq ; j++) {
           double u ;
           
           fscanf(fic_ini,"%le",&u) ;
-          n += fprintf(stdout," %d(%e)",j,u) ;
+          n += PRINT(" %d(%e)",j,u) ;
         }
       
-        fprintf(stdout,"\n") ;
+        PRINT("\n") ;
         
       }
       
@@ -750,29 +917,29 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       Field_t* ch = ICond_GetField(IC + i) ;
       Function_t* fn = ICond_GetFunction(IC + i) ;
       
-      fprintf(stdout,"Initial Condition(%d):\n",i) ;
+      PRINT("Initial Condition(%d):\n",i) ;
       
-      fprintf(stdout,"\t Region  = %d\n",reg) ;
+      PRINT("\t Region  = %d\n",reg) ;
       
-      fprintf(stdout,"\t Unknown = %s\n",name_unk) ;
+      PRINT("\t Unknown = %s\n",name_unk) ;
       
       if(ch) {
         int n = ch - CH ;
         
-        fprintf(stdout,"\t Field = %d (type %s)\n",n,Field_GetType(ch)) ;
+        PRINT("\t Field = %d (type %s)\n",n,Field_GetType(ch)) ;
         
       } else {
-        fprintf(stdout,"\t Natural initial condition (null)\n") ;
+        PRINT("\t Natural initial condition (null)\n") ;
         
       }
       
       if(fn) {
         int n = fn - FN ;
         
-        fprintf(stdout,"\t Function = %d\n",n) ;
+        PRINT("\t Function = %d\n",n) ;
         
       } else {
-        fprintf(stdout,"\t Function unity (f(t) = 1)\n") ;
+        PRINT("\t Function unity (f(t) = 1)\n") ;
         
       }
     }
@@ -780,40 +947,39 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Boundary conditions
    * ------------------- */
-  if(DataSet_GetBConds(jdd) && (!strcmp(mot,"bcond") || !strcmp(mot,"all"))) {
+  if(DataSet_GetBConds(jdd) && (!strncmp(mot,"bcondition",4) || !strncmp(mot,"all",3))) {
     int i ;
     
-    fprintf(stdout,"\n") ;
+    PRINT("\n") ;
     
     for(i = 0 ; i < (int) N_CL ; i++) {
       int reg = BCond_GetRegionIndex(CL + i) ;
       char* name_unk =BCond_GetNameOfUnknown(CL + i) ;
-      Field_t* ch = BCond_GetField(CL + i) ;
-      Function_t* fn = BCond_GetFunction(CL + i) ;
+      int ich = BCond_GetFieldIndex(CL + i) ;
+      int ifn = BCond_GetFunctionIndex(CL + i) ;
       
-      fprintf(stdout,"Boundary Condition(%d):\n",i) ;
+      PRINT("Boundary Condition(%d):\n",i) ;
       
-      fprintf(stdout,"\t Region  = %d\n",reg) ;
+      PRINT("\t Region  = %d\n",reg) ;
       
-      fprintf(stdout,"\t Unknown = %s\n",name_unk) ;
+      PRINT("\t Unknown = %s\n",name_unk) ;
       
-      if(ch) {
-        int n = ch - CH ;
+      if(ich >= 0 && ich < N_CH) {
+        Field_t* ch = BCond_GetField(CL + i) ;
         
-        fprintf(stdout,"\t Field = %d (type %s)\n",n,Field_GetType(ch)) ;
+        PRINT("\t Field = %d (type %s)\n",ich,Field_GetType(ch)) ;
         
       } else {
-        fprintf(stdout,"\t Natural boundary condition (null)\n") ;
+        PRINT("\t Natural boundary condition (null)\n") ;
         
       }
       
-      if(fn) {
-        int n = fn - FN ;
+      if(ifn >= 0 && ifn < N_FN) {
         
-        fprintf(stdout,"\t Function = %d\n",n) ;
+        PRINT("\t Function = %d\n",ifn) ;
         
       } else {
-        fprintf(stdout,"\t Function unity (f(t) = 1)\n") ;
+        PRINT("\t Function unity (f(t) = 1)\n") ;
         
       }
     }
@@ -821,10 +987,10 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Loads
    * ----- */
-  if(DataSet_GetLoads(jdd) && (!strcmp(mot,"load") || !strcmp(mot,"all"))) {
+  if(DataSet_GetLoads(jdd) && (!strncmp(mot,"load",4) || !strncmp(mot,"all",3))) {
     int i ;
     
-    fprintf(stdout,"\n") ;
+    PRINT("\n") ;
     
     for(i = 0 ; i < (int) N_CG ; i++) {
       int reg = Load_GetRegionIndex(CG + i) ;
@@ -833,29 +999,29 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       Field_t* ch = Load_GetField(CG + i) ;
       Function_t* fn = Load_GetFunction(CG + i) ;
       
-      fprintf(stdout,"Load(%d):\n",i) ;
+      PRINT("Load(%d):\n",i) ;
       
-      fprintf(stdout,"\t Region   = %d\n",reg) ;
-      fprintf(stdout,"\t Equation = %s\n",name_eqn) ;
-      fprintf(stdout,"\t Type     = %s\n",type) ;
+      PRINT("\t Region   = %d\n",reg) ;
+      PRINT("\t Equation = %s\n",name_eqn) ;
+      PRINT("\t Type     = %s\n",type) ;
       
       if(ch) {
         int n = ch - CH ;
         
-        fprintf(stdout,"\t Field = %d (type %s)\n",n,Field_GetType(ch)) ;
+        PRINT("\t Field = %d (type %s)\n",n,Field_GetType(ch)) ;
         
       } else {
-        fprintf(stdout,"\t Natural load (null)\n") ;
+        PRINT("\t Natural load (null)\n") ;
         
       }
       
       if(fn) {
         int n = fn - FN ;
         
-        fprintf(stdout,"\t Function = %d\n",n) ;
+        PRINT("\t Function = %d\n",n) ;
         
       } else {
-        fprintf(stdout,"\t Function unity (f(t) = 1)\n") ;
+        PRINT("\t Function unity (f(t) = 1)\n") ;
         
       }
     }
@@ -863,15 +1029,15 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Points
    * ------ */
-  if(DataSet_GetPoints(jdd) && (!strcmp(mot,"points") || !strcmp(mot,"all"))) {
+  if(DataSet_GetPoints(jdd) && (!strncmp(mot,"points",4) || !strncmp(mot,"all",3))) {
     int n_points = N_POINTS ;
     Point_t* point = Points_GetPoint(POINTS) ;
     int i ;
     
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"Points:\n") ;
+    PRINT("\n") ;
+    PRINT("Points:\n") ;
     
-    fprintf(stdout,"\t Nb of points = %d\n",n_points) ;
+    PRINT("\t Nb of points = %d\n",n_points) ;
     
     for(i = 0 ; i < n_points ; i++) {
       double* coor = Point_GetCoordinate(point + i) ;
@@ -879,106 +1045,111 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       double y = (DIM > 1) ? coor[1] : 0. ;
       double z = (DIM > 2) ? coor[2] : 0. ;
       Element_t* elt = Point_GetEnclosingElement(point + i) ;
-      int reg = Element_GetRegionIndex(elt) ;
+      int reg = Point_GetRegionIndex(point + i) ;
+      int reg_el = (elt) ? Element_GetRegionIndex(elt) : -1 ;
       
-      fprintf(stdout,"\t Point(%d): ",i) ;
+      PRINT("\t Point(%d): ",i) ;
       
-      fprintf(stdout,"(%e,%e,%e) ",x,y,z) ;
+      PRINT("(%e,%e,%e) ",x,y,z) ;
       
-      fprintf(stdout,"in region %d\n",reg) ;
+      if(reg_el > 0) {
+        PRINT("in region %d",reg_el) ;
+      }
+      
+      PRINT("\n") ;
     }
   }
 
   /* Dates
    * ----- */
-  if(DataSet_GetDates(jdd) && (!strcmp(mot,"dates") || !strcmp(mot,"all"))) {
+  if(DataSet_GetDates(jdd) && (!strncmp(mot,"dates",4) || !strncmp(mot,"all",3))) {
     int n_dates = N_DATES ;
     Date_t* date = Dates_GetDate(DATES) ;
     int i ;
     
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"Dates:\n") ;
+    PRINT("\n") ;
+    PRINT("Dates:\n") ;
     
-    fprintf(stdout,"\t Nb of dates = %d\n",n_dates) ;
+    PRINT("\t Nb of dates = %d\n",n_dates) ;
     
     for(i = 0 ; i < n_dates ; i++) {
       double t = Date_GetTime(date + i) ;
       
-      fprintf(stdout,"\t Date(%d): ",i) ;
+      PRINT("\t Date(%d): ",i) ;
       
-      fprintf(stdout,"%e\n",t) ;
+      PRINT("%e\n",t) ;
     }
   }
 
   /* Time steps
    * ---------- */
-  if(DataSet_GetTimeStep(jdd) && (!strcmp(mot,"time") || !strcmp(mot,"all"))) {
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"Time Step:\n") ;
-    fprintf(stdout,"\t Dtini = %e\n",TimeStep_GetInitialTimeStep(TIMESTEP)) ;
-    fprintf(stdout,"\t Dtmax = %e\n",TimeStep_GetMaximumTimeStep(TIMESTEP)) ;
-    fprintf(stdout,"\t Dtmin = %e\n",TimeStep_GetMinimumTimeStep(TIMESTEP)) ;
-    fprintf(stdout,"\t Max common ratio = %e\n",TimeStep_GetMaximumCommonRatio(TIMESTEP)) ;
-    fprintf(stdout,"\t Reduction factor = %e\n",TimeStep_GetReductionFactor(TIMESTEP)) ;
+  if(DataSet_GetTimeStep(jdd) && (!strncmp(mot,"time",4) || !strncmp(mot,"all",3))) {
+    PRINT("\n") ;
+    PRINT("Time Step:\n") ;
+    PRINT("\t Dtini = %e\n",TimeStep_GetInitialTimeStep(TIMESTEP)) ;
+    PRINT("\t Dtmax = %e\n",TimeStep_GetMaximumTimeStep(TIMESTEP)) ;
+    PRINT("\t Dtmin = %e\n",TimeStep_GetMinimumTimeStep(TIMESTEP)) ;
+    PRINT("\t Max common ratio = %e\n",TimeStep_GetMaximumCommonRatio(TIMESTEP)) ;
+    PRINT("\t Reduction factor = %e\n",TimeStep_GetReductionFactor(TIMESTEP)) ;
   }
 
 
 
   /* Iterative process
    * ----------------- */
-  if(DataSet_GetIterProcess(jdd) && (!strcmp(mot,"iter") || !strcmp(mot,"all"))) {
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"Iterative Process:\n") ;
-    fprintf(stdout,"\t Nb of iterations = %d\n",IterProcess_GetNbOfIterations(ITERPROCESS)) ;
-    fprintf(stdout,"\t Tolerance = %e\n",IterProcess_GetTolerance(ITERPROCESS)) ;
-    fprintf(stdout,"\t Nb of repetitions = %d\n",IterProcess_GetNbOfRepetitions(ITERPROCESS)) ;
+  if(DataSet_GetIterProcess(jdd) && (!strncmp(mot,"iterations",4) || !strncmp(mot,"all",3))) {
+    PRINT("\n") ;
+    PRINT("Iterative Process:\n") ;
+    PRINT("\t Nb of iterations = %d\n",IterProcess_GetNbOfIterations(ITERPROCESS)) ;
+    PRINT("\t Tolerance = %e\n",IterProcess_GetTolerance(ITERPROCESS)) ;
+    PRINT("\t Nb of repetitions = %d\n",IterProcess_GetNbOfRepetitions(ITERPROCESS)) ;
   }
 
   /* Objective variations
    * -------------------- */
-  if(DataSet_GetObVals(jdd) && (!strcmp(mot,"obval") || !strcmp(mot,"all"))) {
+  if(DataSet_GetObVals(jdd) && (!strncmp(mot,"obvariations",4) || !strncmp(mot,"all",3))) {
     int i ;
     
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"Objective values:\n") ;
+    PRINT("\n") ;
+    PRINT("Objective values:\n") ;
     
-    fprintf(stdout,"\t Nb of objective values = %d\n",N_OBJ) ;
+    PRINT("\t Nb of objective values = %d\n",N_OBJ) ;
     
     for(i = 0 ; i < (int) N_OBJ ; i++) {
-      fprintf(stdout,"\t %s = %e",ObVal_GetNameOfUnknown(OBJ + i),ObVal_GetValue(OBJ + i)) ;
-      fprintf(stdout," , type = %c",ObVal_GetType(OBJ + i)) ;
-      fprintf(stdout," , relaxation factor = %e",ObVal_GetRelaxationFactor(OBJ + i)) ;
-      fprintf(stdout,"\n") ;
+      PRINT("\t %s = %e",ObVal_GetNameOfUnknown(OBJ + i),ObVal_GetValue(OBJ + i)) ;
+      PRINT(" , type = %c",ObVal_GetType(OBJ + i)) ;
+      PRINT(" , relaxation factor = %e",ObVal_GetRelaxationFactor(OBJ + i)) ;
+      PRINT("\n") ;
     }
   }
 
   /* Interpolation functions
    * ----------------------- */
-  if(DataSet_GetMesh(jdd) && (!strcmp(mot,"inter"))) {
+  if(DataSet_GetMesh(jdd) && (!strncmp(mot,"interpolation",4))) {
     int i ;
     
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"Interpolation:\n") ;
+    PRINT("\n") ;
+    PRINT("Interpolation:\n") ;
     
-    fprintf(stdout,"\t Nb of interpolation functions = %d\n",N_FI) ;
+    PRINT("\t Nb of interpolation functions = %d\n",N_FI) ;
     
     for(i = 0 ; i < (int) N_FI ; i++) {
       int np = IntFct_GetNbOfPoints(FI + i) ;
       int nn = IntFct_GetNbOfFunctions(FI + i) ;
       int dim = IntFct_GetDimension(FI + i) ;
       
-      fprintf(stdout,"\n") ;
+      PRINT("\n") ;
       
-      fprintf(stdout,"\t Interpolation function %d\n",i) ;
+      PRINT("\t Interpolation function %d\n",i) ;
       
-      fprintf(stdout,"\t Nb of integration points = %d",np) ;
+      PRINT("\t Nb of integration points = %d",np) ;
       
-      fprintf(stdout,", Dimension = %d\n",dim) ;
+      PRINT(", Dimension = %d\n",dim) ;
       
       if(np <= 0) continue ;
       
       
-      fprintf(stdout,"\t Point Coordinates:\n") ;
+      PRINT("\t Point Coordinates:\n") ;
       
       {
         double* a = IntFct_GetPointCoordinates(FI + i) ;
@@ -988,37 +1159,37 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
         for(k = 0 ; k < dim ; k++) {
           int p ;
       
-          fprintf(stdout,"\t %c = ",axis[k]) ;
+          PRINT("\t %c = ",axis[k]) ;
         
           for(p = 0 ; p < np ; p++) {
             double* ap = a + p*dim ;
             
-            fprintf(stdout,"% e ",ap[k]) ;
+            PRINT("% e ",ap[k]) ;
           }
         
-          fprintf(stdout,"\n") ;
+          PRINT("\n") ;
         }
       }
       
       
-      fprintf(stdout,"\t Weights = ") ;
+      PRINT("\t Weights = ") ;
       
       {
         double* w = IntFct_GetWeight(FI + i) ;
         int p ;
         
         for(p = 0 ; p < np ; p++) {
-          fprintf(stdout,"%e ",w[p]) ;
+          PRINT("%e ",w[p]) ;
         }
         
-        fprintf(stdout,"\n") ;
+        PRINT("\n") ;
       }
       
       
-      fprintf(stdout,"\t Nb of functions = %d\n",nn) ;
+      PRINT("\t Nb of functions = %d\n",nn) ;
       
       
-      fprintf(stdout,"\t Functions:\n") ;
+      PRINT("\t Functions:\n") ;
       
       {
         double* h = IntFct_GetFunction(FI + i) ;
@@ -1029,30 +1200,30 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
           
           if(k == 0) {
             
-            fprintf(stdout,"\t hi = ") ;
+            PRINT("\t hi = ") ;
             
             for(p = 0 ; p < np ; p++) {
-              fprintf(stdout," hi(pt %d)     ",p) ;
+              PRINT(" hi(pt %d)     ",p) ;
             }
             
-            fprintf(stdout,"\n") ;
+            PRINT("\n") ;
           }
         
-          fprintf(stdout,"\t h%d = ",k) ;
+          PRINT("\t h%d = ",k) ;
         
           for(p = 0 ; p < np ; p++) {
             double* hp = h + p*nn ;
             
-            fprintf(stdout,"% e ",hp[k]) ;
+            PRINT("% e ",hp[k]) ;
           }
         
-          fprintf(stdout,"\n") ;
+          PRINT("\n") ;
         }
       }
       
       
       
-      fprintf(stdout,"\t Function derivatives:\n") ;
+      PRINT("\t Function derivatives:\n") ;
       
       
 #define DHP(n,i)  (dhp[(n)*dim+(i)])
@@ -1067,27 +1238,27 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
           if(l == 0) {
             int p ;
             
-            fprintf(stdout,"\t hi,j = ") ;
+            PRINT("\t hi,j = ") ;
             
             for(p = 0 ; p < np ; p++) {
-              fprintf(stdout," hi,j(pt %d)   ",p) ;
+              PRINT(" hi,j(pt %d)   ",p) ;
             }
             
-            fprintf(stdout,"\n") ;
+            PRINT("\n") ;
           }
         
           for(k = 0 ; k < dim ; k++) {
             int p ;
         
-            fprintf(stdout,"\t h%d,%c = ",l,axis[k]) ;
+            PRINT("\t h%d,%c = ",l,axis[k]) ;
           
             for(p = 0 ; p < np ; p++) {
               double* dhp = dh + p*nn*dim ;
               
-              fprintf(stdout,"% e ",DHP(l,k)) ;
+              PRINT("% e ",DHP(l,k)) ;
             }
         
-            fprintf(stdout,"\n") ;
+            PRINT("\n") ;
           }
         }
       }

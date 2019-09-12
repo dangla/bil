@@ -10,10 +10,14 @@ struct FieldGrid_s      ; typedef struct FieldGrid_s      FieldGrid_t ;
 struct FieldConstant_s  ; typedef struct FieldConstant_s  FieldConstant_t ;
 
 
+#include "DataFile.h"
+#include "Geometry.h"
 
-#include "Field.h"
-
-extern double    Field_ComputeValueAtPoint(Field_t*,double*,int) ;
+extern Field_t*       (Field_New)                  (void) ;
+extern void           (Field_Delete)               (void*) ;
+extern Field_t*       (Field_Create)               (int) ;
+extern void           (Field_Scan)                 (Field_t*,DataFile_t*,Geometry_t*) ;
+extern double         (Field_ComputeValueAtPoint)  (Field_t*,double*,int) ;
 
 
 #define Field_MaxLengthOfKeyWord        (30)
@@ -28,6 +32,10 @@ extern double    Field_ComputeValueAtPoint(Field_t*,double*,int) ;
 
 /* 3. FieldAffine */
 
+extern FieldAffine_t* (FieldAffine_Create) (void) ;
+extern void           (FieldAffine_Delete) (void*) ;
+
+
 #define FieldAffine_GetValue(FLD)        ((FLD)->v)
 #define FieldAffine_GetGradient(FLD)     ((FLD)->g)
 #define FieldAffine_GetCoordinate(FLD)   ((FLD)->x)
@@ -35,6 +43,9 @@ extern double    Field_ComputeValueAtPoint(Field_t*,double*,int) ;
 
 
 /* 4. FieldGrid */
+
+extern FieldGrid_t*   (FieldGrid_Create)(char*,int) ;
+
 
 #define FieldGrid_GetFileName(FLD)                ((FLD)->name)
 #define FieldGrid_GetNbOfPointsAlongX(FLD)        ((FLD)->n_x)

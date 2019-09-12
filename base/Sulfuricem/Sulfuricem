@@ -41,13 +41,14 @@ Value = -8      Gradient = 0. 0 0 Point = 0. 0 0
 
 
 Initialization
-6
+7
 Region = 2 Unknown = logc_h2so4  Field = 1
 Region = 2 Unknown = psi         Field = 0
 Region = 2 Unknown = z_si        Field = 6
 Region = 2 Unknown = z_ca        Field = 2
 Region = 2 Unknown = z_al        Field = 8
 Region = 2 Unknown = logc_k      Field = 7
+Region = 2 Unknown = logc_cl     Field = 7
 
 
 Functions
@@ -59,7 +60,7 @@ Boundary Conditions
 4
 Region = 3 Unknown = psi        Field = 0 Function = 0
 Region = 3 Unknown = logc_h2so4 Field = 1 Function = 1
-Region = 2 Unknown = c_cl       Field = 0 Function = 0
+Region = 2 Unknown = logc_cl    Field = 7 Function = 0
 Region = 2 Unknown = z_si       Field = 6 Function = 0
 
 
@@ -83,7 +84,7 @@ z_ca         = 1.e-1
 psi          = 1.e-1
 z_si         = 1.e-1
 logc_k       = 1.e-1
-c_cl         = 1.e-1
+logc_cl      = 1.e-1
 z_al         = 1.e-1
 logc_oh      = 1.e-1
 

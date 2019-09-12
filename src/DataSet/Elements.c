@@ -13,6 +13,7 @@
 #include "Message.h"
 #include "Tools/Math.h"
 #include "Curves.h"
+#include "Mry.h"
 
 
 static double   (Elements_ComputeMaximumSizeOfElements)(Elements_t*) ;
@@ -22,14 +23,16 @@ static int      (Element_ComputeNbOfMatrixEntries)(Element_t*) ;
 
 
 
-void Elements_CreateMore(Elements_t* elements,Materials_t* materials)
+void Elements_LinkUp(Elements_t* elements,Materials_t* materials)
 {
   int n_el = Elements_GetNbOfElements(elements) ;
   Element_t* el = Elements_GetElement(elements) ;
-  int ie ;
   
-  /* Pointers to material for each element */
+  
+  /* Link up element and material */
   {
+    int ie ;
+    
     for(ie = 0 ; ie < n_el ; ie++) {
       int imat = Element_GetMaterialIndex(el + ie) ;
     
@@ -40,36 +43,46 @@ void Elements_CreateMore(Elements_t* elements,Materials_t* materials)
       }
     }
   }
+}
+
+
+
+void Elements_CreateMore(Elements_t* elements)
+{
+  int n_el = Elements_GetNbOfElements(elements) ;
+  Element_t* el = Elements_GetElement(elements) ;
+  int ie ;
   
   /* Pointers to unknowns and equations positions at nodes */
   {
-    int n_pn = 0 ;
+    int n_pos = 0 ;
     
     for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
+      int imat = Element_GetMaterialIndex(el + ie) ;
+      //Material_t* mat = Element_GetMaterial(el + ie) ;
       int nn = Element_GetNbOfNodes(el + ie) ;
       int neq = Element_GetNbOfEquations(el + ie) ;
     
-      if(mat) n_pn += nn*neq ;
+      if(imat >= 0) n_pos += nn*neq ;
     }
   
-  /* Memory space allocation with initialization to 0 */
+    /* Memory space allocation with initialization to 0 */
     {
-      short int* pntr_pn = (short int* ) calloc(2*n_pn,sizeof(short int)) ;
-    
-      if(!pntr_pn) {
-        arret("Elements_CreateMore (1) : impossible d\'allouer la memoire") ;
-      }
+      //short int* pos = (short int* ) calloc(2*n_pos,sizeof(short int)) ;
+      short int* upos = (short int* ) Mry_New(short int[2*n_pos]) ;
+      short int* epos = upos + n_pos ;
   
-      Element_GetUnknownPosition(el)  = pntr_pn ;
-      Element_GetEquationPosition(el) = pntr_pn + n_pn ;
+      Element_GetUnknownPosition(el)  = upos ;
+      Element_GetEquationPosition(el) = epos ;
     
+      #if 0
       for(ie = 1 ; ie < n_el ; ie++) {
-        Material_t* mat = Element_GetMaterial(el + ie) ;
+        int imat = Element_GetMaterialIndex(el + ie) ;
+        //Material_t* mat = Element_GetMaterial(el + ie) ;
         short int* pin = Element_GetUnknownPosition(el + ie - 1) ;
         short int* peq = Element_GetEquationPosition(el + ie - 1) ;
       
-        if(mat) {
+        if(imat >= 0) {
           int nn = Element_GetNbOfNodes(el + ie - 1) ;
           int neq = Element_GetNbOfEquations(el + ie - 1) ;
         
@@ -82,6 +95,25 @@ void Elements_CreateMore(Elements_t* elements,Materials_t* materials)
           Element_GetEquationPosition(el + ie) = peq ;
         }
       }
+      #endif
+      
+      #if 1
+      for(ie = 0 ; ie < n_el ; ie++) {
+        int imat = Element_GetMaterialIndex(el + ie) ;
+        //Material_t* mat = Element_GetMaterial(el + ie) ;
+        
+        Element_GetUnknownPosition(el + ie)  = upos ;
+        Element_GetEquationPosition(el + ie) = epos ;
+      
+        if(imat >= 0) {
+          int nn = Element_GetNbOfNodes(el + ie) ;
+          int neq = Element_GetNbOfEquations(el + ie) ;
+          
+          upos += nn*neq ;
+          epos += nn*neq ;
+        }
+      }
+      #endif
     }
   }
 

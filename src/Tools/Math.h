@@ -14,7 +14,7 @@ struct Math_s         ; typedef struct Math_s         Math_t ;
 extern double   (Math_ComputeSecondDeviatoricStressInvariant)(const double*) ;
 extern double*  (Math_SolveByGaussElimination)(double*,double*,int) ;
 extern int      (Math_ComputePolynomialEquationRoots)(double*,int) ;
-extern double   (Math_PolishPolynomialEquationRoot)(double*,int,double,double,int) ;
+extern int      (Math_PolishPolynomialEquationRoot)(double*,int,double*,double,int) ;
 extern double   (Math_EvaluateExpression)(char*) ;
 extern double   (Math_EvaluateExpressions)(char*,char*) ;
 

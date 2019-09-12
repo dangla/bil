@@ -16,6 +16,8 @@
 #include "Solutions.h"
 #include "Context.h"
 #include "TextFile.h"
+#include "String.h"
+#include "Mry.h"
 #include "Mesh.h"
 
 
@@ -64,18 +66,28 @@ Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geo
 {
   Mesh_t* mesh = Mesh_New() ;
   
+  {
+    char* filecontent = DataFile_GetFileContent(datafile) ;
+    char* c  = String_FindToken(filecontent,"MAIL,MESH,Mesh",",") ;
+    
+    if(c) {
+      c = String_SkipLine(c) ;
+    } else {
+      arret("Mesh_Create: Mesh not found") ;
+    }
+      
+    DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+  }
+   
+   
+  Message_Direct("Enter in %s","Mesh") ;
+  Message_Direct("\n") ;
+  
   Mesh_GetGeometry(mesh) = geometry ;
   
   Mesh_GetElements(mesh) = Elements_New() ;
   
   Mesh_GetNodes(mesh) = Nodes_New() ;
-  
-  DataFile_OpenFile(datafile,"r") ;
-  
-  DataFile_SetFilePositionAfterKey(datafile,"MAIL,MESH,Mesh",",",1) ;
-   
-  Message_Direct("Enter in %s","Mesh") ;
-  Message_Direct("\n") ;
 
 
   {
@@ -97,11 +109,14 @@ Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geo
     ecrit_mail_msh_2(mesh,filename) ;
   }
   
-  DataFile_CloseFile(datafile) ;
+  
+  /* 1. Link up elements and materials
+   * ---------------------------------*/
+   Elements_LinkUp(Mesh_GetElements(mesh),materials) ;
 
   /* 2. Allocation memory for unknown and equation positions
    * -------------------------------------------------------*/
-  Elements_CreateMore(Mesh_GetElements(mesh),materials) ;
+  Elements_CreateMore(Mesh_GetElements(mesh)) ;
 
   /* 3. Allocation memory for names of equations and unknowns
    * --------------------------------------------------------*/
@@ -110,8 +125,6 @@ Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geo
   /* 4. Allocation memory for matrix row and column indexes
    * ------------------------------------------------------*/
   Nodes_CreateMore(Mesh_GetNodes(mesh)) ;
-  
-  //Elements_DefineProperties(Mesh_GetElements(mesh)) ;
 
 
   return(mesh) ;
@@ -352,7 +365,7 @@ void  Mesh_SetMatrixPermutationNumbering(Mesh_t* mesh,BConds_t* bconds,DataFile_
 
 
 void  Mesh_ResetMatrixNumbering(Mesh_t* mesh)
-/** Initialization to 0 the Matrix Row/Column Indexes */
+/** Initialize the Matrix Row/Column Indexes to 0 */
 {
 
   /* Initialization to arbitrarily negative value (-1) 
@@ -457,7 +470,7 @@ void Mesh_WriteGraph(Mesh_t* mesh,const char* nom,const char* format)
   }
 
 
-	/* Format HSL_MC40 */
+  /* Format HSL_MC40 */
   if(!strcmp(format,"hsl") || !strcmp(format,"hsl_mc40")) {
     int    n_no = Mesh_GetNbOfNodes(mesh) ;
     int in ;
@@ -470,11 +483,11 @@ void Mesh_WriteGraph(Mesh_t* mesh,const char* nom,const char* format)
       for(i = 0 ; i < degree ; i++) {
         int jn = list[i] ;
         
-	      if(jn < in) fprintf(fic_graph,"%d %d\n",in+1,jn+1) ;
+        if(jn < in) fprintf(fic_graph,"%d %d\n",in+1,jn+1) ;
       }
     }
     
-	/* Format METIS */
+  /* Format METIS */
   } else if(!strcmp(format,"metis")) {
     int    n_no = Mesh_GetNbOfNodes(mesh) ;
     int in ;
@@ -777,18 +790,16 @@ void Mesh_CreateEquationContinuity(Mesh_t* mesh)
   int n_el = Mesh_GetNbOfElements(mesh) ;
   int    ie,in ;
 
+
   /* Allocate memory space for names of equations and unknwons */
   {
-    int    np = 2*n_no*Model_MaxNbOfEquations ;
-    char** p  = (char**) malloc(np*sizeof(char*)) ;
-    
-    if(!p) {
-      arret("Mesh_SetEquationContinuity(1): memory allocation impossible") ;
-    }
+    int    n_names = n_no*Model_MaxNbOfEquations ;
+    char** uname = (char**) Mry_New(char*[2*n_names]) ;
+    char** ename = uname + n_names ;
   
     for(in = 0 ; in < n_no ; in++) {
-      Node_GetNameOfUnknown(no + in)  = p + in*Model_MaxNbOfEquations ;
-      Node_GetNameOfEquation(no + in) = p + (in + n_no)*Model_MaxNbOfEquations ;
+      Node_GetNameOfUnknown(no + in)  = uname + in*Model_MaxNbOfEquations ;
+      Node_GetNameOfEquation(no + in) = ename + in*Model_MaxNbOfEquations ;
     }
   }
 

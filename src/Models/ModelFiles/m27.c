@@ -76,7 +76,7 @@
 
 /* constante physique */
 #define FARADAY   (9.64846e4) /* Faraday (C/mole) */
-#define T         (293.)      /* Temperature (K) */
+#define TEMPERATURE         (293.)      /* Temperature (K) */
 #define RT        (2436.)     /* Produit R = 8.3143 et T = 293. (J/mole) */
 
 /* viscosites (Pa.s) */
@@ -97,11 +97,11 @@
 /* Fonctions */
 static int    pm(const char *s) ;
 static double activite(double,double,double) ;
-extern double lna_i(double,double,double,double,double,double) ;
-/*
+static double lna_i(double,double,double,double,double,double) ;
 extern double lng_LinLee(double,double,double,double,double,double) ;
 extern double lng_TQN(double,double,double,double,double,double,double,double) ;
-*/
+
+
 static double tortuosite_l(double) ;
 static void   flux(double**,double**,double*,double*,elem_t,int,geom_t) ;
 static double concentration_cl_l(double) ;
@@ -204,7 +204,7 @@ void ch27(double **x,double **u,double **u_n,double *f,double *f_n,double *va,do
     {
       double c_cl_t = C_Cl_t(0) ;  
       double h_r    = H_r(0) ;
-      double p_vs   = P_VS(T) ;  
+      double p_vs   = P_VS(TEMPERATURE) ;  
       double p_v    = h_r*p_vs ; 
       double c_cl,c_na,c_w ;
       double s_w ;
@@ -273,7 +273,7 @@ void in27(double **x,double **u,double *f,double *va,elem_t el,int dim,geom_t ge
   for(i=0;i<2;i++) {
     double c_cl_t = C_Cl_t(i) ;  
     double h_r    = H_r(i) ;
-    double p_vs   = P_VS(T) ;  
+    double p_vs   = P_VS(TEMPERATURE) ;  
     double p_v    = h_r*p_vs ;
     double c_cl,c_na,c_w ;
     double s_w,s_g ;
@@ -360,7 +360,7 @@ int ex27(double **x,double **u,double *f,double *va,elem_t el,int dim,geom_t geo
   for(i=0;i<2;i++) {
     double c_cl_t = C_Cl_t(i) ;  
     double h_r    = H_r(i) ;
-    double p_vs   = P_VS(T) ;
+    double p_vs   = P_VS(TEMPERATURE) ;
     double c_cl,c_na,c_w ;
     double s_w,s_g ;
     double p_l,p_c ;
@@ -445,7 +445,7 @@ int ct27(double **x,double **u,double **u_n,double *f,double *f_n,double *va,ele
   for(i=0;i<2;i++) {
     double c_cl_t = C_Cl_t(i) ; 
     double h_r    = H_r(i) ;
-    double p_vs   = P_VS(T) ; 
+    double p_vs   = P_VS(TEMPERATURE) ; 
     double p_v    = h_r*p_vs ;
     double c_cl,c_na,c_w ;
     double s_w,s_g ;
@@ -543,7 +543,7 @@ int mx27(double **x,double **u,double **u_n,double *f,double *f_n,double *va,dou
   for(i=0;i<2;i++) {
     double c_cl_t = C_Cl_t(i) ; 
     double h_r    = H_r(i) ;
-    double p_vs   = P_VS(T) ; 
+    double p_vs   = P_VS(TEMPERATURE) ; 
     double p_v    = h_r*p_vs ;
     double p_c,p_l ;
     double s_w,s_g ;
@@ -864,6 +864,7 @@ double activite(double c_cl,double c_na,double c_w)
   double m_cl,m_na,m_T ;
   double I,A,epsi ;
 
+  double T = TEMPERATURE ;
   double T_0 = 273.15 ;
   double b0 = sqrt(M_h2o),S0 = pow(M_h2o,1.29) ; /* references */
   double b_na = 4.352/b0,b_cl = 1.827/b0 ; /* donnees intrinseques */
@@ -932,4 +933,29 @@ double porosite(double phi0,double s_w,double c_cl_t)
   /* if(phi < 1.e-8*phi0) phi = 1.e-8*phi0 ; */
   if(phi < 0.) phi = 0. ;
   return(phi) ;
+}
+
+double lng_TQN(double T,double I,double z,double b,double S,double A,double lna_w,double m_t)
+/* Le log du coefficient d'activite d'un ion (T.Q Nguyen) :
+   lng_i = dGamma/dm_i = (dGamma/dm_i)_I - 0.5*z_i*z_i*(lna_w + m_t)/I 
+   lna_w = - m_t - sum_i ( m_i*lng_i ) + Gamma */
+{
+  double alpha = 1.29,II = sqrt(I) ;
+  double lng ;
+  
+  lng = - A*2*log(1 + b*II)/b + S*pow(I,alpha)/(1+alpha)/T - 0.5*(lna_w + m_t)/I ;
+  
+  return(lng*z*z) ;
+}
+
+double lna_i(double T,double I,double z,double b,double S,double A)
+/* Contribution de chaque ion au log de l'activite du solvant 
+   lna_w = sum_i ( m_i*lna_i ) (T.Q Nguyen) */ 
+{
+  double alpha = 1.29,a1 = alpha/(1+alpha),II = sqrt(I) ;
+  double lna ;
+  
+  lna = A*II/(1 + b*II) - a1*S*pow(I,alpha)/T ;
+  
+  return(-1 + lna*z*z) ;
 }

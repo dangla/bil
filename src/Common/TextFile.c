@@ -8,6 +8,7 @@
 #include <assert.h>
 
 #include "Message.h"
+#include "Tools/Math.h"
 #include "Buffer.h"
 #include "Mry.h"
 #include "TextFile.h"
@@ -168,6 +169,58 @@ void (TextFile_MoveToStoredFilePosition)(TextFile_t* textfile)
 
 
 
+char* (TextFile_ReadLineFromCurrentFilePositionInString)(TextFile_t* textfile,char* line,int n)
+/** Reads a line from the textfile at the current position of its string
+ *  and stores it into the string pointed to by line. It stops when 
+ *  either (n-1) characters are read, the newline character is read,
+ *  or the end-of-file is reached, whichever comes first. 
+ *  Return a pointer to the string line on success or NULL on failure. */
+{
+  char* c ;
+  char* beg = TextFile_GetFileContent(textfile) ;
+  char* end = (beg) ? String_FindEndOfString(beg) : NULL ;
+  
+  if(!beg) {
+    arret("TextFile_ReadLineFromCurrentFilePositionInString") ;
+  }
+  
+  
+  /* Reads a non empty line from the current position of the string */
+  do {
+    char* cur = TextFile_GetCurrentPositionInFileContent(textfile) ;
+    char* eol = String_FindEndOfLine(cur) ;
+    char* nex = (eol) ? eol + 1 : end ;
+    
+    if(nex == cur) {
+      return(NULL) ;
+    }
+    
+    {
+      int n0 = nex - cur ;
+      int n1 = Math_Min(n0,n) ;
+      char* cur1 = cur + n1 ;
+      
+      strncpy(line,cur,n1) ;
+      c = line ;
+      line[n1] = '\0' ;
+    
+      TextFile_GetCurrentPositionInString(textfile) = cur1 - beg ;
+    }
+    
+    /* Eliminate the first blank characters */
+    //if(*c == ' ') c += strspn(c," ") ;
+    c = String_SkipBlankChars(c) ;
+    
+  //} while((*c == '\n')) ;
+  } while(isspace(*c)) ;
+  
+  //String_FindEndOfLine(line)[0] = '\0' ;
+  
+  return(c) ;
+}
+
+
+
 char* (TextFile_ReadLineFromCurrentFilePosition)(TextFile_t* textfile,char* line,int n)
 /** Reads a line from the stream of textfile at the current position 
  *  and stores it into the string pointed to by line. It stops when 
@@ -176,28 +229,30 @@ char* (TextFile_ReadLineFromCurrentFilePosition)(TextFile_t* textfile,char* line
  *  The file of textfile is assumed open for reading. 
  *  Return a pointer to the string line on success or NULL on failure. */
 {
-  FILE* str  = TextFile_GetFileStream(textfile) ;
   char* c ;
   
   
   /* Reads a non empty line from the stream after the current position */
-  do {
-    if(feof(str)) return(NULL) ;
+  {
+    FILE* str  = TextFile_GetFileStream(textfile) ;
+  
+    do {
+      if(feof(str)) return(NULL) ;
     
-    c = fgets(line,n,str) ;
+      c = fgets(line,n,str) ;
     
-    if(!c) {
-      return(NULL) ;
-    }
+      if(!c) {
+        return(NULL) ;
+      }
     
-    TextFile_GetCurrentPositionInString(textfile) += strlen(line) ;
+      /* Eliminate the first blank characters */
+      if(*c == ' ') c += strspn(c," ") ;
     
-    /* Eliminate the first blank characters */
-    if(*c == ' ') c += strspn(c," ") ;
-    
-  /* } while((*c == '\n') || (*c == '#')) ; */
-  } while((*c == '\n')) ;
-  /* } while(0) ; */
+    /* } while((*c == '\n') || (*c == '#')) ; */
+    //} while((*c == '\n') || (*c == '\r') || (*c == '\t') || (*c == '\v') || (*c == '\f')) ;
+    } while(isspace(*c)) ;
+    /* } while(0) ; */
+  }
   
   return(c) ;
 }
@@ -206,24 +261,27 @@ char* (TextFile_ReadLineFromCurrentFilePosition)(TextFile_t* textfile,char* line
 
 long int TextFile_CountNbOfEatenCharacters(TextFile_t* textfile)
 {
-  fpos_t* pos  = TextFile_GetFilePosition(textfile) ;
-  fpos_t* cpos = NULL ;
-  FILE* str = TextFile_OpenFile(textfile,"r") ;
   long int count = 0 ;
-  char c ;
   
-  while((cpos != pos) && ((c = fgetc(str)) != EOF)) {
+  if(TextFile_Exists(textfile)) {
+    fpos_t* pos  = TextFile_GetFilePosition(textfile) ;
+    fpos_t* cpos = NULL ;
+    FILE* str = TextFile_OpenFile(textfile,"r") ;
+    char c ;
+  
+    while((cpos != pos) && ((c = fgetc(str)) != EOF)) {
     
-    /* Store the current file position of the stream in pos */
-    if(fgetpos(str,cpos)) {
-      arret("TextFile_CountNbOfEatenCharacters") ;
+      /* Store the current file position of the stream in pos */
+      if(fgetpos(str,cpos)) {
+        arret("TextFile_CountNbOfEatenCharacters") ;
+      }
+    
+      count++ ;
+    
     }
-    
-    count++ ;
-    
-  }
   
-  TextFile_CloseFile(textfile) ;
+    TextFile_CloseFile(textfile) ;
+  }
   
   return(count) ;
 }
@@ -233,17 +291,22 @@ long int TextFile_CountNbOfEatenCharacters(TextFile_t* textfile)
 long int TextFile_CountNbOfCharacters(TextFile_t* textfile)
 /** Return the number of character of the file including end of file */
 {
-  FILE* str = TextFile_OpenFile(textfile,"r") ;
-  long int count = 1 ;
-  char c ;
+  long int count = 0 ;
   
-  while((c = fgetc(str)) != EOF) {
+  if(TextFile_Exists(textfile)) {
+    FILE* str = TextFile_OpenFile(textfile,"r") ;
+    char c ;
     
-    count++ ;
+    count = 1 ;
+  
+    while((c = fgetc(str)) != EOF) {
     
+      count++ ;
+    
+    }
+  
+    TextFile_CloseFile(textfile) ;
   }
-  
-  TextFile_CloseFile(textfile) ;
   
   return(count) ;
 }
@@ -252,25 +315,28 @@ long int TextFile_CountNbOfCharacters(TextFile_t* textfile)
 int TextFile_CountTheMaxNbOfCharactersPerLine(TextFile_t* textfile)
 /** Return the max number of character per line including end of line */
 {
-  FILE* str = TextFile_OpenFile(textfile,"r") ;
   int linelength = 0 ;
-  int ll = 0 ;
-  char c ;
   
-  while((c = fgetc(str)) != EOF) {
+  if(TextFile_Exists(textfile)) {
+    FILE* str = TextFile_OpenFile(textfile,"r") ;
+    int ll = 0 ;
+    char c ;
+  
+    while((c = fgetc(str)) != EOF) {
     
-    if(c != '\n') {
-      ll++ ;
-    } else {
-      if(ll > linelength) linelength = ll ;
-      ll = 0 ;
+      if(c != '\n') {
+        ll++ ;
+      } else {
+        if(ll > linelength) linelength = ll ;
+        ll = 0 ;
+      }
     }
+  
+    /* Include end of line character */
+    linelength += 1 ;
+  
+    TextFile_CloseFile(textfile) ;
   }
-  
-  /* Include end of line character */
-  linelength += 1 ;
-  
-  TextFile_CloseFile(textfile) ;
   
   return(linelength) ;
 }
@@ -284,6 +350,9 @@ char* (TextFile_FileCopy)(TextFile_t* textfile)
 {
   char*   targetfile = tmpnam(NULL) ; /* temporary filename */
   FILE*   target  = fopen(targetfile,"w") ;
+  //char    targetfile[] = "tmpXXXXXX" ;
+  //int     descriptor   = mkstemp(targetfile) ;
+  //FILE*   target  = (descriptor != -1) ? fopen(targetfile,"w") : NULL ;
   
   if(!target) {
     arret("TextFile_FileCopy(2)") ;
@@ -335,29 +404,39 @@ char* (TextFile_StoreFileContent)(TextFile_t* textfile)
     char* content = TextFile_GetFileContent(textfile) ;
     
     free(content) ;
+    
+    TextFile_GetFileContent(textfile) = NULL ;
   }
   
   /* Allocate the memory space for the content */
   {
     int n = TextFile_CountNbOfCharacters(textfile) ;
-    size_t sz = n*sizeof(char) ;
-    char* content = (char*) malloc(sz) ;
     
-    if(!content) {
-      assert(content) ;
-    }
+    if(n) {
+      char* content = (char*) Mry_New(char[n]) ;
   
-    TextFile_GetFileContent(textfile) = content ;
+      TextFile_GetFileContent(textfile) = content ;
+    }
   }
   
   /* Read the chars and fill in the allocated space */
   {
     char* c = TextFile_GetFileContent(textfile) ;
-    FILE* str  = TextFile_OpenFile(textfile,"r") ;
     
-    while( (*c = fgetc(str)) != EOF ) c++ ;
+    if(c && TextFile_Exists(textfile)) {
+      FILE* str  = TextFile_OpenFile(textfile,"r") ;
+      int i ;
     
-    TextFile_CloseFile(textfile) ;
+      //while( (*c = fgetc(str)) != EOF ) c++ ;
+      while( (i = fgetc(str)) != EOF ) {
+        c[0] = i ;
+        c++ ;
+      }
+    
+      c[0] = '\0' ;
+    
+      TextFile_CloseFile(textfile) ;
+    }
   }
 
   return(TextFile_GetFileContent(textfile)) ;
@@ -371,14 +450,12 @@ char* (TextFile_StoreFileContent)(TextFile_t* textfile)
 
 static int rmlit = 0;
 
-static void
-echo_1(FILE *in, FILE *out)
+static void echo_1(FILE *in, FILE *out)
 {
   fputc(fgetc(in), out);
 }
 
-static void
-echo_upto(FILE *in, FILE *out, int chr)
+static void echo_upto(FILE *in, FILE *out, int chr)
 {
   int c;
  
@@ -389,14 +466,12 @@ echo_upto(FILE *in, FILE *out, int chr)
   }
 }
 
-static void
-skip_1(FILE *in)
+static void skip_1(FILE *in)
 {
   fgetc(in);
 }
 
-static void
-skip_upto(FILE *in, int chr)
+static void skip_upto(FILE *in, int chr)
 {
   int c;
  
@@ -406,8 +481,7 @@ skip_upto(FILE *in, int chr)
   }
 }
 
-static void
-skip_line(FILE *in)
+static void skip_line(FILE *in)
 {
   int c;
  
@@ -416,8 +490,7 @@ skip_line(FILE *in)
   ungetc(c, in);
 }
 
-static void
-skip_cmt(FILE *in)
+static void skip_cmt(FILE *in)
 {
   int c, p;
 
@@ -428,8 +501,7 @@ skip_cmt(FILE *in)
   ungetc(' ', in);
 }
 
-static void
-remove_cmt(FILE *in , FILE *out)
+static void remove_cmt(FILE *in , FILE *out)
 {
   int c;
  
@@ -449,15 +521,13 @@ remove_cmt(FILE *in , FILE *out)
   }
 }
 
-static void
-help(void)
+static void help(void)
 {
   fprintf(stderr, "usage: coscmt [-h] [-l] [-o outfile] [infiles]\n");
   exit(EXIT_FAILURE);
 }
  
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   FILE *in  = stdin;
   FILE *out = stdout;

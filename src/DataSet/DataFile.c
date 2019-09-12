@@ -5,16 +5,15 @@
 
 #include "DataFile.h"
 #include "Message.h"
+#include "String.h"
+#include "Mry.h"
 
 
 
 
 DataFile_t*  (DataFile_Create)(char* filename)
 {
-  DataFile_t* datafile = (DataFile_t*) malloc(sizeof(DataFile_t)) ;
-  
-  if(!datafile) assert(datafile) ;
-  
+  DataFile_t* datafile = (DataFile_t*) Mry_New(DataFile_t) ;
   
   /* Memory space for textfile */
   {
@@ -26,15 +25,21 @@ DataFile_t*  (DataFile_Create)(char* filename)
   
   /* Memory space for line */
   {
-    TextFile_t* textfile = DataFile_GetTextFile(datafile) ;
-    int n = TextFile_CountTheMaxNbOfCharactersPerLine(textfile) ;
-    size_t sz = n*sizeof(char) ;
-    char* line = (char*) malloc(sz) ;
+    int n = DataFile_MaxLengthOfTextLine ;
     
-    assert(line) ;
+    if(filename) {
+      TextFile_t* textfile = DataFile_GetTextFile(datafile) ;
+      
+      n = TextFile_CountTheMaxNbOfCharactersPerLine(textfile) ;
+    }
     
-    DataFile_GetTextLine(datafile) = line ;
     DataFile_GetMaxLengthOfTextLine(datafile) = n ;
+    
+    {
+      char* line = (char*) Mry_New(char[n]) ;
+    
+      DataFile_GetTextLine(datafile) = line ;
+    }
   }
   
   
@@ -50,6 +55,7 @@ DataFile_t*  (DataFile_Create)(char* filename)
 }
 
 
+
 void (DataFile_Delete)(void* self)
 {
   DataFile_t** pdatafile = (DataFile_t**) self ;
@@ -61,92 +67,51 @@ void (DataFile_Delete)(void* self)
 }
 
 
+#if 0
 int (DataFile_CountNbOfKeyWords)(DataFile_t* datafile,const char* cle,const char* del)
-/** Open the file for reading and return the number of times any token of the series
- *  of tokens that are delimited by any character of "del" in "cle,
+/** Return the number of times any token of the series of tokens
+ *  that are delimited by any character of "del" in "cle,
  *  occurs in the filename "datafile". */
 {
-  int    n = 0 ;
-  char*   tok[DataFile_MaxNbOfKeyWords] ;
-  short int ntok = 1 ;
-  
-  /* Break "cle" into a series of tokens */
-  {
-    char  cle1[DataFile_MaxLengthOfKeyWords] ;
-  
-    strcpy(cle1,cle) ;
-    
-    tok[0] = strtok(cle1,del) ;
-  
-    if(tok[0] == NULL) {
-      arret("DataFile_CountNbOfKeyWords(1)") ;
-    }
-  
-    while((tok[ntok] = strtok(NULL,del))) ntok++ ;
-  
-    if(ntok > DataFile_MaxNbOfKeyWords - 1) {
-      arret("DataFile_CountNbOfKeyWords(2)") ;
-    }
-  }
+  char**  tok  = String_BreakIntoTokens(cle,del) ;
+  int     ntok = String_NbOfTokens(tok) ;
+  int     n = 0 ;
   
   /* Compute the nb of times we find the tokens in datafile */
   {
-    char*   line ;
+    char* c  = DataFile_GetFileContent(datafile) ;
+    int itok ;
     
-    DataFile_OpenFile(datafile,"r") ;
-  
-    while((line = DataFile_ReadLineFromCurrentFilePosition(datafile)) && \
-        (line[0] != '#')) {
-      short int itok = 0 ;
-    
-      while(itok < ntok && strncmp(line,tok[itok],strlen(tok[itok]))) itok++ ;
-      
-      if(itok < ntok) n++ ;
-      
+    for(itok = 0 ; itok < ntok ; itok++) {
+      n += String_CountTokens(c,tok[itok]) ;
     }
-  
-    DataFile_CloseFile(datafile) ;
   }
   
   return(n) ;
 }
+#endif
 
 
 
-void (DataFile_SetFilePositionAfterKey)(DataFile_t* datafile,const char* cle,const char* del,short int n)
+char* (DataFile_SetFilePositionAfterKey)(DataFile_t* datafile,const char* cle,const char* del,short int n)
 /** The file "datafile" is assumed open for reading. Then set the file position of
  *  its stream just after the n^th occurence of any token of the series of tokens 
  *  that are delimited by any character of "del" in "cle". */
 {
-  short int count = 0 ;
-  char*   tok[DataFile_MaxNbOfKeyWords] ;
-  short int ntok = 1 ;
-  
-  /* Break "cle" into a series of tokens */
-  {
-    char   cle1[DataFile_MaxLengthOfKeyWords] ;
-  
-    strcpy(cle1,cle) ;
-  
-    tok[0] = strtok(cle1,del) ;
-    
-    while((tok[ntok] = strtok(NULL,del))) ntok++ ;
-  
-    if(ntok > DataFile_MaxNbOfKeyWords) {
-      arret("DataFile_SetFilePositionAfterKey") ;
-    }
-  }
+  char**    tok = String_BreakIntoTokens(cle,del) ;
+  short int ntok = String_NbOfTokens(tok) ;
 
 
   /* Compute the nb of times we find the tokens in datafile */
+  #if 1
   {
+    short int count = 0 ;
     char*  line ;
     
     DataFile_Rewind(datafile) ;
   
     while((count < n) && \
-          (line = DataFile_ReadLineFromCurrentFilePosition(datafile)) && \
-          (line[0] != '#')) {
+          (line = DataFile_ReadLineFromCurrentFilePosition(datafile))) {
       short int itok = 0 ;
     
       while((itok < ntok) && strncmp(line,tok[itok],strlen(tok[itok]))) itok++ ;
@@ -162,6 +127,30 @@ void (DataFile_SetFilePositionAfterKey)(DataFile_t* datafile,const char* cle,con
   
     DataFile_StoreFilePosition(datafile) ;
   }
+  #endif
+  
+  #if 1
+  {
+    char*  line = NULL ;
+    short int itok = 0 ;
+    
+    while((itok < ntok) && !(line = DataFile_FindNthToken(datafile,tok[itok],n))) itok++ ;
+    
+    if(line) {
+      char* c = String_FindAndSkipToken(line,tok[itok]) ;
+        
+      DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+  
+      //DataFile_StoreFilePosition(datafile) ;
+        
+      return(c) ;
+    } else {
+      arret("DataFile_SetFilePositionAfterKey(1): %s not found",cle) ;
+    }
+  }
+  #endif
+  
+  return(NULL) ;
 }
 
 
@@ -178,6 +167,8 @@ char* (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t* datafile)
   do {
     
     c = TextFile_ReadLineFromCurrentFilePosition(textfile,line,n) ;
+    /* On going test */
+    //c = TextFile_ReadLineFromCurrentFilePositionInString(textfile,line,n) ;
       
   } while((c) && (c[0] == '#')) ;
 
@@ -185,37 +176,40 @@ char* (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t* datafile)
 }
 
 
-#if 0
-double* (DataFile_ReadDoublesFromCurrentFilePosition0)(DataFile_t* datafile,double* v,int n)
-/** Reads n doubles from the stream at the current position.
- *  Return the pointer to double. */
+
+char* (DataFile_ReadLineFromCurrentFilePositionInString)(DataFile_t* datafile)
+/** Reads the first non-commented line from the stream at the current position.
+ *  Return a pointer to the string line if succeeded or stop if failed. */
 {
-  //FILE* str  = DataFile_GetFileStream(datafile) ;
-  int i ;
+  char* line = DataFile_GetTextLine(datafile) ;
+  TextFile_t* textfile = DataFile_GetTextFile(datafile) ;
+  int n = DataFile_GetMaxLengthOfTextLine(datafile) ;
+  char* c ;
   
-  for(i = 0 ; i < n ; i++) {
-    DataFile_ScanAdv(datafile,"%le",v + i) ;
-    //fscanf(str,"%le",v + i) ;
-  }
-  
-  return(v) ;
+  do {
+    
+    c = TextFile_ReadLineFromCurrentFilePositionInString(textfile,line,n) ;
+      
+  } while((c) && (c[0] == '#')) ;
+
+  return(c) ;
 }
-#endif
 
 
 
 #if 0
-void* (DataFile_ReadDataFromCurrentFilePosition)(DataFile_t* datafile,void* v,int n,size_t sz,const char* fmt)
+void* (DataFile_ReadArray)(DataFile_t* datafile,const char* fmt,void* v,int n,size_t sz)
 /** Reads n data of size "sz" with the format "fmt" from the stream 
  *  at the current position. Return the pointer to data. */
 /** NOT YET CHECKED */
 {
   //FILE* str  = DataFile_GetFileStream(datafile) ;
   char* c = (char*) v ;
+  char* cur = DataFile_GetCurrentPositionInFileContent(datafile) ;
   int i ;
   
   for(i = 0 ; i < n ; i++) {
-    DataFile_ScanAdv(datafile,fmt,c + i*sz) ;
+    cur += String_Scan(cur,fmt,c + i*sz) ;
     //fscanf(str,fmt,c + i*sz) ;
   }
   

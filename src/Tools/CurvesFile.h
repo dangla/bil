@@ -10,7 +10,7 @@ struct CurvesFile_s       ; typedef struct CurvesFile_s       CurvesFile_t ;
 
 
 extern CurvesFile_t*   (CurvesFile_Create)(void) ;
-extern void            (CurvesFile_Delete)(CurvesFile_t**) ;
+extern void            (CurvesFile_Delete)(void*) ;
 /* extern void            (CurvesFile_MoveToFilePositionStartingInputData)(CurvesFile_t*) ; */
 extern int             (CurvesFile_Initialize)(CurvesFile_t*,const char *) ;
 extern int             (CurvesFile_WriteCurves)(CurvesFile_t*) ;

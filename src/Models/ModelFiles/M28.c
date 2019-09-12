@@ -103,7 +103,7 @@
 
 /* constantes physiques */
 #define FARADAY   (9.64846e4) /* Faraday (C/mole) */
-#define T         (293.)      /* Temperature (K) */
+#define TEMPERATURE         (293.)      /* Temperature (K) */
 #define RT        (2436.)     /* Produit R = 8.3143 et T = 293. (J/mole) */
 
 /* viscosites (Pa.s) */
@@ -196,8 +196,9 @@ static void    ComputeTransferCoefficients(Element_t*,double**,double*) ;
 static double* ComputeFluxes(Element_t*,double**) ;
 static double* Fluxes(Element_t*,double*) ;
 
-extern double lna_i(double,double,double,double,double,double) ;
-extern double lng_TQN(double,double,double,double,double,double,double,double) ;
+static double lna_i(double,double,double,double,double,double) ;
+static double lng_TQN(double,double,double,double,double,double,double,double) ;
+static double lng_LinLee(double,double,double,double,double,double) ;
 
 static double tortuosite_l(double) ;
 
@@ -239,8 +240,8 @@ static double (*xactivite_s[])(double,double) = {activite_s,activite_s_ideal} ;
 #define ACTIVITE_W(a)   courbe(a,el.mat->cb[3])
 #define ACTIVITE_S(a)   courbe(a,el.mat->cb[4])
 */
-#define ACTIVITE_W(a)     xactivite_w[1](a,T)
-#define ACTIVITE_S(a)     xactivite_s[1](a,T)
+#define ACTIVITE_W(a)     xactivite_w[1](a,TEMPERATURE)
+#define ACTIVITE_S(a)     xactivite_s[1](a,TEMPERATURE)
 
 /* Parametres */
 static double phi0,r_d,k_int ;
@@ -625,7 +626,7 @@ int  ComputeMatrix(Element_t *el,double t,double dt,double *k)
     
     double c_s    = x[I_C_S] ; 
     double h_r    = x[I_H_R] ;
-    double p_vs   = P_VS(T) ; 
+    double p_vs   = P_VS(TEMPERATURE) ; 
     /* activite de l'eau */
     double lna_w  = x[I_LNA_W] ;
     /* activite du sel */
@@ -860,13 +861,13 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
     Result_Store(r + i++,&lna_w,"Log(a_w)",1) ;
     Result_Store(r + i++,&dlna_s,"Log(a_s)",1) ;
     {
-      double lna_w_ideal  = activite_w_ideal(c_s,T) ;
+      double lna_w_ideal  = activite_w_ideal(c_s,TEMPERATURE) ;
       Result_Store(r + i++,&lna_w_ideal,"Log(a_w) ideal",1) ;
     }
     {
       double c_s0 = K_SALT ;
-      double lna_s_ideal  = activite_s_ideal(c_s,T) ;
-      double lna_s_ideal0 = activite_s_ideal(c_s0,T) ;
+      double lna_s_ideal  = activite_s_ideal(c_s,TEMPERATURE) ;
+      double lna_s_ideal0 = activite_s_ideal(c_s0,TEMPERATURE) ;
       double dlna_s_ideal = lna_s_ideal - lna_s_ideal0 ;
       Result_Store(r + i++,&dlna_s_ideal,"Log(a_s) ideal",1) ;
     }
@@ -901,7 +902,7 @@ void ComputeTransferCoefficients(Element_t *el,double **u,double *f)
     double *x = ComputeComponents(el,u,f,0,i) ;
     
     double c_s    = C_s(i) ;
-    double p_vs   = P_VS(T) ;
+    double p_vs   = P_VS(TEMPERATURE) ;
     /* concentrations */
     double c_w    = (1. - V_AC*c_s)/V_H2O ;
     /* saturations */
@@ -1359,7 +1360,7 @@ void  ComputeSecondaryComponents(Element_t *el,double dt,double *x)
   double c_s    = x[U_C_s] ; 
   double h_r    = x[U_H_r] ;
     
-  double p_vs   = P_VS(T) ; 
+  double p_vs   = P_VS(TEMPERATURE) ; 
   double p_v    = h_r*p_vs ;
     
   /* concentration en eau liquide */
@@ -1404,4 +1405,45 @@ void  ComputeSecondaryComponents(Element_t *el,double dt,double *x)
   /* Fluid contents */
   x[I_N_S      ] = n_s ;
   x[I_M_W      ] = m_w ;
+}
+
+
+
+
+
+
+double lng_LinLee(double T,double I,double z,double b,double S,double A)
+/* Le log du coefficient d'activite d'un ion d'apres Lin & Lee */ 
+{
+  double alpha = 1.29,II = sqrt(I) ;
+  double lng ;
+  
+  lng = - A*(II/(1 + b*II) + 2*log(1 + b*II)/b) + S*pow(I,alpha)/T ;
+  
+  return(lng*z*z) ;
+}
+
+double lng_TQN(double T,double I,double z,double b,double S,double A,double lna_w,double m_t)
+/* Le log du coefficient d'activite d'un ion (T.Q Nguyen) :
+   lng_i = dGamma/dm_i = (dGamma/dm_i)_I - 0.5*z_i*z_i*(lna_w + m_t)/I 
+   lna_w = - m_t - sum_i ( m_i*lng_i ) + Gamma */
+{
+  double alpha = 1.29,II = sqrt(I) ;
+  double lng ;
+  
+  lng = - A*2*log(1 + b*II)/b + S*pow(I,alpha)/(1+alpha)/T - 0.5*(lna_w + m_t)/I ;
+  
+  return(lng*z*z) ;
+}
+
+double lna_i(double T,double I,double z,double b,double S,double A)
+/* Contribution de chaque ion au log de l'activite du solvant 
+   lna_w = sum_i ( m_i*lna_i ) (T.Q Nguyen) */ 
+{
+  double alpha = 1.29,a1 = alpha/(1+alpha),II = sqrt(I) ;
+  double lna ;
+  
+  lna = A*II/(1 + b*II) - a1*S*pow(I,alpha)/T ;
+  
+  return(-1 + lna*z*z) ;
 }

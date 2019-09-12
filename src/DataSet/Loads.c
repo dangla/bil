@@ -11,7 +11,7 @@
 #include "Loads.h"
 
 
-Loads_t* Loads_Create(DataFile_t *datafile,Fields_t *fields, Functions_t *functions)
+Loads_t* Loads_Create(DataFile_t *datafile,Fields_t *fields,Functions_t *functions)
 {
   Loads_t *loads       = (Loads_t*) malloc(sizeof(Loads_t)) ;
   int n_loads ;
@@ -156,6 +156,9 @@ Loads_t* Loads_Create(DataFile_t *datafile,Fields_t *fields, Functions_t *functi
     } else {
       arret("Loads_Create (4) : no Function") ;
     }
+    
+    Load_GetFields(load) = fields ;
+    Load_GetFunctions(load) = functions ;
     
   }
   

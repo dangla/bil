@@ -243,8 +243,9 @@ static int     TangentCoefficients(FVM_t*,double,double*) ;
 
 static void    ComputePhysicoChemicalProperties(double) ;
 
-extern double  lna_i(double,double,double,double,double,double) ;
-extern double  lng_TQN(double,double,double,double,double,double,double,double) ;
+static double  lna_i(double,double,double,double,double,double) ;
+static double  lng_TQN(double,double,double,double,double,double,double,double) ;
+static double  lng_LinLee(double,double,double,double,double,double) ;
 
 static double  tortuosite_l(double) ;
 
@@ -1342,4 +1343,45 @@ void  ComputeSecondaryComponents(Element_t *el,double t,double dt,double *x)
   x[I_M_L      ] = m_l ;
   x[I_M_G      ] = m_g ;
   x[I_M_V      ] = m_v ;
+}
+
+
+
+
+
+
+double lng_LinLee(double T,double I,double z,double b,double S,double A)
+/* Le log du coefficient d'activite d'un ion d'apres Lin & Lee */ 
+{
+  double alpha = 1.29,II = sqrt(I) ;
+  double lng ;
+  
+  lng = - A*(II/(1 + b*II) + 2*log(1 + b*II)/b) + S*pow(I,alpha)/T ;
+  
+  return(lng*z*z) ;
+}
+
+double lng_TQN(double T,double I,double z,double b,double S,double A,double lna_w,double m_t)
+/* Le log du coefficient d'activite d'un ion (T.Q Nguyen) :
+   lng_i = dGamma/dm_i = (dGamma/dm_i)_I - 0.5*z_i*z_i*(lna_w + m_t)/I 
+   lna_w = - m_t - sum_i ( m_i*lng_i ) + Gamma */
+{
+  double alpha = 1.29,II = sqrt(I) ;
+  double lng ;
+  
+  lng = - A*2*log(1 + b*II)/b + S*pow(I,alpha)/(1+alpha)/T - 0.5*(lna_w + m_t)/I ;
+  
+  return(lng*z*z) ;
+}
+
+double lna_i(double T,double I,double z,double b,double S,double A)
+/* Contribution de chaque ion au log de l'activite du solvant 
+   lna_w = sum_i ( m_i*lna_i ) (T.Q Nguyen) */ 
+{
+  double alpha = 1.29,a1 = alpha/(1+alpha),II = sqrt(I) ;
+  double lna ;
+  
+  lna = A*II/(1 + b*II) - a1*S*pow(I,alpha)/T ;
+  
+  return(-1 + lna*z*z) ;
 }

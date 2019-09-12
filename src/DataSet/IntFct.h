@@ -16,7 +16,7 @@ extern double     (IntFct_InterpolateAtPoint)(IntFct_t*,double*,int,int) ;
 
 #define IntFct_MaxLengthOfKeyWord          (30)
 
-#define IntFct_MaxNbOfIntPoints            (8)
+#define IntFct_MaxNbOfIntPoints            (20)
 
 #define IntFct_GetType(IFCT)             ((IFCT)->type)
 #define IntFct_GetNbOfNodes(IFCT)        ((IFCT)->nn)

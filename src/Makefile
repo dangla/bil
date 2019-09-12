@@ -219,6 +219,69 @@ parser:
 
 
 #=======================================================================
+# Target rules for listing sources
+
+listsources:
+	@echo '----------------------------------------------'
+	@echo 'Sources'
+	@echo '----------------------------------------------'
+	@echo '1. All source files'
+	@echo 'SRCALL = '${SRCALL}
+	@echo '----------------------------------------------'
+	@echo '2. Source Model Files'
+	@echo 'SRCMODELS = '${SRCMODELS}
+	@echo '----------------------------------------------'
+	@echo '3. Source Module Files'
+	@echo 'SRCMODULES = '${SRCMODULES}
+	@echo '----------------------------------------------'
+	@echo '4. Other source files .c'
+	@echo 'SRCOTHERC = '${SRCOTHERC}
+	@echo '----------------------------------------------'
+	@echo '5. Other source files .cpp'
+	@echo 'SRCOTHERCPP = '${SRCOTHERCPP}
+	@echo '----------------------------------------------'
+
+
+
+
+#=======================================================================
+# Target rules for listing headers
+
+listheaders:
+	@echo '----------------------------------------------'
+	@echo 'Headers'
+	@echo '----------------------------------------------'
+	@echo '1. All Headers'
+	@echo 'HEADERSALL = '${HEADERSALL}
+	@echo '----------------------------------------------'
+	@echo '2. Headers from sources .h'
+	@echo 'HEADERSC = '${HEADERSC}
+	@echo '----------------------------------------------'
+	@echo '3. Headers from sources .hpp'
+	@echo 'HEADERSCPP = '${HEADERSCPP}
+	@echo '----------------------------------------------'
+	@echo '4. Header files without associated source files'
+	@echo 'HEADERSONLY = '${HEADERSONLY}
+	@echo '----------------------------------------------'
+	@echo '----------------------------------------------'
+
+
+
+
+#=======================================================================
+# Target rules for listing object files
+
+listobjects:
+	@echo '----------------------------------------------'
+	@echo 'Objects'
+	@echo '----------------------------------------------'
+	@echo 'OBJALL = '${OBJALL}
+	@echo '----------------------------------------------'
+
+
+
+
+#=======================================================================
 # Target rules for testing
 
 test:

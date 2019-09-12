@@ -33,12 +33,18 @@ DIFF_FILE = diff
 #DIFF := diff --suppress-common-lines -E -b -y --width=${LLENGTH}
 DIFF := diff --suppress-common-lines -E -b
 
+
+
 all: exec diff
+
+
 
 diff: diff1 diff2
 
+
+
 .IGNORE: diff1
-diff1:
+diff1: 
 	rm -f ${DIFF_FILE}.t1
 	for i in ${BASE_DIRS} ; do (\
 	cd $$i &&\
@@ -59,14 +65,34 @@ diff2:
 	); done
 
 
-exec: clean
+
+#=======================================================================
+# Target rules for iperm
+
+iperm: clean
 	for i in ${BASE_DIRS}; do (\
 	cd $$i && \
-	echo "Execution of $$i" && \
+	echo "\n\nExecution of $$i:" && \
+	echo "-----------------------------------------" && \
 	cp $$i toto && \
-	bil -i toto && \
-	bil toto \
-	); done
+	bil -i toto \
+	); done ; echo "\n\n\n";
+
+
+
+#=======================================================================
+# Target rules for exec
+# To pass the variable "-r" to make, use: make exec opt=-r
+
+exec: iperm
+	for i in ${BASE_DIRS}; do (\
+	cd $$i && \
+	echo "\n\nExecution of $$i:" && \
+	echo "-----------------------------------------" && \
+	bil ${opt} toto \
+	); done ; echo "\n\n\n";
+
+
 
 ref:
 	for i in ${BASE_DIRS}; do (\
@@ -75,12 +101,15 @@ ref:
 	bil $$i \
 	); done
 
+
+
 clean:
 	rm -f ${DIFF_FILE}.t*
 	for i in ${ALL_BASE_DIRS}; do (\
 	cd $$i && \
-	rm -f *~ *.eps toto* *.stk \
+	rm -f *~ *.eps toto* *.sto \
 	); done
+
 
 
 plotdifft1:
@@ -91,6 +120,7 @@ plotdifft1:
 	); done
 
 
+
 plotdifft2:
 	for i in ${BASE_DIRS}; do (\
 	echo "Plot $$i.t1 and toto.t1" && \
@@ -99,12 +129,14 @@ plotdifft2:
 	); done
 
 
+
 plotdiffp:
 	for i in ${BASE_DIRS}; do (\
 	echo "Plot $$i.p1 and toto.p1" && \
 	cd $$i && \
 	gnuplot -e "call '${BASEDIR}/diffp.gp' \"$$i.p1\" \"toto.p1\" " \
 	); done
+
 
 
 BASE1 = MTD1 Shen
@@ -116,12 +148,14 @@ plotdifft11:
 	); done
 
 
+
 plotdifft21:
 	for i in ${BASE1}; do (\
 	echo "Plot $$i.t1 and toto.t1" && \
 	cd ${BASEDIR}/$$i && \
 	gnuplot -e "call '${BASEDIR}/diff.gp' \"$$i.t2\" \"toto.t2\" " \
 	); done
+
 
 
 plotdiffp1:
@@ -132,11 +166,15 @@ plotdiffp1:
 	); done
 
 
+
 list:
 	for i in ${BASE_DIRS}; do (\
+	echo "\n\n\n" && \
 	echo "List $$i" && \
-	less $$i/$$i \
+	echo "--------\n" && \
+	cat $$i/$$i \
 	); done
+
 
 
 work1:
@@ -145,7 +183,8 @@ work1:
 	sed 's/Time Steps$^$/Time Steps/g' $$i > $$i.bak && \
 	mv -f $$i.bak toto \
 	); done
-	
+
+
 
 grep:
 	for i in ${BASE_DIRS}; do (\
@@ -153,6 +192,7 @@ grep:
 	echo "$$i" && \
 	grep "Geometry" $$i \
 	); done
+
 
 
 test:
@@ -172,3 +212,26 @@ test:
 	echo "Maximum line length = " $${LL} &&\
 	echo "Maximum line length = " ${shell wc -L $$i.t1} \
 	); done
+
+
+
+
+
+TEST_DIRS = Yuan1 Elast
+test1: 
+	rm -f ${DIFF_FILE}.t1
+	for i in ${TEST_DIRS} ; do (\
+	cd $$i &&\
+	echo "-- diff on $$i.t1 --" &&\
+	echo "-- diff on $$i.t1 --" >> ${BASEDIR}/${DIFF_FILE}.t1 &&\
+	${DIFF} $$i.t1 toto.t1 >> ${BASEDIR}/${DIFF_FILE}.t1 \
+	); done
+
+
+
+F2 = Elast
+test2: 
+	rm -f ${DIFF_FILE}.t1
+	cd ${F2} &&\
+	${DIFF} ${F2}.t1 toto.t1
+

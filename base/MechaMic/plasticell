@@ -14,7 +14,7 @@ MasterRegion = 123 SlaveRegion = 105 PeriodVector = 0 0.04 0
 MasterRegion = 113 SlaveRegion = 14  PeriodVector = 0 0.04 0
 
 
-Material 1            # matrix
+Material #1            # matrix
 Model = Plast
 gravity = 0       # gravity
 rho_s = 0         # mass density of the dry material
@@ -34,7 +34,7 @@ macro-fctindex_21 = 1
 macro-fctindex_22 = 2
 
 
-Material 2            # inclusion
+Material #2            # inclusion
 Model = Elast
 gravity = 0       # gravity
 rho_s = 0         # mass density of the dry material

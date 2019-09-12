@@ -281,7 +281,7 @@ int    (Element_FindUnknownPositionIndex)(Element_t* element,char* s)
     if(i == n) i = -1 ;
   }
 
-  if(i < 0) arret("Element_FindUnknownPositionIndex (1) : position not known") ;
+  if(i < 0) arret("Element_FindUnknownPositionIndex: unknown position of %s",s) ;
   return(i) ;
 }
 
@@ -301,7 +301,7 @@ int    (Element_FindEquationPositionIndex)(Element_t* element,char* s)
     if(i == n) i = -1 ;
   }
 
-  if(i < 0) arret("Element_FindEquationPositionIndex (1) : position not known") ;
+  if(i < 0) arret("Element_FindEquationPositionIndex: unknown position of %s",s) ;
   return(i) ;
 }
 

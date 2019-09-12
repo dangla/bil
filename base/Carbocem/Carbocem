@@ -10,7 +10,7 @@ Mesh
 
 
 Material
-Model = Carbocem
+Model = Carbocem1
 porosity = 0.379
 k_int = 1.4e-17
 N_CH = 3.9
@@ -76,9 +76,10 @@ logc_co2 = 0.1
 p_l      = 1.e5 
 z_ca     = 0.1
 psi      = 1.
-logc_na     = 1e-1
-logc_k      = 1e-1
+logc_na  = 1e-1
+logc_k   = 1e-1
 z_si     = 1e-1
+logc_oh  = 1.
 
 
 Iterative Process

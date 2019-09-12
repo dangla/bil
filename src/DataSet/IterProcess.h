@@ -13,7 +13,7 @@ struct IterProcess_s  ; typedef struct IterProcess_s  IterProcess_t ;
 #include "Solver.h"
 
 extern IterProcess_t*  IterProcess_Create(DataFile_t*,ObVals_t*) ;
-extern void            IterProcess_SetCurrentError(IterProcess_t*,Nodes_t*,Solver_t*) ;
+extern int             IterProcess_SetCurrentError(IterProcess_t*,Nodes_t*,Solver_t*) ;
 extern void            IterProcess_PrintCurrentError(IterProcess_t*) ;
 
 

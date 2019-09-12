@@ -11,11 +11,10 @@ struct DataFile_s     ; typedef struct DataFile_s     DataFile_t ;
 
 extern DataFile_t*  (DataFile_Create)(char*) ;
 extern void         (DataFile_Delete)(void*) ;
-extern int          (DataFile_CountNbOfKeyWords)(DataFile_t*,const char*,const char*) ;
-extern void         (DataFile_SetFilePositionAfterKey)(DataFile_t*,const char*,const char*,short int) ;
+extern char*        (DataFile_SetFilePositionAfterKey)(DataFile_t*,const char*,const char*,short int) ;
 extern char*        (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t*) ;
-//extern double*      (DataFile_ReadDoublesFromCurrentFilePosition0)(DataFile_t*,double*,int) ;
-//extern void*        (DataFile_ReadDataFromCurrentFilePosition)(DataFile_t*,void*,int,size_t,const char*) ;
+extern char*        (DataFile_ReadLineFromCurrentFilePositionInString)(DataFile_t*) ;
+//extern void*        (DataFile_ReadArray)(DataFile_t*,const char*,void*,int,size_t) ;
 
 
 
@@ -44,20 +43,31 @@ extern char*        (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t*) ;
 
 #define DataFile_Rewind(DF) \
         TextFile_Rewind(DataFile_GetTextFile(DF))
-
-#define DataFile_ScanAdv(DF, ...) \
-        TextFile_ScanAdv(DataFile_GetTextFile(DF),__VA_ARGS__)
         
-#define DataFile_ReadDataFromCurrentFilePosition(DF, ...) \
-        TextFile_ReadDataFromCurrentFilePosition(DataFile_GetTextFile(DF),__VA_ARGS__)
+#define DataFile_ReadArrayFromCurrentFilePosition(DF, ...) \
+        TextFile_ReadArrayFromCurrentFilePosition(DataFile_GetTextFile(DF),__VA_ARGS__)
         
 #define DataFile_ReadDoublesFromCurrentFilePosition(DF, ...) \
-        DataFile_ReadDataFromCurrentFilePosition(DF,"%le",__VA_ARGS__)
+        DataFile_ReadArrayFromCurrentFilePosition(DF,"%le",__VA_ARGS__)
+
+
+
+#include "String.h"
+
+/* Tokens in file content */
+#define DataFile_FindToken(DF, ...) \
+        String_FindToken(DataFile_GetFileContent(DF),__VA_ARGS__)
+        
+#define DataFile_FindNthToken(DF, ...) \
+        String_FindNthToken(DataFile_GetFileContent(DF),__VA_ARGS__)
+        
+#define DataFile_CountNbOfKeyWords(DF, ...) \
+        String_CountTokens(DataFile_GetFileContent(DF),__VA_ARGS__)
         
         
 
 #define DataFile_MaxLengthOfFileName    (TextFile_MaxLengthOfFileName)
-//#define DataFile_MaxLengthOfTextLine    (TextFile_MaxLengthOfTextLine)
+#define DataFile_MaxLengthOfTextLine    (TextFile_MaxLengthOfTextLine)
 #define DataFile_MaxLengthOfKeyWord     (30)
 
 #define DataFile_MaxNbOfKeyWords        (10)
@@ -84,8 +94,16 @@ extern char*        (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t*) ;
 #define DataFile_GetFilePosition(DF) \
         TextFile_GetFilePosition(DataFile_GetTextFile(DF))
 
+#define DataFile_GetCurrentPositionInString(DF) \
+        TextFile_GetCurrentPositionInString(DataFile_GetTextFile(DF))
+
 #define DataFile_GetCurrentPositionInFileContent(DF) \
         TextFile_GetCurrentPositionInFileContent(DataFile_GetTextFile(DF))
+
+#define DataFile_SetCurrentPositionInFileContent(DF,C) \
+        do { \
+          DataFile_GetCurrentPositionInString(DF) = C - DataFile_GetFileContent(DF) ; \
+        } while(0)
         
 
 /* Test initialization */

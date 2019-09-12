@@ -88,7 +88,7 @@ IterProcess_t*  IterProcess_Create(DataFile_t* datafile,ObVals_t* obvals)
 
 
 
-void IterProcess_SetCurrentError(IterProcess_t* iterprocess,Nodes_t* nodes,Solver_t* solver)
+int IterProcess_SetCurrentError(IterProcess_t* iterprocess,Nodes_t* nodes,Solver_t* solver)
 {
   double*   x     = Solver_GetSolution(solver) ;
   int       nrows = Solver_GetNbOfRows(solver) ;
@@ -113,13 +113,13 @@ void IterProcess_SetCurrentError(IterProcess_t* iterprocess,Nodes_t* nodes,Solve
         double val = ObVal_GetValue(obval_j) ;
         double re = fabs(x[k])/val ;
                 
-        if(ObVal_GetType(obval_j) == 'r') {
+        if(ObVal_IsRelativeValue(obval_j)) {
           double* u_n = Node_GetPreviousUnknown(nodi) ;
                   
           if(fabs(u_n[j]) > 0.) re /= fabs(u_n[j]) ;
         }
 
-        /* Sometimes re is strictly equal to zero */
+        /* Sometimes re is strictly equal to zero hence the >= */
         if(re >= err) {
           err = re ;
           obvalindex = Node_GetObValIndex(nodi)[j] ;
@@ -132,12 +132,15 @@ void IterProcess_SetCurrentError(IterProcess_t* iterprocess,Nodes_t* nodes,Solve
   if(nrows > 0 && nodeindex < 0) {
     /* Raise an interrupt signal instead of exit */
     Message_Warning("IterProcess_SetCurrentError: can't compute error!") ;
-    Exception_Interrupt ;
+    return(1) ;
+    //Exception_Interrupt ;
   }
           
   IterProcess_GetCurrentError(iterprocess) = err ;
   IterProcess_GetObValIndexOfCurrentError(iterprocess) = obvalindex ;
   IterProcess_GetNodeIndexOfCurrentError(iterprocess) = nodeindex ;
+  
+  return(0) ;
 }
 
 

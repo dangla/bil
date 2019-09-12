@@ -468,7 +468,7 @@ static CementSolutionDiffusion_t* csd = NULL ;
 static HardenedCementChemistry_t* hcc = NULL ;
 
 
-enum {
+static enum {
 I_ZN_Ca_S = NEQ,
 I_ZN_Si_S,
 I_ZN_Al_S,
@@ -514,6 +514,7 @@ I_PHIn,
 I_PHI_Cn,
 
 
+I_C_OH,
 I_C_OHn,
 
 I_Radius,
@@ -539,72 +540,6 @@ I_Last
 #define NbOfVariables    (I_Last)
 static double Variables[Element_MaxNbOfNodes][NbOfVariables] ;
 static double dVariables[NbOfVariables] ;
-
-
-#if 0
-#define I_ZN_Ca_S      (NEQ+0)
-#define I_ZN_Si_S      (NEQ+1)
-#define I_ZN_Al_S      (NEQ+2)
-
-#define I_N_Q          (NEQ+4)
-#define I_N_S          (NEQ+5)
-#define I_N_Ca         (NEQ+6)
-#define I_N_Si         (NEQ+7)
-#define I_N_K          (NEQ+8)
-#define I_N_Cl         (NEQ+9)
-#define I_N_Al         (NEQ+10)
-
-#define I_N_CH         (NEQ+11)
-#define I_N_CSH2       (NEQ+12)
-#define I_N_AH3        (NEQ+13)
-#define I_N_AFm        (NEQ+14)
-#define I_N_AFt        (NEQ+15)
-#define I_N_C3AH6      (NEQ+16)
-#define I_N_CSH        (NEQ+17)
-
-
-#define I_V_Cem        (NEQ+21)
-
-#define I_PHI          (NEQ+22)
-#define I_PHI_C        (NEQ+23)
-
-#define I_V_CSH        (NEQ+24)
-
-
-
-#define I_N_CHn        (NEQ+31)
-#define I_N_CSH2n      (NEQ+32)
-#define I_N_AH3n       (NEQ+33)
-#define I_N_AFmn       (NEQ+34)
-#define I_N_AFtn       (NEQ+35)
-#define I_N_C3AH6n     (NEQ+36)
-#define I_N_CSHn       (NEQ+37)
-
-#define I_V_Cem0       (NEQ+41)
-
-
-#define I_PHIn         (NEQ+42)
-#define I_PHI_Cn       (NEQ+43)
-
-
-#define I_C_OHn        (NEQ+45)
-
-#define I_Radius       (NEQ+46)
-#define I_Radiusn      (NEQ+47)
-
-#define I_S_C          (NEQ+48)
-
-#define I_P_C          (NEQ+49)
-
-#define I_Beta_p       (NEQ+50)
-#define I_Beta_pn      (NEQ+51)
-
-#define I_Strain       (NEQ+52)
-#define I_Strain_n     (NEQ+53)
-
-#define I_Straind      (NEQ+54)
-#define I_Straind_n    (NEQ+55)
-#endif
 
 
 
@@ -1262,8 +1197,11 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
       for(i = 0 ; i < ndof*ndof ; i++) k[i] = km[i] ;
     }
   }
-  
 
+
+/* On output TangentCoefficients has computed the derivatives wrt
+ * LogC_H2SO4, LogC_K and LogC_OH
+ * (see ComputeVariables and ComputeVariablesDerivatives). */
 
 #if (U_H2SO4 == NOLOG_U)
   {
@@ -2043,6 +1981,9 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
 
   /* Charge density */
   x[I_N_Q       ] = n_q_l ;
+  
+  /* Hydroxide ion concentration */
+  x[I_C_OH]  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,OH) ;
 }
 
 

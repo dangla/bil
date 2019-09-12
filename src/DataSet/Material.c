@@ -8,30 +8,26 @@
 #include "DataFile.h"
 #include "Material.h"
 #include "Curves.h"
+#include "Mry.h"
+#include "String.h"
 
 
 /* Extern functions */
 
 
-Material_t* (Material_Create)(int n_mat)
+Material_t* (Material_New)(void)
 {
-  int    i ;
-  Material_t* material   = (Material_t*) malloc(n_mat*sizeof(Material_t)) ;
-  
-  if(!material) assert(material) ;
+  Material_t* material   = (Material_t*) Mry_New(Material_t) ;
   
     
   /* Allocation of memory space for each material */
-  for(i = 0 ; i < n_mat ; i++) {
-    Material_t* mat = material + i ;
+  {
+    Material_t* mat = material ;
     
     
     /* Allocation of space for the code name of the model */
     {
-      size_t sz = Material_MaxLengthOfKeyWord*sizeof(char) ;
-      char* name = (char*) malloc(sz) ;
-      
-      if(!name) arret("Material_Create(1)") ;
+      char* name = (char*) Mry_New(char[Material_MaxLengthOfKeyWord]) ;
       
       Material_GetCodeNameOfModel(mat) = name ;
     }
@@ -43,9 +39,7 @@ Material_t* (Material_Create)(int n_mat)
     
     /* The properties (also part of the generic data) */
     {
-      double* pr = (double*) calloc(Material_MaxNbOfProperties,sizeof(double)) ;
-    
-      if(!pr) arret("Material_Create (2)") ;
+      double* pr = (double*) Mry_New(double[Material_MaxNbOfProperties]) ;
     
       Material_GetNbOfProperties(mat) = 0 ;
       Material_GetProperty(mat) = pr ;
@@ -64,15 +58,122 @@ Material_t* (Material_Create)(int n_mat)
     
     /* The method */
     {
-      char* meth = (char*) malloc(Material_MaxLengthOfKeyWord*sizeof(char)) ;
-      
-      if(!meth) arret("Material_Create (8)") ;
+      char* meth = (char*) Mry_New(char[Material_MaxLengthOfKeyWord]) ;
       
       Material_GetMethod(mat) = meth ;
     }
   }
   
   return(material) ;
+}
+
+
+
+void Material_Delete(void* self)
+{
+  Material_t** pmaterial = (Material_t**) self ;
+  Material_t*   material = *pmaterial ;
+  
+  free(Material_GetCodeNameOfModel(material)) ;
+  GenericData_Delete(&Material_GetGenericData(material)) ;
+  Curves_Delete(&Material_GetCurves(material)) ;
+  free(Material_GetMethod(material)) ;
+  free(material) ;
+  *pmaterial = NULL ;
+}
+
+
+
+Material_t* Material_Create(const int n_mat)
+{
+  Material_t* material   = (Material_t*) Mry_New(Material_t[n_mat]) ;
+  int    i ;
+  
+    
+  /* Allocation of memory space for each material */
+  for(i = 0 ; i < n_mat ; i++) {
+    Material_t* mat = Material_New() ;
+    
+    material[i] = mat[0] ;
+  }
+  
+  return(material) ;
+}
+
+
+
+void Material_Scan(Material_t* mat,DataFile_t* datafile,Geometry_t* geom)
+{
+  
+    {
+      /* Which model ? */
+      {
+        char   codename[Material_MaxLengthOfKeyWord] ;
+        char*  code = codename + 1 ;
+        char*  line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
+        //int n = String_FindAndScanExp(line,"Model =,",","," %s",codename+1) ;
+      
+        if(String_Is(line,"Model",5)) {
+          String_Scan(line,"%*s = %s",codename + 1) ;
+        } else {
+          String_Scan(line,"%s",codename + 1) ;
+        }
+      
+        if(isdigit(codename[1])) {
+          codename[0] = 'm' ;
+          code = codename ;
+        }
+      
+        /* Code name of the model */
+        strcpy(Material_GetCodeNameOfModel(mat),code) ;
+      }
+      
+      
+      /* Find or append a model and point to it */
+      {
+        char*  code = Material_GetCodeNameOfModel(mat) ;
+        Models_t* usedmodels = Material_GetUsedModels(mat) ;
+        Model_t* matmodel = Models_FindOrAppendModel(usedmodels,code,geom,datafile) ;
+        int modind  = Models_FindModelIndex(usedmodels,code) ;
+        
+        Material_GetModel(mat) = matmodel ;
+        Material_GetModelIndex(mat) = modind ;
+      }
+
+
+      /* for compatibility with old version */
+      {
+        if(Material_GetModel(mat)) {
+          mat->eqn = Material_GetNameOfEquation(mat) ;
+          mat->inc = Material_GetNameOfUnknown(mat) ;
+        }
+      }
+
+
+      /* Input material data */
+      /* A model pointing to a null pointer serves to build curves only */
+      {
+        Material_GetNbOfProperties(mat) = Material_ReadProperties(mat,datafile) ;
+      }
+    
+    
+      /* for compatibility with old version */
+      {
+        if(Material_GetModel(mat)) {
+          if(Material_GetNbOfEquations(mat) == 0) {
+            Material_GetNbOfEquations(mat) = mat->neq ;
+          }
+        }
+      }
+      mat->nc = Material_GetNbOfCurves(mat) ;
+    
+    
+      if(!Material_GetModel(mat)) {
+        Message_Info("Material_Scan: Model not known") ;
+        exit(EXIT_SUCCESS) ;
+      }
+
+    }
 }
 
 
@@ -99,6 +200,7 @@ int  (Material_ReadProperties)(Material_t* material,DataFile_t* datafile)
 
 
 
+#if 0
 void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(const char*))
 /** Read the material properties in the stream file ficd */
 {
@@ -179,6 +281,88 @@ void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(co
   Material_GetNbOfProperties(mat) = nd ;
   return ;
 }
+#endif
+
+
+
+#if 1
+void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(const char*))
+/** Read the material properties in the string of the file content */
+{
+  int    nd = Material_GetNbOfProperties(mat) ;
+  short int    cont = 1 ;
+  
+
+  while(cont) {
+    char   mot[Material_MaxLengthOfKeyWord] = {'\n'} ;
+    char*  line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
+    
+    if(!line) break ;
+    
+    String_Scan(line," %[^= ]",mot) ;
+    //String_Scan(line,"%*[ ]%[^=]",mot) ;
+
+    /* Reading some curves */
+    if(String_Is(mot,"Courbes",6) || String_Is(mot,"Curves",5)) {
+      Curves_t* curves = Material_GetCurves(mat) ;
+      Curves_FreeBuffer(curves) ;
+      Curves_ReadCurves(curves,line) ;
+      
+      if(Curves_GetNbOfCurves(curves) > Material_MaxNbOfCurves) {
+        arret("Material_ScanProperties: too many curves") ;
+      }
+
+    /* Reading the method */
+    } else if(String_Is(mot,"Method",6)) {
+      char* p = String_FindChar(line,'=') ;
+      
+      if(p) {
+        char* cr = String_FindChar(p,'\n') ;
+        
+        if(cr) *cr = '\0' ;
+        
+        p = String_FindAndSkipToken(p,"=") ;
+        p = String_SkipBlankChars(p) ;
+        //sscanf(p,"%s",Material_GetMethod(mat)) ;
+        strcpy(Material_GetMethod(mat),p) ;
+      }
+      
+    /* Reading the material properties and storing through pm */
+    } else if(pm) {
+      char   *p = String_FindChar(line,'=') ;
+
+      /* We assume that this is a property as long as "=" is found */
+      if(p) {
+        int i = (*pm)(mot) ;
+        
+        if(i >= 0) {
+        
+          String_Scan(p+1,"%lf",Material_GetProperty(mat) + i) ;
+          nd = (nd > i + 1) ? nd : i + 1 ;
+        
+        } else {
+        
+          Message_RuntimeError("%s is not known",mot) ;
+          
+        }
+      
+      /* ... otherwise we stop reading */
+      } else {
+        
+        /* go out */
+        cont = 0 ;
+      }
+      
+    } else {
+      break ;
+    }
+    
+  }
+
+  Material_GetNbOfProperties(mat) = nd ;
+  return ;
+}
+#endif
 
 
 

@@ -5,12 +5,43 @@
 #include "Message.h"
 #include "DataFile.h"
 #include "Mesh.h"
+#include "Mry.h"
+#include "String.h"
 #include "Points.h"
 
 
-static void Point_SetEnclosingElement(Point_t*,Mesh_t*) ;
+
+Points_t*  Points_New(const int n_points)
+{
+  Points_t* points = (Points_t*) Mry_New(Points_t) ;
 
 
+  /* Nb of points */
+  {
+    Points_GetNbOfPoints(points) = n_points ;
+  }
+  
+  
+  /* Pointer to point */
+  {
+    Point_t* point = (Point_t*) Mry_New(Point_t[n_points]) ;
+    int i ;
+    
+    for(i = 0 ; i < n_points ; i++) {
+      Point_t* pt = Point_New() ;
+    
+      point[i] = pt[0] ;
+    }
+    
+    Points_GetPoint(points) = point ;
+  }
+  
+  return(points) ;
+}
+
+
+
+#if 0
 Points_t*  Points_Create(DataFile_t* datafile,Mesh_t* mesh)
 {
   Points_t* points = (Points_t*) malloc(sizeof(Points_t)) ;
@@ -90,50 +121,85 @@ Points_t*  Points_Create(DataFile_t* datafile,Mesh_t* mesh)
   
   return(points) ;
 }
+#endif
 
 
 
-void Point_SetEnclosingElement(Point_t* point,Mesh_t* mesh)
-/** Set a pointer to the element which encloses the point */
+#if 1
+Points_t*  Points_Create(DataFile_t* datafile,Mesh_t* mesh)
 {
-  unsigned short int dim = Mesh_GetDimension(mesh) ;
-  int n_el = Mesh_GetNbOfElements(mesh) ;
-  Element_t* el = Mesh_GetElement(mesh) ;
-  double* pt = Point_GetCoordinate(point) ;
-  double d0 = 0. ;
-  int ie = -1 ;
-  int    i ;
+  char* filecontent = DataFile_GetFileContent(datafile) ;
+  char* c  = String_FindToken(filecontent,"POIN,Points",",") ;
+  int n_points = (c = String_SkipLine(c)) ? atoi(c) : 0 ;
+  Points_t* points = Points_New(n_points) ;
   
+  
+  Message_Direct("Enter in %s","Points") ;
+  Message_Direct("\n") ;
+  
+  
+  c = String_SkipLine(c) ;
 
-  for(i = 0 ; i < n_el ; i++) {
-    int  nn = Element_GetNbOfNodes(el + i) ;
-    Material_t* mat = Element_GetMaterial(el + i) ;
-    double x_s[3] = {0.,0.,0.} ;
-    double d = 0. ;
-    int    j ;
+
+  /* Read in the input data file */
+  {
+    Point_t* point = Points_GetPoint(points) ;
+    char* c1 = String_CopyLine(c) ;
     
-    if(!mat) continue ;
     
-    /* on prend celui dont le "centre" est le plus proche du point */
-    for(j = 0 ; j < dim ; j++) {
-      int in ;
+    /* If no token "Reg" is found in the line c1 */
+    if(!String_FindToken(c1,"Reg")) {
+      int dim = Mesh_GetDimension(mesh) ;
+      double* x = (double*) Mry_New(double[3*n_points]) ;
+    
+      String_ReadArray(c,dim*n_points," %lf",x) ;
       
-      x_s[j] = 0. ;
+      /* The coordinates */
+      {
+        int i ;
+        
+        for(i = 0 ; i < n_points ; i++) {
+          double* coor = Point_GetCoordinate(point + i) ;
+          int j ;
       
-      for(in = 0 ; in < nn ; in++) {
-        x_s[j] += Element_GetNodeCoordinate(el + i,in)[j] ;
+          for(j = 0 ; j < dim ; j++) {
+            coor[j] = x[dim*i + j] ;
+          }
+        }
       }
-      
-      x_s[j] /= nn ;
-      x_s[j] -= pt[j] ;
+    
+      free(x) ;
+
+    /* If a token "Reg" is found in the line */
+    } else {
+      int i ;
+    
+      DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+    
+      for(i = 0 ; i < n_points ; i++) {
+        char* line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
+  
+  
+        Message_Direct("Enter in %s %d","Point",i+1) ;
+        Message_Direct("\n") ;
+        
+        Point_Scan(point + i,line) ;
+    
+      }
     }
-    
-    for(j = 0 ; j < dim ; j++) d += x_s[j]*x_s[j] ;
-    
-    if(ie < 0 || d < d0) {d0 = d ; ie = i ;}
   }
   
-  Point_GetEnclosingElement(point) = (ie < 0) ? NULL : (el + ie) ;
+  
+  /* The enclosing element */
+  {
+    Point_t* point = Points_GetPoint(points) ;
+    int i ;
     
-  return ;
+    for(i = 0 ; i < n_points ; i++) {
+      Point_SetEnclosingElement(point + i,mesh) ;
+    }
+  }
+  
+  return(points) ;
 }
+#endif

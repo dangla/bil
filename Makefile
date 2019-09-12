@@ -316,6 +316,7 @@ test:
 
 #=======================================================================
 # Target rules for memcheck through valgrind
+# To pass the variable "foo" to make use: make memcheck arg="foo"
 
 memcheck:
 	@( valgrind --tool=memcheck --leak-check=full ${BIL_EXE} ${arg} )

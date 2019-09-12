@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "Message.h"
+#include "Mry.h"
 #include "Nodes.h"
 
 
@@ -10,53 +11,57 @@ void  Nodes_CreateMore(Nodes_t* nodes)
   int    n_no = Nodes_GetNbOfNodes(nodes) ;
   Node_t* node = Nodes_GetNode(nodes) ;
   int    i ;
-  int    n_inc ;
-  int    n_equ ;
 
 
-
-  /* Number of unknowns */
-  n_inc = 0 ;
-  for(i = 0 ; i < n_no ; i++) n_inc += Node_GetNbOfUnknowns(node + i) ;
-  
-  /* Number of equations */
-  n_equ = 0 ;
-  for(i = 0 ; i < n_no ; i++) n_equ += Node_GetNbOfEquations(node + i) ;
-  
-  if(n_inc != n_equ) {
-    arret("Nodes_CreateMore(1): the numbers of unknowns and equations are different") ;
-  }
 
   /* Nb of degrees of freedom */
-  Nodes_GetNbOfDOF(nodes) = n_inc ;
+  {
+    int    n_inc = 0 ;
+    int    n_equ = 0 ;
+  
+    /* Number of unknowns */
+    for(i = 0 ; i < n_no ; i++) {
+      n_inc += Node_GetNbOfUnknowns(node + i) ;
+    }
+  
+    /* Number of equations */
+    for(i = 0 ; i < n_no ; i++) {
+      n_equ += Node_GetNbOfEquations(node + i) ;
+    }
+  
+    if(n_inc != n_equ) {
+      arret("Nodes_CreateMore(1): the numbers of unknowns and equations are different") ;
+    }
 
+    /* Nb of degrees of freedom */
+    Nodes_GetNbOfDOF(nodes) = n_inc ;
+  }
 
 
   /* Allocation of space for the matrix column indexes */
   {
-    size_t sz = n_inc*sizeof(int) ;
-    int* colind = (int*) malloc(sz) ;
-  
-    if(!colind) arret("Nodes_CreateMore (2) : impossible d\'allouer la memoire") ;
+    int n_inc = Nodes_GetNbOfDOF(nodes) ;
+    int* colind = (int*) Mry_New(int[n_inc]) ;
   
     Node_GetMatrixColumnIndex(node) = colind ;
-  
-    for(i = 1 ; i < n_no ; i++) {
-      Node_GetMatrixColumnIndex(node + i) = Node_GetMatrixColumnIndex(node + i - 1) + Node_GetNbOfUnknowns(node + i - 1) ;
+    
+    for(i = 0 ; i < n_no ; i++) {
+      Node_GetMatrixColumnIndex(node + i) = colind ;
+      colind += Node_GetNbOfUnknowns(node + i) ;
     }
   }
 
+
   /* Allocation of space for the matrix row indexes */
   {
-    size_t sz = n_equ*sizeof(int) ;
-    int* rowind = (int*) malloc(sz) ;
-  
-    if(!rowind) arret("Nodes_CreateMore (3) : impossible d\'allouer la memoire") ;
+    int n_equ = Nodes_GetNbOfDOF(nodes) ;
+    int* rowind = (int*) Mry_New(int[n_equ]) ;
   
     Node_GetMatrixRowIndex(node) = rowind ;
-  
-    for(i = 1 ; i < n_no ; i++) {
-      Node_GetMatrixRowIndex(node + i) = Node_GetMatrixRowIndex(node + i - 1) + Node_GetNbOfEquations(node + i - 1) ;
+    
+    for(i = 0 ; i < n_no ; i++) {
+      Node_GetMatrixRowIndex(node + i) = rowind ;
+      rowind += Node_GetNbOfEquations(node + i) ;
     }
   }
 }

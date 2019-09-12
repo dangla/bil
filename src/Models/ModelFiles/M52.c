@@ -181,7 +181,9 @@ static int    flux(Element_t*,double**,double*) ;
 static int    TangentCoefficients(Element_t*,double,double*) ;
 static double activity(double,double) ;
 static double tortuosity(double,double) ;
-extern double lna_i(double,double,double,double,double,double) ;
+static double lna_i(double,double,double,double,double,double) ;
+static double lng_LinLee(double,double,double,double,double,double) ;
+static double lng_TQN(double,double,double,double,double,double,double,double) ;
 
 /* Parametres */
 static double lam_l = LAM_l,lam_i = LAM_i ;
@@ -1060,4 +1062,44 @@ double tortuosity(double p,double s)
   double tau_l_sat = 0.296e-3*exp(9.95*p)/p ;
   if(s > 0.) return(tau_l_sat/(s*(1 + 625*pow(1 - s,4)))) ;
   else return(0.) ;
+}
+
+
+
+
+
+double lng_LinLee(double T,double I,double z,double b,double S,double A)
+/* Le log du coefficient d'activite d'un ion d'apres Lin & Lee */ 
+{
+  double alpha = 1.29,II = sqrt(I) ;
+  double lng ;
+  
+  lng = - A*(II/(1 + b*II) + 2*log(1 + b*II)/b) + S*pow(I,alpha)/T ;
+  
+  return(lng*z*z) ;
+}
+
+double lng_TQN(double T,double I,double z,double b,double S,double A,double lna_w,double m_t)
+/* Le log du coefficient d'activite d'un ion (T.Q Nguyen) :
+   lng_i = dGamma/dm_i = (dGamma/dm_i)_I - 0.5*z_i*z_i*(lna_w + m_t)/I 
+   lna_w = - m_t - sum_i ( m_i*lng_i ) + Gamma */
+{
+  double alpha = 1.29,II = sqrt(I) ;
+  double lng ;
+  
+  lng = - A*2*log(1 + b*II)/b + S*pow(I,alpha)/(1+alpha)/T - 0.5*(lna_w + m_t)/I ;
+  
+  return(lng*z*z) ;
+}
+
+double lna_i(double T,double I,double z,double b,double S,double A)
+/* Contribution de chaque ion au log de l'activite du solvant 
+   lna_w = sum_i ( m_i*lna_i ) (T.Q Nguyen) */ 
+{
+  double alpha = 1.29,a1 = alpha/(1+alpha),II = sqrt(I) ;
+  double lna ;
+  
+  lna = A*II/(1 + b*II) - a1*S*pow(I,alpha)/T ;
+  
+  return(-1 + lna*z*z) ;
 }

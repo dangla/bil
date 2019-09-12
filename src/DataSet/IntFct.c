@@ -50,6 +50,38 @@ IntFct_t* (IntFct_Create)(int nn,int dim,const char* type)
 
 
 
+void (IntFct_AllocateMemory)(IntFct_t* intfct)
+{
+  
+  {
+    char* p = (char*) malloc(IntFct_MaxLengthOfKeyWord*sizeof(char)) ;
+    
+    if(!p) arret("IntFct_AllocateMemory(1)") ;
+    
+    IntFct_GetType(intfct) = p ;
+  }
+  
+  {
+    int dim = IntFct_GetDimension(intfct) ;
+    int nn  = IntFct_GetNbOfNodes(intfct) ;
+    int np  = IntFct_MaxNbOfIntPoints ;
+    int k   = np*(1 + nn*(1 + dim) + dim) ;
+    double* weight = (double*) malloc(k*sizeof(double)) ;
+    
+    if(!weight) arret("IntFct_AllocateMemory(2)") ;
+    
+    IntFct_GetWeight(intfct)           = weight ;
+    IntFct_GetFunction(intfct)         = weight + np ;
+    IntFct_GetFunctionGradient(intfct) = weight + np*(1 + nn) ;
+    IntFct_GetPointCoordinates(intfct) = weight + np*(1 + nn*(1 + dim)) ;
+  }
+  
+  return ;
+}
+
+
+
+
 double (IntFct_InterpolateAtPoint)(IntFct_t* intfct,double* var,int shift,int p)
 /** Interpolate from nodal values stored in "var". 
  *  Return the interpolated value at the point p. */
@@ -890,37 +922,5 @@ void normale(int dim,int nn,double** x,double* dh,double* norm)
 
   arret("normale") ;
 #undef DH
-}
-
-
-
-
-void (IntFct_AllocateMemory)(IntFct_t* intfct)
-{
-  int dim = IntFct_GetDimension(intfct) ;
-  int nn  = IntFct_GetNbOfNodes(intfct) ;
-  
-  {
-    char* p = (char*) malloc(IntFct_MaxLengthOfKeyWord*sizeof(char)) ;
-    
-    if(!p) arret("IntFct_AllocateMemory(1)") ;
-    
-    IntFct_GetType(intfct) = p ;
-  }
-  
-  {
-    int np = IntFct_MaxNbOfIntPoints ;
-    int k  = np*(1 + nn*(1 + dim) + dim) ;
-    double* weight = (double*) malloc(k*sizeof(double)) ;
-    
-    if(!weight) arret("IntFct_AllocateMemory(2)") ;
-    
-    IntFct_GetWeight(intfct)           = weight ;
-    IntFct_GetFunction(intfct)         = weight + np ;
-    IntFct_GetFunctionGradient(intfct) = weight + np*(1 + nn) ;
-    IntFct_GetPointCoordinates(intfct) = weight + np*(1 + nn*(1 + dim)) ;
-  }
-  
-  return ;
 }
 

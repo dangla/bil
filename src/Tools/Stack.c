@@ -30,9 +30,10 @@ Stack_t* (Stack_New)(void)
 
 
 
-void (Stack_Delete)(Stack_t** pstack)
+void (Stack_Delete)(void* self)
 {
-  Stack_t* stack = *pstack ;
+  Stack_t** pstack = (Stack_t**) self ;
+  Stack_t*   stack = *pstack ;
   
   if(stack) {
     Stack_t* below = Stack_GetBelow(stack) ;

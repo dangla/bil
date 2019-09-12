@@ -199,21 +199,28 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
        * 3.1.1 Looking for a new solution at t + dt
        * We step forward (point to the next solution) 
        */
-      //SOL_1 = Solution_GetNextSolution(SOL_1) ;
       Solutions_StepForward(sols) ;
       Mesh_InitializeSolutionPointers(mesh,sols) ;
       
       /*
-       * 3.1.1b Backup the previous solution if the previous 
-       * saved environment is restored after a nonlocal jump.
+       * 3.1.1b Save the environment. 
+       * That means that this is where the environment
+       * is restored after a nonlocal jump.
+       */
+      Exception_SaveEnvironment ;
+      
+      /*
+       * 3.1.1c Backup the previous solution:
+       * if the saved environment was restored after a nonlocal jump
+       * and 
+       * if the exception mechanism orders to do it.
        */
       {
-        if(Exception_SaveEnvironment) {
+        if(Exception_OrderToBackupAndTerminate) {
           backupandreturn :
           Solutions_StepBackward(sols) ;
           Mesh_InitializeSolutionPointers(mesh,sols) ;
           OutputFiles_BackupSolutionAtTime(outputfiles,jdd,T_1,idate+1) ;
-          //Mesh_StoreCurrentSolution(mesh,datafile,T_1) ;
           return(-1) ;
         }
       }
@@ -248,10 +255,40 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
       }
       
       /*
-       * 3.1.3b The time at which we compute
+       * 3.1.3b Initialize the repetition index
        */
       IterProcess_GetRepetitionIndex(iterprocess) = 0 ;
-      recommences :
+      
+      
+      /*
+       * 3.1.3c Reduce the time step 
+       * if the exception mechanism orders to do it.
+       */
+      {
+        if(Exception_OrderToReiterateWithSmallerTimeStep) {
+          repeatwithreducedtimestep :
+          
+          IterProcess_IncrementRepetitionIndex(iterprocess) ;
+          DT_1 *= TimeStep_GetReductionFactor(timestep) ;
+          
+        } else if(Exception_OrderToReiterateWithInitialTimeStep) {
+          repeatwithinitialtimestep :
+          
+          IterProcess_IncrementRepetitionIndex(iterprocess) ;
+          DT_1 *= TimeStep_GetReductionFactor(timestep) ;
+          {
+            double t_ini = TimeStep_GetInitialTimeStep(timestep) ;
+              
+            if(DT_1 > t_ini) DT_1 = t_ini ;
+          }
+        }
+      }
+      
+      //recommences :
+      
+      /*
+       * 3.1.3d The time at which we compute
+       */
       {
         int irecom = IterProcess_GetRepetitionIndex(iterprocess) ;
         
@@ -280,6 +317,8 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
           
           if(i != 0) {
             if(IterProcess_LastRepetitionIsNotReached(iterprocess)) {
+              goto repeatwithinitialtimestep ;
+              /*
               IterProcess_IncrementRepetitionIndex(iterprocess) ;
               DT_1 *= TimeStep_GetReductionFactor(timestep) ;
               {
@@ -288,13 +327,13 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
                 if(DT_1 > t_ini) DT_1 = t_ini ;
               }
               goto recommences ;
+              */
             } else {
               int iter = IterProcess_GetIterationIndex(iterprocess) ;
               
               Message_Direct("\n") ;
               Message_Direct("Algorithm(2): undefined implicit terms at iteration %d\n",iter) ;
               goto backupandreturn ;
-              //return ;
             }
           }
         }
@@ -325,6 +364,8 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
           
           if(i != 0) {
             if(IterProcess_LastRepetitionIsNotReached(iterprocess)) {
+              goto repeatwithinitialtimestep ;
+              /*
               IterProcess_IncrementRepetitionIndex(iterprocess) ;
               DT_1 *= TimeStep_GetReductionFactor(timestep) ;
               {
@@ -333,13 +374,13 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
                 if(DT_1 > t_ini) DT_1 = t_ini ;
               }
               goto recommences ;
+              */
             } else {
               int iter = IterProcess_GetIterationIndex(iterprocess) ;
               
               Message_Direct("\n") ;
               Message_Direct("Algorithm(3): undefined matrix at iteration %d\n",iter) ;
               goto backupandreturn ;
-              //return ;
             }
           }
           
@@ -360,6 +401,8 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
           
           if(i != 0) {
             if(IterProcess_LastRepetitionIsNotReached(iterprocess)) {
+              goto repeatwithinitialtimestep ;
+              /*
               IterProcess_IncrementRepetitionIndex(iterprocess) ;
               DT_1 *= TimeStep_GetReductionFactor(timestep) ;
               {
@@ -368,13 +411,13 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
                 if(DT_1 > t_ini) DT_1 = t_ini ;
               }
               goto recommences ;
+              */
             } else {
               int iter = IterProcess_GetIterationIndex(iterprocess) ;
               
               Message_Direct("\n") ;
               Message_Direct("Algorithm(4): unable to solve at iteration %d\n",iter) ;
               goto backupandreturn ;
-              //return ;
             }
           }
         }
@@ -387,7 +430,31 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
         /*
          * 3.1.5.6 The error
          */
-        IterProcess_SetCurrentError(iterprocess,nodes,solver) ;
+        {
+          int i = IterProcess_SetCurrentError(iterprocess,nodes,solver) ;
+          
+          if(i != 0) {
+            if(IterProcess_LastRepetitionIsNotReached(iterprocess)) {
+              goto repeatwithinitialtimestep ;
+              /*
+              IterProcess_IncrementRepetitionIndex(iterprocess) ;
+              DT_1 *= TimeStep_GetReductionFactor(timestep) ;
+              {
+                double t_ini = TimeStep_GetInitialTimeStep(timestep) ;
+              
+                if(DT_1 > t_ini) DT_1 = t_ini ;
+              }
+              goto recommences ;
+              */
+            } else {
+              int iter = IterProcess_GetIterationIndex(iterprocess) ;
+              
+              Message_Direct("\n") ;
+              Message_Direct("Algorithm(5): unable to compute error at iteration %d\n",iter) ;
+              goto backupandreturn ;
+            }
+          }
+        }
         
         /*
          * 3.1.5.7 We get out if convergence is met
@@ -410,11 +477,20 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
       /*
        * 3.1.6 Back to 3.1.3 with a smaller time step
        */
-      if(IterProcess_ConvergenceIsNotMet(iterprocess) && 
-         IterProcess_LastRepetitionIsNotReached(iterprocess)) {
-        IterProcess_IncrementRepetitionIndex(iterprocess) ;
-        DT_1 *= TimeStep_GetReductionFactor(timestep) ;
-        goto recommences ;
+      if(IterProcess_ConvergenceIsNotMet(iterprocess)) {
+        if(IterProcess_LastRepetitionIsNotReached(iterprocess)) {
+          goto repeatwithreducedtimestep ;
+          /*
+          IterProcess_IncrementRepetitionIndex(iterprocess) ;
+          DT_1 *= TimeStep_GetReductionFactor(timestep) ;
+          {
+            double t_ini = TimeStep_GetInitialTimeStep(timestep) ;
+              
+            if(DT_1 > t_ini) DT_1 = t_ini ;
+          }
+          goto recommences ;
+          */
+        }
       }
       
       /*
@@ -439,18 +515,8 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
   }
   
   /*
-   * 4. Store for future resumption
+   * 4. Step backward if convergence was not met
    */
-   /*
-  if(IterProcess_ConvergenceIsMet(iterprocess)) {
-    Mesh_StoreCurrentSolution(mesh,datafile,T_1) ;
-  } else {
-    Solutions_StepBackward(sols) ;
-    Mesh_InitializeSolutionPointers(mesh,sols) ;
-    Mesh_StoreCurrentSolution(mesh,datafile,T_1) ;
-    return(-1) ;
-  }
-  */
   if(IterProcess_ConvergenceIsNotMet(iterprocess)) {
     Solutions_StepBackward(sols) ;
     return(-1) ;

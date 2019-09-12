@@ -1382,7 +1382,7 @@ double poly4(double a,double b,double c,double d,double e)
   y[3] = d ;
   y[4] = e ;
   
-  x = Math_PolishPolynomialEquationRoot(y,4,x,tol*x,20) ;
+  Math_PolishPolynomialEquationRoot(y,4,&x,tol*x,20) ;
   
   return(x) ;
 }

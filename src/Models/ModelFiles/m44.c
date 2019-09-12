@@ -154,10 +154,10 @@
 
 /* Fonctions */
 static int    pm(const char *s) ;
-extern double activite(double,double,double,double,double,int,double*) ;
-extern double lng_LinLee(double,double,double,double,double,double) ;
-extern double lna_i(double,double,double,double,double,double) ;
-extern double lng_TQN(double,double,double,double,double,double,double,double) ;
+static double activite(double,double,double,double,double,int,double*) ;
+static double lng_LinLee(double,double,double,double,double,double) ;
+static double lna_i(double,double,double,double,double,double) ;
+static double lng_TQN(double,double,double,double,double,double,double,double) ;
 
 /* Parametres */
 static int    noc_Iso,mode_a ;

@@ -90,7 +90,7 @@
 
 /* constantes physiques */
 #define FARADAY   (9.64846e4) /* Faraday (C/mole) */
-#define T         (293.)      /* Temperature (K) */
+#define TEMPERATURE         (293.)      /* Temperature (K) */
 #define RT        (2436.)     /* Produit R = 8.3143 et T = 293. (J/mole) */
 
 /* viscosites (Pa.s) */
@@ -153,8 +153,9 @@
 
 /* Fonctions */
 static int    pm(const char *s) ;
-extern double lna_i(double,double,double,double,double,double) ;
-extern double lng_TQN(double,double,double,double,double,double,double,double) ;
+static double lna_i(double,double,double,double,double,double) ;
+static double lng_TQN(double,double,double,double,double,double,double,double) ;
+static double lng_LinLee(double,double,double,double,double,double) ;
 
 static double tortuosite_l(double) ;
 static void   flux(double**,double**,double*,double*,elem_t,int,geom_t) ;
@@ -197,8 +198,8 @@ static double (*xactivite_s[])(double,double) = {activite_s,activite_s_ideal} ;
 #define ACTIVITE_W(a)   courbe(a,el.mat->cb[3])
 #define ACTIVITE_S(a)   courbe(a,el.mat->cb[4])
 */
-#define ACTIVITE_W(a)     xactivite_w[1](a,T)
-#define ACTIVITE_S(a)     xactivite_s[1](a,T)
+#define ACTIVITE_W(a)     xactivite_w[1](a,TEMPERATURE)
+#define ACTIVITE_S(a)     xactivite_s[1](a,TEMPERATURE)
 
 /* Parametres */
 static double phi0,r_d,k_int ;
@@ -255,8 +256,8 @@ int dm28(int dim,mate_t *mat,FILE *ficd)
       int    n_i  = n_points - 1 ;
       double c_s  = c_s1*pow(c_s2/c_s1,((double) i)/n_i) ;
       int    j    = mat->nc ;
-      mat->cb[j].f[i]   = xactivite_w[1](c_s,T) ;
-      mat->cb[j+1].f[i] = xactivite_s[1](c_s,T) ;
+      mat->cb[j].f[i]   = xactivite_w[1](c_s,TEMPERATURE) ;
+      mat->cb[j+1].f[i] = xactivite_s[1](c_s,TEMPERATURE) ;
     }
     mat->cb[mat->nc].a[0] = c_s1 ;
     mat->cb[mat->nc].a[1] = c_s2 ;
@@ -330,7 +331,7 @@ void in28(double **x,double **u,double *f,double *va,elem_t el,int dim,geom_t ge
   for(i=0;i<2;i++) {
     double c_s    = C_s(i) ;  
     double h_r    = H_r(i) ;
-    double p_vs   = P_VS(T) ;  
+    double p_vs   = P_VS(TEMPERATURE) ;  
     double p_v    = h_r*p_vs ;
     /* concentration en eau liquide */
     double c_w    = (1. - V_AC*c_s)/V_H2O ;
@@ -396,7 +397,7 @@ int ex28(double **x,double **u,double *f,double *va,elem_t el,int dim,geom_t geo
   for(i=0;i<2;i++) {
     double c_s    = C_s(i) ;  
     double h_r    = H_r(i) ;
-    double p_vs   = P_VS(T) ;
+    double p_vs   = P_VS(TEMPERATURE) ;
     /* concentrations */
     double c_w    = (1. - V_AC*c_s)/V_H2O ;
     /* activite de l'eau */
@@ -465,7 +466,7 @@ int ct28(double **x,double **u,double **u_n,double *f,double *f_n,double *va,ele
   for(i=0;i<2;i++) {
     double c_s    = C_s(i) ; 
     double h_r    = H_r(i) ;
-    double p_vs   = P_VS(T) ; 
+    double p_vs   = P_VS(TEMPERATURE) ; 
     double p_v    = h_r*p_vs ;
     /* concentration en eau liquide */
     double c_w    = (1. - V_AC*c_s)/V_H2O ;
@@ -556,7 +557,7 @@ int mx28(double **x,double **u,double **u_n,double *f,double *f_n,double *va,dou
   for(i=0;i<2;i++) {
     double c_s    = C_s(i) ; 
     double h_r    = H_r(i) ;
-    double p_vs   = P_VS(T) ; 
+    double p_vs   = P_VS(TEMPERATURE) ; 
     double p_v    = h_r*p_vs ;
     /* concentration en eau liquide */
     double c_w    = (1. - V_AC*c_s)/V_H2O ;
@@ -817,12 +818,12 @@ int so28(double **x,double **u,double *f,double *va,double *s,resu_t *r,elem_t e
     strcpy(r[i].text,"Log(a_s)") ; r[i].n = 1 ;
     r[i++].v[0] = dlna_s ;
     strcpy(r[i].text,"Log(a_w) ideal") ; r[i].n = 1 ;
-    r[i++].v[0] = activite_w_ideal(c_s,T) ;
+    r[i++].v[0] = activite_w_ideal(c_s,TEMPERATURE) ;
     strcpy(r[i].text,"Log(a_s) ideal") ; r[i].n = 1 ;
     {
     double c_s0 = K_SALT ;
-    double lna_s_ideal  = activite_s_ideal(c_s,T) ;
-    double lna_s_ideal0 = activite_s_ideal(c_s0,T) ;
+    double lna_s_ideal  = activite_s_ideal(c_s,TEMPERATURE) ;
+    double lna_s_ideal0 = activite_s_ideal(c_s0,TEMPERATURE) ;
     r[i++].v[0] = lna_s_ideal - lna_s_ideal0 ;
     }
     strcpy(r[i].text,"Sel total") ; r[i].n = 1 ;
@@ -1139,4 +1140,35 @@ double activite_s_ideal(double c_s1,double Ta)
   double lna_ani = log(c_ani/c_t) ;
   double lna_s   = NU_C*lna_cat + NU_A*lna_ani ;
   return(lna_s) ;
+}
+
+
+
+
+
+
+
+double lng_TQN(double T,double I,double z,double b,double S,double A,double lna_w,double m_t)
+/* Le log du coefficient d'activite d'un ion (T.Q Nguyen) :
+   lng_i = dGamma/dm_i = (dGamma/dm_i)_I - 0.5*z_i*z_i*(lna_w + m_t)/I 
+   lna_w = - m_t - sum_i ( m_i*lng_i ) + Gamma */
+{
+  double alpha = 1.29,II = sqrt(I) ;
+  double lng ;
+  
+  lng = - A*2*log(1 + b*II)/b + S*pow(I,alpha)/(1+alpha)/T - 0.5*(lna_w + m_t)/I ;
+  
+  return(lng*z*z) ;
+}
+
+double lna_i(double T,double I,double z,double b,double S,double A)
+/* Contribution de chaque ion au log de l'activite du solvant 
+   lna_w = sum_i ( m_i*lna_i ) (T.Q Nguyen) */ 
+{
+  double alpha = 1.29,a1 = alpha/(1+alpha),II = sqrt(I) ;
+  double lna ;
+  
+  lna = A*II/(1 + b*II) - a1*S*pow(I,alpha)/T ;
+  
+  return(-1 + lna*z*z) ;
 }

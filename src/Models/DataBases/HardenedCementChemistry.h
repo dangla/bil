@@ -245,7 +245,7 @@ extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemi
 #define HardenedCementChemistry_GetAqueousConcentration(HCC) \
         CementSolutionChemistry_GetConcentration(HardenedCementChemistry_GetCementSolutionChemistry(HCC))
 
-#define HardenedCementChemistry_GetLogAqueousConcentration(HCC,CPD) \
+#define HardenedCementChemistry_GetLogAqueousConcentration(HCC) \
         CementSolutionChemistry_GetLogConcentration(HardenedCementChemistry_GetCementSolutionChemistry(HCC))
         
 #define HardenedCementChemistry_GetAqueousConcentrationOf(HCC,CPD) \

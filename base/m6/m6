@@ -8,8 +8,9 @@ Mesh
 0.001
 1 100 1
 1 1 1
+
 Material
-6
+Model = 6
 gravite = 0
 phi = 0.3
 rho_l = 1000
