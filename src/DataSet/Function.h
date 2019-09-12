@@ -7,12 +7,11 @@
 struct Function_s     ; typedef struct Function_s     Function_t ;
 
 
-extern double       (Function_ComputeValue)(Function_t*,double) ;
-
-//#define Function_ComputeValue(A,B) \
-        ((A) ? (Function_ComputeValue)(A,B) : 1.)
+#include "DataFile.h"
 
 extern Function_t*  (Function_New)(const int) ;
+extern int          (Function_Scan)(Function_t*,DataFile_t*) ;
+extern double       (Function_ComputeValue)(Function_t*,double) ;
 
 
 #define Function_MaxLengthOfFileName       (200)

@@ -8,16 +8,20 @@
 struct Material_s     ; typedef struct Material_s     Material_t ;
 
 
-#include "DataFile.h"
 #include <stdlib.h>
 #include "Model.h"
+#include "DataFile.h"
+#include "Geometry.h"
 
 
-extern Material_t* (Material_Create)(int) ;
-extern int         (Material_ReadProperties)(Material_t*,DataFile_t*) ;
-extern void        (Material_ScanProperties)(Material_t*,DataFile_t*,Model_ComputePropertyIndex_t*) ;
-extern void        (Material_ScanProperties1)(Material_t*,FILE*,Model_ComputePropertyIndex_t*,int) ;
-extern void        (Material_ScanProperties2)(Material_t*,FILE*,Model_ComputePropertyIndex_t*,int,int) ;
+extern Material_t* (Material_New)             (void) ;
+extern Material_t* (Material_Create)          (const int) ;
+extern void        (Material_Delete)          (void*) ;
+extern void        (Material_Scan)            (Material_t*,DataFile_t*,Geometry_t*) ;
+extern int         (Material_ReadProperties)  (Material_t*,DataFile_t*) ;
+extern void        (Material_ScanProperties)  (Material_t*,DataFile_t*,Model_ComputePropertyIndex_t*) ;
+extern void        (Material_ScanProperties1) (Material_t*,FILE*,Model_ComputePropertyIndex_t*,int) ;
+extern void        (Material_ScanProperties2) (Material_t*,FILE*,Model_ComputePropertyIndex_t*,int,int) ;
 
 
 
@@ -38,6 +42,8 @@ extern void        (Material_ScanProperties2)(Material_t*,FILE*,Model_ComputePro
 #define Material_GetMethod(MAT)           ((MAT)->method)
 #define Material_GetCodeNameOfModel(MAT)  ((MAT)->codenameofmodel)
 #define Material_GetGenericData(MAT)      ((MAT)->genericdata)
+#define Material_GetUsedModels(MAT)       ((MAT)->models)
+#define Material_GetModelIndex(MAT)       ((MAT)->modelindex)
 
 
 
@@ -123,6 +129,7 @@ extern void        (Material_ScanProperties2)(Material_t*,FILE*,Model_ComputePro
 #include "Functions.h"
 #include "Curves.h"
 #include "GenericData.h"
+#include "Models.h"
 
 struct Material_s {           /* material */
   char*   codenameofmodel ;   /**< Code name of the model */
@@ -133,7 +140,9 @@ struct Material_s {           /* material */
   Curves_t* curves ;          /**< Curves */
   Fields_t* fields ;          /**< Fields */
   Functions_t* functions ;    /**< Time functions */
+  Models_t* models ;          /**< Used models */
   Model_t* model ;            /**< Model */
+  int modelindex ;            /**< Model index */
   
   /* for compatibility with former version (should be eliminated) */
   unsigned short int neq ;    /**< nombre d'equations du modele */

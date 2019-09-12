@@ -23,29 +23,29 @@
         (((T) < 25 ) ? LinearTemperatureDependence(T,0,L1,25,L2) : \
         PiecewiseLinearTemperatureDependence_Lt60(T,L2,__VA_ARGS__))
 
-#define PiecewiseLinearTemperatureDependence_Lt60(T,L1,L2,...) \
-        (((T) < 60 ) ? LinearTemperatureDependence(T,25,L1,60,L2) : \
-        PiecewiseLinearTemperatureDependence_Lt100(T,L2,__VA_ARGS__))
+#define PiecewiseLinearTemperatureDependence_Lt60(T,L2,L3,...) \
+        (((T) < 60 ) ? LinearTemperatureDependence(T,25,L2,60,L3) : \
+        PiecewiseLinearTemperatureDependence_Lt100(T,L3,__VA_ARGS__))
 
-#define PiecewiseLinearTemperatureDependence_Lt100(T,L1,L2,...) \
-        (((T) < 100) ? LinearTemperatureDependence(T,60,L1,100,L2) : \
-        PiecewiseLinearTemperatureDependence_Lt150(T,L2,__VA_ARGS__))
+#define PiecewiseLinearTemperatureDependence_Lt100(T,L3,L4,...) \
+        (((T) < 100) ? LinearTemperatureDependence(T,60,L3,100,L4) : \
+        PiecewiseLinearTemperatureDependence_Lt150(T,L4,__VA_ARGS__))
 
-#define PiecewiseLinearTemperatureDependence_Lt150(T,L1,L2,...) \
-        (((T) < 150) ? LinearTemperatureDependence(T,100,L1,150,L2) : \
-        PiecewiseLinearTemperatureDependence_Lt200(T,L2,__VA_ARGS__))
+#define PiecewiseLinearTemperatureDependence_Lt150(T,L4,L5,...) \
+        (((T) < 150) ? LinearTemperatureDependence(T,100,L4,150,L5) : \
+        PiecewiseLinearTemperatureDependence_Lt200(T,L5,__VA_ARGS__))
 
-#define PiecewiseLinearTemperatureDependence_Lt200(T,L1,L2,...) \
-        (((T) < 200) ? LinearTemperatureDependence(T,150,L1,200,L2) : \
-        PiecewiseLinearTemperatureDependence_Lt250(T,L2,__VA_ARGS__))
+#define PiecewiseLinearTemperatureDependence_Lt200(T,L5,L6,...) \
+        (((T) < 200) ? LinearTemperatureDependence(T,150,L5,200,L6) : \
+        PiecewiseLinearTemperatureDependence_Lt250(T,L6,__VA_ARGS__))
 
-#define PiecewiseLinearTemperatureDependence_Lt250(T,L1,L2,...) \
-        (((T) < 250) ? LinearTemperatureDependence(T,200,L1,250,L2) : \
-        PiecewiseLinearTemperatureDependence_Lt300(T,L2,__VA_ARGS__))
+#define PiecewiseLinearTemperatureDependence_Lt250(T,L6,L7,...) \
+        (((T) < 250) ? LinearTemperatureDependence(T,200,L6,250,L7) : \
+        PiecewiseLinearTemperatureDependence_Lt300(T,L7,__VA_ARGS__))
 
-#define PiecewiseLinearTemperatureDependence_Lt300(T,L1,L2) \
-        (((T) < 300) ? LinearTemperatureDependence(T,250,L1,300,L2) : \
-        (L2))
+#define PiecewiseLinearTemperatureDependence_Lt300(T,L7,L8) \
+        (((T) < 300) ? LinearTemperatureDependence(T,250,L7,300,L8) : \
+        (L8))
 
 
 

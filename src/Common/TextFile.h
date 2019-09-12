@@ -17,6 +17,7 @@ extern void            (TextFile_CloseFile)(TextFile_t*) ;
 extern void            (TextFile_StoreFilePosition)(TextFile_t*) ;
 extern void            (TextFile_MoveToStoredFilePosition)(TextFile_t*) ;
 extern char*           (TextFile_ReadLineFromCurrentFilePosition)(TextFile_t*,char*,int) ;
+extern char*           (TextFile_ReadLineFromCurrentFilePositionInString)(TextFile_t*,char*,int) ;
 extern long int        (TextFile_CountNbOfCharacters)(TextFile_t*) ;
 extern long int        (TextFile_CountNbOfEatenCharacters)(TextFile_t*) ;
 extern int             (TextFile_CountTheMaxNbOfCharactersPerLine)(TextFile_t*) ;
@@ -50,35 +51,18 @@ extern char*           (TextFile_StoreFileContent)(TextFile_t*) ;
 
 #define TextFile_Scan(TF, ...) \
         String_Scan(TextFile_GetCurrentPositionInFileContent(TF),__VA_ARGS__)
-
-#define TextFile_ScanAdv(TF, ...) \
-        TextFile_GetCurrentPositionInString(TF) += TextFile_Scan(TF,__VA_ARGS__)
         
-#define TextFile_NextLine(TF) \
-        String_NextLine(TextFile_GetCurrentPositionInFileContent(TF))
+#define TextFile_SkipLine(TF) \
+        String_SkipLine(TextFile_GetCurrentPositionInFileContent(TF))
         
 
 /** Reads N data of size sizeof(V) with the format "FMT" from 
  *  the current position in the string and advance accordingly. */
-#define TextFile_ReadDataFromCurrentFilePosition(TF,FMT,V,N) \
+#define TextFile_ReadArrayFromCurrentFilePosition(TF,N,FMT,V) \
         do { \
-          int TextFile_i ; \
-          for(TextFile_i = 0 ; TextFile_i < (N) ; TextFile_i++) { \
-            TextFile_ScanAdv(TF,FMT,(V) + TextFile_i) ; \
-          } \
+          char* TextFile_c = TextFile_GetCurrentPositionInFileContent(TF) ; \
+          String_ReadArray(TextFile_c,N,FMT,V) ; \
         } while(0)
-
-/*
-#define TextFile_ReadDataFromCurrentFilePosition(TF,FMT,V,N) \
-        do { \
-          size_t TextFile_sz = sizeof(*(V)) ; \
-          char*  TextFile_c  = (char*) (V) ; \
-          int TextFile_i ; \
-          for(TextFile_i = 0 ; TextFile_i < (N) ; TextFile_i++) { \
-            TextFile_ScanAdv(TF,FMT,TextFile_c + TextFile_i*TextFile_sz) ; \
-          } \
-        } while(0)
-*/
         
 
 
@@ -114,7 +98,7 @@ extern char*           (TextFile_StoreFileContent)(TextFile_t*) ;
 
 
 
-#include "Buffer.h"
+//#include "Buffer.h"
 
 struct TextFile_s {           /* File */
   char*     filename ;        /* Name of the file */

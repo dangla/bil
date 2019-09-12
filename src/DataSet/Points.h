@@ -11,7 +11,10 @@ struct Points_s       ; typedef struct Points_s       Points_t ;
 #include "Mesh.h"
 
 
-extern Points_t*  Points_Create(DataFile_t*,Mesh_t*) ;
+extern Points_t*  (Points_New)     (const int) ;
+extern Points_t*  (Points_Create)  (DataFile_t*,Mesh_t*) ;
+
+
 
 #define Points_GetNbOfPoints(PTS)    ((PTS)->n_points)
 #define Points_GetPoint(PTS)         ((PTS)->point)

@@ -8,7 +8,11 @@ struct Dates_s        ; typedef struct Dates_s        Dates_t ;
 
 #include "DataFile.h"
 
-extern Dates_t*  Dates_Create(DataFile_t*) ;
+
+extern Dates_t*  (Dates_New)    (const int) ;
+extern Dates_t*  (Dates_Create) (DataFile_t*) ;
+
+
 
 #define Dates_GetNbOfDates(DATES)       ((DATES)->n_dates)
 #define Dates_GetDate(DATES)            ((DATES)->date)

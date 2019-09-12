@@ -3,32 +3,64 @@
 #include <string.h>
 #include "Message.h"
 #include "DataFile.h"
+#include "Mry.h"
 #include "Fields.h"
 
 /*
 static void   lit_grille(FieldGrid_t* ,int,char*) ;
 */
-static Field_t*       Field_Create(int) ;
-static FieldAffine_t* FieldAffine_Create(void) ;
-static FieldGrid_t*   FieldGrid_Create(char*,int) ;
 //static void           Field_ReadGrid(FieldGrid_t*,int,char*) ;
 
 
 
-Fields_t* Fields_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geometry)
+Fields_t* Fields_New(const int n_fields)
+{
+  Fields_t* fields = (Fields_t*) Mry_New(Fields_t) ;
+  
+  
+  Fields_GetNbOfFields(fields) = n_fields ;
+    
+  {
+    if(n_fields > 0) {
+      Field_t* field = (Field_t*) Mry_New(Field_t[n_fields]) ;
+      int i ;
+      
+      for(i = 0 ; i < n_fields ; i++) {
+        Field_t* fld = Field_New() ;
+        
+        field[i] = fld[0] ;
+      }
+      
+      Fields_GetField(fields) = field ;
+    }
+  }
+  
+  return(fields) ;
+}
+
+
+
+#if 0
+//Fields_t* Fields_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geometry)
+Fields_t* Fields_Create(DataFile_t* datafile,Geometry_t* geometry)
 {
   Fields_t* fields      = (Fields_t*) malloc(sizeof(Fields_t)) ;
-  int n_mats = Materials_GetNbOfMaterials(materials) ;
   int dim = Geometry_GetDimension(geometry) ;
   int n_fields = 0 ;
   int    i ;
   
   if(!fields) arret("Fields_Create") ;
 
-  for(i = 0 ; i < n_mats ; i++) {
-    Material_t* mat = Materials_GetMaterial(materials) + i ;
-    Material_GetFields(mat) = fields ;
+  #if 0
+  {
+    int n_mats = Materials_GetNbOfMaterials(materials) ;
+    
+    for(i = 0 ; i < n_mats ; i++) {
+      Material_t* mat = Materials_GetMaterial(materials) + i ;
+      Material_GetFields(mat) = fields ;
+    }
   }
+  #endif
   
   DataFile_OpenFile(datafile,"r") ;
   
@@ -194,202 +226,61 @@ Fields_t* Fields_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* 
   
   return(fields) ;
 }
+#endif
 
 
 
-Field_t* Field_Create(int n_fields)
+#if 1
+//Fields_t* Fields_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geometry)
+Fields_t* Fields_Create(DataFile_t* datafile,Geometry_t* geometry)
 {
-  Field_t* field = (Field_t*) malloc(n_fields*sizeof(Field_t)) ;
+  char* filecontent = DataFile_GetFileContent(datafile) ;
+  char* c  = String_FindToken(filecontent,"CHMP,FLDS,Fields",",") ;
+  int n_fields = (c = String_SkipLine(c)) ? atoi(c) : 0 ;
+  Fields_t* fields  = Fields_New(n_fields) ;
+  
+  Message_Direct("Enter in %s","Fields") ;
+  Message_Direct("\n") ;
     
-  if(!field) {
-    arret("Field_Create(1): allocation impossible") ;
+    
+  if(n_fields <= 0) {
+    return(fields) ;
   }
 
-  /* Allocation of space for the type of field */
+  #if 0
   {
-    char* type = (char*) malloc(n_fields*Field_MaxLengthOfKeyWord*sizeof(char)) ;
+    int n_mats = Materials_GetNbOfMaterials(materials) ;
     int i ;
     
-    if(!type) {
-      arret("Field_Create(2): allocation impossible") ;
+    for(i = 0 ; i < n_mats ; i++) {
+      Material_t* mat = Materials_GetMaterial(materials) + i ;
+      
+      Material_GetFields(mat) = fields ;
     }
+  }
+  #endif
+
+
+
+  {
+    int i ;
     
+    c = String_SkipLine(c) ;
+    
+    DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+    
+    /* Read the fields */
     for(i = 0 ; i < n_fields ; i++) {
-      Field_GetType(field + i) = type + i*Field_MaxLengthOfKeyWord ;
-      /* Default type */
-      strcpy(Field_GetType(field + i),"affine") ;
+      Field_t* field = Fields_GetField(fields) + i ;
+      
+  
+      Message_Direct("Enter in %s %d","Field",i+1) ;
+      Message_Direct("\n") ;
+      
+      Field_Scan(field,datafile,geometry) ;
     }
   }
   
-  return(field) ;
+  return(fields) ;
 }
-
-
-
-FieldGrid_t* FieldGrid_Create(char* filename,int dim)
-{
-  FieldGrid_t* grid = (FieldGrid_t*) malloc(sizeof(FieldGrid_t)) ;
-  int    n_x = 1,n_y = 1,n_z = 1 ;
-  
-  if(!grid) {
-    arret("FieldGrid_Create(1): allocation impossible") ;
-  }
-        
-  /* Read the numbers */
-  {
-    DataFile_t* dfile = DataFile_Create(filename) ;
-    char*   line = DataFile_GetTextLine(dfile) ;
-  
-    DataFile_OpenFile(dfile,"r") ;
-  
-    DataFile_ReadLineFromCurrentFilePosition(dfile) ;
-
-    if(dim == 1) {
-      sscanf(line,"%d",&n_x) ;
-    } else if(dim == 2) {
-      sscanf(line,"%d %d",&n_x,&n_y) ;
-    } else if(dim == 3) {
-      sscanf(line,"%d %d %d",&n_x,&n_y,&n_z) ;
-    } else {
-      arret("FieldGrid_Create(2): dimension incompatible") ;
-    }
-  
-    DataFile_CloseFile(dfile) ;
-  
-    DataFile_Delete(&dfile) ;
-  }
-
-  FieldGrid_GetNbOfPointsAlongX(grid) = n_x ;
-  FieldGrid_GetNbOfPointsAlongY(grid) = n_y ;
-  FieldGrid_GetNbOfPointsAlongZ(grid) = n_z ;
-  
-  /* Allocation of memory space for the file name */
-  {
-    size_t sz = Field_MaxLengthOfFileName*sizeof(char) ;
-    char* name = (char*) malloc(sz) ;
-    
-    if(!name) {
-      arret("FieldGrid_Create(2): allocation impossible") ;
-    }
-    
-    FieldGrid_GetFileName(grid) = name ;
-        
-    if(strlen(filename) > Field_MaxLengthOfFileName) {
-      arret("FieldGrid_Create(5): too long file name") ;
-    }
-    
-    strcpy(name,filename) ;
-  }
-  
-  /* Allocation of memory space for the coordinate */
-  {
-    size_t sz = (n_x + n_y + n_z)*sizeof(double) ;
-    double* x = (double*) malloc(sz) ;
-    double* y = x + n_x ;
-    double* z = y + n_y ;
-    
-    if(!x) {
-      arret("FieldGrid_Create(3): allocation impossible") ;
-    }
-
-    FieldGrid_GetCoordinateAlongX(grid) = x ;
-    FieldGrid_GetCoordinateAlongY(grid) = y ;
-    FieldGrid_GetCoordinateAlongZ(grid) = z ;
-
-    /* Initialization of the coordinate */
-    if(n_x > 0) FieldGrid_GetCoordinateAlongX(grid)[0] = 0. ;
-    if(n_y > 0) FieldGrid_GetCoordinateAlongY(grid)[0] = 0. ;
-    if(n_z > 0) FieldGrid_GetCoordinateAlongZ(grid)[0] = 0. ;
-  }
-
-
-  /* Allocation of memory space for the values */
-  {
-    size_t sz = n_x*n_y*n_z*sizeof(double) ;
-    double* v = (double*) malloc(sz) ;
-    
-    if(!v) {
-      arret("FieldGrid_Create(4): allocation impossible") ;
-    }
-    
-    FieldGrid_GetValue(grid) = v ;
-  }
-  
-  
-  /* Read the grid */
-  {
-    DataFile_t* dfile = DataFile_Create(filename) ;
-    char*   line = DataFile_GetTextLine(dfile) ;
-  
-    DataFile_OpenFile(dfile,"r") ;
-  
-    DataFile_ReadLineFromCurrentFilePosition(dfile) ;
-
-    if(dim == 1) {
-      sscanf(line,"%d",&n_x) ;
-    } else if(dim == 2) {
-      sscanf(line,"%d %d",&n_x,&n_y) ;
-    } else if(dim == 3) {
-      sscanf(line,"%d %d %d",&n_x,&n_y,&n_z) ;
-    } else {
-      arret("FieldGrid_Create(2): dimension incompatible") ;
-    }
-  
-    if(dim >= 1) {
-      double* x = FieldGrid_GetCoordinateAlongX(grid) ;
-      
-      DataFile_ReadDoublesFromCurrentFilePosition(dfile,x,n_x) ;
-    }
-  
-    if(dim >= 2) {
-      double* y = FieldGrid_GetCoordinateAlongY(grid) ;
-      
-      DataFile_ReadDoublesFromCurrentFilePosition(dfile,y,n_y) ;
-    }
-  
-    if(dim >= 3) {
-      double* z = FieldGrid_GetCoordinateAlongZ(grid) ;
-      
-      DataFile_ReadDoublesFromCurrentFilePosition(dfile,z,n_z) ;
-    }
-
-    /* Read the value of the field */
-    {
-      double* v = FieldGrid_GetValue(grid) ;
-      
-      DataFile_ReadDoublesFromCurrentFilePosition(dfile,v,n_x*n_y*n_z) ;
-    }
-  
-    DataFile_CloseFile(dfile) ;
-  
-    DataFile_Delete(&dfile) ;
-  }
-
-  return(grid) ;
-}
-
-
-
-FieldAffine_t* FieldAffine_Create(void)
-{
-  FieldAffine_t* affine = (FieldAffine_t*) malloc(sizeof(FieldAffine_t)) ;
-      
-  if(!affine) {
-    arret("FieldAffine_Create(1): allocation impossible") ;
-  }
-
-  /* Allocation of memory space for the gradient and the coordinate */
-  {
-    size_t sz = sizeof(double) ;
-    double* grd = (double*) calloc(6,sz) ;
-      
-    if(!grd) {
-      arret("FieldAffine_Create(2): allocation impossible") ;
-    }
-    
-    FieldAffine_GetGradient(affine)   = grd ;
-    FieldAffine_GetCoordinate(affine) = FieldAffine_GetGradient(affine) + 3 ;
-  }
-  
-  return(affine) ;
-}
+#endif

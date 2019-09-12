@@ -87,8 +87,8 @@ TimeStep_t*  TimeStep_Create(DataFile_t* datafile,ObVals_t* obvals)
     
   /* Fraction */
   DataFile_MoveToStoredFilePosition(datafile) ;
-  while((line = DataFile_ReadLineFromCurrentFilePosition(datafile)) && !(pline = strstr(line,"Frac"))) ;
-  if(line && (pline = strstr(line,"Frac"))) {
+  while((line = DataFile_ReadLineFromCurrentFilePosition(datafile)) && !(pline = strstr(line,"Reduction Factor"))) ;
+  if(line && (pline = strstr(line,"Reduction Factor"))) {
     pline = strchr(pline,'=') + 1 ;
     TimeStep_GetReductionFactor(timestep) = atof(pline) ;
   } else {
@@ -97,8 +97,8 @@ TimeStep_t*  TimeStep_Create(DataFile_t* datafile,ObVals_t* obvals)
     
   /* Raison */
   DataFile_MoveToStoredFilePosition(datafile) ;
-  while((line = DataFile_ReadLineFromCurrentFilePosition(datafile)) && !(pline = strstr(line,"Raison"))) ;
-  if(line && (pline = strstr(line,"Raison"))) {
+  while((line = DataFile_ReadLineFromCurrentFilePosition(datafile)) && !(pline = strstr(line,"Common Ratio"))) ;
+  if(line && (pline = strstr(line,"Common Ratio"))) {
     pline = strchr(pline,'=') + 1 ;
     TimeStep_GetMaximumCommonRatio(timestep) = atof(pline) ;
   } else {
@@ -114,11 +114,11 @@ TimeStep_t*  TimeStep_Create(DataFile_t* datafile,ObVals_t* obvals)
 
 
 double TimeStep_ComputeTimeStep(TimeStep_t* timestep,Nodes_t* nodes,double tn,double dtn,double t1,double t2)
-/** Return the current time increment dt such as the current time be t = tn + dt.
- *  The two times tn and t should be located in between the two dates t1 and t2.
- *  Also set the location of the time step dt between the two dates t1 and t2 
- *  as being either at the beginning, in between or at the end of the date range
- *  [t1:t2]. */
+/** Return the current time increment dt so that the current time is t = tn + dt.
+ *  The two times tn and t should lie within the range between t1 and t2.
+ *  Also set the location of the time step dt within the range between t1 and t2 
+ *  as being either at the beginning, in between or at the end of the  range [t1:t2].
+ **/
 {
   double dt ;
   double zero = 0. ;
@@ -163,7 +163,7 @@ double TimeStep_ComputeTimeStep(TimeStep_t* timestep,Nodes_t* nodes,double tn,do
         double val = ObVal_GetValue(obval_j) ;
         double varrel = fabs(u_1[j] - u_n[j])/val ;
         
-        if(ObVal_GetType(obval_j) == 'r') {
+        if(ObVal_IsRelativeValue(obval_j)) {
           if(fabs(u_n[j]) > 0.) varrel /= fabs(u_n[j]) ;
         }
         

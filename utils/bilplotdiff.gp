@@ -4,6 +4,11 @@ set term qt
 
 tictac = 1
 
+NbOfFiles = ARGC
+
+#do for [i = 1:NbOfFiles] {
+#filei = "ARG" . i
+#}
 file1 = ARG1
 file2 = ARG2
 

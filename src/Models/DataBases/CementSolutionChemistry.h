@@ -17,8 +17,8 @@ extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O) 
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O)(CementSolutionChemistry_t*) ;
 extern void   (CementSolutionChemistry_PrintChemicalConstants)(CementSolutionChemistry_t*) ;
 
-extern double (CementSolutionChemistry_SolveElectroneutrality)         (CementSolutionChemistry_t*) ;
-extern double (CementSolutionChemistry_SolveExplicitElectroneutrality) (CementSolutionChemistry_t*) ;
+extern int    (CementSolutionChemistry_SolveElectroneutrality)         (CementSolutionChemistry_t*) ;
+extern int    (CementSolutionChemistry_SolveExplicitElectroneutrality) (CementSolutionChemistry_t*) ;
 
 extern void   (CementSolutionChemistry_UpdateSolution)(CementSolutionChemistry_t*) ;
 

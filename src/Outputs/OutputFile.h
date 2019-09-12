@@ -13,6 +13,9 @@ struct OutputFile_s  ; typedef struct OutputFile_s  OutputFile_t ;
 
 extern char    (OutputFile_TypeOfCurrentFile) ;
 
+extern OutputFile_t*  (OutputFile_Create)(char*,int) ;
+extern void           (OutputFile_Delete)(void*,int) ;
+
 
 #define OutputFile_GetTextFile(OF)            ((OF)->textfile)
 

@@ -23,7 +23,7 @@ extern Loads_t* Loads_Create(DataFile_t*,Fields_t*,Functions_t*) ;
 
 struct Loads_s {              /* loadings */
   unsigned int n_cg ;         /* nb */
-  Load_t *cg ;                /* loading */
+  Load_t* cg ;                /* loading */
 } ;
 
 

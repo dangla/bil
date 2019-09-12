@@ -62,18 +62,27 @@ void  Models_Delete(void* self)
 {
   Models_t** pmodels = (Models_t**) self ;
   Models_t*   models = *pmodels ;
-  int n_models = Models_GetNbOfModels(models) ;
-  Model_t* model = Models_GetModel(models) ;
   
+  
+  /*
   {
+    int n_models = Models_GetNbOfModels(models) ;
+    Model_t* model = Models_GetModel(models) ;
     int i ;
     
     for(i = 0 ; i < n_models ; i++) {
       Model_t* modeli = model + i ;
       
-      //Model_Delete(&model,n_models) ;
       Model_Delete(&modeli) ;
     }
+  }
+  */
+  
+  {
+    int n_models = Models_GetNbOfModels(models) ;
+    Model_t* model = Models_GetModel(models) ;
+    
+    Model_Delete(&model,n_models) ;
   }
   
   free(models) ;
@@ -128,6 +137,23 @@ void Models_Print(char* codename,FILE* ficd)
 
 
 
+int Models_FindModelIndex(Models_t* models,const char* codename)
+{
+  Model_t* model = Models_GetModel(models) ;
+  int n_models = Models_GetNbOfModels(models) ;
+  int j = 0 ;
+  
+  while(j < n_models && strcmp(Model_GetCodeNameOfModel(model + j),codename)) j++ ;
+  
+  if(j < n_models) {
+    return(j) ;
+  }
+
+  return(-1) ;
+}
+
+
+
 
 Model_t* Models_FindModel(Models_t* models,const char* codename)
 {
@@ -163,21 +189,4 @@ Model_t* Models_FindOrAppendModel(Models_t* models,const char* codename,Geometry
   }
 
   return(model) ;
-}
-
-
-
-int Models_FindModelIndex(Models_t* models,const char* codename)
-{
-  Model_t* model = Models_GetModel(models) ;
-  int n_models = Models_GetNbOfModels(models) ;
-  int j = 0 ;
-  
-  while(j < n_models && strcmp(Model_GetCodeNameOfModel(model + j),codename)) j++ ;
-  
-  if(j < n_models) {
-    return(j) ;
-  }
-
-  return(-1) ;
 }

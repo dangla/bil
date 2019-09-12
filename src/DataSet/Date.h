@@ -7,7 +7,19 @@
 struct Date_s        ; typedef struct Date_s        Date_t ;
 
 
+
+
+extern Date_t*  Date_Create(int) ;
+
+
+#define  Date_New() \
+         (Date_t*) Mry_New(Date_t)
+
+
+
 #define Date_GetTime(DATE)            ((DATE)->time)
+
+
 
 
 struct Date_s {

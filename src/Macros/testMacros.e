@@ -6,7 +6,7 @@
 
 #if 0
 To test the macros below, copy and execute the line:
-"gcc -iprefix ../ -iwithprefix . -iwithprefix DataSet -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools -iwithprefix Models -iwithprefix Modules -iwithprefix Help -iwithprefix Common -iwithprefix Main -iwithprefix Macros -E testMacros.E"
+"gcc -x c -iprefix ../ -iwithprefix . -iwithprefix DataSet -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools -iwithprefix Models -iwithprefix Modules -iwithprefix Help -iwithprefix Common -iwithprefix Main -iwithprefix Macros -E testMacros.e"
 #endif
 
 

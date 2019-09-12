@@ -257,7 +257,8 @@ Mesh :
       {
         Materials_t* materials = DataSet_GetMaterials(dataset) ;
         if(materials) {
-          Elements_CreateMore(Mesh_GetElements(mesh),materials) ;
+          Elements_LinkUp(Mesh_GetElements(mesh),materials) ;
+          Elements_CreateMore(Mesh_GetElements(mesh)) ;
           Mesh_CreateEquationContinuity(mesh) ;
           Nodes_CreateMore(Mesh_GetNodes(mesh)) ;
         }

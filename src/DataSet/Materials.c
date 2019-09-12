@@ -9,23 +9,36 @@
 #include "Materials.h"
 #include "Models.h"
 #include "Curves.h"
+#include "Mry.h"
 
 
 /* Extern functions */
 
 Materials_t* (Materials_New)(const int n_mats)
 {
-  Materials_t* materials   = (Materials_t*) malloc(sizeof(Materials_t)) ;
-  
-  assert(materials) ;
+  Materials_t* materials   = (Materials_t*) Mry_New(Materials_t) ;
 
 
   Materials_GetNbOfMaterials(materials) = n_mats ;
 
   /* Allocate the materials */
   {
-    Materials_GetMaterial(materials) = Material_Create(n_mats) ;
+    //Materials_GetMaterial(materials) = Material_Create(n_mats) ;
   }
+  #if 1
+  {
+    Material_t* material   = (Material_t*) Mry_New(Material_t[n_mats]) ;
+    int    i ;
+    
+    for(i = 0 ; i < n_mats ; i++) {
+      Material_t* mat   = Material_New() ;
+      
+      material[i] = mat[0] ;
+    }
+    
+    Materials_GetMaterial(materials) = material ;
+  }
+  #endif
   
   
   /* Allocate the space for the models used by the materials */
@@ -38,18 +51,48 @@ Materials_t* (Materials_New)(const int n_mats)
   }
   
   
+  /* All materials share the same pointer to usedmodels */
+  {
+    Models_t* usedmodels = Materials_GetUsedModels(materials) ;
+    int    i ;
+    
+    for(i = 0 ; i < n_mats ; i++) {
+      Material_t* mat   = Materials_GetMaterial(materials) + i ;
+      
+      Material_GetUsedModels(mat) = usedmodels ;
+    }
+  }
+  
+  
   return(materials) ;
 }
 
 
 
-Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom)
+#if 0
+Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* fields,Functions_t* functions)
 {
   int n_mats = DataFile_CountNbOfKeyWords(datafile,"MATE,Material",",") ;
   Materials_t* materials = Materials_New(n_mats) ;
   
   
+  /* Fields and functions */
+  {
+    int i ;
+    
+    for(i = 0 ; i < n_mats ; i++) {
+      Material_t* mat = Materials_GetMaterial(materials) + i ;
+      
+      Material_GetFields(mat) = fields ;
+      Material_GetFunctions(mat) = functions ;
+    }
+  }
+  
+  
   DataFile_OpenFile(datafile,"r") ;
+  
+  Message_Direct("Enter in %s","Materials") ;
+  Message_Direct("\n") ;
 
   /* Initialization */
   {
@@ -125,3 +168,67 @@ Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom)
   
   return(materials) ;
 }
+#endif
+
+
+
+
+#if 1
+Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* fields,Functions_t* functions)
+{
+  int n_mats = DataFile_CountNbOfKeyWords(datafile,"MATE,Material",",") ;
+  Materials_t* materials = Materials_New(n_mats) ;
+  
+  
+  Message_Direct("Enter in %s","Materials") ;
+  Message_Direct("\n") ;
+  
+
+  /* Fields and functions */
+  {
+    int i ;
+    
+    for(i = 0 ; i < n_mats ; i++) {
+      Material_t* mat = Materials_GetMaterial(materials) + i ;
+      
+      Material_GetFields(mat) = fields ;
+      Material_GetFunctions(mat) = functions ;
+    }
+  }
+  
+
+  
+  /* Open for Material_ScanProperties1/2 */
+  DataFile_OpenFile(datafile,"r") ;
+
+  /* Scan the datafile */
+  {
+    int i ;
+    
+    for(i = 0 ; i < n_mats ; i++) {
+      Material_t* mat = Materials_GetMaterial(materials) + i ;
+      char* c = DataFile_FindNthToken(datafile,"MATE,Material",",",i + 1) ;
+      char* c1 ;
+      
+      c = String_SkipLine(c) ;
+      
+      /* This for Material_ScanProperties1/2 */
+      {
+        DataFile_SetFilePositionAfterKey(datafile,"MATE,Material",",",i + 1) ;
+        c1 = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
+      }
+      
+      DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+  
+      Message_Direct("Enter in %s %d","Material",i+1) ;
+      Message_Direct("\n") ;
+      
+      Material_Scan(mat,datafile,geom) ;
+    }
+  }
+  
+  DataFile_CloseFile(datafile) ;
+  
+  return(materials) ;
+}
+#endif

@@ -514,7 +514,7 @@ void ComputePhysicoChemicalProperties(void)
 static CementSolutionDiffusion_t* csd = NULL ;
 static HardenedCementChemistry_t* hcc = NULL ;
 
-enum VariableIndexes_e {
+static enum VariableIndexes_e {
 I_ZN_Ca_S = NEQ,
 I_ZN_Si_S,
 I_ZN_Al_S,
@@ -570,7 +570,7 @@ static double dVariables[NbOfVariables] ;
 
 
 
-enum VariableFluxIndexes_e {
+static enum VariableFluxIndexes_e {
 I_W_S,
 I_W_Ca,
 I_W_Si,

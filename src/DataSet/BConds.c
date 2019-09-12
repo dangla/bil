@@ -10,23 +10,46 @@
 #include "Fields.h"
 #include "Functions.h"
 #include "BConds.h"
+#include "Mry.h"
 
 
 static void     BConds_SetDefaultNameOfEquations(BConds_t*,Mesh_t*) ;
 
-static BCond_t* BCond_Create(int) ;
+
+BConds_t* BConds_New(const int n_bconds)
+{
+  BConds_t* bconds  = (BConds_t*) Mry_New(BConds_t) ;
+    
+  BConds_GetNbOfBConds(bconds) = n_bconds ;
+  
+  
+  /* Allocation of space for the boundary conditions */
+  if(n_bconds > 0) {
+    BCond_t* bcond  = (BCond_t*) Mry_New(BCond_t[n_bconds]) ;
+    int i ;
+
+    for(i = 0 ; i < n_bconds ; i++) {
+      BCond_t* bc  = BCond_New() ;
+      
+      bcond[i] = bc[0] ;
+    }
+
+    BConds_GetBCond(bconds) = bcond ;
+  }
+  
+  return(bconds) ;
+}
 
 
+#if 0
 BConds_t* BConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* functions)
 {
-  BConds_t* bconds  = (BConds_t*) malloc(sizeof(BConds_t)) ;
-  
-  if(!bconds) arret("BConds_Create") ;
+  BConds_t* bconds ;
   
   DataFile_OpenFile(datafile,"r") ;
   
   DataFile_SetFilePositionAfterKey(datafile,"COND,Boundary Conditions",",",1) ;
-  
+    
   Message_Direct("Enter in %s","Boundary Conditions") ;
   Message_Direct("\n") ;
   
@@ -36,11 +59,7 @@ BConds_t* BConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* funct
     char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
     int n_bconds = atoi(line) ;
     
-    BConds_GetNbOfBConds(bconds) = n_bconds ;
-    
-    if(n_bconds > 0) {
-      BConds_GetBCond(bconds) = BCond_Create(n_bconds) ;
-    }
+    bconds = BConds_New(n_bconds) ;
   
     if(n_bconds <= 0) {
       DataFile_CloseFile(datafile) ;
@@ -96,6 +115,8 @@ BConds_t* BConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* funct
       
         pline = strchr(pline,'=') + 1 ;
         sscanf(pline," %d",&ich) ;
+        
+        BCond_GetFieldIndex(bcond) = ich - 1 ;
 
         if(ich > n_fields) {
         
@@ -122,6 +143,8 @@ BConds_t* BConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* funct
       
         pline = strchr(pline,'=') + 1 ;
         sscanf(pline," %d",&ifn) ;
+        
+        BCond_GetFunctionIndex(bcond) = ifn - 1 ;
       
         if(ifn > n_fcts) {
         
@@ -168,48 +191,106 @@ BConds_t* BConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* funct
   
   return(bconds) ;
 }
+#endif
 
 
-
-
-
-BCond_t* BCond_Create(int n_bconds)
+#if 1
+BConds_t* BConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* functions)
 {
-  BCond_t* bcond = (BCond_t*) malloc(n_bconds*sizeof(BCond_t)) ;
-    
-  if(!bcond) arret("BCond_Create(1)") ;
-    
-    
-  /* Allocation of space for the name of unknowns */
-  {
-    size_t sz = n_bconds*BCond_MaxLengthOfKeyWord*sizeof(char) ;
-    char* name_unk = (char*) malloc(sz) ;
-    int i ;
-    
-    if(!name_unk) arret("BCond_Create(2)") ;
+  char* filecontent = DataFile_GetFileContent(datafile) ;
+  char* c  = String_FindToken(filecontent,"COND,Boundary Conditions",",") ;
+  int n_bconds = (c = String_SkipLine(c)) ? atoi(c) : 0 ;
+  BConds_t* bconds = BConds_New(n_bconds) ;
   
-    for(i = 0 ; i < n_bconds ; i++) {
-      BCond_GetNameOfUnknown(bcond + i) = name_unk + i*BCond_MaxLengthOfKeyWord ;
-    }
-  }
-    
-    
-  /* Allocation of space for the name of equations */
-  {
-    size_t sz = n_bconds*BCond_MaxLengthOfKeyWord*sizeof(char) ;
-    char* name_eqn = (char*) malloc(sz) ;
-    int i ;
-    
-    if(!name_eqn) arret("BCond_Create(3)") ;
-    
-    for(i = 0 ; i < n_bconds ; i++) {
-      BCond_GetNameOfEquation(bcond + i) = name_eqn + i*BCond_MaxLengthOfKeyWord ;
-    }
+  
+  Message_Direct("Enter in %s","Boundary Conditions") ;
+  Message_Direct("\n") ;
+  
+  if(n_bconds <= 0) {
+    return(bconds) ;
   }
   
   
-  return(bcond) ;
+
+  /* Fields and functions */
+  {
+    int i_cl ;
+    
+    for(i_cl = 0 ; i_cl < n_bconds ; i_cl++) {
+      BCond_t* bcond = BConds_GetBCond(bconds) + i_cl ;
+      
+      BCond_GetFields(bcond) = fields ;
+      BCond_GetFunctions(bcond) = functions ;
+    }
+  }
+
+
+
+  /* Scan the datafile */
+  {
+    int i_cl ;
+    
+    c = String_SkipLine(c) ;
+      
+    DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+    
+    for(i_cl = 0 ; i_cl < n_bconds ; i_cl++) {
+      BCond_t* bcond = BConds_GetBCond(bconds) + i_cl ;
+    
+      Message_Direct("Enter in %s %d","Boundary Condition",i_cl+1) ;
+      Message_Direct("\n") ;
+      
+      BCond_Scan(bcond,datafile) ;
+      
+      /* Field */
+      {
+        int  n_fields = Fields_GetNbOfFields(fields) ;
+        int  ifld = BCond_GetFieldIndex(bcond) ;
+        
+        if(ifld < 0) {
+        
+          BCond_GetField(bcond) = NULL ;
+        
+        } else if(ifld < n_fields) {
+          Field_t* field = Fields_GetField(fields) ;
+        
+          BCond_GetField(bcond) = field + ifld ;
+          
+        } else {
+        
+          arret("BConds_Create: field out of range") ;
+          
+        }
+      }
+      
+      /* Function */
+      {
+        int  n_fcts = Functions_GetNbOfFunctions(functions) ;
+        int  ifct = BCond_GetFunctionIndex(bcond) ;
+      
+        if(ifct < 0) {
+        
+          BCond_GetFunction(bcond) = NULL ;
+          
+        } else if(ifct < n_fcts) {
+          Function_t* fct = Functions_GetFunction(functions) ;
+        
+          BCond_GetFunction(bcond) = fct + ifct ;
+        
+        } else {
+        
+          arret("BConds_Create: function out of range") ;
+        
+        }
+      }
+      
+    }
+    
+  }
+  
+  return(bconds) ;
 }
+#endif
 
 
 

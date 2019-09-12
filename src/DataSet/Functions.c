@@ -3,15 +3,38 @@
 #include <string.h>
 #include "Message.h"
 #include "DataFile.h"
+#include "String.h"
+#include "Mry.h"
 #include "Functions.h"
 
 
 static int    lit_fonction(Function_t*,char*) ;
 
 
-Functions_t* (Functions_Create)(DataFile_t* datafile,Materials_t* materials)
+
+Functions_t* (Functions_New)(const int n_fncts)
 {
-  int n_mats = Materials_GetNbOfMaterials(materials) ;
+  Functions_t* functions   = (Functions_t*) Mry_New(Functions_t) ;
+  
+  
+  Functions_GetNbOfFunctions(functions) = n_fncts ;
+  Functions_GetFunction(functions) = NULL ;
+
+  if(n_fncts > 0) {
+    Function_t* function = (Function_t*) Mry_New(Function_t[n_fncts]) ;
+    
+    Functions_GetFunction(functions) = function ;
+  }
+  
+  return(functions) ;
+}
+
+
+
+#if 0
+//Functions_t* (Functions_Create)(DataFile_t* datafile,Materials_t* materials)
+Functions_t* (Functions_Create)(DataFile_t* datafile)
+{
   int    i ;
   int    i_fn ;
   Functions_t* functions   = (Functions_t*) malloc(sizeof(Functions_t)) ;
@@ -19,10 +42,16 @@ Functions_t* (Functions_Create)(DataFile_t* datafile,Materials_t* materials)
   
   if(!functions) arret("Functions_Create") ;
 
-  for(i = 0 ; i < n_mats ; i++) {
-    Material_t* mat = Materials_GetMaterial(materials) + i ;
-    Material_GetFunctions(mat) = functions ;
+  #if 0
+  {
+    int n_mats = Materials_GetNbOfMaterials(materials) ;
+    
+    for(i = 0 ; i < n_mats ; i++) {
+      Material_t* mat = Materials_GetMaterial(materials) + i ;
+      Material_GetFunctions(mat) = functions ;
+    }
   }
+  #endif
   
   DataFile_OpenFile(datafile,"r") ;
   
@@ -109,6 +138,47 @@ Functions_t* (Functions_Create)(DataFile_t* datafile,Materials_t* materials)
   
   return(functions) ;
 }
+#endif
+
+
+
+#if 1
+Functions_t* (Functions_Create)(DataFile_t* datafile)
+{
+  char* filecontent = DataFile_GetFileContent(datafile) ;
+  char* c  = String_FindToken(filecontent,"FONC,FUNC,Functions",",") ;
+  int n_fncts = (c = String_SkipLine(c)) ? atoi(c) : 0 ;
+  Functions_t* functions = Functions_New(n_fncts) ;
+  
+  
+  Message_Direct("Enter in %s","Functions") ;
+  Message_Direct("\n") ;
+  
+  
+  if(n_fncts <= 0) return(functions) ;
+
+
+  if(n_fncts > 0) {
+    int    i_fn ;
+    
+    c = String_SkipLine(c) ;
+      
+    DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+    
+    for(i_fn = 0 ; i_fn < n_fncts ; i_fn++) {
+      Function_t* function = Functions_GetFunction(functions) + i_fn ;
+  
+  
+      Message_Direct("Enter in %s %d","Function",i_fn + 1) ;
+      Message_Direct("\n") ;
+      
+      i_fn += Function_Scan(function,datafile) - 1 ;
+    }
+  }
+  
+  return(functions) ;
+}
+#endif
 
 
 

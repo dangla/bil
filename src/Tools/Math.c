@@ -245,13 +245,11 @@ int Math_ComputePolynomialEquationRoots(double* x,int n)
   /* Polish the solutions */
   /*
   {
+    double tol = 1.e-10 ;
     int i ;
 
     for(i = 0 ; i < m ; i++) {
-      double z = x[i] ;
-      double tol = 1.e-10 ;
-    
-      x[i] = Math_PolishPolynomialEquationRoot(y,n,z,fabs(z)*tol,10) ;
+      int k = Math_PolishPolynomialEquationRoot(y,n,x+i,fabs(z)*tol,10) ;
     }
   }
   */
@@ -262,8 +260,9 @@ int Math_ComputePolynomialEquationRoots(double* x,int n)
 
 
 
-double Math_PolishPolynomialEquationRoot(double* x,int n,double root,double tol,int iterations)
+int Math_PolishPolynomialEquationRoot(double* x,int n,double* proot,double tol,int iterations)
 {
+  double root = proot[0] ;
   int it ;
   
   for(it = 0 ; it < iterations ; it++) {
@@ -286,22 +285,38 @@ double Math_PolishPolynomialEquationRoot(double* x,int n,double root,double tol,
       derivative = a*root + b ;
     }
 	    
-    if(derivative == 0) return(root) ;
+    if(derivative == 0) {
+      proot[0] = root ;
+      return(0) ;
+    }
 	    
     droot = - error / derivative ;
     root += droot ;
       
-    if(fabs(droot) < tol) return(root) ;
+    if(fabs(droot) < tol) {
+      proot[0] = root ;
+      return(root) ;
+    }
   }
   
   /* Raise an interrupt signal instead of exit */
-  Message_Warning("Math_PolishPolynomialEquationRoot: not converged") ;
-  Exception_Interrupt ;
+  Message_Warning("Math_PolishPolynomialEquationRoot: no convergence") ;
+  {
+    int i ;
+    
+    Message_Direct("\nthe %dth order polynomial equation:\n",n) ;
+    
+    for(i = 0 ; i <= n ; i++) {
+      Message_Direct("%d order coeffcient: %lf\n",n-i,x[i]) ;
+    }
+    
+    Message_Direct("\nhas not converged for the root %lf\n",root) ;
+  }
+  //Exception_Interrupt ;
   /*
   arret("Math_PolishPolynomialEquationRoot: not converged ") ;
   */
-    
-  return(root) ;
+  return(-1) ;
 }
 
 

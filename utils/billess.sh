@@ -1,4 +1,4 @@
 #!/bin/sh
 
-find ${BIL} -name $1 | xargs less -N
+find ${BIL} -readable -type f -name $1 -printf "\"%p\"\n" | xargs less -N
 

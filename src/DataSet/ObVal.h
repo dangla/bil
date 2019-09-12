@@ -20,9 +20,25 @@ struct ObVal_s        ; typedef struct ObVal_s        ObVal_t ;
 
 #define ObVal_IsRelativeValue(OV) \
         (ObVal_GetType(OV) == 'r')
+        
+#define ObVal_SetTypeToRelative(OV) \
+        (ObVal_GetType(OV) = 'r')
+
 
 #define ObVal_IsAbsoluteValue(OV) \
         (ObVal_GetType(OV) == 'a')
+        
+#define ObVal_SetTypeToAbsolute(OV) \
+        (ObVal_GetType(OV) = 'a')
+
+
+#include <math.h>
+
+#define ObVal_GetTargetedAbsoluteValue(OV,U) \
+        (ObVal_GetValue(OV) * ((ObVal_IsAbsoluteValue(OV)) ? 1 : fabs(U)))
+
+#define ObVal_GetTargetedRelativeValue(OV,U) \
+        (ObVal_GetValue(OV) / ((ObVal_IsRelativeValue(OV)) ? 1 : fabs(U)))
 
 
 

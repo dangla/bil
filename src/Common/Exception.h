@@ -44,6 +44,32 @@ extern void            (Exception_Delete)(void*) ;
 
 #define Exception_IsNotCaught \
         (!Exception_IsCaught)
+        
+
+/* Orders given through the exception mechanism */
+
+/* Order to backup */
+#define Exception_BackupAndTerminate \
+        Exception_RestoreEnvironment(1)
+        
+#define Exception_OrderToBackupAndTerminate \
+        (Exception_ExceptionType == 1)
+        
+
+/* Order to reduce the time step */
+#define Exception_ReiterateWithSmallerTimeStep \
+        Exception_RestoreEnvironment(2)
+
+#define Exception_OrderToReiterateWithSmallerTimeStep \
+        (Exception_ExceptionType == 2)
+        
+
+/* Order to initialize the time step */
+#define Exception_ReiterateWithInitialTimeStep \
+        Exception_RestoreEnvironment(3)
+        
+#define Exception_OrderToReiterateWithInitialTimeStep \
+        (Exception_ExceptionType == 3)
 
 
 #include <GenericObject.h>

@@ -78,8 +78,12 @@
 static int    pm(const char* s) ;
 static void   GetProperties(Element_t*) ;
 
-static double* ComputeVariables(Element_t*,double**,double**,double*,double,double,int) ;
-static void    ComputeSecondaryVariables(Element_t*,double,double,double*) ;
+static int    ComputeTangentCoefficients(FEM_t*,double,double,double*) ;
+static int    ComputeTransferCoefficients(FEM_t*,double,double*) ;
+
+static double* ComputeVariables(Element_t*,void*,void*,void*,const double,const double,const int) ;
+static void    ComputeSecondaryVariables(Element_t*,const double,const double,double*,double*) ;
+static double* ComputeVariableDerivatives(Element_t*,const double,const double,double*,const double,const int) ;
 
 
 /* Intern parameters */
@@ -89,19 +93,22 @@ static double coef3 ;
 static double* sig0 ;
 
 
+/* We define some indices for the local variables */
+static enum {
+I_U     =  0,
+I_P,
+I_EPS,
+I_SIG   =  I_EPS + 9,
+I_Last
+} ;
+
+
 /* Locally defined intern variables  */
 #define NP               IntFct_MaxNbOfIntPoints
-#define NbOfVariables    (NEQ+50)
+#define NbOfVariables    (I_Last)
 static double Variables[NP][NbOfVariables] ;
+static double Variables_n[NP][NbOfVariables] ;
 static double dVariables[NbOfVariables] ;
-
-
-/* We define some indices for the local variables */
-#define I_U            (U_Unk1)
-#define I_P            (U_Unk2)
-#define I_EPS          (NEQ+0)
-#define I_SIG          (NEQ+9)
-/* etc... */
 
 
 int pm(const char* s)
@@ -406,15 +413,72 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
  *  Return 0 if succeeded and -1 if failed */
 {
 #define K(i,j)    (k[(i)*2*NEQ+(j)])
+  IntFct_t*  intfct = Element_GetIntFct(el) ;
+  int nn = Element_GetNbOfNodes(el) ;
+  int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
+  int ndof = nn*NEQ ;
+  FEM_t* fem = FEM_GetInstance(el) ;
 
+  /* Initialization */
+  {
+    int    i ;
+    
+    for(i = 0 ; i < ndof*ndof ; i++) k[i] = 0. ;
+  }
+
+
+  /* We skip if the element is a submanifold */
+  if(Element_IsSubmanifold(el)) return(0) ;
+  
+  
   /*
     We load some input data
   */
   GetProperties(el) ;
 
   /* Compute here the matrix K(i,j) */
+  
+  /* Example of a poromechanical problem */
+  
+  /*
+  ** Poromechanics matrix
+  */
   {
-    /* ...*/
+    double c[IntFct_MaxNbOfIntPoints*100] ;
+    int dec = ComputeTangentCoefficients(fem,t,dt,c) ;
+    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,1) ;
+    /* The matrix kp is stored as (u for displacement, s1,s2 for pressure)
+     * | Kuu  Kup  |
+     * | Kpu  Kpp  |
+     * i.e. the displacements u are in the positions 0 to dim-1 and
+     * the pressure p is in the position dim.
+     */
+    {
+      int i ;
+      
+      for(i = 0 ; i < ndof*ndof ; i++) {
+        k[i] = kp[i] ;
+      }
+    }
+  }
+  
+  
+  /*
+  ** Conduction Matrix
+  */
+  {
+    double c[IntFct_MaxNbOfIntPoints*100] ;
+    int dec = ComputeTransferCoefficients(fem,dt,c) ;
+    double* kc = FEM_ComputeConductionMatrix(fem,intfct,c,dec) ;
+    int    i ;
+  
+    for(i = 0 ; i < nn ; i++) {
+      int    j ;
+      
+      for(j = 0 ; j < nn ; j++) {
+        K(E_Eq2 + i*NEQ,U_Unk2 + j*NEQ) += dt*kc[i*nn + j] ;
+      }
+    }
   }
   
   return(0) ;
@@ -463,12 +527,159 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 
 
 
+int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
+/*
+**  Tangent matrix (c), return the shift (dec).
+*/
+{
+#define T4(a,i,j,k,l)  ((a)[(((i)*3+(j))*3+(k))*3+(l)])
+#define T2(a,i,j)      ((a)[(i)*3+(j)])
+#define C1(i,j,k,l)    T4(c1,i,j,k,l)
+#define B1(i,j)        T2(c1,i,j)
+  Element_t* el  = FEM_GetElement(fem) ;
+  double*  vim0   = Element_GetCurrentImplicitTerm(el) ;
+  double*  vim0_n = Element_GetPreviousImplicitTerm(el) ;
+//  double*  vex0  = Element_GetExplicitTerm(el) ;
+  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
+  int dim = Element_GetDimensionOfSpace(el) ;
+  double dui[NEQ] ;
+  int    dec = 100 ;
+  
+  
+  if(Element_IsSubmanifold(el)) return(0) ;
+  
+  
+  {
+    ObVal_t* obval = Element_GetObjectiveValue(el) ;
+    int i ;
+    
+    for(i = 0 ; i < NEQ ; i++) {
+      dui[i] =  1.e-2*ObVal_GetValue(obval + i) ;
+    }
+  }
+
+
+  {
+    IntFct_t*  intfct = Element_GetIntFct(el) ;
+    int np = IntFct_GetNbOfPoints(intfct) ;
+    int    p ;
+    
+    for(p = 0 ; p < np ; p++) {
+      double* vim   = vim0   + p*NVI ;
+      double* vim_n = vim0_n + p*NVI ;
+      /* Variables */
+      double* x = ComputeVariables(el,u,u_n,vim_n,t,dt,p) ;
+      double* c0 = c + p*dec ;
+
+
+      /* initialization */
+      {
+        int i ;
+      
+        for(i = 0 ; i < dec ; i++) c0[i] = 0. ;
+      }
+      
+      
+      /* The derivative of equations wrt to unknwons */
+      
+      /* Loop on the unknowns */
+    
+
+      /* Derivatives with respect to strains */
+      {
+    
+        /* Mechanics (tangent stiffness matrix) */
+        {
+          double* c1 = c0 ;
+        
+          {
+            double young   = 1.e9 ;
+            double poisson = 0.25 ;
+          
+            Elasticity_SetParameters(elasty,young,poisson) ;
+          }
+
+          Elasticity_ComputeStiffnessTensor(elasty,c1) ;
+      
+          {
+            double crit = CRIT ;
+            
+            /* Criterion */
+            if(crit >= 0.) {
+              double p_l2 = x[I_P_L2] ;
+              double s2 = p_g - p_l2 ;
+              double p_co    = x[HARDV] ;
+              double p_s     = k_s * s2 ;
+              double hardv[2] = {p_co,p_s} ;
+              double* sig = x + I_SIG ;
+              double crit1 = ComputeFunctionGradients(sig,hardv) ;
+              double fcg   = UpdateElastoplasticTensor(c1) ;
+          
+              if(fcg < 0) return(-1) ;
+            }
+          }
+        }
+        
+    
+        /* Conservation of mass: coupling matrix */
+        {
+    
+          /* Coupling matrix */
+          {
+            double deps = 1.e-6 ;
+            double* dxdeps = ComputeVariableDerivatives(el,t,dt,x,deps,I_EPS) ;
+            double* c1 = c0 + 81 + 9 ;
+            int i ;
+
+            for(i = 0 ; i < 3 ; i++) B1(i,i) = dxdeps[I_EPS] ;
+          }
+        }
+      }
+      
+      
+      /* Derivatives with respect to pressure */
+      {
+        double  dp_l = dui[U_p_l] ;
+        double* dxdp_l = ComputeVariableDerivatives(el,t,dt,x,dp_l,I_P_L) ;
+        
+        /* Mechanics: tangent Biot's coefficient */
+        {
+          double* dsigdp_l = dxdp_l + I_SIG ;
+          double  dtrsigdp_l = dsigdp_l[0] + dsigdp_l[4] + dsigdp_l[8] ;
+          double  biot = - dtrsigdp_l / 3 ;
+          double* c1 = c0 + 81 ;
+          int i ;
+
+          for(i = 0 ; i < 3 ; i++) B1(i,i) = biot ;
+
+        }
+    
+        /* Conservation of mass: storage matrix */
+        {
+            double* c1 = c0 + 81 + 9 + 9 ;
+        
+            c1[0] = dxdp_l[I_M_L] ;
+        }
+      }
+    }
+  }
+  
+  return(dec) ;
+#undef C1
+#undef B1
+#undef T2
+#undef T4
+}
 
 
 
 
 
-double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,double t,double dt,int p)
+
+
+
+double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const double t,const double dt,const int p)
 /** This locally defined function compute the intern variables at
  *  the interpolation point p, from the nodal unknowns.
  *  Return a pointer on the locally defined array of the variables. */
@@ -476,9 +687,14 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
   IntFct_t* intfct = Element_GetIntFct(el) ;
   FEM_t*    fem    = FEM_GetInstance(el) ;
   int dim = Element_GetDimensionOfSpace(el) ; 
+  double** u   = (double**) vu ;
+  double** u_n = (double**) vu_n ;
+  double*  f_n = (double*)  vf_n ;
+  double*  x   = Variable ;
+  double*  x_n = Variable_n ;
   /* Variables is a locally defined array of array */
-  Model_t*  model  = Element_GetModel(el) ;
-  double*   x      = Model_GetVariable(model,p) ;
+  //Model_t*  model  = Element_GetModel(el) ;
+  //double*   x      = Model_GetVariable(model,p) ;
 
   /*
    * The variables are stored in the array x by using some indexes.
@@ -540,22 +756,56 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
   {
   }
     
-  ComputeSecondaryVariables(el,t,dt,x) ;
+  ComputeSecondaryVariables(el,t,dt,x_n,x) ;
   
   return(x) ;
 }
 
 
 
-void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
+void  ComputeSecondaryVariables(Element_t* el,const double t,const double dt,double* x_n,double* x)
 /** Compute the secondary variables from the primary ones. */
 {
   int dim = Element_GetDimensionOfSpace(el) ;
   /* Retrieve the primary variables from x */
-  double* eps   =  x + I_EPS ;
-
+  /* Strains */
+  double* eps   =  x   + I_EPS ;
+  double* eps_n =  x_n + I_EPS ;
+  /* Stresses */
+  double* sig_n =  x_n + I_SIG ;
+  /* Pressures */
+  double  p_l   = x[I_P_L] ;
+  double  p_ln  = x_n[I_P_L] ;
+  
+  
   /* Compute the secondary variables in terms of the primary ones
    * and backup them in x */
   {
   }
+}
+
+
+double* ComputeVariableDerivatives(Element_t* el,const double t,const double dt,double* x,const double dxi,const int i)
+{
+  double*  x_n = Variable_n ;
+  double* dx = dVariable ;
+  int j ;
+  
+  /* Primary Variables */
+  for(j = 0 ; j < NbOfVariables ; j++) {
+    dx[j] = x[j] ;
+  }
+  
+  /* We increment the variable as (x + dx) */
+  dx[i] += dxi ;
+  
+  ComputeSecondaryVariables(el,t,dt,x_n,dx) ;
+  
+  /* The numerical derivative as (f(x + dx) - f(x))/dx */
+  for(j = 0 ; j < NbOfVariables ; j++) {
+    dx[j] -= x[j] ;
+    dx[j] /= dxi ;
+  }
+
+  return(dx) ;
 }

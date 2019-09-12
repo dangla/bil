@@ -138,7 +138,7 @@ ObVals_t*  ObVals_Create(DataFile_t* datafile,Mesh_t* mesh,Materials_t* mats)
         }
     
         if(ieq == n_obvals) {
-          arret("ObVals_Create (4) : mot_cle non connu") ;
+          arret("ObVals_Create: keyword % unknown",mot) ;
         }
       }
 
@@ -155,16 +155,16 @@ ObVals_t*  ObVals_Create(DataFile_t* datafile,Mesh_t* mesh,Materials_t* mats)
         }
       
         /* Default type */
-        ObVal_GetType(obval + ieq) = 'a' ;
+        ObVal_SetTypeToAbsolute(obval + ieq) ;
           
         /* Read the type "absolute" */
         if((pline = strstr(line,"Absolute"))) {
-          ObVal_GetType(obval + ieq) = 'a' ;
+          ObVal_SetTypeToAbsolute(obval + ieq) ;
         }
           
         /* Read the type "relative" */
         if((pline = strstr(line,"Relative"))) {
-          ObVal_GetType(obval + ieq) = 'r' ;
+          ObVal_SetTypeToRelative(obval + ieq) ;
         }
           
         /* Read the relaxation factor if any */

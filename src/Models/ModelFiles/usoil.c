@@ -1262,6 +1262,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
 double* ComputeVariablesDerivatives(Element_t* el,double t,double dt,double* x,double dxi,int i)
 {
   double* dx = dVariable ;
+  double* x_n = Variable_n ;
   int j ;
   
   /* Primary Variables */

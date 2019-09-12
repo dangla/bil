@@ -2,6 +2,7 @@
 #include "Exception.h"
 #include "Session.h"
 #include "GenericData.h"
+#include "Mry.h"
 #include <signal.h>
 #include <assert.h>
 
@@ -11,9 +12,6 @@
 static Exception_t*  (Exception_Create)(void) ;
 static void          (Exception_Initialize)(void) ;
 
-static void InterruptHandler(int) ;
-static void FloatingPointErrorHandler(int) ;
-static void SegmentationFaultHandler(int) ;
 static void SignalHandler(int) ;
 
 
@@ -54,11 +52,7 @@ Exception_t*  (Exception_GetInstance)(void)
 /* Intern functions */
 Exception_t*  (Exception_Create)(void)
 {
-  Exception_t* exception = (Exception_t*) malloc(sizeof(Exception_t)) ;
-  
-  if(!exception) {
-    arret("Exception_Create") ;
-  }
+  Exception_t* exception = (Exception_t*) Mry_New(Exception_t) ;
   
   Exception_GetDelete(exception) = Exception_Delete ;
   
@@ -92,8 +86,82 @@ void (Exception_Initialize)(void)
   if(signal(SIGSEGV,SignalHandler) == SIG_ERR) {
     Message_FatalError("An error occured while setting a signal handler.\n") ;
   }
+  
+  if(signal(SIGABRT,SignalHandler) == SIG_ERR) {
+    Message_FatalError("An error occured while setting a signal handler.\n") ;
+  }
+  
+  if(signal(SIGILL,SignalHandler) == SIG_ERR) {
+    Message_FatalError("An error occured while setting a signal handler.\n") ;
+  }
+  
+  if(signal(SIGTERM,SignalHandler) == SIG_ERR) {
+    Message_FatalError("An error occured while setting a signal handler.\n") ;
+  }
 }
 
+
+
+void (SignalHandler)(int sigid)
+{
+  if(signal(sigid,SignalHandler) == SIG_ERR) {
+    Message_FatalError("An error occured while setting a signal handler.\n") ;
+  }
+  
+  switch(sigid) {
+    case SIGSEGV:
+  
+      Message_Direct("Segmentation fault. ") ;
+      Message_Direct("Possible sources:\n") ;
+      Message_Direct("- Bad \"iperm\" file (remove it!)\n") ;
+      Exception_BackupAndTerminate ;
+      return ;
+    
+    case SIGFPE:
+  
+      Message_Direct("Floating-point error.\n") ;
+      Exception_ReiterateWithInitialTimeStep ;
+      return ;
+      
+    case SIGINT:
+  
+      Message_Direct("Program interrupted.\n") ;
+      Exception_BackupAndTerminate ;
+      return ;
+      
+    case SIGABRT:
+  
+      Message_Direct("Abnormal termination.\n") ;
+      Exception_BackupAndTerminate ;
+      return ;
+      
+    case SIGILL:
+  
+      Message_Direct("Illegal operation.\n") ;
+      Exception_BackupAndTerminate ;
+      return ;
+      
+    case SIGTERM:
+  
+      Message_Direct("Termination request.\n") ;
+      Exception_BackupAndTerminate ;
+      return ;
+      
+    default:
+    
+      break ;
+  }
+  
+  Message_FatalError("SignalHandler: unexpected error") ;
+}
+
+
+
+
+#if 0
+static void InterruptHandler(int) ;
+static void FloatingPointErrorHandler(int) ;
+static void SegmentationFaultHandler(int) ;
 
 
 void (InterruptHandler)(int val)
@@ -134,38 +202,4 @@ void (SegmentationFaultHandler)(int val)
   Message_Warning("Segmentation fault.\n") ;
   Message_FatalError("SegmentationFaultHandler") ;
 }
-
-
-
-void (SignalHandler)(int sigid)
-{
-  if(signal(sigid,SignalHandler) == SIG_ERR) {
-    Message_FatalError("An error occured while setting a signal handler.\n") ;
-  }
-  
-  switch(sigid) {
-    case SIGSEGV:
-  
-      Message_Direct("Segmentation fault. ") ;
-      Message_Direct("Possible sources:\n") ;
-      Message_Direct("- Bad \"iperm\" file (remove it!)\n") ;
-      break ;
-    
-    case SIGFPE:
-  
-      Message_Direct("Floating-point error.\n") ;
-      break ;
-      
-    case SIGINT:
-  
-      Message_Direct("Program interrupted.\n") ;
-      Exception_RestoreEnvironment(sigid) ;
-      return ;
-      
-    default:
-    
-      break ;
-  }
-  
-  Message_FatalError("SignalHandler: unexpected error") ;
-}
+#endif

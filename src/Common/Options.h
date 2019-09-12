@@ -37,12 +37,45 @@ extern void        (Options_Delete)(void*) ;
         (!strcmp(Options_GetPrintLevel(OPT),"2"))
 
 
+/* Crout method */
+#define Options_ResolutionMethodIsCrout(OPT) \
+        Options_ResolutionMethodIs(OPT,"crout")
+        
+#define Options_SetResolutionMethodToCrout(OPT) \
+        Options_SetResolutionMethodTo(OPT,"crout")
+
+
+/* Superlu method */
+#define Options_ResolutionMethodIsSuperlu(OPT) \
+        Options_ResolutionMethodIs(OPT,"slu")
+        
+#define Options_SetResolutionMethodToSuperlu(OPT) \
+        Options_SetResolutionMethodTo(OPT,"slu")
+
+
+/* MA38 method */
+#define Options_ResolutionMethodIsMA38(OPT) \
+        Options_ResolutionMethodIs(OPT,"ma38")
+        
+#define Options_SetResolutionMethodToMA38(OPT) \
+        Options_SetResolutionMethodTo(OPT,"ma38")
+    
+
 #define Options_GetFillFactor(OPT) \
         (((!strcmp(((char**) Context_GetSolver(Options_GetContext(OPT)))[2],"-ff")) && atof(((char**) Context_GetSolver(Options_GetContext(OPT)))[3])) ? \
         atof(((char**) Context_GetSolver(Options_GetContext(OPT)))[3]) : Options_DefaultFillFactor)
         
 
 #define Options_DefaultFillFactor (2)
+
+
+/* Implementations */
+
+#define Options_ResolutionMethodIs(OPT,M) \
+        (!strcmp(Options_GetResolutionMethod(OPT),M))
+        
+#define Options_SetResolutionMethodTo(OPT,M) \
+        (strncpy(Options_GetResolutionMethod(OPT),M,Options_MaxLengthOfKeyWord))
         
 
 

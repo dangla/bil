@@ -6,7 +6,7 @@
  * Cement chemistry notation:
  * H  = H2O  ; K  = K2O  ; N  = Na2O  ;
  * C  = CaO  ; S  = SiO2 ; A  = Al2O3 ; 
- * C' = CO2  ; S' = SO3  ; F  = Fe2O3 ;
+ * c  = CO2  ; s  = SO3  ; F  = Fe2O3 ;
  */
 
 #include "TemperatureDependenceOfLog10EquilibriumConstant.h"
@@ -29,39 +29,58 @@
 /* to be completed */
 
 /* Al-Ettringite (AFt):  (ref [4]) */
-/* C3A.(CS')3.H32 = 6Ca[2+] + 2Al(OH)4[-] + 3SO4[2-] + 4OH[-] + 26H2O */
+/* C3A.(Cs)3.H32 = 6Ca[2+] + 2Al(OH)4[-] + 3SO4[2-] + 4OH[-] + 26H2O */
 #define Log10DissociationConstantOfCementHydrationProduct_AFt__6Ca_2AlO4H4_3SO4_4OH_26H2O(T) \
         (-44.9)
 
-/* C3A.(CS')3.H32 = 6Ca[2+] + 2Al[3+] + 3SO4[2-] + 12OH[-] + 26H2O */
+/* C3A.(Cs)3.H32 = 6Ca[2+] + 2Al[3+] + 3SO4[2-] + 12OH[-] + 26H2O */
 #define Log10DissociationConstantOfCementHydrationProduct_AFt__6Ca_2Al_3SO4_12OH_26H2O(T) \
         (xx)
 
-/* C3A.(CS')3.H32 + 12H[+] = 6Ca[2+] + 2Al[3+] + 3SO4[2-] + 38H2O (ref. [5]) */
+/* C3A.(Cs)3.H32 + 12H[+] = 6Ca[2+] + 2Al[3+] + 3SO4[2-] + 38H2O (ref. [5]) */
 #define Log10DissociationConstantOfCementHydrationProduct_AFt_12H__6Ca_2Al_3SO4_38H2O(T) \
         TemperatureDependenceOfLog10EquilibriumConstant(T,-576.29,0,44841.95,195.,0)
 
 
 /* Monosulfoalumiate (AFm): (ref [4]) */
-/* C3A.CS'.H12    = 4Ca[2+] + 2Al(OH)4[-] + SO4[2-]  + 4OH[-] + 6H2O */
+/* C3A.Cs.H12    = 4Ca[2+] + 2Al(OH)4[-] + SO4[2-]  + 4OH[-] + 6H2O */
 #define Log10DissociationConstantOfCementHydrationProduct_AFm__4Ca_2AlO4H4_SO4_4OH_6H2O(T) \
         (-29.26)
 
-/* C3A.CS'.H12    = 4Ca[2+] + 2Al[3+] + SO4[2-]  + 12OH[-] + 6H2O */
+/* C3A.Cs.H12    = 4Ca[2+] + 2Al[3+] + SO4[2-]  + 12OH[-] + 6H2O */
 #define Log10DissociationConstantOfCementHydrationProduct_AFm__4Ca_2Al_SO4_12OH_6H2O(T) \
         (xx)
 
-/* C3A.CS'.H12 + 12H[+]  = 4Ca[2+] + 2Al[3+] + SO4[2-] + 18H2O (ref. [5]) */
+/* C3A.Cs.H12 + 12H[+]  = 4Ca[2+] + 2Al[3+] + SO4[2-] + 18H2O (ref. [5]) */
 #define Log10DissociationConstantOfCementHydrationProduct_AFm_12H__4Ca_2Al_SO4_18H2O(T) \
         TemperatureDependenceOfLog10EquilibriumConstant(T,59.77,0,24477.17,-28.09,0)
+        
+
+/* Friedel's salt (ref [7]) */
+/* C3AH10.CaCl2 = C4ACl2H10 = Ca4.Al2.Cl2.12(OH)·4(H2O) 
+ * Ca4Al2Cl2(OH)12·4H2O = 4Ca[2+] + 2Al(OH)4[-] + 2Cl[-] + 4OH[-] + 4H2O
+ * */
+#define Log10DissociationConstantOfCementHydrationProduct_FriedelSalt__4Ca_2AlO4H4_2Cl_4OH_4H2O(T) \
+        (-27.27)
+#define Log10DissociationConstantOfCementHydrationProduct_C3AH10CaCl2__4Ca_2AlO4H4_2Cl_4OH_4H2O(T) \
+        (-27.27)
+        
+        
+/* Kuzel's salt */
+/* C3AH12.0.5(Cs).0.5(CaCl2) = Ca4.Al2.Cl(SO4)0.5.12(OH)·6(H2O) 
+ * Ca4Al2Cl(SO4)0.5(OH)12·6H2O = 4Ca[2+] + 2Al(OH)4[-] + Cl[-] + 0.5SO4[2-] + 4OH[-] + 6H2O*/
+#define Log10DissociationConstantOfCementHydrationProduct_KuzeSalt__4Ca_2AlO4H4_Cl_halfSO4_4OH_6H2O(T) \
+        (-28.53)
+#define Log10DissociationConstantOfCementHydrationProduct_2KuzelSalt__8Ca_4AlO4H4_2Cl_SO4_8OH_12H2O(T) \
+        (-57.06)
 
 
 /* Monocarbonate: 
- * C3A.CC'.H11    = 4Ca[2+] + 2Al(OH)4[-] + CO3[2-] + 11H2O */
+ * C3A.Cc.H11    = 4Ca[2+] + 2Al(OH)4[-] + CO3[2-] + 11H2O */
 
 
 /* Gypsum:
- * CS'H2 = Ca[2+] + SO4[2-] + 2H2O  (solubility of gypsum in water is 15 mmol/L) */
+ * CsH2 = Ca[2+] + SO4[2-] + 2H2O  (solubility of gypsum in water is 15 mmol/L) */
 #define Log10DissociationConstantOfCementHydrationProduct_CSH2__Ca_SO4_2H2O(T) \
         (-4.58)
 
@@ -100,7 +119,7 @@
 
 
 /* Anhydrite (metastable in presence of water):
- * CS' = Ca[2+] + SO4[2-] (solubility of anhydrite is 24 mmol/L) */
+ * Cs = Ca[2+] + SO4[2-] (solubility of anhydrite is 24 mmol/L) */
 #define Log10DissociationConstantOfCementHydrationProduct_CS__Ca_SO4(T) \
         TemperatureDependenceOfLog10EquilibriumConstant_293(T,-3.239577517,0,0,0,0) /* To be checked */
 
@@ -136,6 +155,10 @@
  * 
  * [6] Thermochimie, ANDRA
  * 
+ * [7] Lothenbach, Kulik, Matschei, Balonis, Baquerizo, Dilnesa, Miron, Myers
+ * Cemdata18: A chemical thermodynamic database for hydrated Portland cements and 
+ * alkali-activated materials, 
+ * CCR 115 (2019) 472-506. 
  */
  
 

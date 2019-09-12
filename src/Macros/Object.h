@@ -11,7 +11,7 @@ template <typename T> inline void* Object_New_(const int n)
 {
   T* A = new T[n] ;
   //T* A = (T*) calloc(n,sizeof(T)) ;
-  if(A) assert(A) ;
+  assert(A) ;
   return(A) ;
 }
 #define Object_New(T, ...) \

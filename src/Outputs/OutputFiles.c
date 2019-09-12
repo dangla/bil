@@ -4,37 +4,34 @@
 #include <math.h>
 #include <time.h>
 
+#include "OutputFiles.h"
 #include "Message.h"
 #include "Mesh.h"
 #include "BilVersion.h"
-#include "OutputFiles.h"
 #include "TextFile.h"
 #include "Models.h"
+#include "String.h"
+#include "Mry.h"
 
 
-char   OutputFile_TypeOfCurrentFile ;
+//char   OutputFile_TypeOfCurrentFile ;
 
 
 static void  (OutputFiles_PostProcessForGmshASCIIFileFormatVersion2_2)(OutputFiles_t*,DataSet_t*) ;
 static void  (OutputFiles_PostProcessForGmshParsedFileFormatVersion2)(OutputFiles_t*,DataSet_t*) ;
 static Views_t* (OutputFiles_CreateGlobalViews)(OutputFiles_t*,Models_t*,TextFile_t*) ;
-static OutputFile_t*  (OutputFile_Create)(char*,int) ;
-static void  (OutputFile_Delete)(OutputFile_t**,int) ;
 
 
 
 OutputFiles_t*   (OutputFiles_Create)(char* filename,int n_dates,int n_points)
 {
-  OutputFiles_t* outputfiles = (OutputFiles_t*) malloc(sizeof(OutputFiles_t)) ;
+  OutputFiles_t* outputfiles = (OutputFiles_t*) Mry_New(OutputFiles_t) ;
   
-  if(!outputfiles) arret("OutputFiles_Create") ;
   
   /* The file name */
   {
     int LengthOfName = strlen(filename) + 1 ;
-    char* name = (char*) malloc(LengthOfName*sizeof(char)) ;
-      
-    if(!name) arret("OutputFiles_Create") ;
+    char* name = (char*) Mry_New(char[LengthOfName]) ;
     
     strcpy(name,filename) ;
 
@@ -44,45 +41,12 @@ OutputFiles_t*   (OutputFiles_Create)(char* filename,int n_dates,int n_points)
 
   /* Date Files */
   OutputFiles_GetNbOfDateFiles(outputfiles) = n_dates ;
-#if 0
-  {
-    TextFile_t* datefile = (TextFile_t*) malloc(n_dates*sizeof(TextFile_t)) ;
-    
-    if(!datefile) arret("OutputFiles_Create") ;
-    
-    OutputFiles_GetDateFile1(outputfiles) = datefile ;
-    
-    {
-      int n = ceil(log10((double) n_dates+1)) ;
-      int LengthOfName = strlen(filename) + 3 + n ;
-      char* name = (char*) malloc(LengthOfName*sizeof(char)) ;
-      int i ;
-      
-      if(!name) arret("OutputFiles_Create") ;
-      
-      for(i = 0 ; i < n_dates ; i++) {
-        sprintf(name,"%s.t%d",filename,i) ;
-        
-        {
-          TextFile_t* textfile = TextFile_Create(name) ;
-          
-          /* Copy */
-          datefile[i] = textfile[0] ;
-        }
-      }
-      
-      free(name) ;
-    }
-  }
-#endif
 
   /* Date Output Files */
   {
     int n = ceil(log10((double) n_dates+1)) ;
     int LengthOfName = strlen(filename) + 3 + n ;
-    char* name = (char*) malloc(LengthOfName*sizeof(char)) ;
-    
-    if(!name) arret("OutputFiles_Create") ;
+    char* name = (char*) Mry_New(char[LengthOfName]) ;
       
     sprintf(name,"%s.t0",filename) ;
     
@@ -98,43 +62,12 @@ OutputFiles_t*   (OutputFiles_Create)(char* filename,int n_dates,int n_points)
   
   /* Point Files */
   OutputFiles_GetNbOfPointFiles(outputfiles) = n_points ;
-#if 0
-  {
-    TextFile_t* pointfile = (TextFile_t*) malloc(n_points*sizeof(TextFile_t)) ;
-    
-    if(!pointfile) arret("OutputFiles_Create") ;
-    
-    OutputFiles_GetPointFile1(outputfiles) = pointfile ;
-    
-    {
-      int n = ceil(log10((double) n_points+1)) ;
-      int LengthOfName = strlen(filename) + 3 + n ;
-      char* name = (char*) malloc(LengthOfName*sizeof(char)) ;
-      int i ;
-      
-      for(i = 0 ; i < n_points ; i++) {
-        sprintf(name,"%s.p%d",filename,i+1) ;
-        
-        {
-          TextFile_t* textfile = TextFile_Create(name) ;
-          
-          /* Copy */
-          pointfile[i] = textfile[0] ;
-        }
-      }
-      
-      free(name) ;
-    }
-  }
-#endif
 
   /* Point Output Files */
   {
     int n = ceil(log10((double) n_points+1)) ;
     int LengthOfName = strlen(filename) + 3 + n ;
-    char* name = (char*) malloc(LengthOfName*sizeof(char)) ;
-    
-    if(!name) arret("OutputFiles_Create") ;
+    char* name = (char*) Mry_New(char[LengthOfName]) ;
       
     sprintf(name,"%s.p1",filename) ;
     
@@ -158,9 +91,7 @@ OutputFiles_t*   (OutputFiles_Create)(char* filename,int n_dates,int n_points)
   
   /* Text line */
   {
-    char* line = (char*) malloc(OutputFiles_MaxLengthOfTextLine*sizeof(char)) ;
-    
-    if(!line) arret("OutputFiles_Create") ;
+    char* line = (char*) Mry_New(char[OutputFiles_MaxLengthOfTextLine]) ;
     
     OutputFiles_GetTextLine(outputfiles) = line ;
   }
@@ -171,69 +102,24 @@ OutputFiles_t*   (OutputFiles_Create)(char* filename,int n_dates,int n_points)
 
 
 
-void   (OutputFiles_Delete)(OutputFiles_t** outputfiles)
+void   (OutputFiles_Delete)(void* self)
 {
-  int n_dates = OutputFiles_GetNbOfDateFiles(*outputfiles) ;
-  int n_points = OutputFiles_GetNbOfPointFiles(*outputfiles) ;
+  OutputFiles_t** poutputfiles = (OutputFiles_t**) self ;
+  OutputFiles_t*   outputfiles = *poutputfiles ;
+  int n_dates = OutputFiles_GetNbOfDateFiles(outputfiles) ;
+  int n_points = OutputFiles_GetNbOfPointFiles(outputfiles) ;
   
-  free(OutputFiles_GetDataFileName(*outputfiles)) ;
-  
-  /* We cannot use TextFile_Delete here (see above) */
-  //free((OutputFiles_GetDateFile1(*outputfiles))) ;
-  //free((OutputFiles_GetPointFile1(*outputfiles))) ;
-  
-  free(OutputFiles_GetTextLine(*outputfiles)) ;
+  free(OutputFiles_GetDataFileName(outputfiles)) ;
     
-  OutputFile_Delete(&(OutputFiles_GetDateOutputFile(*outputfiles)),n_dates) ;
-  OutputFile_Delete(&(OutputFiles_GetPointOutputFile(*outputfiles)),n_points) ;
+  OutputFile_Delete(&(OutputFiles_GetDateOutputFile(outputfiles)),n_dates) ;
+  OutputFile_Delete(&(OutputFiles_GetPointOutputFile(outputfiles)),n_points) ;
   
-  Results_Delete(&(OutputFiles_GetResults(*outputfiles))) ;
+  Results_Delete(&(OutputFiles_GetResults(outputfiles))) ;
   
-  free(*outputfiles) ;
-  *outputfiles = NULL ;
-}
-
-
-
-OutputFile_t*   (OutputFile_Create)(char* filename,int nfiles)
-{
-  OutputFile_t* outputfile = (OutputFile_t*) malloc(nfiles*sizeof(OutputFile_t)) ;
-    
-  if(!outputfile) arret("OutputFile_Create") ;
+  free(OutputFiles_GetTextLine(outputfiles)) ;
   
-  {
-    char* c = filename + strlen(filename) - 1 ;
-    int j = (int) (*c - '0') ;
-    int i ;
-    
-    for(i = 0 ; i < nfiles ; i++) {
-      sprintf(c,"%d",j+i) ;
-      
-      {
-        TextFile_t* textfile = TextFile_Create(filename) ;
-          
-        OutputFile_GetTextFile(outputfile + i) = textfile ;
-      }
-    }
-  }
-    
-  return(outputfile) ;
-}
-
-
-
-void   (OutputFile_Delete)(OutputFile_t** outputfile,int nfiles)
-{
-  int i ;
-  
-  for(i = 0 ; i < nfiles ; i++) {
-    TextFile_t* textfile = OutputFile_GetTextFile(*outputfile + i) ;
-    
-    TextFile_Delete(&textfile) ;
-  }
-  
-  free(*outputfile) ;
-  *outputfile = NULL ;
+  free(outputfiles) ;
+  *poutputfiles = NULL ;
 }
 
 
@@ -248,13 +134,13 @@ void (OutputFiles_PostProcessForGmshASCIIFileFormat)(OutputFiles_t* outputfiles,
     /* Assuming that there is at least one date file */
     OutputFile_t* outputfile = OutputFiles_GetDateOutputFile(outputfiles) ;
     TextFile_t* textfile = OutputFile_GetTextFile(outputfile) ;
-    //TextFile_t* textfile = OutputFiles_GetDateFile(outputfiles) ;
     char* c ;
     
     TextFile_OpenFile(textfile,"r") ;
     c = OutputFiles_ReadLineFromCurrentFilePosition(outputfiles,textfile) ;
   
-    if((c = strstr(c,"Version") + strlen("Version"))) {
+    //if((c = strstr(c,"Version") + strlen("Version"))) {
+    if((c = String_FindAndSkipToken(c,"Version"))) {
       sscanf(c,"%lf",&version) ;
     }
   
@@ -292,7 +178,6 @@ void (OutputFiles_PostProcessForGmshASCIIFileFormatVersion2_2)(OutputFiles_t* ou
 
   OutputFile_t* outputfile = OutputFiles_GetDateOutputFile(outputfiles) ;
   TextFile_t* datefile = OutputFile_GetTextFile(outputfile) ;
-  //TextFile_t* datefile = OutputFiles_GetDateFile(outputfiles) ;
   
   Views_t* globalviews = OutputFiles_CreateGlobalViews(outputfiles,usedmodels,datefile) ;
   
@@ -606,13 +491,13 @@ void (OutputFiles_PostProcessForGmshParsedFileFormat)(OutputFiles_t* outputfiles
     /* Assuming that there is at least one date file */
     OutputFile_t* outputfile = OutputFiles_GetDateOutputFile(outputfiles) ;
     TextFile_t* textfile = OutputFile_GetTextFile(outputfile) ;
-    //TextFile_t* textfile = OutputFiles_GetDateFile(outputfiles) ;
     char* c ;
     
     TextFile_OpenFile(textfile,"r") ;
     c = OutputFiles_ReadLineFromCurrentFilePosition(outputfiles,textfile) ;
   
-    if((c = strstr(c,"Version") + strlen("Version"))) {
+    //if((c = strstr(c,"Version") + strlen("Version"))) {
+    if((c = String_FindAndSkipToken(c,"Version"))) {
       sscanf(c,"%lf",&version) ;
     }
   
@@ -652,7 +537,6 @@ void (OutputFiles_PostProcessForGmshParsedFileFormatVersion2)(OutputFiles_t* out
   
   OutputFile_t* outputfile = OutputFiles_GetDateOutputFile(outputfiles) ;
   TextFile_t* datefile = OutputFile_GetTextFile(outputfile) ;
-  //TextFile_t* datefile = OutputFiles_GetDateFile(outputfiles) ;
   
   Views_t* globalviews = OutputFiles_CreateGlobalViews(outputfiles,usedmodels,datefile) ;
   
@@ -900,8 +784,6 @@ void (OutputFiles_BackupSolutionAtTime_)(OutputFiles_t* outputfiles,DataSet_t* d
   int n_usedmodels = Models_GetNbOfModels(usedmodels) ;
   
   OutputFile_t* outputfile = OutputFiles_GetDateOutputFile(outputfiles) ;
-  //TextFile_t* datefile = OutputFile_GetTextFile(outputfile) ;
-  //TextFile_t* datefile = OutputFiles_GetDateFile(outputfiles) ; 
   
   Result_t* r_s = Results_GetResult(OutputFiles_GetResults(outputfiles)) ;
   
@@ -1026,8 +908,6 @@ void (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t* outputfiles,DataSet_t* 
   int npt = Points_GetNbOfPoints(points) ;
   
   OutputFile_t* outputfile = OutputFiles_GetPointOutputFile(outputfiles) ;
-  //TextFile_t* pointfile = OutputFile_GetTextFile(outputfile) ;
-  //TextFile_t* pointfile = OutputFiles_GetPointFile(outputfiles) ;
   
   Result_t* r_s = Results_GetResult(OutputFiles_GetResults(outputfiles)) ;
   int    p ;

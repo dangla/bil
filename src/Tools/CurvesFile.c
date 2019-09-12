@@ -128,14 +128,18 @@ CurvesFile_t*   (CurvesFile_Create)(void)
 }
 
 
-void (CurvesFile_Delete)(CurvesFile_t** curvesfile)
+void (CurvesFile_Delete)(void* self)
 {
-  TextFile_Delete(&CurvesFile_GetTextFile(*curvesfile)) ;
-  /* free(CurvesFile_GetFileName(*curvesfile)) ; */
-  /* free(CurvesFile_GetFilePositionStartingInputData(*curvesfile)) ; */
-  free(CurvesFile_GetTextLine(*curvesfile)) ;
-  Buffer_Delete(&CurvesFile_GetBuffer(*curvesfile)) ;
-  free(*curvesfile) ;
+  CurvesFile_t** pcurvesfile = (CurvesFile_t**) self ;
+  CurvesFile_t*   curvesfile = *pcurvesfile ;
+  
+  TextFile_Delete(&CurvesFile_GetTextFile(curvesfile)) ;
+  /* free(CurvesFile_GetFileName(curvesfile)) ; */
+  /* free(CurvesFile_GetFilePositionStartingInputData(curvesfile)) ; */
+  free(CurvesFile_GetTextLine(curvesfile)) ;
+  Buffer_Delete(&CurvesFile_GetBuffer(curvesfile)) ;
+  free(curvesfile) ;
+  *pcurvesfile = NULL ;
 }
 
 
@@ -270,7 +274,7 @@ int   (CurvesFile_Initialize)(CurvesFile_t* curvesfile,const char* cmdline)
         line = CurvesFile_ReadLineFromCurrentFilePosition(curvesfile) ;
         
         /* We count the nb of non-commented lines */
-        if(line != NULL && line[0] != '#') n_points++ ;
+        if((line) && line[0] != '#') n_points++ ;
         
       } while(line) ;
     
