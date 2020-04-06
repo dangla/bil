@@ -8,10 +8,10 @@ composite0.msh
 
 Periodicities
 4
-MasterRegion = 104 SlaveRegion = 13  PeriodVector = 0.04 0 0
-MasterRegion = 122 SlaveRegion = 112 PeriodVector = 0.04 0 0
-MasterRegion = 123 SlaveRegion = 105 PeriodVector = 0 0.04 0
-MasterRegion = 113 SlaveRegion = 14  PeriodVector = 0 0.04 0
+MasterRegion = 105 SlaveRegion = 13  PeriodVector = 0.04 0 0
+MasterRegion = 114 SlaveRegion = 125 PeriodVector = 0.04 0 0
+MasterRegion = 115 SlaveRegion = 104 PeriodVector = 0 0.04 0
+MasterRegion = 124 SlaveRegion = 14  PeriodVector = 0 0.04 0
 
 
 Material #1            # matrix
@@ -61,18 +61,18 @@ Region = 100  Unknown = u_1  Field = 0
 Region = 101  Unknown = u_1  Field = 0
 Region = 102  Unknown = u_1  Field = 0
 Region = 108  Unknown = u_1  Field = 0
-Region = 110  Unknown = u_1  Field = 0
-Region = 116  Unknown = u_1  Field = 0
-Region = 120  Unknown = u_1  Field = 0
-Region = 126  Unknown = u_1  Field = 0
+Region = 112  Unknown = u_1  Field = 0
+Region = 118  Unknown = u_1  Field = 0
+Region = 122  Unknown = u_1  Field = 0
+Region = 128  Unknown = u_1  Field = 0
 Region = 100  Unknown = u_2  Field = 0
 Region = 101  Unknown = u_2  Field = 0
 Region = 102  Unknown = u_2  Field = 0
 Region = 108  Unknown = u_2  Field = 0
-Region = 110  Unknown = u_2  Field = 0
-Region = 116  Unknown = u_2  Field = 0
-Region = 120  Unknown = u_2  Field = 0
-Region = 126  Unknown = u_2  Field = 0
+Region = 112  Unknown = u_2  Field = 0
+Region = 118  Unknown = u_2  Field = 0
+Region = 122  Unknown = u_2  Field = 0
+Region = 128  Unknown = u_2  Field = 0
 
 
 Functions

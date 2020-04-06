@@ -38,8 +38,9 @@ typedef void   (Model_ComputeSecondaryVariables_t)(Element_t*,const double,const
 typedef void*  (Model_ComputeVariableDerivatives_t)(Element_t*,const double,const double,void*,const double,const int) ;
 
 #include "IntFcts.h"
+#include "ShapeFcts.h"
 
-typedef int    (Model_DefineElementProperties_t)(Element_t*,IntFcts_t*) ;
+typedef int    (Model_DefineElementProperties_t)(Element_t*,IntFcts_t*,ShapeFcts_t*) ;
 
 #include "Load.h"
 

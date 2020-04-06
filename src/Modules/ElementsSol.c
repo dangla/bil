@@ -2,6 +2,7 @@
 #include "ElementsSol.h"
 #include "Message.h"
 #include "GenericData.h"
+#include "Mry.h"
 
 
 static void   (ElementSol_Initialize)(ElementSol_t*) ;
@@ -11,18 +12,12 @@ static void   (ElementSol_Initialize)(ElementSol_t*) ;
 
 ElementsSol_t*   (ElementsSol_Create)(Mesh_t* mesh)
 {
-  ElementsSol_t* elementssol = (ElementsSol_t*) malloc(sizeof(ElementsSol_t)) ;
-  
-  if(!elementssol) arret("ElementsSol_Create") ;
+  ElementsSol_t* elementssol = (ElementsSol_t*) Mry_New(ElementsSol_t) ;
   
   
   {
     int NbOfElements = Mesh_GetNbOfElements(mesh) ;
-    ElementSol_t* elementsol = (ElementSol_t*) malloc(NbOfElements*sizeof(ElementSol_t)) ;
-  
-    if(!elementsol) {
-      arret("ElementsSol_Create (1) : impossible d\'allouer la memoire") ;
-    }
+    ElementSol_t* elementsol = (ElementSol_t*) Mry_New(ElementSol_t[NbOfElements]) ;
 
     ElementsSol_GetElementSol(elementssol)   = elementsol ;
     ElementsSol_GetNbOfElements(elementssol) = NbOfElements ;
@@ -81,11 +76,7 @@ void (ElementsSol_AllocateMemoryForImplicitTerms)(ElementsSol_t* elementssol)
       int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
       ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
       int    i ;
-      double* vi = (double*) calloc(n_vi,sizeof(double)) ;
-      
-      if(!vi) {
-        arret("ElementsSol_AllocateMemoryForImplicitTerms") ;
-      }
+      double* vi = (double*) Mry_New(double[n_vi]) ;
   
   
       for(i = 0 ; i < NbOfElements ; i++) {

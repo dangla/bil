@@ -7,7 +7,8 @@
 struct ICond_s        ; typedef struct ICond_s        ICond_t ;
 
 
-extern ICond_t* (ICond_Create)(int) ;
+extern ICond_t* (ICond_New)(void) ;
+extern void     (ICond_Scan)(ICond_t*,DataFile_t*) ;
 
 
 

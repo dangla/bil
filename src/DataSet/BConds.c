@@ -41,160 +41,7 @@ BConds_t* BConds_New(const int n_bconds)
 }
 
 
-#if 0
-BConds_t* BConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* functions)
-{
-  BConds_t* bconds ;
-  
-  DataFile_OpenFile(datafile,"r") ;
-  
-  DataFile_SetFilePositionAfterKey(datafile,"COND,Boundary Conditions",",",1) ;
-    
-  Message_Direct("Enter in %s","Boundary Conditions") ;
-  Message_Direct("\n") ;
-  
-  
-  /* Allocation of space for the boundary conditions */
-  {
-    char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
-    int n_bconds = atoi(line) ;
-    
-    bconds = BConds_New(n_bconds) ;
-  
-    if(n_bconds <= 0) {
-      DataFile_CloseFile(datafile) ;
-      return(bconds) ;
-    }
-  }
 
-
-  {
-    int n_bconds = BConds_GetNbOfBConds(bconds) ;
-    int i_cl ;
-    
-    for(i_cl = 0 ; i_cl < n_bconds ; i_cl++) {
-      BCond_t* bcond = BConds_GetBCond(bconds) + i_cl ;
-      char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
-      char* pline ;
-
-    
-      /* Region */
-      if((pline = strstr(line,"Reg"))) {
-        pline = strchr(pline,'=') + 1 ;
-        BCond_GetRegionIndex(bcond) = atoi(pline) ;
-      } else {
-        arret("BConds_Create: no Region") ;
-      }
-    
-    
-      /* Unknown */
-      if((pline = strstr(line,"Unk")) || (pline = strstr(line,"Inc"))) {
-        char   name_unk[BCond_MaxLengthOfKeyWord] ;
-      
-        pline = strchr(pline,'=') + 1 ;
-      
-        sscanf(pline,"%s",name_unk) ;
-        strcpy(BCond_GetNameOfUnknown(bcond),name_unk) ;
-      
-        if(strlen(BCond_GetNameOfUnknown(bcond)) > BCond_MaxLengthOfKeyWord-1)  {
-          arret("BConds_Create(6): mot trop long") ;
-        } else if(isdigit(BCond_GetNameOfUnknown(bcond)[0])) {
-          if(atoi(BCond_GetNameOfUnknown(bcond)) < 1) {
-            arret("BConds_Create(7): numero non positif") ;
-          }
-        }
-      } else {
-        arret("BConds_Create: no Unknown") ;
-      }
-    
-    
-      /* Field */
-      if((pline = strstr(line,"Field")) || (pline = strstr(line,"Champ"))) {
-        int  n_fields = Fields_GetNbOfFields(fields) ;
-        int  ich ;
-      
-        pline = strchr(pline,'=') + 1 ;
-        sscanf(pline," %d",&ich) ;
-        
-        BCond_GetFieldIndex(bcond) = ich - 1 ;
-
-        if(ich > n_fields) {
-        
-          arret("BConds_Create(10): champ non defini") ;
-        
-        } else if(ich > 0) {
-          Field_t* field = Fields_GetField(fields) ;
-        
-          BCond_GetField(bcond) = field + ich - 1 ;
-        
-        } else {
-        
-          BCond_GetField(bcond) = NULL ;
-        }
-      } else {
-        arret("BConds_Create: no Field") ;
-      }
-    
-    
-      /* Function */
-      if((pline = strstr(line,"Func")) || (pline = strstr(line,"Fonc"))) {
-        int  n_fcts = Functions_GetNbOfFunctions(functions) ;
-        int  ifn ;
-      
-        pline = strchr(pline,'=') + 1 ;
-        sscanf(pline," %d",&ifn) ;
-        
-        BCond_GetFunctionIndex(bcond) = ifn - 1 ;
-      
-        if(ifn > n_fcts) {
-        
-          arret("BConds_Create(11): fonction non definie") ;
-        
-        } else if(ifn > 0) {
-          Function_t* fct = Functions_GetFunction(functions) ;
-        
-          BCond_GetFunction(bcond) = fct + ifn - 1 ;
-        
-        } else {
-        
-          BCond_GetFunction(bcond) = NULL ;
-        
-        }
-      } else {
-        arret("BConds_Create: no Function") ;
-      }
-    
-    
-      /* Equation (not mandatory) */
-      strcpy(BCond_GetNameOfEquation(bcond)," ") ;
-    
-      if((pline = strstr(line,"Equ"))) {
-        char   name_eqn[BCond_MaxLengthOfKeyWord] ;
-      
-        pline = strchr(pline,'=') + 1 ;
-      
-        sscanf(pline,"%s",name_eqn) ;
-        strcpy(BCond_GetNameOfEquation(bcond),name_eqn) ;
-      
-        if(strlen(BCond_GetNameOfEquation(bcond)) > BCond_MaxLengthOfKeyWord)  {
-          arret("BConds_Create(8): mot trop long") ;
-        } else if(isdigit(BCond_GetNameOfEquation(bcond)[0])) {
-          if(atoi(BCond_GetNameOfEquation(bcond)) < 1) {
-            arret("BConds_Create(9): numero non positif") ;
-          }
-        }
-      }
-    }
-  } 
-  
-  DataFile_CloseFile(datafile) ;
-  
-  return(bconds) ;
-}
-#endif
-
-
-#if 1
 BConds_t* BConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* functions)
 {
   char* filecontent = DataFile_GetFileContent(datafile) ;
@@ -206,23 +53,11 @@ BConds_t* BConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* funct
   Message_Direct("Enter in %s","Boundary Conditions") ;
   Message_Direct("\n") ;
   
+  
   if(n_bconds <= 0) {
     return(bconds) ;
   }
   
-  
-
-  /* Fields and functions */
-  {
-    int i_cl ;
-    
-    for(i_cl = 0 ; i_cl < n_bconds ; i_cl++) {
-      BCond_t* bcond = BConds_GetBCond(bconds) + i_cl ;
-      
-      BCond_GetFields(bcond) = fields ;
-      BCond_GetFunctions(bcond) = functions ;
-    }
-  }
 
 
 
@@ -240,57 +75,16 @@ BConds_t* BConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* funct
       Message_Direct("Enter in %s %d","Boundary Condition",i_cl+1) ;
       Message_Direct("\n") ;
       
+      BCond_GetFields(bcond) = fields ;
+      BCond_GetFunctions(bcond) = functions ;
+      
       BCond_Scan(bcond,datafile) ;
-      
-      /* Field */
-      {
-        int  n_fields = Fields_GetNbOfFields(fields) ;
-        int  ifld = BCond_GetFieldIndex(bcond) ;
-        
-        if(ifld < 0) {
-        
-          BCond_GetField(bcond) = NULL ;
-        
-        } else if(ifld < n_fields) {
-          Field_t* field = Fields_GetField(fields) ;
-        
-          BCond_GetField(bcond) = field + ifld ;
-          
-        } else {
-        
-          arret("BConds_Create: field out of range") ;
-          
-        }
-      }
-      
-      /* Function */
-      {
-        int  n_fcts = Functions_GetNbOfFunctions(functions) ;
-        int  ifct = BCond_GetFunctionIndex(bcond) ;
-      
-        if(ifct < 0) {
-        
-          BCond_GetFunction(bcond) = NULL ;
-          
-        } else if(ifct < n_fcts) {
-          Function_t* fct = Functions_GetFunction(functions) ;
-        
-          BCond_GetFunction(bcond) = fct + ifct ;
-        
-        } else {
-        
-          arret("BConds_Create: function out of range") ;
-        
-        }
-      }
-      
     }
     
   }
   
   return(bconds) ;
 }
-#endif
 
 
 
@@ -343,7 +137,7 @@ void  BConds_SetDefaultNameOfEquations(BConds_t* bconds,Mesh_t* mesh)
 
 
 
-void  BConds_ResetMatrixNumbering(BConds_t* bconds,Mesh_t* mesh)
+void  BConds_EliminateMatrixRowColumnIndexes(BConds_t* bconds,Mesh_t* mesh)
 /** Set to a negative value (-1) the matrix row/column 
  *  indexes which are prescribed by the BC */
 {
@@ -381,7 +175,7 @@ void  BConds_ResetMatrixNumbering(BConds_t* bconds,Mesh_t* mesh)
 
         /* Index of prescribed unknown */
         jun = Element_FindUnknownPositionIndex(elt_i,inc_cl) ;
-        if(jun < 0) arret("BConds_ResetMatrixNumbering(1)") ;
+        if(jun < 0) arret("BConds_EliminateMatrixRowColumnIndexes(1)") ;
 
         /* We eliminate the associated column */
         for(i = 0 ; i < nn ; i++) {
@@ -399,7 +193,7 @@ void  BConds_ResetMatrixNumbering(BConds_t* bconds,Mesh_t* mesh)
         } else {
           jeq = Element_FindEquationPositionIndex(elt_i,eqn_cl) ;
         }
-        if(jeq < 0) arret("BConds_ResetMatrixNumbering(2)") ;
+        if(jeq < 0) arret("BConds_EliminateMatrixRowColumnIndexes(2)") ;
 
         /* We eliminate the associated row */
         for(i = 0 ; i < nn ; i++) {
@@ -416,7 +210,7 @@ void  BConds_ResetMatrixNumbering(BConds_t* bconds,Mesh_t* mesh)
     }
     
     if(!regionwasfound) {
-      arret("BConds_ResetMatrixNumbering(3): the region %d was not found",reg_cl) ;
+      arret("BConds_EliminateMatrixRowColumnIndexes(3): the region %d was not found",reg_cl) ;
     }
   }
 

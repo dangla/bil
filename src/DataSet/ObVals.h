@@ -13,7 +13,11 @@ struct ObVals_s       ; typedef struct ObVals_s       ObVals_t ;
 #include "Materials.h"
 
 
-extern ObVals_t*  ObVals_Create(DataFile_t*,Mesh_t*,Materials_t*) ;
+extern ObVals_t*  (ObVals_New)(const int) ;
+extern ObVals_t*  (ObVals_Create)(DataFile_t*,Mesh_t*,Materials_t*) ;
+extern int        (ObVals_FindObValIndex)(ObVals_t*,char*) ;
+
+
 
 #define ObVals_GetNbOfObVals(OVS)    ((OVS)->n_obj)
 #define ObVals_GetObVal(OVS)         ((OVS)->obj)

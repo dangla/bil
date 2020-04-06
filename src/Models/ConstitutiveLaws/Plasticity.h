@@ -20,7 +20,6 @@ extern void           (Plasticity_Delete)(void*) ;
 extern void           (Plasticity_Initialize)                  (Plasticity_t*) ;
 extern void           (Plasticity_SetParameters)               (Plasticity_t*,...) ;
 extern void           (Plasticity_SetParameter)                (Plasticity_t*,const char*,double) ;
-extern void           (Plasticity_CopyElasticTensor)           (Plasticity_t*,double*) ;
 extern double         (Plasticity_UpdateElastoplasticTensor)   (Plasticity_t*,double*) ;
 extern void           (Plasticity_PrintTangentStiffnessTensor) (Plasticity_t*) ;
 //extern Plasticity_ComputeFunctionGradients_t     Plasticity_Criterion ;
@@ -51,8 +50,10 @@ extern void           (Plasticity_PrintTangentStiffnessTensor) (Plasticity_t*) ;
 #include "Elasticity.h"
 #include "GenericData.h"
 #include "Tools/Math.h"
-        
-        
+
+
+
+
 
 /* Drucker-Prager
  * -------------- */
@@ -133,6 +134,9 @@ extern void           (Plasticity_PrintTangentStiffnessTensor) (Plasticity_t*) ;
 
 #define Plasticity_ComputeElasticTensor(PL,...) \
         Elasticity_ComputeStiffnessTensor(Plasticity_GetElasticity(PL),__VA_ARGS__)
+        
+#define Plasticity_CopyElasticTensor(PL,...) \
+        Elasticity_CopyStiffnessTensor(Plasticity_GetElasticity(PL),__VA_ARGS__)
         
 
 

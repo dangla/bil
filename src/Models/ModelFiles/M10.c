@@ -20,7 +20,7 @@
 #define E_liq   (0)
 
 /* Unknown index*/
-#define I_p_l   (0)
+#define U_P_L   (0)
 
 /* We define some names for implicit terms */
 #define M_L           (vim[0])
@@ -52,9 +52,30 @@ static void   GetProperties(Element_t*) ;
 static int    c10(FEM_t*,double*) ;
 static int    k10(FEM_t*,double*) ;
 
+static double* ComputeVariables(Element_t*,void*,void*,void*,const double,const double,const int) ;
+static void    ComputeSecondaryVariables(Element_t*,const double,const double,double*,double*) ;
+static double* ComputeVariableDerivatives(Element_t*,const double,const double,double*,const double,const int) ;
+
 
 /* Parameters */
 static double gravite,phi,rho_l,k_int,mu_l,p_g ;
+
+  
+enum {
+I_P_L  = NEQ   ,
+I_M_L          ,
+I_S_L          ,
+I_K_L          ,
+I_GRD_P_L      ,
+I_W_L = I_GRD_P_L + 3 ,
+I_Last
+} ;
+
+
+#define NP               IntFct_MaxNbOfIntPoints
+#define NbOfVariables    (I_Last)
+static double Variables[NP][NbOfVariables] ;
+static double dVariables[NbOfVariables] ;
 
 
 int pm(const char *s) {
@@ -85,7 +106,7 @@ int SetModelProp(Model_t *model)
   
   Model_CopyNameOfEquation(model,E_liq, "liq") ;
 
-  Model_CopyNameOfUnknown(model,I_p_l,"p_l") ;
+  Model_CopyNameOfUnknown(model,U_P_L,"p_l") ;
   
   return(0) ;
 }
@@ -139,16 +160,27 @@ int PrintModelChar(Model_t *model,FILE *ficd)
 
 int DefineElementProp(Element_t *el,IntFcts_t *intfcts)
 {
-  IntFct_t *intfct = Element_GetIntFct(el) ;
-  int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
   
-  /** Define the length of tables */
-  Element_GetNbOfImplicitTerms(el) = NVI*NbOfIntPoints ;
-  Element_GetNbOfExplicitTerms(el) = NVE*NbOfIntPoints ;
-  Element_GetNbOfConstantTerms(el) = NV0*NbOfIntPoints ;
+  /* Continuity of pressure across zero-thickness element */
+  {
+    if(Element_HasZeroThickness(el)) {
+      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,U_P_L) ;
+    }
+  }
+  
+  {
+    IntFct_t *intfct = Element_GetIntFct(el) ;
+    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
+  
+    /** Define the length of tables */
+    Element_GetNbOfImplicitTerms(el) = NVI*NbOfIntPoints ;
+    Element_GetNbOfExplicitTerms(el) = NVE*NbOfIntPoints ;
+    Element_GetNbOfConstantTerms(el) = NV0*NbOfIntPoints ;
+  }
   
   return(0) ;
 }
+
 
 
 int  ComputeLoads(Element_t *el,double t,double dt,Load_t *cg,double *r)
@@ -169,6 +201,7 @@ int  ComputeLoads(Element_t *el,double t,double dt,Load_t *cg,double *r)
 }
 
 
+
 int ComputeInitialState(Element_t *el)
 /** Compute the initial state i.e. 
  *  the constant terms,
@@ -176,57 +209,55 @@ int ComputeInitialState(Element_t *el)
  *  the implicit terms.
  */ 
 {
-  double *vim = Element_GetImplicitTerm(el) ;
-  double *vex = Element_GetExplicitTerm(el) ;
+  double* vim0 = Element_GetImplicitTerm(el) ;
+  double* vex0 = Element_GetExplicitTerm(el) ;
+  double** u  = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   IntFct_t  *intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-  int nn = IntFct_GetNbOfNodes(intfct) ;
-  int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
   FEM_t *fem = FEM_GetInstance(el) ;
   int    p ;
   
   /* We skip if the element is a submanifold */
-  if(Element_IsSubmanifold(el)) return(0) ;
+  //if(Element_IsSubmanifold(el)) return(0) ;
   
   /*
     Input data
   */
   GetProperties(el) ;
   
-    
-  /* boucle sur les points d'integration */
-  for(p = 0 ; p < NbOfIntPoints ; p++ , vim += NVI , vex += NVE) {
-    /* interpolation functions */
-    double *h  = IntFct_GetFunctionAtPoint(intfct,p) ;
-    double *dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
-    
-    /* pressures */
-    double pl  = FEM_ComputeCurrentUnknown(fem,h,nn,I_p_l) ;
-    double pc  = p_g - pl ;
-    
-    /* saturation */
-    double sl  = SATURATION(pc) ;
-    
-    /* liquid mass content */
-    double m_l = rho_l*phi*sl ;
+  /* Pre-initialization */
+  for(p = 0 ; p < NbOfIntPoints ; p++) {
+    double pl = FEM_ComputeUnknown(fem,u,intfct,p,U_P_L) ;
+    double pc = p_g - pl ;
     
     /* transfert coefficient */
     double k_l = rho_l*k_int/mu_l*RELATIVEPERM(pc) ;
     
-    /* flux */
-    double *gpl = FEM_ComputeCurrentUnknownGradient(fem,dh,nn,I_p_l) ;
-    double w_l[3] ;
-    int i ;
+    /* storage in vex */
+    double* vex = vex0 + p*NVE ;
+    K_L = k_l ;
+  }
+  
+  
     
-    for(i = 0 ; i < 3 ; i++) w_l[i] = - k_l*gpl[i] ;
-    w_l[dim - 1] += k_l*rho_l*gravite ;
+  /* boucle sur les points d'integration */
+  for(p = 0 ; p < NbOfIntPoints ; p++) {
+    double* x = ComputeVariables(el,u,u,vim0,t,0,p) ;
+    double* vim = vim0 + p*NVI ;
+    double* vex = vex0 + p*NVE ;
     
     /* storage in vim */
-    M_L = m_l ;
-    for(i = 0 ; i < 3 ; i++) W_L[i] = w_l[i] ;
+    M_L = x[I_M_L] ;
+    
+    {
+      int i ;
+      double* w_l = x + I_W_L ;
+      
+      for(i = 0 ; i < 3 ; i++) W_L[i] = w_l[i] ;
+    }
     
     /* storage in vex */
-    K_L = k_l ;
+    K_L = x[I_K_L] ;
   }
   
   return(0) ;
@@ -237,15 +268,15 @@ int ComputeInitialState(Element_t *el)
 int  ComputeExplicitTerms(Element_t *el,double t)
 /** Compute the explicit terms */
 {
-  double *vex = Element_GetExplicitTerm(el) ;
-  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  double* vim0 = Element_GetPreviousImplicitTerm(el) ;
+  double *vex0 = Element_GetExplicitTerm(el) ;
+  double** u  = Element_ComputePointerToPreviousNodalUnknowns(el) ;
+  IntFct_t* intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-  int nn = IntFct_GetNbOfNodes(intfct) ;
-  FEM_t *fem = FEM_GetInstance(el) ;
   int    p ;
   
   /* We skip if the element is a submanifold */
-  if(Element_IsSubmanifold(el)) return(0) ;
+  //if(Element_IsSubmanifold(el)) return(0) ;
 
   /*
     Input data
@@ -253,12 +284,12 @@ int  ComputeExplicitTerms(Element_t *el,double t)
   GetProperties(el) ;
 
   /* Loop on integration points */
-  for(p = 0 ; p < NbOfIntPoints ; p++ , vex += NVE) {
-    /* interpolation functions */
-    double *h  = IntFct_GetFunctionAtPoint(intfct,p) ;
+  for(p = 0 ; p < NbOfIntPoints ; p++) {
+    double* x = ComputeVariables(el,u,u,vim0,t,0,p) ;
+    double* vex = vex0 + p*NVE ;
     
     /* pressures */
-    double pl  = FEM_ComputePreviousUnknown(fem,h,nn,I_p_l) ;
+    double pl  = x[I_P_L] ;
     double pc  = p_g - pl ;
     
     /* transfert coefficient */
@@ -278,17 +309,16 @@ int  ComputeExplicitTerms(Element_t *el,double t)
 int  ComputeImplicitTerms(Element_t *el,double t,double dt)
 /** Compute the implicit terms */
 {
-  double *vim = Element_GetImplicitTerm(el) ;
-  double *vex = Element_GetExplicitTerm(el) ;
-  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  double* vim0  = Element_GetCurrentImplicitTerm(el) ;
+  double* vim_n = Element_GetPreviousImplicitTerm(el) ;
+  double** u  = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  double** u_n= Element_ComputePointerToPreviousNodalUnknowns(el) ;
+  IntFct_t* intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-  int nn = IntFct_GetNbOfNodes(intfct) ;
-  int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
-  FEM_t *fem = FEM_GetInstance(el) ;
   int    p ;
   
   /* We skip if the element is a submanifold */
-  if(Element_IsSubmanifold(el)) return(0) ;
+  //if(Element_IsSubmanifold(el)) return(0) ;
 
   /*
     Input data
@@ -298,35 +328,19 @@ int  ComputeImplicitTerms(Element_t *el,double t,double dt)
   
   
   /* Loop on integration points */
-  for(p = 0 ; p < NbOfIntPoints ; p++ , vim += NVI , vex += NVE) {
-    /* interpolation functions */
-    double *h  = IntFct_GetFunctionAtPoint(intfct,p) ;
-    double *dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
-    
-    /* Pressures */
-    double pl  = FEM_ComputeCurrentUnknown(fem,h,nn,I_p_l) ;
-    double pc  = p_g - pl ;
-    
-    /* saturation */
-    double sl  = SATURATION(pc) ;
-    
-    /* liquid mass content */
-    double m_l = rho_l*phi*sl ;
-    
-    /* transfert coefficient */
-    double k_l = K_L ;
-    
-    /* flux */
-    double *gpl = FEM_ComputeCurrentUnknownGradient(fem,dh,nn,I_p_l) ;
-    double w_l[3] ;
-    int i ;
-    
-    for(i = 0 ; i < 3 ; i++) w_l[i] = - k_l*gpl[i] ;
-    w_l[dim-1] += k_l*rho_l*gravite ;
+  for(p = 0 ; p < NbOfIntPoints ; p++) {
+    double* x = ComputeVariables(el,u,u_n,vim_n,t,dt,p) ;
+    double* vim = vim0 + p*NVI ;
     
     /* storage in vim */
-    M_L = m_l ;
-    for(i = 0 ; i < 3 ; i++) W_L[i] = w_l[i] ;
+    M_L = x[I_M_L] ;
+    
+    {
+      int i ;
+      double* w_l = x + I_W_L ;
+      
+      for(i = 0 ; i < 3 ; i++) W_L[i] = w_l[i] ;
+    }
   }
 
   return(0) ;
@@ -353,7 +367,7 @@ int  ComputeMatrix(Element_t *el,double t,double dt,double *k)
   for(i = 0 ; i < ndof*ndof ; i++) k[i] = zero ;
 
   /* We skip if the element is a submanifold */
-  if(Element_IsSubmanifold(el)) return(0) ;
+  //if(Element_IsSubmanifold(el)) return(0) ;
 
 
   /*
@@ -404,7 +418,7 @@ int  ComputeResidu(Element_t *el,double t,double dt,double *r)
   /* Initialisation */
   for(i = 0 ; i < ndof ; i++) r[i] = zero ;
 
-  if(Element_IsSubmanifold(el)) return(0) ;
+  //if(Element_IsSubmanifold(el)) return(0) ;
   
   
   /* 1 Accumulation Terms */
@@ -444,20 +458,20 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
   int NbOfOutputs = 3 ;
   double *vim = Element_GetImplicitTerm(el) ;
   double *vex = Element_GetExplicitTerm(el) ;
+  double** u  = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   IntFct_t  *intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
-  int nn = IntFct_GetNbOfNodes(intfct) ;
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
   FEM_t *fem = FEM_GetInstance(el) ;
-  double zero = 0. ;
 
-  if(Element_IsSubmanifold(el)) return(0) ;
+  //if(Element_IsSubmanifold(el)) return(0) ;
 
   /* Initialization */
   {
-    int    i,j ;
-    for(i = 0 ; i < NbOfOutputs ; i++) for(j = 0 ; j < 9 ; j++) {
-      Result_GetValue(r + i)[j] = zero ;
+    int    i ;
+    
+    for(i = 0 ; i < NbOfOutputs ; i++) {
+      Result_SetValuesToZero(r + i) ;
     }
   }
   
@@ -468,9 +482,11 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
 
   {
     /* Interpolation functions at s */
-    double *h_s = FEM_ComputeIsoShapeFctInActualSpace(fem,s) ;
+    double* a = Element_ComputeCoordinateInReferenceFrame(el,s) ;
+    int p = IntFct_ComputeFunctionIndexAtPointOfReferenceFrame(intfct,a) ;
+    //double* x = ComputeVariables(el,u,u,vim,t,0,p) ;
     /* pressures */
-    double pl  =  FEM_ComputeCurrentUnknown(fem,h_s,nn,I_p_l) ;
+    double pl  = FEM_ComputeUnknown(fem,u,intfct,p,U_P_L) ;
     double pc  = p_g - pl ;
     
     /* saturation */
@@ -487,8 +503,8 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
     }
       
     i = 0 ;
-    Result_Store(r + i++,&pl,"pression-liquide",1) ;
-    Result_Store(r + i++,w_l,"flux-liquide",3) ;
+    Result_Store(r + i++,&pl,"pressure",1) ;
+    Result_Store(r + i++,w_l,"flow",3) ;
     Result_Store(r + i++,&sl,"saturation",1) ;
   }
   
@@ -503,12 +519,13 @@ int c10(FEM_t *fem,double *c)
 **  Matrice de comportement (c) et decalage (dec)
 */
 {
-  Element_t *el = FEM_GetElement(fem) ;
-  double *vim = Element_GetImplicitTerm(el) ;
-  double *vex = Element_GetExplicitTerm(el) ;
-  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  Element_t* el = FEM_GetElement(fem) ;
+  //double* vim0  = Element_GetCurrentImplicitTerm(el) ;
+  //double* vim_n = Element_GetPreviousImplicitTerm(el) ;
+  double** u  = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  //double** u_n= Element_ComputePointerToPreviousNodalUnknowns(el) ;
+  IntFct_t* intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
-  int nn = IntFct_GetNbOfNodes(intfct) ;
   
   int    dec = 1 ;
   int    p ;
@@ -518,13 +535,10 @@ int c10(FEM_t *fem,double *c)
   */
   GetProperties(el) ;
   
-  for(p = 0 ; p < np ; p++ , vim += NVI , vex += NVE) {
-    double *c1 = c + p*dec ;
-    /* interpolation functions */
-    double *h  = IntFct_GetFunctionAtPoint(intfct,p) ;
-    
+  for(p = 0 ; p < np ; p++) {
+    double* c1 = c + p*dec ;
     /* pressures */
-    double pl  = FEM_ComputeCurrentUnknown(fem,h,nn,I_p_l) ;
+    double pl  = FEM_ComputeUnknown(fem,u,intfct,p,U_P_L) ;
     double pc  = p_g - pl ;
     
     /* saturation */
@@ -553,7 +567,7 @@ int k10(FEM_t *fem,double *c)
 
   for(p = 0 ; p < np ; p++ , vex += NVE) {
     int i ;
-    double *c1 = c + p*dec ;
+    double* c1 = c + p*dec ;
     
     /* initialisation */
     for(i = 0 ; i < dec ; i++) c1[i] = zero ;
@@ -565,4 +579,118 @@ int k10(FEM_t *fem,double *c)
   }
   
   return(dec) ;
+}
+
+
+
+
+
+
+
+
+double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const double t,const double dt,const int p)
+/** This locally defined function compute the intern variables at
+ *  the interpolation point p, from the nodal unknowns.
+ *  Return a pointer on the locally defined array of the variables. */
+{
+  IntFct_t* intfct = Element_GetIntFct(el) ;
+  FEM_t*    fem    = FEM_GetInstance(el) ;
+  double* vex0 = Element_GetExplicitTerm(el) ;
+  double** u   = (double**) vu ;
+  //double** u_n = (double**) vu_n ;
+  //double*  f_n = (double*)  vf_n ;
+  double*  x   = Variables[p] ;
+  
+    
+  /* Load the primary variables in x */
+  {
+    int    i ;
+    
+    /* Pressure */
+    x[I_P_L] = FEM_ComputeUnknown(fem,u,intfct,p,U_P_L) ;
+    
+    /* Pressure gradient */
+    {
+      double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_P_L) ;
+    
+      for(i = 0 ; i < 3 ; i++) {
+        x[I_GRD_P_L + i] = grd[i] ;
+      }
+      
+      FEM_FreeBufferFrom(fem,grd) ;
+    }
+  }
+  
+  
+  /* Needed variables to compute secondary variables */
+  {
+    double* vex = vex0 + p*NVE ;
+    
+    /* transfert coefficient */
+    x[I_K_L] = K_L ;
+  }
+
+    
+  ComputeSecondaryVariables(el,t,dt,NULL,x) ;
+  
+  return(x) ;
+}
+
+
+
+void  ComputeSecondaryVariables(Element_t* el,const double t,const double dt,double* x_n,double* x)
+/** Compute the secondary variables from the primary ones. */
+{
+  int dim = Element_GetDimensionOfSpace(el) ;
+  /* Pressures */
+  double pl  = x[I_P_L] ;
+  double pc  = p_g - pl ;
+    
+  /* saturation */
+  double sl  = SATURATION(pc) ;
+    
+  /* liquid mass content */
+  double m_l = rho_l*phi*sl ;
+    
+  /* transfert coefficient */
+  double k_l = x[I_K_L] ;
+    
+  /* Pressure gradient */
+  double* gpl = x + I_GRD_P_L ;
+  double* w_l = x + I_W_L ;
+  int i ;
+  
+  
+  /* Backup */
+    
+  for(i = 0 ; i < 3 ; i++) w_l[i] = - k_l*gpl[i] ;
+  w_l[dim-1] += k_l*rho_l*gravite ;
+    
+  x[I_M_L] = m_l ;
+  
+}
+
+
+double* ComputeVariableDerivatives(Element_t* el,const double t,const double dt,double* x,const double dxi,const int i)
+{
+  double* dx = dVariables ;
+  int j ;
+  
+  /* Primary Variables */
+  for(j = 0 ; j < NbOfVariables ; j++) {
+    dx[j] = x[j] ;
+  }
+  
+  /* We increment the variable as (x + dx) */
+  dx[i] += dxi ;
+  
+  ComputeSecondaryVariables(el,t,dt,NULL,dx) ;
+  
+  /* The numerical derivative as (f(x + dx) - f(x))/dx */
+  for(j = 0 ; j < NbOfVariables ; j++) {
+    dx[j] -= x[j] ;
+    dx[j] /= dxi ;
+  }
+
+  return(dx) ;
 }

@@ -69,7 +69,7 @@
 /* Kuzel's salt */
 /* C3AH12.0.5(Cs).0.5(CaCl2) = Ca4.Al2.Cl(SO4)0.5.12(OH)·6(H2O) 
  * Ca4Al2Cl(SO4)0.5(OH)12·6H2O = 4Ca[2+] + 2Al(OH)4[-] + Cl[-] + 0.5SO4[2-] + 4OH[-] + 6H2O*/
-#define Log10DissociationConstantOfCementHydrationProduct_KuzeSalt__4Ca_2AlO4H4_Cl_halfSO4_4OH_6H2O(T) \
+#define Log10DissociationConstantOfCementHydrationProduct_KuzelSalt__4Ca_2AlO4H4_Cl_halfSO4_4OH_6H2O(T) \
         (-28.53)
 #define Log10DissociationConstantOfCementHydrationProduct_2KuzelSalt__8Ca_4AlO4H4_2Cl_SO4_8OH_12H2O(T) \
         (-57.06)

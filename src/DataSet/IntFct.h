@@ -18,6 +18,11 @@ extern double     (IntFct_InterpolateAtPoint)(IntFct_t*,double*,int,int) ;
 
 #define IntFct_MaxNbOfIntPoints            (20)
 
+#include "ShapeFct.h"
+
+#define IntFct_MaxNbOfFunctions            (ShapeFct_MaxNbOfNodes)
+
+
 #define IntFct_GetType(IFCT)             ((IFCT)->type)
 #define IntFct_GetNbOfNodes(IFCT)        ((IFCT)->nn)
 #define IntFct_GetNbOfFunctions(IFCT)    ((IFCT)->nn)
@@ -31,15 +36,24 @@ extern double     (IntFct_InterpolateAtPoint)(IntFct_t*,double*,int,int) ;
 
 
 
+#define IntFct_GetCoordinatesAtPoint(IFCT,p) \
+        (IntFct_GetPointCoordinates(IFCT) + (p)*3)
+//        (IntFct_GetPointCoordinates(IFCT) + (p)*IntFct_GetDimension(IFCT))
+        
 #define IntFct_GetFunctionAtPoint(IFCT,p) \
-        (IntFct_GetFunction(IFCT) + (p)*IntFct_GetNbOfNodes(IFCT))
+        (IntFct_GetFunction(IFCT) + (p)*IntFct_MaxNbOfFunctions)
+//        (IntFct_GetFunction(IFCT) + (p)*IntFct_GetNbOfFunctions(IFCT))
 
 #define IntFct_GetFunctionGradientAtPoint(IFCT,p) \
         (IntFct_GetFunctionGradient(IFCT) + \
-        (p)*IntFct_GetDimension(IFCT)*IntFct_GetNbOfNodes(IFCT))
+        (p)*3*IntFct_MaxNbOfFunctions)
+//        (p)*IntFct_GetDimension(IFCT)*IntFct_GetNbOfFunctions(IFCT))
         
 #define IntFct_TypeIs(IFCT,type) \
         (!strcmp(IntFct_GetType(IFCT),type))
+        
+#define IntFct_SetType(IFCT,type) \
+        (strcpy(IntFct_GetType(IFCT),type))
 
 
 

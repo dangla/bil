@@ -7,6 +7,7 @@
 #include "GenericData.h"
 //#include "GenericObject.h"
 #include "Tools/Math.h"
+#include "Mry.h"
 
 
 static void           (GenericData_Remove)(GenericData_t**) ;
@@ -16,16 +17,11 @@ static void           (GenericData_Remove)(GenericData_t**) ;
 
 GenericData_t* (GenericData_New)(void)
 {
-  GenericData_t* gdat = (GenericData_t*) malloc(sizeof(GenericData_t)) ;
-  
-  assert(gdat) ;
+  GenericData_t* gdat = (GenericData_t*) Mry_New(GenericData_t) ;
   
   /* Allocation for the name */
   {
-    size_t sz = (GenericData_MaxLengthOfKeyWord + 1)*sizeof(char) ;
-    char* name = (char*) malloc(sz) ;
-    
-    assert(name) ;
+    char* name = (char*) Mry_New(char[GenericData_MaxLengthOfKeyWord + 1]) ;
     
     GenericData_GetName(gdat) = name ;
   }

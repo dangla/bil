@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "Message.h"
+#include "Mry.h"
 #include "Elasticity.h"
 
 
@@ -16,26 +17,19 @@ static double* Elasticity_ComputeTransverselyIsotropicStiffnessTensor(Elasticity
 
 Elasticity_t*  (Elasticity_Create)(void)
 {
-  Elasticity_t* elasty = (Elasticity_t*) malloc(sizeof(Elasticity_t)) ;
+  Elasticity_t* elasty = (Elasticity_t*) Mry_New(Elasticity_t) ;
   
-  assert(elasty) ;
   
   /* Allocation of space for the stiffness tensor */
   {
-    size_t sz = 81*sizeof(double) ;
-    double* c = (double*) malloc(sz) ;
-    
-    assert(c) ;
+    double* c = (double*) Mry_New(double[81]) ;
     
     Elasticity_GetStiffnessTensor(elasty) = c ;
   }
   
   /* Allocation of space for the type */
   {
-    size_t sz = Elasticity_MaxLengthOfKeyWord*sizeof(char) ;
-    char* c = (char*) malloc(sz) ;
-    
-    assert(c) ;
+    char* c = (char*) Mry_New(char[Elasticity_MaxLengthOfKeyWord]) ;
     
     Elasticity_GetType(elasty) = c ;
     /* Default = isotropy */
@@ -44,10 +38,7 @@ Elasticity_t*  (Elasticity_Create)(void)
   
   /* Allocation of space for the parameters */
   {
-    size_t sz = Elasticity_MaxNbOfParameters*sizeof(double) ;
-    double* c = (double*) malloc(sz) ;
-    
-    assert(c) ;
+    double* c = (double*) Mry_New(double[Elasticity_MaxNbOfParameters]) ;
     
     Elasticity_GetParameter(elasty) = c ;
   }
@@ -67,7 +58,6 @@ void  (Elasticity_Delete)(void* self)
   free(Elasticity_GetParameter(elasty)) ;
   
   free(*pelasty) ;
-  *pelasty = NULL ;
 }
 
 
@@ -159,6 +149,24 @@ double* Elasticity_ComputeStiffnessTensor(Elasticity_t* elasty,double* c)
   }
   
   return(NULL) ;
+}
+
+
+
+
+
+void Elasticity_CopyStiffnessTensor(Elasticity_t* elasty,double* c)
+/** Copy the 4th rank stiffness tensor in c. */
+{
+  double* cel = Elasticity_GetStiffnessTensor(elasty) ;
+
+  {
+    int i ;
+        
+    for(i = 0 ; i < 81 ; i++) {
+      c[i] = cel[i] ;
+    }
+  }
 }
 
 

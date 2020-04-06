@@ -1,3 +1,5 @@
+#ifdef SUPERLULIB
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,18 +10,11 @@
 #include "Message.h"
 #include "Matrix.h"
 
-#ifdef SUPERLULIB
 
 #include "SuperLUMethod.h"
 #include "SuperLUFormat.h"
 
-//#define val(x) #x
-//#define xval(x) val(x)
-//#include xval(SUPERLULIB/SRC/dsp_defs.h)
-//#include "/home/dangla/Documents/Softwares/getfem-4.0.0/superlu/slu_ddefs.h"
 #include "superlu.h"
-//#undef val
-//#undef xval
 
 
 
@@ -40,7 +35,6 @@ int   SuperLUMethod_Solve(Solver_t* solver)
   superlu_options_t options ;
   SuperLUStat_t stat ;
   int   info ;
-  /* int   *perm_r = a.work,*perm_c = (int *) a.work + n ; */
   static int*   perm_r ;
   static int*   perm_c ;
   /* for dgssvx */
@@ -51,10 +45,12 @@ int   SuperLUMethod_Solve(Solver_t* solver)
   /* Allocate memory space for the permutations of rows and columns */
   if(!iresol) {
     perm_r = (int*) malloc(n*sizeof(int)) ;
+    //perm_r = (int*) a.work ;
     
     assert(perm_r) ;
     
     perm_c = (int*) malloc(n*sizeof(int)) ;
+    //perm_c = (int*) a.work + n ;
     
     assert(perm_c) ;
   }

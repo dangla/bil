@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "Mry.h"
 #include "Message.h"
 #include "Tools/Math.h"
 #include "IntFcts.h"
@@ -11,17 +12,12 @@
 
 IntFcts_t*  IntFcts_Create(void)
 {
-  IntFcts_t* intfcts = (IntFcts_t*) malloc(sizeof(IntFcts_t)) ;
-  
-  if(!intfcts) arret("IntFcts_Create") ;
+  IntFcts_t* intfcts = (IntFcts_t*) Mry_New(IntFcts_t) ;
 
 
   /* Memory space for interpolation functions */
   {
-    size_t sz = IntFcts_MaxNbOfIntFcts*sizeof(IntFct_t) ;
-    IntFct_t* intfct = (IntFct_t*) malloc(sz) ;
-    
-    if(!intfct) arret("IntFcts_Create(1)") ;
+    IntFct_t* intfct = (IntFct_t*) Mry_New(IntFct_t[IntFcts_MaxNbOfIntFcts]) ;
     
     IntFcts_GetIntFct(intfcts) = intfct ;
   }
@@ -36,7 +32,7 @@ IntFcts_t*  IntFcts_Create(void)
 
 int IntFcts_FindIntFct(IntFcts_t* intfcts,int nn,int dim,const char* type)
 /** Find an Interpolation Function class defined by 
- *  nn = Nb of nodes 
+ *  nn = nb of functions 
  *  dim = local dimension
  *  type = characteristic of this interpolation functions
  *  Return the index of the Int. Fct. */
@@ -46,10 +42,10 @@ int IntFcts_FindIntFct(IntFcts_t* intfcts,int nn,int dim,const char* type)
 
   /* Does the function already exist? */
   for(i = 0 ; i < n_fi ; i++) {
-    IntFct_t* fi = IntFcts_GetIntFct(intfcts) + i ;
-    int    i_nn = IntFct_GetNbOfNodes(fi) ;
-    int    i_dim = IntFct_GetDimension(fi) ;
-    char   *i_type = IntFct_GetType(fi) ;
+    IntFct_t* fi  = IntFcts_GetIntFct(intfcts) + i ;
+    int    i_nn   = IntFct_GetNbOfFunctions(fi) ;
+    int    i_dim  = IntFct_GetDimension(fi) ;
+    char*  i_type = IntFct_GetType(fi) ;
 
     if((nn == i_nn) && (dim == i_dim) && (strcmp(type,i_type) == 0)) {
       return(i) ;
@@ -64,7 +60,7 @@ int IntFcts_FindIntFct(IntFcts_t* intfcts,int nn,int dim,const char* type)
 
 int IntFcts_AddIntFct(IntFcts_t* intfcts,int nn,int dim,const char* type)
 /** Add an Interpolation Function class defined by 
- *  nn = Nb of nodes 
+ *  nn = nb of functions 
  *  dim = local dimension
  *  type = characteristic of this interpolation functions
  *  Return the index of the Int. Fct. */
@@ -85,7 +81,7 @@ int IntFcts_AddIntFct(IntFcts_t* intfcts,int nn,int dim,const char* type)
   {
     IntFct_t* intfcti = IntFct_Create(nn,dim,type) ;
     
-    intfct[i] = *intfcti ;
+    intfct[i] = intfcti[0] ;
   }
   
   return(i) ;

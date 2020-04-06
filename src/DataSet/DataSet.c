@@ -19,7 +19,6 @@
 
 
 static void   (DataSet_PrintData)  (DataSet_t*,char*) ;
-static void   (DataSet_LinkUp)     (DataSet_t*) ;
 
 
 
@@ -70,9 +69,8 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   /* Fields */
   {
     DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    Geometry_t*    geometry = DataSet_GetGeometry(jdd) ;
   
-    DataSet_GetFields(jdd) = Fields_Create(datafile,geometry) ;
+    DataSet_GetFields(jdd) = Fields_Create(datafile) ;
   }
   if(!strcmp(debug,"field")) DataSet_PrintData(jdd,debug) ;
   
@@ -107,8 +105,6 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     DataSet_GetMesh(jdd) = Mesh_Create(datafile,materials,geometry) ;
   }
   if(!strcmp(debug,"mesh")) DataSet_PrintData(jdd,debug) ;
-  if(!strcmp(debug,"continuity")) DataSet_PrintData(jdd,debug) ;
-  if(!strcmp(debug,"inter")) DataSet_PrintData(jdd,debug) ;
   
   
   /* Initial conditions */
@@ -142,17 +138,6 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     DataSet_GetBConds(jdd) = BConds_Create(datafile,fields,functions) ;
   }
   if(!strcmp(debug,"bcond")) DataSet_PrintData(jdd,debug) ;
-  
-  
-  /* Matrix permutation numbering */
-  {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    BConds_t*      bconds = DataSet_GetBConds(jdd) ;
-    Mesh_t*        mesh = DataSet_GetMesh(jdd) ;
-  
-    Mesh_SetMatrixPermutationNumbering(mesh,bconds,datafile) ;
-  }
-  if(!strcmp(debug,"numbering")) DataSet_PrintData(jdd,debug) ;
   
   
   /* Points */
@@ -210,9 +195,27 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   if(!strcmp(debug,"module")) DataSet_PrintData(jdd,debug) ;
   
   
-  //DataSet_LinkUp(jdd) ;
+  
+  /* Set up the system of equations */
+  {
+    BConds_t*      bconds = DataSet_GetBConds(jdd) ;
+    Mesh_t*        mesh = DataSet_GetMesh(jdd) ;
+    
+    /* Set indexes to arbitrary >= 0 value */
+    Mesh_InitializeMatrixRowColumnIndexes(mesh) ;
+
+    /* Accounting for BC 
+     * (set indexes to arbitray < 0 value) */
+    BConds_EliminateMatrixRowColumnIndexes(bconds,mesh) ;
+  
+    //Mesh_SetMatrixRowColumnIndexes(mesh,bconds) ;
+  }
   
   
+  /* Other printings in debug mode */
+  if(!strcmp(debug,"continuity")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"numbering")) DataSet_PrintData(jdd,debug) ;
+  //if(!strcmp(debug,"inter")) DataSet_PrintData(jdd,debug) ;
   if(!strcmp(debug,"all")) DataSet_PrintData(jdd,debug) ;
 
 
@@ -251,148 +254,6 @@ DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
   }
   
   return(jdd) ;
-}
-
-
-
-void DataSet_LinkUp(DataSet_t* dataset)
-{
-
-  /* Material - Fields */
-  {
-    Materials_t* materials = DataSet_GetMaterials(dataset) ;
-    Fields_t* fields = DataSet_GetFields(dataset) ;
-    
-    if(materials && fields) {
-      int n_mats = Materials_GetNbOfMaterials(materials) ;
-      int i ;
-
-      for(i = 0 ; i < n_mats ; i++) {
-        Material_t* mat = Materials_GetMaterial(materials) + i ;
-        Material_GetFields(mat) = fields ;
-      }
-    }
-  }
-    
-
-  /* BCond - Fields */
-  {
-    BConds_t* bconds = DataSet_GetBConds(dataset) ;
-    Fields_t* fields = DataSet_GetFields(dataset) ;
-    
-    if(bconds && fields) {
-      BCond_t* bcond = BConds_GetBCond(bconds) ;
-      Field_t* field = Fields_GetField(fields) ;
-      int n_bconds = BConds_GetNbOfBConds(bconds) ;
-      int n_fields = Fields_GetNbOfFields(fields) ;
-      int i ;
-    
-      for(i = 0 ; i < n_bconds ; i++) {
-        BCond_t* bc = bcond + i ;
-        
-        {
-          int ifld = BCond_GetFieldIndex(bc) ;
-        
-          if(ifld < 0) {
-            BCond_GetField(bc) = NULL ;
-          } else if(ifld < n_fields) {
-            BCond_GetField(bc) = field + ifld ;
-          } else {
-            arret("DataSet_LinkUp: undefined field") ;
-          }
-        }
-        
-        BCond_GetFields(bc) = fields ;
-      }
-    }
-  }
-    
-    
-  /* BCond - Functions */
-  {
-    BConds_t* bconds = DataSet_GetBConds(dataset) ;
-    Functions_t* functions = DataSet_GetFunctions(dataset) ;
-    
-    if(bconds && functions) {
-      BCond_t* bcond = BConds_GetBCond(bconds) ;
-      Function_t* function = Functions_GetFunction(functions) ;
-      int n_functions = Functions_GetNbOfFunctions(functions) ;
-      int n_bconds = BConds_GetNbOfBConds(bconds) ;
-      int i ;
-    
-      for(i = 0 ; i < n_bconds ; i++) {
-        BCond_t* bc = bcond + i ;
-        
-        {
-          int ifct = BCond_GetFunctionIndex(bc) ;
-          
-          if(ifct < 0) {
-            BCond_GetFunction(bc) = NULL ;
-          } else if(ifct < n_functions) {
-            BCond_GetFunction(bc) = function + ifct ;
-          } else {
-            arret("DataSet_LinkUp: undefined function") ;
-          }
-        }
-        
-        BCond_GetFunctions(bc) = functions ;
-      }
-    }
-  }
-
-
-  /* Element - Material */
-  {
-    Mesh_t* mesh = DataSet_GetMesh(dataset) ;
-    Materials_t* materials = DataSet_GetMaterials(dataset) ;
-  
-    if(mesh && materials) {
-      Elements_t* elements = Mesh_GetElements(mesh) ;
-      Element_t* el = Elements_GetElement(elements) ;
-      Material_t* material = Materials_GetMaterial(materials) ;
-      int n_el = Elements_GetNbOfElements(elements) ;
-      int ie ;
-    
-      for(ie = 0 ; ie < n_el ; ie++) {
-        int imat = Element_GetMaterialIndex(el + ie) ;
-    
-        if(imat >= 0) {
-          Element_GetMaterial(el + ie) = material + imat ;
-        } else {
-          Element_GetMaterial(el + ie) = NULL ;
-        }
-      }
-    }
-  }
-  
-  
-  /* Initial conditions */
-  {
-  }
-  
-  
-  /* Loads */
-  {
-  }
-  
-
-  /* Point - Element */
-  {
-    Points_t*  points = DataSet_GetPoints(dataset) ;
-    Mesh_t*  mesh = DataSet_GetMesh(dataset) ;
-    
-    if(points && mesh) {
-      int n_points = Points_GetNbOfPoints(points) ;
-      int i ;
-    
-      /* The enclosing element */
-      for(i = 0 ; i < n_points ; i++) {
-        Point_t* point_i = Points_GetPoint(points) + i ;
-    
-        Point_SetEnclosingElement(point_i,mesh) ;
-      }
-    }
-  }
 }
 
 
@@ -530,6 +391,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
     
     for(i = 0 ; i < (int) N_NO ; i++) {
       Node_t* node_i = NO + i ;
+      int ne = Node_GetNbOfElements(node_i) ;
       int n = PRINT("\t no(%d)",i) ;
       int j ;
       
@@ -539,6 +401,15 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       
       for(j = 0 ; j < DIM ; j++) {
         n += PRINT(" % e",Node_GetCoordinate(node_i)[j]) ;
+      }
+      
+      while(n < c3) n += PRINT(" ") ;
+      
+      if(ne) n += PRINT("  el(") ;
+      
+      for(j = 0 ; j < ne ; j++) {
+        n += PRINT("%d",Element_GetElementIndex(Node_GetElement(node_i,j))) ;
+        n += PRINT(((j < ne - 1) ? "," : ")")) ;
       }
       
       PRINT("\n") ;
@@ -1152,7 +1023,6 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       PRINT("\t Point Coordinates:\n") ;
       
       {
-        double* a = IntFct_GetPointCoordinates(FI + i) ;
         char axis[3] = {'x','y','z'} ;
         int k ;
         
@@ -1162,7 +1032,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
           PRINT("\t %c = ",axis[k]) ;
         
           for(p = 0 ; p < np ; p++) {
-            double* ap = a + p*dim ;
+            double* ap = IntFct_GetCoordinatesAtPoint(FI + i,p) ;
             
             PRINT("% e ",ap[k]) ;
           }
@@ -1192,7 +1062,6 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       PRINT("\t Functions:\n") ;
       
       {
-        double* h = IntFct_GetFunction(FI + i) ;
         int k ;
         
         for(k = 0 ; k < nn ; k++) {
@@ -1212,7 +1081,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
           PRINT("\t h%d = ",k) ;
         
           for(p = 0 ; p < np ; p++) {
-            double* hp = h + p*nn ;
+            double* hp = IntFct_GetFunctionAtPoint(FI + i,p) ;
             
             PRINT("% e ",hp[k]) ;
           }
@@ -1228,7 +1097,6 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       
 #define DHP(n,i)  (dhp[(n)*dim+(i)])
       {
-        double* dh = IntFct_GetFunctionGradient(FI + i) ;
         int l ;
         
         for(l = 0 ; l < nn ; l++) {
@@ -1253,7 +1121,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
             PRINT("\t h%d,%c = ",l,axis[k]) ;
           
             for(p = 0 ; p < np ; p++) {
-              double* dhp = dh + p*nn*dim ;
+              double* dhp = IntFct_GetFunctionGradientAtPoint(FI + i,p) ;
               
               PRINT("% e ",DHP(l,k)) ;
             }

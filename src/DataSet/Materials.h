@@ -25,6 +25,9 @@ extern Materials_t* (Materials_New)   (const int) ;
 
 #define Materials_GetNbOfUsedModels(MATS) \
         Models_GetNbOfModels(Materials_GetUsedModels(MATS))
+        
+#define Materials_GetUsedModel(MATS) \
+        Models_GetModel(Materials_GetUsedModels(MATS))
 
 
 

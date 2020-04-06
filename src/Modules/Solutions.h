@@ -14,7 +14,7 @@ struct Solutions_s     ; typedef struct Solutions_s     Solutions_t ;
 
 #include "Mesh.h"
  
-extern Solutions_t*   (Solutions_Create)(const int,Mesh_t*,const int) ;
+extern Solutions_t*   (Solutions_Create)(Mesh_t*,const int) ;
 extern void           (Solutions_MergeExplicitTerms)(Solutions_t*) ;
 extern void           (Solutions_StepForward)(Solutions_t*) ;
 extern void           (Solutions_StepBackward)(Solutions_t*) ;

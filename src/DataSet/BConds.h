@@ -15,7 +15,7 @@ struct BConds_s       ; typedef struct BConds_s       BConds_t ;
 
 extern BConds_t* BConds_New(const int) ;
 extern BConds_t* BConds_Create(DataFile_t*,Fields_t*,Functions_t*) ;
-extern void      BConds_ResetMatrixNumbering(BConds_t*,Mesh_t*) ;
+extern void      BConds_EliminateMatrixRowColumnIndexes(BConds_t*,Mesh_t*) ;
 extern void      BConds_AssignBoundaryConditions(BConds_t*,Mesh_t*,double) ;
 
 

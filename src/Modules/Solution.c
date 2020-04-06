@@ -1,11 +1,33 @@
 #include <stdio.h>
 #include "Solution.h"
 #include "Message.h"
+#include "Mry.h"
 
 
 
 
 /* Extern functions */
+
+
+
+Solution_t*   (Solution_Create)(Mesh_t* mesh)
+{
+  Solution_t* sol = (Solution_t*) Mry_New(Solution_t) ;
+  
+  {
+      Solution_GetNodesSol(sol)    = NodesSol_Create(mesh) ;
+      Solution_GetElementsSol(sol) = ElementsSol_Create(mesh) ;
+      Solution_GetTime(sol)      = 0 ;
+      Solution_GetTimeStep(sol)  = 0 ;
+      Solution_GetStepIndex(sol) = 0 ;
+      Solution_GetPreviousSolution(sol) = NULL ;
+      Solution_GetNextSolution(sol)     = NULL ;
+  }
+  
+  return(sol) ;
+}
+
+
 
 void Solution_Copy(Solution_t* sol_dest,Solution_t* sol_src)
 /** Copy unknowns, (im/ex)plicit and constant terms 

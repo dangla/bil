@@ -29,76 +29,54 @@ static Plasticity_ReturnMapping_t               Plasticity_ReturnMappingCamClayO
 
 Plasticity_t*  (Plasticity_Create)(void)
 {
-  Plasticity_t* plasty = (Plasticity_t*) malloc(sizeof(Plasticity_t)) ;
+  Plasticity_t* plasty = (Plasticity_t*) Mry_New(Plasticity_t) ;
   
-  assert(plasty) ;
   
   /* Allocation of space for the code name of the model */
   {
-    size_t sz = Plasticity_MaxLengthOfKeyWord*sizeof(char) ;
-    char* name = (char*) malloc(sz) ;
-    
-    assert(name) ;
+    char* name = (char*) Mry_New(char[Plasticity_MaxLengthOfKeyWord]) ;
     
     Plasticity_GetCodeNameOfModel(plasty) = name ;
   }
   
   /* Allocation of space for the yield function gradient */
   {
-    size_t sz = 9*sizeof(double) ;
-    double* c = (double*) malloc(sz) ;
-    
-    assert(c) ;
+    double* c = (double*) Mry_New(double[9]) ;
     
     Plasticity_GetYieldFunctionGradient(plasty) = c ;
   }
   
   /* Allocation of space for the potential function gradient */
   {
-    size_t sz = 9*sizeof(double) ;
-    double* c = (double*) malloc(sz) ;
-    
-    assert(c) ;
+    double* c = (double*) Mry_New(double[9]) ;
     
     Plasticity_GetPotentialFunctionGradient(plasty) = c ;
   }
   
   /* Allocation of space for the hardening modulus */
   {
-    size_t sz = sizeof(double) ;
-    double* c = (double*) malloc(sz) ;
-    
-    assert(c) ;
+    double* c = (double*) Mry_New(double) ;
     
     Plasticity_GetHardeningModulus(plasty) = c ;
   }
   
   /* Allocation of space for Fji*Cijkl */
   {
-    size_t sz = 9*sizeof(double) ;
-    double* c = (double*) malloc(sz) ;
-    
-    assert(c) ;
+    double* c = (double*) Mry_New(double[9]) ;
     
     Plasticity_GetFjiCijkl(plasty) = c ;
   }
   
   /* Allocation of space for Cijkl*Glk */
   {
-    size_t sz = 9*sizeof(double) ;
-    double* c = (double*) malloc(sz) ;
-    
-    assert(c) ;
+    double* c = (double*) Mry_New(double[9]) ;
     
     Plasticity_GetCijklGlk(plasty) = c ;
   }
   
   /* Allocation of space for the tangent stiffness tensor */
   {
-    size_t sz = 81*sizeof(double) ;
-    double* c = (double*) malloc(sz) ;
-    
-    assert(c) ;
+    double* c = (double*) Mry_New(double[81]) ;
     
     Plasticity_GetTangentStiffnessTensor(plasty) = c ;
   }
@@ -108,10 +86,7 @@ Plasticity_t*  (Plasticity_Create)(void)
   
   /* Allocation of space for the parameters */
   {
-    size_t sz = Plasticity_MaxNbOfParameters*sizeof(double) ;
-    double* c = (double*) malloc(sz) ;
-    
-    assert(c) ;
+    double* c = (double*) Mry_New(double[Plasticity_MaxNbOfParameters]) ;
     
     Plasticity_GetParameter(plasty) = c ;
   }
@@ -173,7 +148,6 @@ void  (Plasticity_Delete)(void* self)
   }
   
   free(*pplasty) ;
-  *pplasty = NULL ;
 }
 
 
@@ -340,7 +314,7 @@ void (Plasticity_ScanProperties)(Plasticity_t* plasty,DataFile_t* datafile,int (
 
 
 
-
+#if 0
 void Plasticity_CopyElasticTensor(Plasticity_t* plasty,double* c)
 /** Copy the 4th rank elastic tensor in c. */
 {
@@ -356,6 +330,7 @@ void Plasticity_CopyElasticTensor(Plasticity_t* plasty,double* c)
       }
   }
 }
+#endif
 
 
 
@@ -708,46 +683,45 @@ double Plasticity_ReturnMappingDruckerPrager(Plasticity_t* plasty,double* sig,do
         double cc ;
         int    i ;
         
-	      /* Plastic strain increments */
-	      for(i = 0 ; i < 9 ; i++) {
-	        deps_p[i] = dl*(1.5*sdev_t[i]/q_t + id[i]*dd/3.) ;
-	      }
+        /* Plastic strain increments */
+        for(i = 0 ; i < 9 ; i++) {
+          deps_p[i] = dl*(1.5*sdev_t[i]/q_t + id[i]*dd/3.) ;
+        }
         
-	      /* Cumulative plastic shear strain */
-	      gam_p1 = gam_pn + sqrt(2*Math_ComputeSecondDeviatoricStressInvariant(deps_p)) ;
+        /* Cumulative plastic shear strain */
+        gam_p1 = gam_pn + sqrt(2*Math_ComputeSecondDeviatoricStressInvariant(deps_p)) ;
         
-	      /* p, q, cc */
-	      //c1 = (gam_p1 < gam_R) ? 1 - (1 - alpha)*gam_p1/gam_R : alpha ;
-	      c1 = 1 ;
-	      cc = cc0*c1*c1 ;
-	      q  = q_t - dl*3*mu ;
-	      p  = p_t - dl*k*dd ;
+        /* p, q, cc */
+        //c1 = (gam_p1 < gam_R) ? 1 - (1 - alpha)*gam_p1/gam_R : alpha ;
+        c1 = 1 ;
+        cc = cc0*c1*c1 ;
+        q  = q_t - dl*3*mu ;
+        p  = p_t - dl*k*dd ;
         
-	      /* dqsdl, dpsdl, dccsdl */
-	      dqsdl = -3*mu ;
-	      dpsdl = -k*dd ;
-	      dccsdl = 0. ;
+        /* dqsdl, dpsdl, dccsdl */
+        dqsdl = -3*mu ;
+        dpsdl = -k*dd ;
+        dccsdl = 0. ;
         /*
-	      if(gam_p1 < gam_R) {
-	        dccsdl = -2*(1 - alpha)/gam_R*c1*cc0 ;
-	        dccsdl *= 1.5*sqrt(2*Math_ComputeSecondDeviatoricStressInvariant(sdev_t))/q_t ;
-	      }
+        if(gam_p1 < gam_R) {
+          dccsdl = -2*(1 - alpha)/gam_R*c1*cc0 ;
+          dccsdl *= 1.5*sqrt(2*Math_ComputeSecondDeviatoricStressInvariant(sdev_t))/q_t ;
+        }
         */
         
         /* Criterion */
         fcrit = q + ff*p - cc ;
         
-	      /* dl */
+        /* dl */
         {
           double df = dqsdl + ff*dpsdl - dccsdl ;
           
-	        dl   -= fcrit/df ;
+          dl   -= fcrit/df ;
         }
         
-	      if(nf++ > 20) {
-	        printf("No convergence (Plasticity_ReturnMappingDruckerPrager)") ;
-	        exit(0) ;
-	      }
+        if(nf++ > 20) {
+          Message_FatalError("Plasticity_ReturnMappingDruckerPrager: no convergence") ;
+        }
       }
       
       /* Stresses */
@@ -755,7 +729,7 @@ double Plasticity_ReturnMappingDruckerPrager(Plasticity_t* plasty,double* sig,do
         int    i ;
         
         for(i = 0 ; i < 9 ; i++) {
-	        sig[i] = sdev_t[i]*q/q_t + p*id[i] ;
+          sig[i] = sdev_t[i]*q/q_t + p*id[i] ;
         }
       }
     }
@@ -785,8 +759,8 @@ double Plasticity_ReturnMappingDruckerPrager(Plasticity_t* plasty,double* sig,do
       
       /* Plastic strain increments and stresses */
       for(i = 0 ; i < 9 ; i++) {
-	      deps_p[i] = sdev_t[i]/dmu + dl*id[i]*dd/3. ;
-	      sig[i]    = p*id[i] ;
+        deps_p[i] = sdev_t[i]/dmu + dl*id[i]*dd/3. ;
+        sig[i]    = p*id[i] ;
       }
     }
     
@@ -977,8 +951,7 @@ double Plasticity_ReturnMappingCamClayEp(Plasticity_t* plasty,double* sig,double
       fcrit  = q*q/m2 + p*(p + pc) ;
       
       if(nf++ > 20) {
-	      printf("no convergence (ReturnMapping_CamClay)") ;
-	      exit(0) ;
+        Message_FatalError("Plasticity_ReturnMappingCamClayEp: no convergence") ;
       }
     }
   }
@@ -1185,8 +1158,7 @@ double Plasticity_ReturnMappingCamClay(Plasticity_t* plasty,double* sig,double* 
       fcrit  = q*q/m2 + p*(p + pc) ;
       
       if(nf++ > 20) {
-	      printf("no convergence (ReturnMapping_CamClay)") ;
-	      exit(0) ;
+        Message_FatalError("Plasticity_ReturnMappingCamClay: no convergence") ;
       }
     }
   }
@@ -1390,8 +1362,7 @@ double Plasticity_ReturnMappingCamClayOffset(Plasticity_t* plasty,double* sig,do
       fcrit  = q*q/m2 + (p - ps)*(p + pc) ;
       
       if(nf++ > 20) {
-	      printf("no convergence (ReturnMapping_CamClay)") ;
-	      exit(0) ;
+        Message_FatalError("Plasticity_ReturnMappingCamClayOffset: no convergence") ;
       }
     }
   }

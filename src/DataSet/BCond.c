@@ -6,6 +6,8 @@
 #include "Message.h"
 #include "Mry.h"
 #include "String.h"
+#include "Fields.h"
+#include "Functions.h"
 #include "BCond.h"
 
 
@@ -16,7 +18,7 @@ BCond_t* BCond_New(void)
   BCond_t* bcond = (BCond_t*) Mry_New(BCond_t) ;
     
     
-  /* Allocation of space for the name of unknowns */
+  /* Allocation of space for the name of unknown */
   {
     char* name = (char*) Mry_New(char[BCond_MaxLengthOfKeyWord]) ;
   
@@ -24,7 +26,7 @@ BCond_t* BCond_New(void)
   }
     
     
-  /* Allocation of space for the name of equations */
+  /* Allocation of space for the name of equation */
   {
     char* name = (char*) Mry_New(char[BCond_MaxLengthOfKeyWord]) ;
     
@@ -80,11 +82,31 @@ void BCond_Scan(BCond_t* bcond,DataFile_t* datafile)
   {
     int i ;
     int n = String_FindAndScanExp(line,"Field,Champ",","," = %d",&i) ;
+    
+    BCond_GetFieldIndex(bcond) = -1 ;
+    BCond_GetField(bcond) = NULL ;
         
     if(n) {
-      BCond_GetFieldIndex(bcond) = i - 1 ;
-    } else {
-      arret("BCond_Scan: no field") ;
+      Fields_t* fields = BCond_GetFields(bcond) ;
+      int n_fields = Fields_GetNbOfFields(fields) ;
+      int ifld = i - 1 ;
+      
+      BCond_GetFieldIndex(bcond) = ifld ;
+      
+      if(ifld < 0) {
+        
+        BCond_GetField(bcond) = NULL ;
+        
+      } else if(ifld < n_fields) {
+        Field_t* field = Fields_GetField(fields) ;
+        
+        BCond_GetField(bcond) = field + ifld ;
+        
+      } else {
+        
+        arret("BCond_Scan: field out of range") ;
+        
+      }
     }
   }
     
@@ -93,11 +115,31 @@ void BCond_Scan(BCond_t* bcond,DataFile_t* datafile)
   {
     int i ;
     int n = String_FindAndScanExp(line,"Func,Fonc",","," = %d",&i) ;
+    
+    BCond_GetFunctionIndex(bcond) = -1 ;
+    BCond_GetFunction(bcond) = NULL ;
         
     if(n) {
-      BCond_GetFunctionIndex(bcond) = i - 1 ;
-    } else {
-      arret("BCond_Scan: no function") ;
+      Functions_t* functions = BCond_GetFunctions(bcond) ;
+      int n_functions = Functions_GetNbOfFunctions(functions) ;
+      int ifct = i - 1 ;
+      
+      BCond_GetFunctionIndex(bcond) = ifct ;
+      
+      if(ifct < 0) {
+        
+        BCond_GetFunction(bcond) = NULL ;
+        
+      } else if(ifct < n_functions) {
+        Function_t* fct = Functions_GetFunction(functions) ;
+        
+        BCond_GetFunction(bcond) = fct + ifct ;
+        
+      } else {
+        
+        arret("BCond_Scan: function out of range") ;
+        
+      }
     }
   }
     

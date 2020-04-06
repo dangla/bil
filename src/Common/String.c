@@ -275,7 +275,7 @@ char* String_CopyLine(const char* str)
 
 
 
-const char* String_SkipComment(const char* str)
+const char* String_SkipRemainingComments(const char* str)
 {
   const char* c = str ;
   

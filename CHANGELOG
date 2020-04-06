@@ -1,3 +1,11 @@
+News in 2.8: Re-arranging some allocation of memory space for the mesh.
+Reformulation of the jacobian matrix of the transformation between the
+element in the reference frame and that in the current frame. Zero-thickness
+element can be dealt with.
+
+News in 2.7: Improvements on exception mechanisms, in no case 
+results will be lost.
+
 News in 2.6: The solver of sparse unsymmetric system of linear equations MA38 
 from HSL is introduced in the package and can be selected from the command line.
 The solver SuperLU can also be selected if the external library "libsuperlu.so" 

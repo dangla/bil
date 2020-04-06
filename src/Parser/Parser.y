@@ -247,20 +247,19 @@ GeometryItem :
 Mesh :
     tMesh tAFFECT tBIGSTR tEND
     {
-      Mesh_t* mesh = Mesh_New() ;
+      Mesh_t* mesh = (Mesh_t*) Mry_New(Mesh_t) ;
 
       DataSet_GetMesh(dataset) = mesh ;
       Mesh_GetGeometry(mesh) = DataSet_GetGeometry(dataset) ;
-      Mesh_GetElements(mesh) = Elements_New() ;
-      Mesh_GetNodes(mesh) = Nodes_New() ;
       Mesh_Scan(mesh,$3) ;
+      Mesh_CreateMore(mesh) ;
       {
         Materials_t* materials = DataSet_GetMaterials(dataset) ;
         if(materials) {
           Elements_LinkUp(Mesh_GetElements(mesh),materials) ;
           Elements_CreateMore(Mesh_GetElements(mesh)) ;
-          Mesh_CreateEquationContinuity(mesh) ;
           Nodes_CreateMore(Mesh_GetNodes(mesh)) ;
+          Mesh_SetEquationContinuity(mesh) ;
         }
       }
     }

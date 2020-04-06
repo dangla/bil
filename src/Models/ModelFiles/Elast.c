@@ -298,16 +298,18 @@ int PrintModelChar(Model_t* model,FILE* ficd)
 
 
 
-int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
+int DefineElementProp(Element_t* el,IntFcts_t* intfcts,ShapeFcts_t* shapefcts)
 /** Define some properties attached to each element */
 {
-  IntFct_t* intfct = Element_GetIntFct(el) ;
-  int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
+  {
+    IntFct_t* intfct = Element_GetIntFct(el) ;
+    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
   
-  /** Define the length of tables */
-  Element_GetNbOfImplicitTerms(el) = NVI*NbOfIntPoints ;
-  Element_GetNbOfExplicitTerms(el) = NVE*NbOfIntPoints ;
-  Element_GetNbOfConstantTerms(el) = NV0*NbOfIntPoints ;
+    /** Define the length of tables */
+    Element_GetNbOfImplicitTerms(el) = NVI*NbOfIntPoints ;
+    Element_GetNbOfExplicitTerms(el) = NVE*NbOfIntPoints ;
+    Element_GetNbOfConstantTerms(el) = NV0*NbOfIntPoints ;
+  }
   
   return(0) ;
 }
@@ -550,7 +552,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
   FEM_t* fem = FEM_GetInstance(el) ;
 
-  //if(Element_IsSubmanifold(el)) return(0) ;
+  if(Element_IsSubmanifold(el)) return(0) ;
   
   /*
     Input data
@@ -564,15 +566,15 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     /* Variables */
     //double* x = ComputeVariables(el,u,vim0,t,0,p) ;
     
-    double pdis[3] = {0,0,0} ;
-    double dis[3] = {0,0,0} ;
+    double* dis  = FEM_ComputeDisplacementVector(fem,u,intfct,p,U_u) ;
+    double dis_tot[3] = {0,0,0} ;
     double sig[9] = {0,0,0,0,0,0,0,0,0} ;
     int    i ;
     
     /* Displacement */
     for(i = 0 ; i < dim ; i++) {
-      pdis[i] = FEM_ComputeUnknown(fem,u,intfct,p,U_u + i) ;
-      dis[i] = pdis[i] ;
+      //dis[i] = FEM_ComputeUnknown(fem,u,intfct,p,U_u + i) ;
+      dis_tot[i] = dis[i] ;
     }
 
     if(ItIsPeriodic) {
@@ -580,7 +582,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
         int j ;
         
         for(j = 0 ; j < dim ; j++) {
-          dis[i] += MacroGradient(el,t)[3*i + j] * s[j] ;
+          dis_tot[i] += MacroGradient(el,t)[3*i + j] * s[j] ;
         }
       }
     }
@@ -593,9 +595,9 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     }
       
     i = 0 ;
-    Result_Store(r + i++,dis ,"Displacements",3) ;
+    Result_Store(r + i++,dis_tot ,"Displacements",3) ;
     Result_Store(r + i++,sig ,"Stresses",9) ;
-    Result_Store(r + i++,pdis,"Perturbated-displacements",3) ;
+    Result_Store(r + i++,dis,"Perturbated-displacements",3) ;
       
     if(i != NbOfOutputs) arret("ComputeOutputs") ;
   }

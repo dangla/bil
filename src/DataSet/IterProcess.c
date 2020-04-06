@@ -10,79 +10,101 @@
 #include "ObVals.h"
 #include "Solver.h"
 #include "Exception.h"
+#include "String.h"
+#include "Mry.h"
+
+
+
+
+IterProcess_t*  IterProcess_New(void)
+{
+  IterProcess_t* iterprocess = (IterProcess_t*) Mry_New(IterProcess_t) ;
+  
+  /* Iterations */
+  {
+    IterProcess_GetNbOfIterations(iterprocess) = 5 ;
+    IterProcess_GetIterationIndex(iterprocess) = 0 ;
+  }
+    
+  /* Tolerance */
+  {
+    IterProcess_GetTolerance(iterprocess) = 1.e-4 ;
+    IterProcess_GetCurrentError(iterprocess) = 0 ;
+  }
+    
+  /* Repetition */
+  {
+    IterProcess_GetNbOfRepetitions(iterprocess) = 0 ;
+    IterProcess_GetRepetitionIndex(iterprocess) = 0 ;
+  }
+
+  return(iterprocess) ;
+}
 
 
 
 IterProcess_t*  IterProcess_Create(DataFile_t* datafile,ObVals_t* obvals)
 {
-  IterProcess_t* iterprocess = (IterProcess_t*) malloc(sizeof(IterProcess_t)) ;
+  IterProcess_t* iterprocess = IterProcess_New() ;
+  char* filecontent = DataFile_GetFileContent(datafile) ;
+  char* c  = String_FindToken(filecontent,"ALGO,ITER,Iterative Process",",") ;
   
-  if(!iterprocess) arret("IterProcess_Create") ;
   
-  DataFile_OpenFile(datafile,"r") ;
+  if(!c) {
+    Message_FatalError("No Iterative Process") ;
+  }
   
-  DataFile_SetFilePositionAfterKey(datafile,"ALGO,ITER,Iterative Process",",",1) ;
   
   Message_Direct("Enter in %s","Iterative Process") ;
   Message_Direct("\n") ;
-  
-  
-  DataFile_StoreFilePosition(datafile) ;
 
+
+
+  /* Objective variations */
+  IterProcess_GetObVals(iterprocess) = obvals ;
+
+
+
+  c = String_SkipLine(c) ;
+      
+  //DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+  
 
   /* Iterations */
-  DataFile_MoveToStoredFilePosition(datafile) ;
   {
-    char* line ;
-    char* pline ;
+    int i ;
+    int n = String_FindAndScanExp(c,"Iter",","," = %d",&i) ;
     
-    while((line = DataFile_ReadLineFromCurrentFilePosition(datafile)) && !(pline = strstr(line,"Iter"))) ;
-    if((pline = strstr(line,"Iter"))) {
-      pline = strchr(pline,'=') + 1 ;
-      IterProcess_GetNbOfIterations(iterprocess) = atoi(pline) ;
+    if(n) {
+      IterProcess_GetNbOfIterations(iterprocess) = i ;
     } else {
       arret("IterProcess_Create: no Iterations") ;
     }
-    IterProcess_GetIterationIndex(iterprocess) = 0 ;
   }
     
   /* Tolerance */
-  DataFile_MoveToStoredFilePosition(datafile) ;
   {
-    char* line ;
-    char* pline ;
+    double tol ;
+    int n = String_FindAndScanExp(c,"Tol",","," = %lf",&tol) ;
     
-    while((line = DataFile_ReadLineFromCurrentFilePosition(datafile)) && !(pline = strstr(line,"Tol"))) ;
-    if((pline = strstr(line,"Tol"))) {
-      pline = strchr(pline,'=') + 1 ;
-      IterProcess_GetTolerance(iterprocess) = atof(pline) ;
+    if(n) {
+      IterProcess_GetTolerance(iterprocess) = tol ;
     } else {
       arret("IterProcess_Create: no Tolerance") ;
     }
-    IterProcess_GetCurrentError(iterprocess) = 0 ;
   }
     
   /* Repetition */
-  DataFile_MoveToStoredFilePosition(datafile) ;
   {
-    char* line ;
-    char* pline ;
+    int i ;
+    int n = String_FindAndScanExp(c,"Rep,Rec",","," = %d",&i) ;
     
-    while((line = DataFile_ReadLineFromCurrentFilePosition(datafile)) && !(pline = strstr(line,"Re"))) ;
-    if((pline = strstr(line,"Re"))) {
-      pline = strchr(pline,'=') + 1 ;
-      IterProcess_GetNbOfRepetitions(iterprocess) = atoi(pline) ;
-    } else {
-      IterProcess_GetNbOfRepetitions(iterprocess) = 0 ;
+    if(n) {
+      IterProcess_GetNbOfRepetitions(iterprocess) = i ;
     }
-    IterProcess_GetRepetitionIndex(iterprocess) = 0 ;
   }
-  
-  /* Objective variations */
-  IterProcess_GetObVals(iterprocess) = obvals ;
-  
-  DataFile_CloseFile(datafile) ;
-  
+
+
   return(iterprocess) ;
 }
 
@@ -142,6 +164,7 @@ int IterProcess_SetCurrentError(IterProcess_t* iterprocess,Nodes_t* nodes,Solver
   
   return(0) ;
 }
+
 
 
 void IterProcess_PrintCurrentError(IterProcess_t* iterprocess)

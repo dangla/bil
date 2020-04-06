@@ -13,6 +13,34 @@
 
 /* Global functions */
 
+Geometry_t*  Geometry_New(void)
+{
+  Geometry_t* geom = (Geometry_t*) Mry_New(Geometry_t) ;
+  
+  Geometry_GetDimension(geom) = 3 ;
+  Geometry_SetNoSymmetry(geom) ;
+  Geometry_GetPeriodicities(geom) = NULL ;
+  
+  return(geom) ;
+}
+
+
+
+
+void Geometry_Delete(void* self)
+{
+  Geometry_t** pgeom = (Geometry_t**) self ;
+  Geometry_t*   geom = *pgeom ;
+  
+  Periodicities_Delete(&Geometry_GetPeriodicities(geom)) ;
+  
+  free(geom) ;
+  
+  *pgeom = NULL ;
+}
+
+
+
 Geometry_t*  Geometry_Create(DataFile_t* datafile)
 {
   Geometry_t* geom = Geometry_New() ; ;
@@ -26,8 +54,6 @@ Geometry_t*  Geometry_Create(DataFile_t* datafile)
     char* filecontent = DataFile_GetFileContent(datafile) ;
     char* c  = String_FindToken(filecontent,"DIME,GEOM,Geometry",",") ;
     char* line = String_SkipLine(c) ;
-    //char* line = DataFile_GetCurrentPositionInFileContent(datafile) ;
-    //char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
   
     if(line) line = String_FindAnyChar(line,"0123") ;
   
@@ -37,7 +63,6 @@ Geometry_t*  Geometry_Create(DataFile_t* datafile)
   
     Geometry_GetDimension(geom) = dim ;
     
-    //if(line) line += strspn(line,"0123456789 ") ;
     if(line) line = String_SkipAnyChar(line,"0123456789 ") ;
   
     /* The symmetry */
@@ -66,39 +91,8 @@ Geometry_t*  Geometry_Create(DataFile_t* datafile)
       }
     }
   }
-
-  //DataFile_CloseFile(datafile) ;
-  
   
   Geometry_GetPeriodicities(geom) = Periodicities_Create(datafile) ;
   
   return(geom) ;
-}
-
-
-
-Geometry_t*  Geometry_New(void)
-{
-  Geometry_t* geom = (Geometry_t*) Mry_New(Geometry_t) ;
-  
-  Geometry_GetDimension(geom) = 3 ;
-  Geometry_SetNoSymmetry(geom) ;
-  Geometry_GetPeriodicities(geom) = NULL ;
-  
-  return(geom) ;
-}
-
-
-
-
-void Geometry_Delete(void* self)
-{
-  Geometry_t** pgeom = (Geometry_t**) self ;
-  Geometry_t*   geom = *pgeom ;
-  
-  Periodicities_Delete(&Geometry_GetPeriodicities(geom)) ;
-  
-  free(geom) ;
-  
-  *pgeom = NULL ;
 }

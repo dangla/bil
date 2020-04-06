@@ -9,6 +9,7 @@
 #include "Message.h"
 #include "Periodicities.h"
 #include "Graph.h"
+#include "Mry.h"
 
 
 static Graph_t*  (Periodicities_ComputeGraph)(Mesh_t*) ;
@@ -28,9 +29,7 @@ Periodicities_t* (Periodicities_Create)(DataFile_t* datafile)
       arret("Periodicities_Create") ;
     }
     
-    periodicities  = (Periodicities_t*) malloc(sizeof(Periodicities_t)) ;
-  
-    if(!periodicities) arret("Periodicities_Create") ;
+    periodicities  = (Periodicities_t*) Mry_New(Periodicities_t) ;
   }
   
   
@@ -53,19 +52,16 @@ Periodicities_t* (Periodicities_Create)(DataFile_t* datafile)
 
   {
     int n = Periodicities_GetNbOfPeriodicities(periodicities) ;
-    Periodicity_t* periodicity = (Periodicity_t*) malloc(n*sizeof(Periodicity_t)) ;
+    Periodicity_t* periodicity = (Periodicity_t*) Mry_New(Periodicity_t[n]) ;
     
-    if(!periodicity) arret("Periodicities_Create(1)") ;
     Periodicities_GetPeriodicity(periodicities) = periodicity ;
   }
    
     
   {
     int n = Periodicities_GetNbOfPeriodicities(periodicities) ;
-    double* vector = (double*) malloc(n*3*sizeof(double)) ;
+    double* vector = (double*) Mry_New(double[n*3]) ;
     int i ;
-    
-    if(!vector) arret("Periodicities_Create(2)") ;
     
     for(i = 0 ; i < n ; i++) {
       Periodicity_t* periodicity = Periodicities_GetPeriodicity(periodicities) + i ;
@@ -131,9 +127,7 @@ Periodicities_t* (Periodicities_Create)(DataFile_t* datafile)
 
 Periodicities_t* (Periodicities_New)(const int n)
 {
-  Periodicities_t* periodicities = (Periodicities_t*) malloc(sizeof(Periodicities_t)) ;
-  
-  assert(periodicities) ;
+  Periodicities_t* periodicities = (Periodicities_t*) Mry_New(Periodicities_t) ;
   
   Periodicities_GetNbOfPeriodicities(periodicities) = 0 ;
   Periodicities_GetPeriodicity(periodicities) = NULL ;
@@ -161,7 +155,7 @@ void Periodicities_Delete(void* self)
   }
   free(periodicities) ;
   
-  *pperiodicities = NULL ;
+  //*pperiodicities = NULL ;
 }
 
 
@@ -209,7 +203,7 @@ Graph_t*  (Periodicities_ComputeGraph)(Mesh_t* mesh)
             int i ;
     
             for(i = 0 ; i < nn ; i++) {
-              Node_t *node = Element_GetNode(elt_i,i) ;
+              Node_t* node = Element_GetNode(elt_i,i) ;
               int k = Node_GetNodeIndex(node) ;
       
               nnz_no[k] += 1 ;
@@ -434,7 +428,7 @@ void  (Periodicities_UpdateGraph)(Mesh_t* mesh,Graph_t* graph)
 
 
 
-void  (Periodicities_UpdateMatrixPermutationNumbering)(Mesh_t* mesh)
+void  (Periodicities_UpdateMatrixRowColumnIndexes)(Mesh_t* mesh)
 /** Account for periodic mesh/BC. 
  *  Merge indexes of master and slave nodes.
  **/
@@ -458,7 +452,7 @@ void  (Periodicities_UpdateMatrixPermutationNumbering)(Mesh_t* mesh)
       int* listin = Graph_GetNeighborOfVertex(graph,in) ;
             
       if(n_unk != n_equ) {
-        arret("Periodicities_UpdateMatrixPermutationNumbering(1)") ;
+        arret("Periodicities_UpdateMatrixRowColumnIndexes(1)") ;
       }
       
       {
@@ -490,10 +484,12 @@ void  (Periodicities_UpdateMatrixPermutationNumbering)(Mesh_t* mesh)
               int ki = Node_GetMatrixRowIndex(node_i)[k] ;
               int kj = Node_GetMatrixRowIndex(node_j)[k] ;
                 
+              /* The slave is i, the master is j */
               if(kj >= 0 && ki == -1) {
                 Node_GetMatrixRowIndex(node_i)[k] = kj ;
               }
                 
+              /* The slave is j, the master is i */
               if(ki >= 0 && kj == -1) {
                 Node_GetMatrixRowIndex(node_j)[k] = ki ;
               }
@@ -509,7 +505,7 @@ void  (Periodicities_UpdateMatrixPermutationNumbering)(Mesh_t* mesh)
 }
 
 
-void  (Periodicities_ResetMatrixPermutationNumbering)(Mesh_t* mesh)
+void  (Periodicities_EliminateMatrixRowColumnIndexes)(Mesh_t* mesh)
 /** Set to a negative value (-1) the matrix row/column indexes 
  *  associated to the slave nodes of periodic mesh. 
  **/

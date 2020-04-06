@@ -9,6 +9,7 @@
 #include "Nodes.h"
 #include "IntFcts.h"
 #include "Materials.h"
+#include "Node.h"
 #include "Elements.h"
 #include "Message.h"
 #include "Tools/Math.h"
@@ -18,8 +19,61 @@
 
 static double   (Elements_ComputeMaximumSizeOfElements)(Elements_t*) ;
 static double   (Elements_ComputeMinimumSizeOfElements)(Elements_t*) ;
-static double   (Element_ComputeSize)(Element_t*) ;
-static int      (Element_ComputeNbOfMatrixEntries)(Element_t*) ;
+
+
+
+Elements_t*  Elements_New(const int n,const int nc)
+{
+  Elements_t* elts = (Elements_t*) Mry_New(Elements_t) ;
+  
+  Elements_GetNbOfElements(elts) = n ;
+  Elements_GetNbOfConnectivities(elts) = nc ;
+  
+  
+  /* Allocation of space for the elements */
+  {
+    Element_t* el = (Element_t*) Mry_New(Element_t[n]) ;
+    
+    Elements_GetElement(elts) = el ;
+  }
+  
+  
+  /* Allocation of space for the pointers to "node" */
+  {
+    Node_t** pnode = (Node_t**) Mry_New(Node_t*[nc]) ;
+    Element_t* el = Elements_GetElement(elts) ;
+    
+    Element_GetPointerToNode(el) = pnode ;
+  }
+  
+  
+  /* Initialization */
+  {
+    Element_t* el = Elements_GetElement(elts) ;
+    Node_t** pnode = Element_GetPointerToNode(el) ;
+    int i ;
+    
+    for(i = 0 ; i < n ; i++) {
+      Element_t* el_i = el + i ;
+      
+      Element_GetElementIndex(el_i)      = i ;
+      Element_GetDimension(el_i)         = -1 ;
+      Element_GetNbOfNodes(el_i)         = 0 ;
+      Element_GetPointerToNode(el_i)     = pnode ;
+      Element_GetRegionIndex(el_i)       = -1 ;
+      Element_GetMaterial(el_i)          = NULL ;
+      Element_GetMaterialIndex(el_i)     = -1 ;
+      Element_GetShapeFct(el_i)          = NULL ;
+      Element_GetIntFct(el_i)            = NULL ;
+      Element_GetUnknownPosition(el_i)   = NULL ;
+      Element_GetEquationPosition(el_i)  = NULL ;
+      Element_GetBuffer(el_i)            = NULL ;
+      Element_GetElementSol(el_i)        = NULL ;
+    }
+  }
+  
+  return(elts) ;
+}
 
 
 
@@ -51,19 +105,22 @@ void Elements_CreateMore(Elements_t* elements)
 {
   int n_el = Elements_GetNbOfElements(elements) ;
   Element_t* el = Elements_GetElement(elements) ;
-  int ie ;
   
   /* Pointers to unknowns and equations positions at nodes */
   {
     int n_pos = 0 ;
+    int ie ;
     
     for(ie = 0 ; ie < n_el ; ie++) {
       int imat = Element_GetMaterialIndex(el + ie) ;
       //Material_t* mat = Element_GetMaterial(el + ie) ;
-      int nn = Element_GetNbOfNodes(el + ie) ;
-      int neq = Element_GetNbOfEquations(el + ie) ;
     
-      if(imat >= 0) n_pos += nn*neq ;
+      if(imat >= 0) {
+        int nn = Element_GetNbOfNodes(el + ie) ;
+        int neq = Element_GetNbOfEquations(el + ie) ;
+        
+        n_pos += nn*neq ;
+      }
     }
   
     /* Memory space allocation with initialization to 0 */
@@ -71,33 +128,9 @@ void Elements_CreateMore(Elements_t* elements)
       //short int* pos = (short int* ) calloc(2*n_pos,sizeof(short int)) ;
       short int* upos = (short int* ) Mry_New(short int[2*n_pos]) ;
       short int* epos = upos + n_pos ;
-  
-      Element_GetUnknownPosition(el)  = upos ;
-      Element_GetEquationPosition(el) = epos ;
-    
-      #if 0
-      for(ie = 1 ; ie < n_el ; ie++) {
-        int imat = Element_GetMaterialIndex(el + ie) ;
-        //Material_t* mat = Element_GetMaterial(el + ie) ;
-        short int* pin = Element_GetUnknownPosition(el + ie - 1) ;
-        short int* peq = Element_GetEquationPosition(el + ie - 1) ;
       
-        if(imat >= 0) {
-          int nn = Element_GetNbOfNodes(el + ie - 1) ;
-          int neq = Element_GetNbOfEquations(el + ie - 1) ;
-        
-          Element_GetUnknownPosition(el + ie) = pin + nn*neq ;
-          Element_GetEquationPosition(el + ie) = peq + nn*neq ;
-        
-        } else {
-        
-          Element_GetUnknownPosition(el + ie) = pin ;
-          Element_GetEquationPosition(el + ie) = peq ;
-        }
-      }
-      #endif
+      for(ie = 0 ; ie < 2*n_pos ; ie++) upos[ie] = 0 ;
       
-      #if 1
       for(ie = 0 ; ie < n_el ; ie++) {
         int imat = Element_GetMaterialIndex(el + ie) ;
         //Material_t* mat = Element_GetMaterial(el + ie) ;
@@ -113,25 +146,87 @@ void Elements_CreateMore(Elements_t* elements)
           epos += nn*neq ;
         }
       }
-      #endif
     }
   }
 
   /* Space allocation for buffer */
   {
     Buffer_t* buf = Buffer_Create(Element_SizeOfBuffer) ;
+    int ie ;
   
-    /* ATTENTION : same memory space (buffer) for all the elements */
+    /* ATTENTION: same memory space (buffer) for all the elements */
     for(ie = 0 ; ie < n_el ; ie++) {
       Element_GetBuffer(el + ie) = buf ;
     }
   }
   
   /* Create shape functions */
-  Elements_GetShapeFcts(elements) = ShapeFcts_Create() ;
+  {
+    ShapeFcts_t* shapefcts = ShapeFcts_Create() ;
+    int    ie ;
+  
+    Elements_GetShapeFcts(elements) = shapefcts ;
+    
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Element_t* el_i = el + ie ;
+      Material_t* mat = Element_GetMaterial(el_i) ;
+
+      /* Find or create the shape functions */
+      if(mat) {
+        int  nn = Element_GetNbOfNodes(el_i) ;
+        int  dim = Element_GetDimension(el_i) ;
+        ShapeFct_t*  shapefct  = ShapeFcts_GetShapeFct(shapefcts) ;
+        int  i = ShapeFcts_FindShapeFct(shapefcts,nn,dim) ;
+      
+        /* Element shape functions */
+        Element_GetShapeFct(el_i) = shapefct + i ;
+        
+        {
+          if(Element_HasZeroThickness(el_i)) {
+            int nf = nn - Element_NbOfOverlappingNodes(el_i) ;
+            int dim_h = dim - 1 ;
+            int j  = ShapeFcts_FindShapeFct(shapefcts,nf,dim_h) ;
+
+            Element_GetShapeFct(el_i) = ShapeFcts_GetShapeFct(shapefcts) + j ;
+          }
+        }
+      }
+    }
+  }
   
   /* Create interpolation functions */
-  Elements_GetIntFcts(elements) = IntFcts_Create() ;
+  {
+    IntFcts_t* intfcts = IntFcts_Create() ;
+    int    ie ;
+    
+    Elements_GetIntFcts(elements) = intfcts ;
+    
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Element_t* el_i = el + ie ;
+      Material_t* mat = Element_GetMaterial(el_i) ;
+
+      /* Find or create default interpolation functions (Gauss type) */
+      if(mat) {
+        int  nn = Element_GetNbOfNodes(el_i) ;
+        int  dim = Element_GetDimension(el_i) ;
+        IntFct_t*  intfct  = IntFcts_GetIntFct(intfcts) ;
+        int  i = IntFcts_FindIntFct(intfcts,nn,dim,"Gauss") ;
+
+        /* Element interpolation functions */
+        Element_GetIntFct(el_i)   = intfct + i ;
+        
+        {
+          if(Element_HasZeroThickness(el_i)) {
+            int nf = nn - Element_NbOfOverlappingNodes(el_i) ;
+            int dim_h = dim - 1 ;
+            int j  = IntFcts_FindIntFct(intfcts,nf,dim_h,"Gauss") ;
+
+            Element_GetIntFct(el_i) = IntFcts_GetIntFct(intfcts) + j ;
+          }
+        }
+      }
+    }
+  }
   
   /* The max and min sizes of elements */
   Elements_GetMaximumSizeOfElements(elements) = Elements_ComputeMaximumSizeOfElements(elements) ;
@@ -152,13 +247,6 @@ void  Elements_DefineProperties(Elements_t* elements)
   ShapeFcts_t* shapefcts = Elements_GetShapeFcts(elements) ;
   IntFcts_t* intfcts = Elements_GetIntFcts(elements) ;
   int    ie ;
-
-
-  /* Nb of shape functions: initialization */
-  ShapeFcts_GetNbOfShapeFcts(shapefcts) = 0 ;
-
-  /* Nb of interpolation functions: initialization */
-  IntFcts_GetNbOfIntFcts(intfcts) = 0 ;
   
   
   for(ie = 0 ; ie < n_el ; ie++) {
@@ -171,27 +259,6 @@ void  Elements_DefineProperties(Elements_t* elements)
     Element_GetNbOfConstantTerms(el) = 0 ;
 
     if(mat) {
-      int  nn = Element_GetNbOfNodes(el) ;
-      int  dim = Element_GetDimension(el) ;
-      
-      /* Find or create the shape functions */
-      {
-        ShapeFct_t*  shapefct  = ShapeFcts_GetShapeFct(shapefcts) ;
-        int  i = ShapeFcts_FindShapeFct(shapefcts,nn,dim) ;
-      
-        /* Element shape functions */
-        Element_GetShapeFct(el) = shapefct + i ;
-      }
-      
-      /* Find or create default interpolation functions (Gauss type) */
-      {
-        IntFct_t*  intfct  = IntFcts_GetIntFct(intfcts) ;
-        int  i = IntFcts_FindIntFct(intfcts,nn,dim,"Gauss") ;
-      
-        /* Element interpolation functions */
-        Element_GetIntFct(el)   = intfct + i ;
-      }
-      
       /* Size of tables for (im/ex)plicit terms and constant terms
        * and possible other interpolation functions */
        
@@ -203,7 +270,7 @@ void  Elements_DefineProperties(Elements_t* elements)
        * Element_GetUnknownPosition(el)  = -1
        * Element_GetEquationPosition(el) = -1 */
         
-      Element_DefineProperties(el,intfcts) ;
+      Element_DefineProperties(el,intfcts,shapefcts) ;
       
       /* Update the size of tables in all the elementsol of the linked list */
       {
@@ -271,48 +338,6 @@ double Elements_ComputeMinimumSizeOfElements(Elements_t* elements)
 
 
 
-double Element_ComputeSize(Element_t* element)
-{
-  int nn = Element_GetNbOfNodes(element) ;
-  int dim = Element_GetDimensionOfSpace(element) ;
-  double h = 0 ;
-  double c[3] = {0,0,0} ;
-  int i ;
-  
-  /* The center of element */
-  for(i = 0 ; i < nn ; i++) {
-    double* x = Element_GetNodeCoordinate(element,i) ;
-    int j ;
-    
-    for(j = 0 ; j < dim ; j++) {
-      c[j] += x[j]/nn ;
-    }
-  }
-  
-  /* The "radius" of element */
-  for(i = 0 ; i < nn ; i++) {
-    double* x = Element_GetNodeCoordinate(element,i) ;
-    double r = 0 ;
-    int j ;
-    
-    for(j = 0 ; j < dim ; j++) {
-      double y = x[j] - c[j] ;
-      
-      r += y*y ;
-    }
-    
-    r = sqrt(r) ;
-    
-    if(r > h) h = r ;
-  }
-  
-  h *= 2 ;
-  
-  return(h) ;
-}
-
-
-
 
 int Elements_ComputeNbOfMatrixEntries(Elements_t* elements)
 {
@@ -334,35 +359,126 @@ int Elements_ComputeNbOfMatrixEntries(Elements_t* elements)
 
 
 
-
-int Element_ComputeNbOfMatrixEntries(Element_t* element)
+void  (Elements_EliminateMatrixRowColumnIndexesOfOverlappingNodes)(Elements_t* elements)
+/** Merge indexes of specific unknowns at face-to-face 
+ *  nodes of zero-thickness interface element.
+ **/
 {
-  int   ndof = Element_GetNbOfDOF(element) ;
-  int*  row  = Element_ComputeMatrixRowAndColumnIndices(element) ;
-  int*  col  = row + ndof ;
-  int   len  = 0 ;
-  
-  {
-    int   jdof ;
-
-    for(jdof = 0 ; jdof < ndof ; jdof++) {
-      int jcol = col[jdof] ;
+  int n_el = Elements_GetNbOfElements(elements) ;
+  Element_t* el = Elements_GetElement(elements) ;
+  int ie ;
     
-      if(jcol < 0) continue ;
-
-      {
-        int idof ;
-            
-        for(idof = 0 ; idof < ndof ; idof++) {
-          int irow = row[idof] ;
+  for(ie = 0 ; ie < n_el ; ie++) {
+    Element_t* el_i = el + ie ;
       
-          if(irow < 0) continue ;
+    if(Element_HasZeroThickness(el_i)) {
+      int neq = Element_GetNbOfEquations(el_i) ;
+      ShapeFct_t* shapefct = Element_GetShapeFct(el_i) ;
+      int nf = ShapeFct_GetNbOfFunctions(shapefct) ;
+      int in ;
         
-          len++ ;
+      for(in = 0 ; in < nf ; in++) {
+        int jn = Element_OverlappingNode(el_i,in) ;
+        Node_t* node_i = Element_GetNode(el_i,in) ;
+        Node_t* node_j = Element_GetNode(el_i,jn) ;
+        int ieq ;
+        
+        /* No overlapping node! */
+        if(jn == in) continue ;
+          
+        /* Unknowns */
+        for(ieq = 0 ; ieq < neq ; ieq++) {
+          int ii = Element_GetUnknownPosition(el_i)[in*neq + ieq] ;
+          int jj = Element_GetUnknownPosition(el_i)[jn*neq + ieq] ;
+          
+          if(ii >= 0 && jj >= 0) {
+            int ki = Node_GetMatrixColumnIndex(node_i)[ii] ;
+            int kj = Node_GetMatrixColumnIndex(node_j)[jj] ;
+              
+            if(ki == kj) {
+              Node_GetMatrixColumnIndex(node_j)[jj] = -1 ;
+            }
+          }
+        }
+          
+        /* Equations */
+        for(ieq = 0 ; ieq < neq ; ieq++) {
+          int ii = Element_GetEquationPosition(el_i)[in*neq + ieq] ;
+          int jj = Element_GetEquationPosition(el_i)[jn*neq + ieq] ;
+            
+          if(ii >= 0 && jj >= 0) {
+            int ki = Node_GetMatrixRowIndex(node_i)[ii] ;
+            int kj = Node_GetMatrixRowIndex(node_j)[jj] ;
+              
+            if(ki == kj) {
+              Node_GetMatrixRowIndex(node_j)[jj] = -1 ;
+            }
+          }
         }
       }
     }
   }
-  
-  return(len) ;
+}
+
+
+
+void  (Elements_UpdateMatrixRowColumnIndexesOfOverlappingNodes)(Elements_t* elements)
+/** Merge indexes of specific unknowns at face-to-face 
+ *  nodes of zero-thickness interface element.
+ **/
+{
+  int n_el = Elements_GetNbOfElements(elements) ;
+  Element_t* el = Elements_GetElement(elements) ;
+  int ie ;
+    
+  for(ie = 0 ; ie < n_el ; ie++) {
+    Element_t* el_i = el + ie ;
+      
+    if(Element_HasZeroThickness(el_i)) {
+      int neq = Element_GetNbOfEquations(el_i) ;
+      ShapeFct_t* shapefct = Element_GetShapeFct(el_i) ;
+      int nf = ShapeFct_GetNbOfFunctions(shapefct) ;
+      int in ;
+        
+      for(in = 0 ; in < nf ; in++) {
+        int jn = Element_OverlappingNode(el_i,in) ;
+        Node_t* node_i = Element_GetNode(el_i,in) ;
+        Node_t* node_j = Element_GetNode(el_i,jn) ;
+        int ieq ;
+        
+        /* No overlapping node! */
+        if(jn == in) continue ;
+          
+        /* Unknowns */
+        for(ieq = 0 ; ieq < neq ; ieq++) {
+          int ii = Element_GetUnknownPosition(el_i)[in*neq + ieq] ;
+          int jj = Element_GetUnknownPosition(el_i)[jn*neq + ieq] ;
+          
+          if(ii >= 0 && jj >= 0) {
+            int ki = Node_GetMatrixColumnIndex(node_i)[ii] ;
+            int kj = Node_GetMatrixColumnIndex(node_j)[jj] ;
+              
+            if(ki >= 0 && kj < 0) {
+              Node_GetMatrixColumnIndex(node_j)[jj] = ki ;
+            }
+          }
+        }
+          
+        /* Equations */
+        for(ieq = 0 ; ieq < neq ; ieq++) {
+          int ii = Element_GetEquationPosition(el_i)[in*neq + ieq] ;
+          int jj = Element_GetEquationPosition(el_i)[jn*neq + ieq] ;
+            
+          if(ii >= 0 && jj >= 0) {
+            int ki = Node_GetMatrixRowIndex(node_i)[ii] ;
+            int kj = Node_GetMatrixRowIndex(node_j)[jj] ;
+              
+            if(ki >= 0 && kj < 0) {
+              Node_GetMatrixRowIndex(node_j)[jj] = ki ;
+            }
+          }
+        }
+      }
+    }
+  }
 }

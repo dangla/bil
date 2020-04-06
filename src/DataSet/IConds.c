@@ -4,166 +4,117 @@
 #include <ctype.h>
 #include "Message.h"
 #include "DataFile.h"
+#include "Mry.h"
 #include "IConds.h"
 
 
-IConds_t* IConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* functions)
+static IConds_t* IConds_New(const int) ;
+
+
+
+IConds_t* IConds_New(const int n_iconds)
 {
-  IConds_t* iconds  = (IConds_t*) malloc(sizeof(IConds_t)) ;
-  
-  if(!iconds) arret("IConds_Create") ;
-  
-  DataFile_OpenFile(datafile,"r") ;
-  
-  DataFile_SetFilePositionAfterKey(datafile,"INIT,Initialization",",",1) ;
-  
-  Message_Direct("Enter in %s","Initialization") ;
-  Message_Direct("\n") ;
+  IConds_t* iconds  = (IConds_t*) Mry_New(IConds_t) ;
+    
+  IConds_GetNbOfIConds(iconds) = n_iconds ;
     
     
   /* Allocation of space for the name of file of nodal values */
   {
-    size_t sz = IConds_MaxLengthOfFileName*sizeof(char) ;
-    char* filename = (char*) malloc(sz) ;
-    
-    if(!filename) arret("IConds_Create (3)") ;
+    char* filename = (char*) Mry_New(char[IConds_MaxLengthOfFileName]) ;
       
     IConds_GetFileNameOfNodalValues(iconds) = filename ;
     IConds_GetFileNameOfNodalValues(iconds)[0] = '\0' ;
   }
-
   
-  /* Allocation of space for the initial conditions */
-  {
-    char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
-    int n_iconds = atoi(line) ;
-    
-    IConds_GetNbOfIConds(iconds) = n_iconds ;
-    
-    if(n_iconds > 0) {
-      IConds_GetICond(iconds) = ICond_Create(n_iconds) ;
+  
+  /* Allocation of space for the boundary conditions */
+  if(n_iconds > 0) {
+    ICond_t* icond  = (ICond_t*) Mry_New(ICond_t[n_iconds]) ;
+    int i ;
+
+    for(i = 0 ; i < n_iconds ; i++) {
+      ICond_t* ic  = ICond_New() ;
+      
+      icond[i] = ic[0] ;
     }
 
-    if(n_iconds <= 0) {
-      DataFile_CloseFile(datafile) ;
-      return(iconds) ;
-    }
+    IConds_GetICond(iconds) = icond ;
+  }
+  
+  return(iconds) ;
+}
+
+
+
+
+
+IConds_t* IConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* functions)
+{
+  char* filecontent = DataFile_GetFileContent(datafile) ;
+  char* c  = String_FindToken(filecontent,"INIT,Initialization,Initial Conditions",",") ;
+  int n_iconds = (c = String_SkipLine(c)) ? atoi(c) : 0 ;
+  IConds_t* iconds = IConds_New(n_iconds) ;
+  
+  
+  Message_Direct("Enter in %s","Initial Conditions") ;
+  Message_Direct("\n") ;
+  
+  
+  
+  if(n_iconds == 0) {
+    return(iconds) ;
   }
   
   
+  /* If n_conds < 0, the IC of the nodal unknowns of the entire mesh are read
+   * from a file (see below in IConds_AssignInitialConditions) */
+  if(n_iconds < 0) {
+    
+    c = String_SkipLine(c) ;
+      
+    DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+    
+    {
+      char* line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
+      char name[IConds_MaxLengthOfFileName] ;
+      int n = String_FindAndScanExp(line,"File,Fichier",","," = %s",name) ;
+        
+      if(n) {
+      
+        if(strlen(name) > IConds_MaxLengthOfFileName-1)  {
+          arret("IConds_Create: name too long") ;
+        }
+      
+        strcpy(IConds_GetFileNameOfNodalValues(iconds),name) ;
+      }
+    }
+    
+    return(iconds) ;
+  }
+  
+  
+  
   {
-    int  n_iconds = IConds_GetNbOfIConds(iconds) ;
     int  i_ic ;
+    
+    c = String_SkipLine(c) ;
+      
+    DataFile_SetCurrentPositionInFileContent(datafile,c) ;
     
     for(i_ic = 0 ; i_ic < n_iconds ; i_ic++) {
       ICond_t* icond = IConds_GetICond(iconds) + i_ic ;
-      char*  line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
-      char*  pline ;
-      
+    
+      Message_Direct("Enter in %s %d","Initial Condition",i_ic+1) ;
+      Message_Direct("\n") ;
       
       ICond_GetFields(icond) = fields ;
       ICond_GetFunctions(icond) = functions ;
-    
-
-      /* Region */
-      if((pline = strstr(line,"Reg"))) {
-        pline = strchr(pline,'=') + 1 ;
-        ICond_GetRegionIndex(icond) = atoi(pline) ;
-      } else {
-        arret("IConds_Create: no Region") ;
-      }
-    
-    
-      /* Unknown */
-      if((pline = strstr(line,"Unk")) || (pline = strstr(line,"Inc"))) {
-        char   name_unk[IConds_MaxLengthOfKeyWord] ;
       
-        pline = strchr(pline,'=') + 1 ;
-        sscanf(pline,"%s",name_unk) ;
-        strcpy(ICond_GetNameOfUnknown(icond),name_unk) ;
+      ICond_Scan(icond,datafile) ;
       
-        if(strlen(ICond_GetNameOfUnknown(icond)) > ICond_MaxLengthOfKeyWord-1)  {
-          arret("IConds_Create (6): name too long") ;
-        } else if(isdigit(ICond_GetNameOfUnknown(icond)[0])) {
-          if(atoi(ICond_GetNameOfUnknown(icond)) < 1) {
-            arret("IConds_Create (7): index non positive") ;
-          }
-        }
-      } else {
-        arret("IConds_Create: no Unknown") ;
-      }
-    
-    
-      /* Field or File */
-      ICond_GetField(icond) = NULL ;
-      
-      if((pline = strstr(line,"Field")) || (pline = strstr(line,"Champ"))) {
-        int n_fields = Fields_GetNbOfFields(fields) ;
-        int    ich ;
-      
-        pline = strchr(pline,'=') + 1 ;
-        sscanf(pline," %d",&ich) ;
-      
-        if(ich > n_fields || ich < 0) {
-          
-          arret("IConds_Create: field not known") ;
-          
-        } else if(ich > 0) {
-          Field_t* field = Fields_GetField(fields) ;
-          
-          ICond_GetField(icond) = field + ich - 1 ;
-          
-        } else {
-          
-          ICond_GetField(icond) = NULL ;
-          
-        }
-      
-      } else if((pline = strstr(line,"Fil")) || (pline = strstr(line,"Fic"))) {
-        char   nom[IConds_MaxLengthOfFileName] ;
-      
-        pline = strchr(pline,'=') + 1 ;
-        sscanf(pline,"%s",nom) ;
-        strcpy(ICond_GetFileNameOfNodalValues(icond),nom) ;
-      
-        if(strlen(ICond_GetFileNameOfNodalValues(icond)) > ICond_MaxLengthOfFileName-1)  {
-          arret("IConds_Create (6): name too long") ;
-        }
-    
-      } else {
-        arret("IConds_Create: no Field or File") ;
-      }
-      
-    
-      /* Function (not mandatory) */
-      ICond_GetFunction(icond) = NULL ;
-      
-      if((pline = strstr(line,"Func")) || (pline = strstr(line,"Fonc"))) {
-        int  n_fcts = Functions_GetNbOfFunctions(functions) ;
-        int  ifn ;
-      
-        pline = strchr(pline,'=') + 1 ;
-        sscanf(pline," %d",&ifn) ;
-      
-        if(ifn > n_fcts || ifn < 0) {
-        
-          arret("IConds_Create(11): undefined function") ;
-        
-        } else if(ifn > 0) {
-          Function_t* fct = Functions_GetFunction(functions) ;
-        
-          ICond_GetFunction(icond) = fct + ifn - 1 ;
-        
-        } else {
-        
-          ICond_GetFunction(icond) = NULL ;
-        
-        }
-      }
     }
   }
-  
-  DataFile_CloseFile(datafile) ;
   
   return(iconds) ;
 }

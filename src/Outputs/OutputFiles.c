@@ -1138,8 +1138,8 @@ Views_t* (OutputFiles_CreateGlobalViews)(OutputFiles_t* outputfiles,Models_t* us
     }
     
     if(imodel != n_usedmodels - 1) {
-      Message_Direct("The nb of models doesn't fit that in the datafile") ;
-      arret("OutputFiles_PostProcessForGmshParsedFileFormat") ;
+      Message_Direct("The nb of models doesn't fit that in the datafile\n") ;
+      //arret("OutputFiles_PostProcessForGmshParsedFileFormat") ;
     }
     
   }

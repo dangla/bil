@@ -28,7 +28,7 @@ extern int         (IntFcts_AddIntFct)(IntFcts_t*,int,int,const char*) ;
 
 struct IntFcts_s {            /* interpolations */
   unsigned int n_fi ;         /* nb of interpolation function */
-  IntFct_t *fi ;              /* interpolation function */
+  IntFct_t* fi ;              /* interpolation function */
 } ;
 
 

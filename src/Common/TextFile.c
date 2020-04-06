@@ -64,11 +64,13 @@ void (TextFile_Delete)(void* self)
   TextFile_t** ptextfile = (TextFile_t**) self ;
   TextFile_t*   textfile = *ptextfile ;
   
+  TextFile_CloseFile(textfile) ;
+  
   free(TextFile_GetFileName(textfile)) ;
   free(TextFile_GetFilePosition(textfile)) ;
   free(TextFile_GetFileContent(textfile)) ;
   free(textfile) ;
-  *ptextfile = NULL ;
+  //*ptextfile = NULL ;
 }
 
 

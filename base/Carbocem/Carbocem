@@ -10,9 +10,9 @@ Mesh
 
 
 Material
-Model = Carbocem1
+Model = Carbocem
 porosity = 0.379
-k_int = 1.4e-17
+kl_int = 1.4e-17
 N_CH = 3.9
 N_CSH = 2.4
 C_Na = 0.019
@@ -20,7 +20,7 @@ C_K = 0.012
 frac = 0.8
 phi_r = 0.70
 Curves = desorbCN
-Curves = relpermCN  s_l = Range{x1 = 0 , x2 = 1 , n = 101} k_r = Mualem_liq(1){m = 0.45}
+Curves = relpermCN  s_l = Range{x1 = 0 , x2 = 1 , n = 101} kl_r = Mualem_liq(1){m = 0.45}
 Curves = V_CSH
 #Curves_log = cementpaste  p_c = Range{x1 = 1.e5 , x2 = 2.e9 , n = 2000} s_l  = Van-Genuchten(1){ p0 = 5.7643e7 , m = 0.45}
 

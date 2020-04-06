@@ -15,7 +15,7 @@
 
 static Module_ComputeProblem_t   calcul ;
 static Module_SolveProblem_t     Algorithm ;
-static void   ComputeInitialState(Mesh_t*,double) ;
+static int    ComputeInitialState(Mesh_t*,double) ;
 static int    ComputeExplicitTerms(Mesh_t*,double) ;
 static int    ComputeMatrix(Mesh_t*,double,double,Matrix_t*) ;
 static void   ComputeResidu(Mesh_t*,double,double,double*,Loads_t*) ;
@@ -44,7 +44,7 @@ int calcul(DataSet_t* jdd)
 {
   Mesh_t* mesh = DataSet_GetMesh(jdd) ;
   const int n_sol = 2 ; /* Must be 2 at minimum but works with more */
-  Solutions_t* sols = Solutions_Create(1,mesh,n_sol) ;
+  Solutions_t* sols = Solutions_Create(mesh,n_sol) ;
 
   /* Execute this line to set only one allocation of space for explicit terms. */
   /* This is not mandatory except in some models where constant terms are saved as 
@@ -55,9 +55,17 @@ int calcul(DataSet_t* jdd)
   /* This is done 11/05/2015 */
   //Message_Warning("Explicit terms are not merged anymore in this version.") ;
   
+  
   {
     DataFile_t* datafile = DataSet_GetDataFile(jdd) ;
     int i = 0 ;
+  
+  /* Set up the system of equations */
+    {
+      BConds_t* bconds = DataSet_GetBConds(jdd) ;
+      
+      //Mesh_SetMatrixRowColumnIndexes(mesh,bconds) ;
+    }
     
   /* 1. Initial time */
     {
@@ -283,8 +291,7 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
           }
         }
       }
-      
-      //recommences :
+
       
       /*
        * 3.1.3d The time at which we compute
@@ -318,16 +325,6 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
           if(i != 0) {
             if(IterProcess_LastRepetitionIsNotReached(iterprocess)) {
               goto repeatwithinitialtimestep ;
-              /*
-              IterProcess_IncrementRepetitionIndex(iterprocess) ;
-              DT_1 *= TimeStep_GetReductionFactor(timestep) ;
-              {
-                double t_ini = TimeStep_GetInitialTimeStep(timestep) ;
-              
-                if(DT_1 > t_ini) DT_1 = t_ini ;
-              }
-              goto recommences ;
-              */
             } else {
               int iter = IterProcess_GetIterationIndex(iterprocess) ;
               
@@ -365,16 +362,6 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
           if(i != 0) {
             if(IterProcess_LastRepetitionIsNotReached(iterprocess)) {
               goto repeatwithinitialtimestep ;
-              /*
-              IterProcess_IncrementRepetitionIndex(iterprocess) ;
-              DT_1 *= TimeStep_GetReductionFactor(timestep) ;
-              {
-                double t_ini = TimeStep_GetInitialTimeStep(timestep) ;
-              
-                if(DT_1 > t_ini) DT_1 = t_ini ;
-              }
-              goto recommences ;
-              */
             } else {
               int iter = IterProcess_GetIterationIndex(iterprocess) ;
               
@@ -402,16 +389,6 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
           if(i != 0) {
             if(IterProcess_LastRepetitionIsNotReached(iterprocess)) {
               goto repeatwithinitialtimestep ;
-              /*
-              IterProcess_IncrementRepetitionIndex(iterprocess) ;
-              DT_1 *= TimeStep_GetReductionFactor(timestep) ;
-              {
-                double t_ini = TimeStep_GetInitialTimeStep(timestep) ;
-              
-                if(DT_1 > t_ini) DT_1 = t_ini ;
-              }
-              goto recommences ;
-              */
             } else {
               int iter = IterProcess_GetIterationIndex(iterprocess) ;
               
@@ -436,16 +413,6 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
           if(i != 0) {
             if(IterProcess_LastRepetitionIsNotReached(iterprocess)) {
               goto repeatwithinitialtimestep ;
-              /*
-              IterProcess_IncrementRepetitionIndex(iterprocess) ;
-              DT_1 *= TimeStep_GetReductionFactor(timestep) ;
-              {
-                double t_ini = TimeStep_GetInitialTimeStep(timestep) ;
-              
-                if(DT_1 > t_ini) DT_1 = t_ini ;
-              }
-              goto recommences ;
-              */
             } else {
               int iter = IterProcess_GetIterationIndex(iterprocess) ;
               
@@ -480,16 +447,6 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
       if(IterProcess_ConvergenceIsNotMet(iterprocess)) {
         if(IterProcess_LastRepetitionIsNotReached(iterprocess)) {
           goto repeatwithreducedtimestep ;
-          /*
-          IterProcess_IncrementRepetitionIndex(iterprocess) ;
-          DT_1 *= TimeStep_GetReductionFactor(timestep) ;
-          {
-            double t_ini = TimeStep_GetInitialTimeStep(timestep) ;
-              
-            if(DT_1 > t_ini) DT_1 = t_ini ;
-          }
-          goto recommences ;
-          */
         }
       }
       
@@ -535,7 +492,7 @@ static int   Algorithm(DataSet_t* jdd,Solutions_t* sols,Solver_t* solver,OutputF
 }
 
 
-void ComputeInitialState(Mesh_t* mesh,double t)
+int ComputeInitialState(Mesh_t* mesh,double t)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
@@ -545,10 +502,15 @@ void ComputeInitialState(Mesh_t* mesh,double t)
     Material_t* mat = Element_GetMaterial(el + ie) ;
     
     if(mat) {
+      int i ;
+      
       Element_FreeBuffer(el + ie) ;
-      Element_ComputeInitialState(el + ie,t) ;
+      i = Element_ComputeInitialState(el + ie,t) ;
+      if(i != 0) return(i) ;
     }
   }
+  
+  return(0) ;
 }
 
 
@@ -607,13 +569,14 @@ int ComputeMatrix(Mesh_t* mesh,double t,double dt,Matrix_t* a)
 
 void ComputeResidu(Mesh_t* mesh,double t,double dt,double* r,Loads_t* loads)
 {
-#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
-  double re[NE] ;
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
   unsigned int n_cg = Loads_GetNbOfLoads(loads) ;
   Load_t* cg = Loads_GetLoad(loads) ;
   unsigned int    ie,i_cg ;
+#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+  double re[NE] ;
+#undef NE
   double zero = 0. ;
   
   {
@@ -681,7 +644,6 @@ void ComputeResidu(Mesh_t* mesh,double t,double dt,double* r,Loads_t* loads)
       }
     }
   }
-#undef NE
 }
 
 

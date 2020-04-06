@@ -15,6 +15,7 @@ extern char*        (DataFile_SetFilePositionAfterKey)(DataFile_t*,const char*,c
 extern char*        (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t*) ;
 extern char*        (DataFile_ReadLineFromCurrentFilePositionInString)(DataFile_t*) ;
 //extern void*        (DataFile_ReadArray)(DataFile_t*,const char*,void*,int,size_t) ;
+extern int*         (DataFile_ReadInversePermutationOfNodes)(DataFile_t*,int) ;
 
 
 
@@ -61,6 +62,9 @@ extern char*        (DataFile_ReadLineFromCurrentFilePositionInString)(DataFile_
 #define DataFile_FindNthToken(DF, ...) \
         String_FindNthToken(DataFile_GetFileContent(DF),__VA_ARGS__)
         
+#define DataFile_CountTokens(DF, ...) \
+        String_CountTokens(DataFile_GetFileContent(DF),__VA_ARGS__)
+        
 #define DataFile_CountNbOfKeyWords(DF, ...) \
         String_CountTokens(DataFile_GetFileContent(DF),__VA_ARGS__)
         
@@ -101,9 +105,7 @@ extern char*        (DataFile_ReadLineFromCurrentFilePositionInString)(DataFile_
         TextFile_GetCurrentPositionInFileContent(DataFile_GetTextFile(DF))
 
 #define DataFile_SetCurrentPositionInFileContent(DF,C) \
-        do { \
-          DataFile_GetCurrentPositionInString(DF) = C - DataFile_GetFileContent(DF) ; \
-        } while(0)
+        TextFile_SetCurrentPositionInFileContent(DataFile_GetTextFile(DF),C) 
         
 
 /* Test initialization */

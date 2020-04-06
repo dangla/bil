@@ -177,6 +177,7 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
     /* here j is equal to i + 1 ! */
     Element_GetIntFct(el) = IntFcts_GetIntFct(intfcts) + i ;
   }
+#if 0 // TO BE REMOVED (don't consider this as really feasible)!
   /* Remove dof on some nodes 
    * (e.g. at the middle of the edges of a triangle) */
   {
@@ -188,6 +189,7 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
       Element_GetEquationPosition(el)[i*NEQ + j] = -1 ;
     }
   }
+#endif
   return(0) ;
 }
 

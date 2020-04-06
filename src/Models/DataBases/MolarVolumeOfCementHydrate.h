@@ -9,7 +9,7 @@
 
 
 #define MolarVolumeOfCementHydrate(I) \
-        (PartialMolarVolumeOfMolecule_##I*MolarVolumeOfCementHydrate_Unit)
+        (MolarVolumeOfCementHydrate_##I*MolarVolumeOfCementHydrate_Unit)
 
 
 
@@ -34,6 +34,12 @@
  * C  = CaO  ; S  = SiO2 ; A  = Al2O3 ; 
  * c  = CO2  ; s  = SO3  ; F  = Fe2O3 ;
  */
+ 
+ 
+ /* Convention
+  * The symbol 'd' between two integers 'N' and 'M' like 'NdM' means 'N.M'.
+  * The symbol 'h' after an integer 'N' like 'Nh' means 'N+0.5'.
+  */
  
 
  
@@ -70,15 +76,15 @@
 
 #define MolarVolumeOfCementHydrate_C4AH11             (257.e-6)
 
-#define MolarVolumeOfCementHydrate_C2AH7.5            (180.e-6)
+#define MolarVolumeOfCementHydrate_C2AH7h             (180.e-6)
 
 #define MolarVolumeOfCementHydrate_CAH10              (193.e-6)
 
-#define MolarVolumeOfCementHydrate_C4Ac0.5H12         (285.e-6)
+#define MolarVolumeOfCementHydrate_C4Ac0hH12          (285.e-6)
 
-#define MolarVolumeOfCementHydrate_C4Ac0.5H10.5       (261.e-6)
+#define MolarVolumeOfCementHydrate_C4Ac0hH10.5        (261.e-6)
 
-#define MolarVolumeOfCementHydrate_C4Ac0.5H9          (249.e-6)
+#define MolarVolumeOfCementHydrate_C4Ac0hH9           (249.e-6)
 
 #define MolarVolumeOfCementHydrate_C4AcH11            (262.e-6)
 
@@ -90,7 +96,7 @@
 
 #define MolarVolumeOfCementHydrate_C4AsH12            (310.e-6)
 
-#define MolarVolumeOfCementHydrate_C4AsH10.5          (282.e-6)
+#define MolarVolumeOfCementHydrate_C4AsH10h           (282.e-6)
 
 #define MolarVolumeOfCementHydrate_C4AsH9             (275.e-6)
 
@@ -98,9 +104,9 @@
 
 #define MolarVolumeOfCementHydrate_C2ASH7             (215.e-6)
 
-#define MolarVolumeOfCementHydrate_C2ASH5.5           (213.e-6)
+#define MolarVolumeOfCementHydrate_C2ASH5h            (213.e-6)
 
-#define MolarVolumeOfCementHydrate_C4As0.5ClH12       (289.e-6)
+#define MolarVolumeOfCementHydrate_C4As0hClH12        (289.e-6)
 
 #define MolarVolumeOfCementHydrate_C4ACl2H10          (272.e-6)
 
@@ -110,7 +116,7 @@
 
 #define MolarVolumeOfCementHydrate_C4FH13             (286.e-6)
 
-#define MolarVolumeOfCementHydrate_C4Fc0.5H10         (273.e-6)
+#define MolarVolumeOfCementHydrate_C4Fc0hH10          (273.e-6)
 
 #define MolarVolumeOfCementHydrate_C4FcH12            (292.e-6)
 
@@ -126,9 +132,9 @@
 
 #define MolarVolumeOfCementHydrate_C3AH6              (150.e-6)
 
-#define MolarVolumeOfCementHydrate_C3AS0.41H5.18      (146.e-6)
+#define MolarVolumeOfCementHydrate_C3AS0d41H5d18      (146.e-6)
 
-#define MolarVolumeOfCementHydrate_C3AS0.84H4.32      (142.e-6)
+#define MolarVolumeOfCementHydrate_C3AS0d84H4d32      (142.e-6)
 
 #define MolarVolumeOfCementHydrate_C3FH6              (155.e-6)
 
@@ -145,7 +151,7 @@
 #define MolarVolumeOfCementHydrate_Gypsum             (75.e-6)
 
 /* Hemihydrate */
-#define MolarVolumeOfCementHydrate_CsH0.5             (62.e-6)  
+#define MolarVolumeOfCementHydrate_CsH0h              (62.e-6)  
 
 /* Syngenite K2Ca(SO4)2·H2O */
 #define MolarVolumeOfCementHydrate_KsCsH2             (128.e-6)

@@ -20,10 +20,19 @@ extern double*  (Element_ComputeNodalCoordinates)               (Element_t*) ;
 extern int      (Element_FindUnknownPositionIndex)              (Element_t*,char*) ;
 extern int      (Element_FindEquationPositionIndex)             (Element_t*,char*) ;
 extern double*  (Element_ComputeIncrementalImplicitTerms)       (Element_t*) ;
-extern double*  (Element_ComputeNormalVector)                   (Element_t*,double*,int) ;
+extern double*  (Element_ComputeNormalVector)                   (Element_t*,double*,int,const int) ;
 extern double*  (Element_ComputeCoordinateInReferenceFrame)     (Element_t*,double*) ;
 extern int      (Element_ComputeNbOfSolutions)                  (Element_t*) ;
 extern int*     (Element_ComputeMatrixRowAndColumnIndices)      (Element_t*) ;
+extern double   (Element_ComputeSize)                           (Element_t*) ;
+extern double*  (Element_ComputeSizes)                          (Element_t*) ;
+extern int      (Element_ComputeNbOfMatrixEntries)              (Element_t*) ;
+extern double*  (Element_ComputeJacobianMatrix)                 (Element_t*,double*,int,const int) ;
+//extern double   (Element_ComputeJacobianDeterminant)            (Element_t*,double*,int,const int) ;
+//extern double*  (Element_ComputeInverseJacobianMatrix)          (Element_t*,double*,int,const int) ;
+extern int      (Element_OverlappingNode)                       (Element_t*,const int) ;
+extern int      (Element_HasZeroThickness)                      (Element_t*) ;
+extern int      (Element_NbOfOverlappingNodes)                  (Element_t*) ;
 
 
 /* Synonyms */
@@ -296,6 +305,50 @@ extern int*     (Element_ComputeMatrixRowAndColumnIndices)      (Element_t*) ;
 /* Access to datafile */
 #define Element_GetDataFile(ELT) \
         Model_GetDataFile(Element_GetModel(ELT))
+        
+        
+        
+/* Zero-thickness element */
+#define Element_MakeUnknownContinuousAcrossZeroThicknessElement(ELT,IEQ) \
+        do { \
+          int neq = Element_GetNbOfEquations(ELT) ; \
+          ShapeFct_t* shapefct = Element_GetShapeFct(ELT) ; \
+          int nf = ShapeFct_GetNbOfFunctions(shapefct) ; \
+          int in ; \
+          for(in = 0 ; in < nf ; in++) { \
+            int jn = Element_OverlappingNode(ELT,in) ; \
+            Node_t* node_i = Element_GetNode(ELT,in) ; \
+            Node_t* node_j = Element_GetNode(ELT,jn) ; \
+            int ineq = in*neq + IEQ ; \
+            int jneq = jn*neq + IEQ ; \
+            { \
+              int ii = Element_GetUnknownPosition(ELT)[ineq] ; \
+              int jj = Element_GetUnknownPosition(ELT)[jneq] ; \
+              if(ii >= 0 && jj >= 0) { \
+                int ki = Node_GetMatrixColumnIndex(node_i)[ii] ; \
+                int kj = Node_GetMatrixColumnIndex(node_j)[ii] ; \
+                if(ki >= 0) { \
+                  Node_GetMatrixColumnIndex(node_j)[jj] = ki ; \
+                } else if(kj >= 0) { \
+                  Node_GetMatrixColumnIndex(node_i)[jj] = kj ; \
+                } \
+              } \
+            } \
+            { \
+              int ii = Element_GetEquationPosition(ELT)[ineq] ; \
+              int jj = Element_GetEquationPosition(ELT)[jneq] ; \
+              if(ii >= 0 && jj >= 0) { \
+                int ki = Node_GetMatrixRowIndex(node_i)[ii] ; \
+                int kj = Node_GetMatrixRowIndex(node_j)[ii] ; \
+                if(ki >= 0) { \
+                  Node_GetMatrixRowIndex(node_j)[jj] = ki ; \
+                } else if(kj >= 0) { \
+                  Node_GetMatrixRowIndex(node_i)[jj] = kj ; \
+                } \
+              } \
+            } \
+          } \
+        } while(0)
 
 
 

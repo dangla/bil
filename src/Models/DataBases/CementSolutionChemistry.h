@@ -14,7 +14,17 @@ extern CementSolutionChemistry_t* (CementSolutionChemistry_Create)(const int) ;
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O)          (CementSolutionChemistry_t*) ;
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O)      (CementSolutionChemistry_t*) ;
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O)      (CementSolutionChemistry_t*) ;
+extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O)    (CementSolutionChemistry_t*) ;
+extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_Cl_H2O) (CementSolutionChemistry_t*) ;
+extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_H2O)(CementSolutionChemistry_t*) ;
+extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_Cl_H2O)(CementSolutionChemistry_t*) ;
+extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_SO3_H2O)(CementSolutionChemistry_t*) ;
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O)(CementSolutionChemistry_t*) ;
+
+extern void CementSolutionChemistry_SupplementSystemWith_Cl(CementSolutionChemistry_t*) ;
+extern void CementSolutionChemistry_SupplementSystemWith_CO2(CementSolutionChemistry_t*) ;
+extern void CementSolutionChemistry_SupplementSystemWith_SO3(CementSolutionChemistry_t*) ;
+
 extern void   (CementSolutionChemistry_PrintChemicalConstants)(CementSolutionChemistry_t*) ;
 
 extern int    (CementSolutionChemistry_SolveElectroneutrality)         (CementSolutionChemistry_t*) ;
@@ -80,7 +90,7 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
 /* Macros for primary variables
  * ----------------------------*/
  
-#define CementSolutionChemistry_NbOfPrimaryVariables  (8)
+#define CementSolutionChemistry_NbOfPrimaryVariables  (9)
 
 /* Different primary variables may be used */
 #define CementSolutionChemistry_CaO          (0)
@@ -113,6 +123,9 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
 #define CementSolutionChemistry_LogA_H2SO4   (7)
 #define CementSolutionChemistry_LogA_SO4 \
         (7 + CementSolutionChemistry_NbOfPrimaryVariables)
+
+#define CementSolutionChemistry_Cl           (8)
+#define CementSolutionChemistry_LogA_Cl      (8)
 
 
        
@@ -410,6 +423,9 @@ enum CementSolutionChemistry_e {
  * --------------------------------------*/
 #define CementSolutionChemistry_ComputeSystem(CSC,SYS) \
        (CementSolutionChemistry_ComputeSystem_##SYS(CSC))
+       
+#define CementSolutionChemistry_SupplementSystemWith(CSC,A) \
+       (CementSolutionChemistry_SupplementSystemWith_##A(CSC))
 
 
 #include "Temperature.h"

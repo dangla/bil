@@ -23,10 +23,6 @@ Materials_t* (Materials_New)(const int n_mats)
 
   /* Allocate the materials */
   {
-    //Materials_GetMaterial(materials) = Material_Create(n_mats) ;
-  }
-  #if 1
-  {
     Material_t* material   = (Material_t*) Mry_New(Material_t[n_mats]) ;
     int    i ;
     
@@ -38,7 +34,6 @@ Materials_t* (Materials_New)(const int n_mats)
     
     Materials_GetMaterial(materials) = material ;
   }
-  #endif
   
   
   /* Allocate the space for the models used by the materials */
@@ -157,8 +152,7 @@ Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* 
       mat->nc = Material_GetNbOfCurves(mat) ;
     
       if(!Material_GetModel(mat)) {
-        Message_Info("Materials_Create(1): Model not known") ;
-        exit(EXIT_SUCCESS) ;
+        Message_FataError("Materials_Create(1): Model not known") ;
       }
 
     }
@@ -176,25 +170,12 @@ Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* 
 #if 1
 Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* fields,Functions_t* functions)
 {
-  int n_mats = DataFile_CountNbOfKeyWords(datafile,"MATE,Material",",") ;
+  int n_mats = DataFile_CountTokens(datafile,"MATE,Material",",") ;
   Materials_t* materials = Materials_New(n_mats) ;
   
   
   Message_Direct("Enter in %s","Materials") ;
   Message_Direct("\n") ;
-  
-
-  /* Fields and functions */
-  {
-    int i ;
-    
-    for(i = 0 ; i < n_mats ; i++) {
-      Material_t* mat = Materials_GetMaterial(materials) + i ;
-      
-      Material_GetFields(mat) = fields ;
-      Material_GetFunctions(mat) = functions ;
-    }
-  }
   
 
   
@@ -208,20 +189,24 @@ Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* 
     for(i = 0 ; i < n_mats ; i++) {
       Material_t* mat = Materials_GetMaterial(materials) + i ;
       char* c = DataFile_FindNthToken(datafile,"MATE,Material",",",i + 1) ;
-      char* c1 ;
       
       c = String_SkipLine(c) ;
       
       /* This for Material_ScanProperties1/2 */
       {
         DataFile_SetFilePositionAfterKey(datafile,"MATE,Material",",",i + 1) ;
-        c1 = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
+        {
+          char* c1 = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
+        }
       }
       
       DataFile_SetCurrentPositionInFileContent(datafile,c) ;
   
       Message_Direct("Enter in %s %d","Material",i+1) ;
       Message_Direct("\n") ;
+      
+      Material_GetFields(mat) = fields ;
+      Material_GetFunctions(mat) = functions ;
       
       Material_Scan(mat,datafile,geom) ;
     }

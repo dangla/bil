@@ -334,15 +334,16 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
         const int nsol_micro = 2 ;
         
         do {
-          Solutions_t* sols = Solutions_Create(NbOfIntPoints,mesh,nsol_micro) ;
-  
-          if(!sols) assert(sols) ;
-    
-          /* Merging explicit terms (not essential!) */
+          Solutions_t* sols = (Solutions_t*) Mry_New(Solutions_t[NbOfIntPoints]) ;
+          
           {
             int i ;
     
             for(i = 0 ; i < NbOfIntPoints ; i++) {
+              Solutions_t* solsi = Solutions_Create(mesh,nsol_micro) ;
+              
+              sols[i] = solsi[0] ;
+              /* Merging explicit terms (not essential!) */
               Solutions_MergeExplicitTerms(sols + i) ;
             }
           }

@@ -8,6 +8,13 @@ struct ObVal_s        ; typedef struct ObVal_s        ObVal_t ;
 
 
 
+#include "DataFile.h"
+
+extern ObVal_t*  (ObVal_New)(void) ;
+extern void      (ObVal_Scan)(ObVal_t*,DataFile_t*) ;
+
+
+
 #define ObVal_MaxLengthOfKeyWord        (30)
 
 
@@ -34,10 +41,10 @@ struct ObVal_s        ; typedef struct ObVal_s        ObVal_t ;
 
 #include <math.h>
 
-#define ObVal_GetTargetedAbsoluteValue(OV,U) \
+#define ObVal_GetAbsoluteValue(OV,U) \
         (ObVal_GetValue(OV) * ((ObVal_IsAbsoluteValue(OV)) ? 1 : fabs(U)))
 
-#define ObVal_GetTargetedRelativeValue(OV,U) \
+#define ObVal_GetRelativeValue(OV,U) \
         (ObVal_GetValue(OV) / ((ObVal_IsRelativeValue(OV)) ? 1 : fabs(U)))
 
 

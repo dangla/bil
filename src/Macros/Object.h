@@ -5,7 +5,7 @@
 #include <stdarg.h>
 
 
-/* T stands or a type */
+/* T stands for a type */
 extern void* Object_New_(const int = 1) ;
 template <typename T> inline void* Object_New_(const int n)
 {

@@ -13,7 +13,7 @@ extern int           (ShapeFcts_FindShapeFct)(ShapeFcts_t*,int,int) ;
 extern int           (ShapeFcts_AddShapeFct)(ShapeFcts_t*,int,int) ;
 
 
-#define ShapeFcts_MaxNbOfShapeFcts             (3)
+#define ShapeFcts_MaxNbOfShapeFcts             (10)
 
 #define ShapeFcts_GetNbOfShapeFcts(SFS)    ((SFS)->n_sh)
 #define ShapeFcts_GetShapeFct(SFS)         ((SFS)->sh)
