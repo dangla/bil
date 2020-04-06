@@ -237,12 +237,21 @@
 
 #define KD_L            TransferCoefficient(va,1)
 
+#define KC_C_L          TransferCoefficient(va,2)
+#define KC_Ca_L         TransferCoefficient(va,3)
+#define KC_Na_L         TransferCoefficient(va,4)
+#define KC_K_L          TransferCoefficient(va,5)
+#define KC_Si_L         TransferCoefficient(va,6)
+#define KC_Cl_L         TransferCoefficient(va,7)
+
+/*
 #define KD_C_L          TransferCoefficient(va,2)
 #define KD_Ca_L         TransferCoefficient(va,3)
 #define KD_Na_L         TransferCoefficient(va,4)
 #define KD_K_L          TransferCoefficient(va,5)
 #define KD_Si_L         TransferCoefficient(va,6)
 #define KD_Cl_L         TransferCoefficient(va,7)
+*/
 
 #define KF_H2O          TransferCoefficient(va,8)
 
@@ -319,6 +328,7 @@
  * ------------------- */
 #define SaturationDegree(p)              (Curve_ComputeValue(Element_GetCurve(el),p))
 #define RelativePermeabilityToLiquid(p)  (Curve_ComputeValue(Element_GetCurve(el) + 1,p))
+#define TortuosityToLiquid               TortuosityToLiquid_Xie
 
 
 
@@ -403,11 +413,15 @@ static double* ComputeFluxes(Element_t*,double*,int,int) ;
 
 static int     TangentCoefficients(Element_t*,double,double*) ;
 
-
-static double  PermeabilityCoefficient(Element_t*,double) ;
 static void    ComputePhysicoChemicalProperties(double) ;
 
 static void    concentrations_oh_na_k(double,double,double,double,double,double) ;
+
+static double  PermeabilityCoefficient(Element_t*,double) ;
+static double  TortuosityToLiquid_OhJang(double,double) ;
+static double  TortuosityToLiquid_BazantNajjar(double,double) ;
+static double  TortuosityToLiquid_Xie(double,double) ;
+static double  TortuosityToGas(double,double) ;
 
 
 /* Internal parameters */
@@ -1233,7 +1247,8 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
         if(i == j) {
           g[i*nn + i] = 0 ;
         } else {
-          g[i*nn + j] = dt * W_q(i,j) ;
+//          g[i*nn + j] = dt * W_q(i,j) ;
+          g[i*nn + j] = W_q(i,j) ;
         }
       }
     }
@@ -1586,7 +1601,6 @@ int ComputeTransferCoefficients(Element_t* el,double** u,double* f)
       double coeff_permeability = PermeabilityCoefficient(el,phi) ; /* Change here */
       double k_l  = (k_int/mu_l)*RelativePermeabilityToLiquid(p_c)*coeff_permeability;
     
-      /* Permeabilities */
       double rho_l  = HardenedCementChemistry_GetLiquidMassDensity(hcc) ;
       double c_c_l  = HardenedCementChemistry_GetElementAqueousConcentrationOf(hcc,C) ;
       double c_ca_l = HardenedCementChemistry_GetElementAqueousConcentrationOf(hcc,Ca) ;
@@ -1596,13 +1610,21 @@ int ComputeTransferCoefficients(Element_t* el,double** u,double* f)
       double c_cl_l = HardenedCementChemistry_GetElementAqueousConcentrationOf(hcc,Cl) ;
     
       KD_L[i]    = rho_l * k_l ;
-            
+      
+      KC_C_L[i]  = c_c_l  / rho_l ;
+      KC_Ca_L[i] = c_ca_l / rho_l ;
+      KC_Na_L[i] = c_na_l / rho_l ;
+      KC_K_L[i]  = c_k_l  / rho_l ;
+      KC_Si_L[i] = c_si_l / rho_l ;
+      KC_Cl_L[i] = c_cl_l / rho_l ;
+      /*
       KD_C_L[i]  = c_c_l  * k_l ;
       KD_Ca_L[i] = c_ca_l * k_l ;
       KD_Na_L[i] = c_na_l * k_l ;
       KD_K_L[i]  = c_k_l  * k_l ;
       KD_Si_L[i] = c_si_l * k_l ;
       KD_Cl_L[i] = c_cl_l * k_l ;
+      */
     }
     
     /* Transport in gas phase (diffusion coef) */
@@ -1614,11 +1636,10 @@ int ComputeTransferCoefficients(Element_t* el,double** u,double* f)
       /* tortuosite gaz */
       double s_g = 1 - s_l ;
       double phi_g = phi*s_g ;
-      /* double tau  = pow(phi,1/3)*pow(s_g,7/3) ; */
-      double tau  = pow(phi,1.74)*pow(s_g,3.20) ;
+      double taugas  = TortuosityToGas(phi,s_l) ;
     
-      KF_CO2[i]      = phi_g * tau * d_co2 ;
-      KF_H2O[i]      = phi_g * tau * d_vap ;
+      KF_CO2[i]      = phi_g * taugas * d_co2 ;
+      KF_H2O[i]      = phi_g * taugas * d_vap ;
       /* KF_CO2[i]    	= (1.6e-3)*pow(phi,1.8)*pow(1-hr,2.2) ; */
     }
 
@@ -1629,38 +1650,10 @@ int ComputeTransferCoefficients(Element_t* el,double** u,double* f)
       double s_l     = x[I_S_L] ;
       /* Porosity */
       double phi     = x[I_Phi] ;
-      double vca = 0.392 ;
-      double vfa = 0.284 ;
-      double vpa = 0.324  ;
-      double fac = (1.-2.1*vca)/(1.-0.65*vfa)*vpa ;
-      double hydrationdegree = 0.95 ;
-      double wcratio = 0.5 ;
-      double phiused = phi/vpa - 0.19*hydrationdegree/(wcratio + 0.32);
-      double fporo = (phiused > 0.18) ? 0.001+0.07*phiused*phiused+1.8*(phiused-0.18)*(phiused-0.18) : 0.001+0.07*phiused*phiused ;
-      double coefsa = pow(s_l,6.) ; 
-      double iff = fac * fporo * coefsa ;   /* mj */
-
-      #if 0
-      double phi_cap = phi/2  ;
-      double phi_c   = 0.17 ; /*Percolation capilar porosity*/
-    
-      /*Diffusivity according to Oh and Jang, CCR203*/
-      double n = 2.7 ; 		/* OPC n = 2.7  --------------  Fly ash n = 4.5 */
-      double ds_norm = 5e-5 ;	/* OPC ds_norm = 1e-4 --------  Fly ash ds_norm = 5e-5 */
-      double m_phi = 0.5*( pow(ds_norm,1/n) + phi_cap/(1-phi_c)*(1 - pow(ds_norm,1/n)) - phi_c/(1-phi_c)) ;
-      double iff =  pow( m_phi + sqrt( m_phi*m_phi +  pow(ds_norm,1/n)*phi_c/(1-phi_c)),n)*pow(s_l,4.5) ; */
-    
-      /*Diffusivity : ITZ for mortars and concrete */
-
-      /*Diffusivity according to Bazant et Najjar */
-		  double iff    = 0.00029*exp(9.95*phi)/(1+625*pow((1-s_l),4)) ;
-
-      /* Humidity relative */
-      double hr = exp(-p_c*M_H2O/(RT*rho_l)) ; 
-      #endif
+      double tauliq =  TortuosityToLiquid(phi,s_l) ;
     
       /* Liquid tortuosity */
-      TORTUOSITY[i] = iff ;
+      TORTUOSITY[i] = tauliq ;
     }
     
     /* Concentrations */
@@ -1770,23 +1763,43 @@ double* ComputeFluxes(Element_t* el,double* grdij,int i,int j)
       double w_l     = - kd_l * grd_p_l  ;
       
       /* Transfer terms */
+      double kc_c_l   = 0.5 * (KC_C_L[i]   + KC_C_L[j]) ;
+      double kc_ca_l  = 0.5 * (KC_Ca_L[i]  + KC_Ca_L[j]) ;
+      double kc_si_l  = 0.5 * (KC_Si_L[i]  + KC_Si_L[j]) ;
+      double kc_na_l  = 0.5 * (KC_Na_L[i]  + KC_Na_L[j]) ;
+      double kc_k_l   = 0.5 * (KC_K_L[i]   + KC_K_L[j]) ;
+      double kc_cl_l  = 0.5 * (KC_Cl_L[i]   + KC_Cl_L[j]) ;
+      
+      /* Transfer terms */
+      /*
       double kd_c_l   = 0.5 * (KD_C_L[i]   + KD_C_L[j]) ;
       double kd_ca_l  = 0.5 * (KD_Ca_L[i]  + KD_Ca_L[j]) ;
       double kd_si_l  = 0.5 * (KD_Si_L[i]  + KD_Si_L[j]) ;
       double kd_na_l  = 0.5 * (KD_Na_L[i]  + KD_Na_L[j]) ;
       double kd_k_l   = 0.5 * (KD_K_L[i]   + KD_K_L[j]) ;
       double kd_cl_l  = 0.5 * (KD_Cl_L[i]  + KD_Cl_L[j]) ;
+      */
 
       /* Mass flux */
       w[I_W_tot]   = w_l  ;
    
       /* Molar fluxes */
+      w[I_W_C  ]  += kc_c_l  * w_l  ;
+      w[I_W_Ca ]  += kc_ca_l * w_l  ;
+      w[I_W_Si ]  += kc_si_l * w_l  ;
+      w[I_W_Na ]  += kc_na_l * w_l  ;
+      w[I_W_K  ]  += kc_k_l  * w_l  ;
+      w[I_W_Cl ]  += kc_cl_l * w_l  ;
+   
+      /* Molar fluxes */
+      /*
       w[I_W_C  ]  += - kd_c_l  * grd_p_l  ;
       w[I_W_Ca ]  += - kd_ca_l * grd_p_l  ;
       w[I_W_Si ]  += - kd_si_l * grd_p_l  ;
       w[I_W_Na ]  += - kd_na_l * grd_p_l  ;
       w[I_W_K  ]  += - kd_k_l  * grd_p_l  ;
       w[I_W_Cl ]  += - kd_cl_l * grd_p_l  ;
+      */
     }
   }
   
@@ -1949,7 +1962,8 @@ int TangentCoefficients(Element_t* el,double dt,double* c)
               cij[E_Si*NEQ   + k] = - dtdij*dw[I_W_Si] ;
               cij[E_K*NEQ    + k] = - dtdij*dw[I_W_K] ;
               cij[E_mass*NEQ + k] = - dtdij*dw[I_W_tot] ;
-              cij[E_q*NEQ    + k] = - dtdij*dw[I_W_q] ;
+              //cij[E_q*NEQ    + k] = - dtdij*dw[I_W_q] ;
+              cij[E_q*NEQ    + k] = - dw[I_W_q]/dij ;
               cij[E_Cl*NEQ   + k] = - dtdij*dw[I_W_Cl] ;
             }
           }
@@ -2208,7 +2222,7 @@ int  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
   x[I_Mass]  = m_noair_g + m_l + m_s ;
   
   /* Charge density */
-  x[I_N_Q]   = n_q_l ;
+  x[I_N_Q]   = c_q_l ;
   
   /* OH concentration */
   x[I_C_OH]  = c_oh ;
@@ -2360,4 +2374,75 @@ double PermeabilityCoefficient(Element_t* el,double phi)
   }
   
   return(coeff_permeability) ;
+}
+
+
+
+double TortuosityToGas(double phi,double s_l)
+{
+  double s_g    = 1 - s_l ;
+  double tausat = (phi > 0) ? pow(phi,1.74) : 0 ;
+  double tau    = (s_g > 0) ? tausat * pow(s_g,3.20) : 0 ;
+
+  return(tau) ;
+}
+
+
+
+
+double TortuosityToLiquid_OhJang(double phi,double s_l)
+/* Ref:
+ * Byung Hwan Oh, Seung Yup Jang, 
+ * Prediction of diffusivity of concrete based on simple analytic equations, 
+ * Cement and Concrete Research 34 (2004) 463 - 480.
+ * tau = (m_p + sqrt(m_p**2 + phi_c/(1 - phi_c) * (Ds/D0)**(1/n)))**n
+ * m_p = 0.5 * ((phi_cap - phi_c) + (Ds/D0)**(1/n) * (1 - phi_c - phi_cap)) / (1 - phi_c)
+ */
+{
+  double phi_cap = (phi > 0) ? 0.5 * phi : 0  ;
+  double phi_c = 0.17 ;         /* Percolation capilar porosity */
+  double n     = 2.7 ; 		      /* OPC n  = 2.7  --------  Fly ash n  = 4.5 */
+  double ds    = 1.e-4 ;	      /* OPC ds = 1e-4 --------  Fly ash ds = 5e-5 */
+  double dsn   = pow(ds,1/n) ;
+  double m_phi = 0.5 * ((phi_cap - phi_c) + dsn * (1 - phi_c - phi_cap)) / (1 - phi_c) ;
+  double tausat =  pow(m_phi + sqrt(m_phi*m_phi + dsn * phi_c/(1 - phi_c)),n) ;
+  
+  double tau =  tausat * pow(s_l,4.5) ;
+    
+  return(tau) ;
+}
+
+
+
+
+double TortuosityToLiquid_BazantNajjar(double phi,double s_l)
+/* Ref:
+ * Z. P. BAZANT, L.J. NAJJAR,
+ * Nonlinear water diffusion in nonsaturated concrete,
+ * Materiaux et constructions, 5(25), 1972.
+ */
+{
+  double iff = 0.00029 * exp(9.95 * phi) ;
+  double tausat = (iff < 1) ? iff : 1 ;
+  double tau    = tausat / (1 + 625*pow((1 - s_l),4)) ;
+    
+  return(tau) ;
+}
+
+
+
+double TortuosityToLiquid_Xie(double phi,double s_l)
+{
+  double vca = 0.392 ;
+  double vfa = 0.284 ;
+  double vpa = 0.324  ;
+  double fac = (1.-2.1*vca)/(1.-0.65*vfa)*vpa ;
+  double hydrationdegree = 0.95 ;
+  double wcratio = 0.5 ;
+  double phiused = phi/vpa - 0.19*hydrationdegree/(wcratio + 0.32);
+  double fporo = (phiused > 0.18) ? 0.001+0.07*phiused*phiused+1.8*(phiused-0.18)*(phiused-0.18) : 0.001+0.07*phiused*phiused ;
+  double coefsa = pow(s_l,6.) ; 
+  double iff = fac * fporo * coefsa ;
+      
+  return(iff) ;
 }

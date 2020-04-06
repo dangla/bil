@@ -24,7 +24,7 @@ extern int         (String_CountTokens3)        (const char*,const char*,const c
 extern char**      (String_BreakIntoTokens)     (const char*,const char*) ;
 extern int         (String_NbOfTokens)          (char**) ;
 extern char*       (String_CopyLine)            (const char*) ;
-extern const char* (String_SkipComment)         (const char*) ;
+extern const char* (String_SkipRemainingComments)(const char*) ;
 extern int         (String_NbOfUncommentedLines)(const char*,const char*) ;
 
 
@@ -49,7 +49,8 @@ extern int         (String_NbOfUncommentedLines)(const char*,const char*) ;
 #include "Logic.h"
 
 
-/* Scan */
+/* Scan string
+ * ----------- */
 /** Scan a string with a given format and return the nb of characters read. */
 #define String_Scan(...) \
         Logic_IF(Logic_GE(Arg_NARG(__VA_ARGS__),3))\
@@ -134,10 +135,9 @@ extern int         (String_NbOfUncommentedLines)(const char*,const char*) ;
 
 
 
-/* Characters */
-#define String_SpaceChars \
-        " \f\n\r\t\v"
-        
+
+/* Find characters
+ * --------------- */
 #define String_FindChar(STR,C) \
         ((STR) ? strchr(STR,C) : NULL)
         
@@ -145,6 +145,22 @@ extern int         (String_NbOfUncommentedLines)(const char*,const char*) ;
 #define String_FindAnyChar(STR,Cs) \
         ((STR) ? strpbrk(STR,Cs) : NULL)
         
+
+#define String_FindEndOfLine(STR) \
+        String_FindChar(STR,'\n')
+        
+
+#define String_FindEndOfString(STR) \
+        String_FindChar(STR,'\0')
+
+
+
+
+/* Skip characters
+ * --------------- */
+#define String_SpaceChars \
+        " \f\n\r\t\v"
+
 
 #define String_SkipAnyChar(STR,Cs) \
         ((STR) ? (STR) + strspn(STR,Cs) : NULL)
@@ -162,20 +178,14 @@ extern int         (String_NbOfUncommentedLines)(const char*,const char*) ;
         String_SkipAnyChar(STR," \n")
         
 
-#define String_FindEndOfLine(STR) \
-        String_FindChar(STR,'\n')
-        
-
-#define String_FindEndOfString(STR) \
-        String_FindChar(STR,'\0')
-        
-
 #define String_SkipLine(STR) \
         ((String_pchar = String_FindEndOfLine(STR)),String_SkipSpaceChars(String_pchar))
+        
 
 
 
-/* Comparisons */
+/* Compare with characters
+ * ----------------------- */
 #define String_Is(...) \
         Utils_CAT_NARG(String_Is,__VA_ARGS__)(__VA_ARGS__)
         
@@ -201,9 +211,12 @@ extern int         (String_NbOfUncommentedLines)(const char*,const char*) ;
         
 
 
+
+
 #include <Utils.h>
 
-/* Tokens */
+/* Tokens
+ * ------ */
 #define String_FindToken(...) \
         Utils_CAT_NARG(String_FindToken,__VA_ARGS__)(__VA_ARGS__)
         

@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
+#include "Mry.h"
 #include "Solver.h"
 #include "Message.h"
 #include "BilLib.h"
@@ -12,7 +13,9 @@
 #ifdef SUPERLULIB
   #include "SuperLUMethod.h"
 #endif
+#ifdef BLASLIB
 #include "MA38Method.h"
+#endif
 
 
 
@@ -23,9 +26,7 @@
 
 Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options,const int n)
 {
-  Solver_t* solver = (Solver_t*) malloc(sizeof(Solver_t)) ;
-  
-  assert(solver) ;
+  Solver_t* solver = (Solver_t*) Mry_New(Solver_t) ;
   
   
   /*  Method */
@@ -44,10 +45,12 @@ Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options,const int n)
       Solver_GetSolve(solver) = SuperLUMethod_Solve ;
     #endif
 
+    #ifdef BLASLIB
     } else if(!strcmp(method,"ma38")) {
     
       Solver_GetResolutionMethod(solver) = ResolutionMethod_Type(MA38) ;
       Solver_GetSolve(solver) = MA38Method_Solve ;
+    #endif
       
     } else {
       arret("Solver_Create(1): unknown method") ;
@@ -57,7 +60,12 @@ Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options,const int n)
   
   /* Nb of rows/columns */
   {
-    int n_col = Mesh_GetNbOfMatrixColumns(mesh) ;
+    /* ... and at the same time update the system */
+    int n_col = Mesh_UpdateMatrixRowColumnIndexes(mesh) ;
+    //int n_col = Mesh_GetNbOfMatrixColumns(mesh) ;
+    char*   debug  = Options_GetPrintedInfos(options) ;
+    
+    if(!strcmp(debug,"numbering")) Mesh_PrintData(mesh,debug) ;
     
     Solver_GetNbOfColumns(solver) = n_col ;
   }
@@ -72,10 +80,7 @@ Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options,const int n)
   /* Allocation of space for the right hand side */
   {
     int n_col = Solver_GetNbOfColumns(solver) ;
-    size_t sz = n*n_col*sizeof(double) ;
-    double* rhs = (double*) malloc(sz) ;
-    
-    assert(rhs) ;
+    double* rhs = (double*) Mry_New(double[n*n_col]) ;
     
     Solver_GetRHS(solver) = rhs ;
   }
@@ -84,10 +89,7 @@ Solver_t*  Solver_Create(Mesh_t* mesh,Options_t* options,const int n)
   /* Allocation of space for the solution */
   {
     int n_col = Solver_GetNbOfColumns(solver) ;
-    size_t sz = n*n_col*sizeof(double) ;
-    double* sol = (double*) malloc(sz) ;
-    
-    assert(sol) ;
+    double* sol = (double*) Mry_New(double[n*n_col]) ;
     
     Solver_GetSolution(solver) = sol ;
   }

@@ -7,6 +7,7 @@
 #include "Mesh.h"
 #include "Message.h"
 #include "BilLib.h"
+#include "Mry.h"
 #include "Matrix.h"
 #include "MatrixStorageFormat.h"
 #include "LDUSKLFormat.h"
@@ -23,9 +24,7 @@
 Matrix_t*   Matrix_Create(Mesh_t* mesh,Options_t* options)
 /* Alloue la memoire de la matrice */
 {
-  Matrix_t* a = (Matrix_t*) malloc(sizeof(Matrix_t)) ;
-  
-  if(!a) assert(a) ;
+  Matrix_t* a = (Matrix_t*) Mry_New(Matrix_t) ;
 
 
   /*  Nb of rows and columns */
@@ -77,9 +76,7 @@ Matrix_t*   Matrix_Create(Mesh_t* mesh,Options_t* options)
       /*  Work space for NCFormat_AssembleElementMatrix */
       {
         int n_col = Matrix_GetNbOfColumns(a) ;
-        void* work = (void*) malloc(n_col*sizeof(int)) ;
-      
-        assert(work) ;
+        void* work = (void*) Mry_New(int[n_col]) ;
       
         Matrix_GetWorkSpace(a) = work ;
       }
@@ -96,10 +93,7 @@ Matrix_t*   Matrix_Create(Mesh_t* mesh,Options_t* options)
       {
         int n_col = Matrix_GetNbOfColumns(a) ;
         int lwork = 4 * n_col ;
-        size_t sz = lwork * sizeof(double) ;
-        void* work = (void*) malloc(sz) ;
-      
-        assert(work) ;
+        void* work = (void*) Mry_New(double[lwork]) ;
       
         Matrix_GetWorkSpace(a) = work ;
       }
@@ -155,7 +149,6 @@ void Matrix_Delete(void* self)
   }
   
   free(a) ;
-  *pa = NULL ;
 }
 
 

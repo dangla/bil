@@ -352,12 +352,23 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
 /** Define some properties attached to each element 
  *  Return 0 */
 {
-  IntFct_t* intfct = Element_GetIntFct(el) ;
-  int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
+  
+  /* Continuity of pressure across zero-thickness element */
+  {
+    if(Element_HasZeroThickness(el)) {
+      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,U_p_l) ;
+    }
+  }
+  
+  {
+    IntFct_t* intfct = Element_GetIntFct(el) ;
+    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
 
-  /** Define the length of tables */
-  Element_GetNbOfImplicitTerms(el) = NVI*NbOfIntPoints ;
-  Element_GetNbOfExplicitTerms(el) = NVE*NbOfIntPoints ;
+    /** Define the length of tables */
+    Element_GetNbOfImplicitTerms(el) = NVI*NbOfIntPoints ;
+    Element_GetNbOfExplicitTerms(el) = NVE*NbOfIntPoints ;
+  }
+  
   return(0) ;
 }
 

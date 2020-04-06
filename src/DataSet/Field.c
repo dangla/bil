@@ -62,10 +62,9 @@ void Field_Delete(void* self)
 
 
 
-void Field_Scan(Field_t* field,DataFile_t* datafile,Geometry_t* geometry)
+void Field_Scan(Field_t* field,DataFile_t* datafile)
 {
   char* line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
-  int dim = Geometry_GetDimension(geometry) ;
 
   {
     char*   type = Field_GetType(field) ;
@@ -77,7 +76,8 @@ void Field_Scan(Field_t* field,DataFile_t* datafile,Geometry_t* geometry)
     }
 
 
-    /* Affine field */
+    /* Affine field
+     * ------------ */
     if(String_Is(type,"affine")) {
       FieldAffine_t* affine = FieldAffine_Create() ;
       
@@ -130,9 +130,14 @@ void Field_Scan(Field_t* field,DataFile_t* datafile,Geometry_t* geometry)
         }
       }
       
-      
-    /* Grid field */
-    } else if(String_Is(type,"grid")) {
+      return ;
+    }
+
+
+
+    /* Grid field
+     * ---------- */
+    if(String_Is(type,"grid")) {
       char name[Field_MaxLengthOfFileName] ;
       int n = String_FindAndScanExp(line,"File",","," = %s",name) ;
         
@@ -142,16 +147,21 @@ void Field_Scan(Field_t* field,DataFile_t* datafile,Geometry_t* geometry)
       
       /* File */
       if(n) {
-        FieldGrid_t* grid = FieldGrid_Create(name,dim) ;
+        FieldGrid_t* grid = FieldGrid_Create(name) ;
         
         Field_GetFieldFormat(field) = grid ;
       } else {
         arret("Field_Scan: no file") ;
       }
       
-      
-    /* Constant field */
-    } else if(String_Is(type,"constant")) {
+      return ;
+    }
+
+
+
+    /* Constant field
+     * -------------- */
+    if(String_Is(type,"constant")) {
       FieldConstant_t* cst = (FieldConstant_t*) Mry_New(FieldConstant_t) ;
       
       Field_GetFieldFormat(field) = cst ;
@@ -168,30 +178,17 @@ void Field_Scan(Field_t* field,DataFile_t* datafile,Geometry_t* geometry)
         }
       }
       
-    } else {
+      return ;
+    }
+
+
+
+    {
       arret("Field_Scan: unknown type") ;
     }
   }
-}
-
-
-
-Field_t* Field_Create(int n_fields)
-{
-  Field_t* field = (Field_t*) Mry_New(Field_t[n_fields]) ;
-
-  /* Allocation of space for the type of field */
-  {
-    int i ;
-      
-    for(i = 0 ; i < n_fields ; i++) {
-      Field_t* fld = Field_New() ;
-        
-      field[i] = fld[0] ;
-    }
-  }
   
-  return(field) ;
+  return ;
 }
 
 
@@ -343,7 +340,7 @@ FieldGrid_t* FieldGrid_Create(char* filename,int dim)
 
 
 #if 1
-FieldGrid_t* FieldGrid_Create(char* filename,int dim1)
+FieldGrid_t* FieldGrid_Create(char* filename)
 {
   FieldGrid_t* grid = (FieldGrid_t*) Mry_New(FieldGrid_t) ;
   int    n_x = 1,n_y = 1,n_z = 1 ;

@@ -154,17 +154,33 @@ set output 'PhaseDiagramOfCaO-SiO2-H2O.eps'
 
 
 plot \
-     'cal-greenberg-a1' us 2:3 w p  lt 1 lw 2 pt 5 ps 2 title '(exp. Greenberg)'\
-    , FITSSH1(x)  w l lt -1 lw 3 title '(model)' \
+      FITSSH1(x)  w l lt -1 lw 2 title '(model)' \
+    ,'cal-greenberg-a1' us 2:3 w p  lt 1 lw 2 pt 1 ps 2 title '(exp. Greenberg)'\
 #    ,FITSSH_SH(x)   w l lw 2 lt 4  title 'Tobermorite' \
 #    ,FITSSH_TOB(x)  w l lw 2 lt 2  title 'Silica' \
 #    ,FITSSH_JEN(x)  w l lw 2 lt 3  title 'Jennite' \
 
 
-exit
+
+reset
+
 
 # Plot 2
-set output 'x-s_ch-greenberg.eps'
+# ------
+# Size
+set size square 1.,1.
+set origin 0.,0.
+
+
+# x-axis
+set xlabel 'Saturation index of portlandite' font ",24"
+X0 = 1.e-8
+X1 = 10
+set xrange[X0:X1]
+set logscale x
+set format x "10^{%T}"
+set xtics mirror 1.e-2
+
 # y-axis
 set ylabel 'C/S ratio' font ",24"
 set nologscale y
@@ -172,13 +188,29 @@ set format y "%g"
 set ytics 0.2
 set ytics mirror
 set yrange[0:1.8]
+
+
+
+# Legends
 set key default
 set key top left reverse Left spacing 1.5 samplen 2
+#set key left at 1.e-5,8 reverse Left spacing 1.5 samplen 2
+#set key left at 1.e-5,1.35 reverse Left spacing 1.5 samplen 1
+
+
+set grid xtics ytics
+
+
+set output 'CalciumSiliconRatioOfCaO-SiO2-H2O.eps'
+
 plot \
-     'cal-greenberg-a1' us 2:1 w p lw 4 pt 1 ps 2 title 'C/S (exp. Greenberg)' \
-    , FITX1(x)  w l lw 6 lt 0 title 'fit' \
-#    ,'cal-greenberg-a05' us 2:1 w p lw 4 pt 1 ps 2 title 'C/S (exp. Greenberg)' \
-    
+      FITX1(x)  w l lt -1 lw 2 title '(model)' \
+    ,'cal-greenberg-a1' us 2:1 w p lt 1 lw 2 pt 1 ps 2 title '(exp. Greenberg)' \
+#    ,'cal-greenberg-a05' us 2:1 w p lw 4 pt 1 ps 2 title '(exp. Greenberg)' \
+
+
+exit
+
     
 # Plot 3
 set output 'ph-s_ch-greenberg.eps'
@@ -191,12 +223,14 @@ set ytics nomirror
 set yrange[7:14]
 set key default
 set key top left reverse Left spacing 1.5 samplen 2
+
 plot \
      'cal-greenberg-a1' us 2:17 w p lw 4 pt 1 ps 2 title 'pH (exp. Greenberg)'\
     ,'cal-greenberg-a1' us 2:18 w p lw 4 pt 1 ps 2 title 'pH (theory)' \
     ,'cal-greenberg-a05' us 2:17 w p lw 4 pt 1 ps 2 title 'pH (exp. Greenberg)'\
     ,'cal-greenberg-a05' us 2:18 w p lw 4 pt 1 ps 2 title 'pH (theory)' \
-    
+
+
     
 # Plot 4
 set output 'c_i-s_ch-greenberg.eps'

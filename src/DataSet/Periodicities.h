@@ -16,8 +16,8 @@ struct Periodicities_s       ; typedef struct Periodicities_s      Periodicities
 extern Periodicities_t* (Periodicities_Create)(DataFile_t*) ;
 extern Periodicities_t* (Periodicities_New)(const int) ;
 extern void             (Periodicities_Delete)(void*) ;
-extern void             (Periodicities_ResetMatrixPermutationNumbering)(Mesh_t*) ;
-extern void             (Periodicities_UpdateMatrixPermutationNumbering)(Mesh_t*) ;
+extern void             (Periodicities_EliminateMatrixRowColumnIndexes)(Mesh_t*) ;
+extern void             (Periodicities_UpdateMatrixRowColumnIndexes)(Mesh_t*) ;
 extern void             (Periodicities_UpdateGraph)(Mesh_t*,Graph_t*) ;
 
 

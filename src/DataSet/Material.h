@@ -15,7 +15,6 @@ struct Material_s     ; typedef struct Material_s     Material_t ;
 
 
 extern Material_t* (Material_New)             (void) ;
-extern Material_t* (Material_Create)          (const int) ;
 extern void        (Material_Delete)          (void*) ;
 extern void        (Material_Scan)            (Material_t*,DataFile_t*,Geometry_t*) ;
 extern int         (Material_ReadProperties)  (Material_t*,DataFile_t*) ;

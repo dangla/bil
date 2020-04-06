@@ -84,33 +84,15 @@ void Material_Delete(void* self)
 
 
 
-Material_t* Material_Create(const int n_mat)
-{
-  Material_t* material   = (Material_t*) Mry_New(Material_t[n_mat]) ;
-  int    i ;
-  
-    
-  /* Allocation of memory space for each material */
-  for(i = 0 ; i < n_mat ; i++) {
-    Material_t* mat = Material_New() ;
-    
-    material[i] = mat[0] ;
-  }
-  
-  return(material) ;
-}
-
-
-
 void Material_Scan(Material_t* mat,DataFile_t* datafile,Geometry_t* geom)
 {
   
     {
       /* Which model ? */
       {
+        char*  line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
         char   codename[Material_MaxLengthOfKeyWord] ;
         char*  code = codename + 1 ;
-        char*  line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
         //int n = String_FindAndScanExp(line,"Model =,",","," %s",codename+1) ;
       
         if(String_Is(line,"Model",5)) {
@@ -169,8 +151,8 @@ void Material_Scan(Material_t* mat,DataFile_t* datafile,Geometry_t* geom)
     
     
       if(!Material_GetModel(mat)) {
-        Message_Info("Material_Scan: Model not known") ;
-        exit(EXIT_SUCCESS) ;
+        //Message_Warning("Material_Scan: Model not known") ;
+        Message_FatalError("Material_Scan: Model not known") ;
       }
 
     }

@@ -20,7 +20,7 @@
 /* Nb of (im/ex)plicit terms and constant terms */
 #define NVI     (32)
 #define NVE     (2)
-#define NV0     (0)
+#define NV0     (1)
 
 /* Equation index */
 #define E_water  (0+dim)
@@ -67,7 +67,7 @@
 #define D_V           (vex + 1)[0]
 
 /* We define some names for constant terms */
-
+#define IS_GRAN       (v0 + 0)[0]
 
 /* Functions */
 static int    pm(const char *s) ;
@@ -124,9 +124,10 @@ static void    ComputePhysicoChemicalProperties(double) ;
 //#define dSaturationDegree(pc)   (Curve_ComputeDerivative(SATURATION_CURVE,pc))
 
 #define RELATIVEPERM_CURVE                (Element_GetCurve(el) + 1)
-#define RelativePermeabilityToLiquid(pc)  1.   //(Curve_ComputeValue(RELATIVEPERM_CURVE,pc))
-#define TortuosityToGas(f)            (tortuosity)
-#define IntrinsicPermeability(rhod)   (k_int_M)
+#define RelativePermeabilityToLiquid(sat_liq_eff)  (pow(sat_liq_eff,k_r_M))                        //(Curve_ComputeValue(RELATIVEPERM_CURVE,pc))
+#define TortuosityToGas(phi_Macro)            (tortuosity)                                     // constant pour le moment
+#define IntrinsicPermeability(k_int_m,k_int_M_a,k_int_M_b,rho_d_eff)   (k_int_m+k_int_M_b*pow((rho_d_eff/1000),k_int_M_a)) // rho_d_eff est donné en kg/m3
+//#define IntrinsicPermeability(k_int_m,k_int_M_a,k_int_M_b,rho_d_eff)   (k_int_m*(1+(k_int_M_b)*exp(-(k_int_M_a)*(rho_d_eff/1000)))) // rho_d_eff est donné en kg/m3
 
 //#define CAPIHARDENING_CURVE     (Element_GetCurve(el) + 2)
 //#define CapillaryHardening(pc)  (Curve_ComputeValue(CAPIHARDENING_CURVE,pc))
@@ -148,7 +149,7 @@ static double* sig0 ;
 static double  rho_l0 ;
 static double  p_g = 0 ;
 static double  k_int_m ;
-static double  k_int_M ;
+static double  k_int_M_b ;
 static double  mu_l ;
 static double  kappa_m ;
 static double  kappa_M ;
@@ -160,9 +161,9 @@ static double  beta ;
 static double  p_c ;
 static double  p_co0 ;
 static double  e0 ;
-static double  p_vap_sat ;
+static double  k_int_M_a ;
 static double  B_a ;
-static double  M_R_T ;
+static double  k_r_M ;
 static double  B_b ;
 static double  A_m ;
 static double  B_m ;
@@ -170,9 +171,6 @@ static double  p_l0 ;
 static double  p_limit ;
 static double  k_s ;
 static double  tortuosity ;
-
-
-/* MODIF */
 static double  initial_pel_dry_dens ;
 static double  p_poudre ;
 static double  p_pellet ;
@@ -181,21 +179,15 @@ static double  beta_hydro_0 ;
 static double  beta_hydro_a ;
 static double  rho_solid ;
 
-static bool    isGran = true ;
-
-
+//static double    isGran ;
 
 static Elasticity_t* elasty ;
 static Plasticity_t* plasty ;
-
 
 static double RT ;
 static double D_av0 ;
 static double  p_l0 ;
 static double  p_v0 ;
-
-
-
 
 #include "DiffusionCoefficientOfMoleculeInAir.h"
 #include "WaterVaporPressure.h"
@@ -299,11 +291,11 @@ int pm(const char *s)
     return(21) ;
   } else if(!strcmp(s,"limit_liquid_pressure")) {
     return(22) ;
-  } else if(!strcmp(s,"p_vap_sat")) {
+  } else if(!strcmp(s,"k_int_M_a")) {
     return(23) ;
   } else if(!strcmp(s,"B_a")) {
     return(24) ;
-  } else if(!strcmp(s,"M_R_T")) {
+  } else if(!strcmp(s,"k_r_M")) {
     return(25) ;
   } else if(!strcmp(s,"B_b")) {
     return(26) ;
@@ -339,20 +331,11 @@ int pm(const char *s)
     return(40) ;
   } else if(!strcmp(s,"tortuosity"))  {
     return(41) ;
-  } else if(!strcmp(s,"k_int_M"))      { 
+  } else if(!strcmp(s,"k_int_M_b"))      { 
     return (42) ;
 	
 	} else return(-1) ;
 }
-
-/* MODIFS :
-static double  initial_pel_dry_dens ;
-static double  p_poudre ;
-static double  p_pellet ;
-static double  initial_equivalent_radius ;
-static double  beta_hydro_0 ;
-static double  beta_hydro_a ;
-*/
 
 
 
@@ -361,7 +344,7 @@ void GetProperties(Element_t* el)
   gravity     = Element_GetPropertyValue(el,"gravity") ;
   rho_s       = Element_GetPropertyValue(el,"rho_s") ;
   k_int_m       = Element_GetPropertyValue(el,"k_int_m") ;
-  k_int_M       = Element_GetPropertyValue(el,"k_int_M") ;
+  k_int_M_b       = Element_GetPropertyValue(el,"k_int_M_b") ;
   mu_l        = Element_GetPropertyValue(el,"mu_l") ;
   rho_l0      = Element_GetPropertyValue(el,"rho_l") ;
   sig0        = &Element_GetPropertyValue(el,"initial_stress") ;
@@ -375,9 +358,9 @@ void GetProperties(Element_t* el)
   beta        = Element_GetPropertyValue(el,"beta") ;
 //  lambda_M0 = Element_GetPropertyValue(el,"lambda_M0") ;
   p_c         = Element_GetPropertyValue(el,"p_c") ;
-  p_vap_sat         = Element_GetPropertyValue(el,"p_vap_sat") ;
+  k_int_M_a         = Element_GetPropertyValue(el,"k_int_M_a") ;
   B_a         = Element_GetPropertyValue(el,"B_a") ;
-  M_R_T         = Element_GetPropertyValue(el,"M_R_T") ;
+  k_r_M         = Element_GetPropertyValue(el,"k_r_M") ;
   B_b         = Element_GetPropertyValue(el,"B_b") ;
   A_m         = Element_GetPropertyValue(el,"A_m") ;
   B_m         = Element_GetPropertyValue(el,"B_m") ;
@@ -395,6 +378,7 @@ void GetProperties(Element_t* el)
 
   plasty  = Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
   elasty  = Plasticity_GetElasticity(plasty) ;
+  
 }
 
 
@@ -420,7 +404,10 @@ static double calcul_delta_epsilon_pel_cont(double,double,double,double,double,d
 static double calcul_delta_epsilon_pou_cont(double,double,double,double,double,double) ;
 static double bulkModulusGran(double, double, double) ;
 static double bulkModulusCont(double) ;
-static double bulkModulus(double*, double*, double, double, double, double) ;
+static double bulkModulus(double*, double*, double, double, double, double, double) ;
+static double calculSaturationLiqMacro(double) ;
+static double calculSuccionPellet(double, double, double, double, double, double) ;
+static double determinationIsGran(double, double, double) ;
 
 
 int SetModelProp(Model_t* model)
@@ -608,6 +595,7 @@ int ComputeInitialState(Element_t* el)
 {
   double* vim0  = Element_GetImplicitTerm(el) ;
   double* vex0  = Element_GetExplicitTerm(el) ;
+  double* v0  = Element_GetConstantTerm(el) ;
   double** u   = Element_ComputePointerToNodalUnknowns(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
@@ -646,6 +634,7 @@ int ComputeInitialState(Element_t* el)
       EPSV_1 = 0. ;
       EPSV_2 = 0. ;
       P_L_1  = p_l2 ;
+      IS_GRAN = 1 ;
     }
   }
   
@@ -683,23 +672,36 @@ int ComputeInitialState(Element_t* el)
     {
       /* pressures */
       double p_l2 = x[I_P_L2] ;
-      double pc = p_g - p_l2 ;
-    
-      /* saturation degrees */
-      double s_l = x[I_S_L] ;
-      double s_g = 1 - s_l ;
+
+      /* strains and solid fractions */
+      double* eps                     =  x   + I_EPS ;
+      double tr_eps                   = eps[0] + eps[4] + eps[8] ; // deformation volumique mélange
+      double eps_2                    = x[I_EPSV_2] ; // deformation poudre
+      double initial_solid_fraction_2 = p_poudre*rho_s/initial_pel_dry_dens ;
+      double solid_fraction_2         = initial_solid_fraction_2 * (1.+eps_2)/(1.+ tr_eps ) ;
     
       /* porosity */
-      double phi_M = x[I_PHI_M] ;
+      double phi_M          = x[I_PHI_M] ;
+      double initial_e1     = rho_solid / initial_pel_dry_dens - 1. ; // indice des vides a partir de densite mesuree au labo
+      double initial_poro_1 = (initial_e1/(1.+initial_e1)) ; // porosite ini pellet
+      double phi_m2         = (initial_poro_1 + eps_2) / (1.+eps_2) ;
+
+      /* saturation degrees */
+      double s_l_M = x[I_S_L] ;
+      double s_g_M = 1 - s_l_M ;
+//      double sat_liq_eff = (solid_fraction_2*phi_m2+s_l_M*phi_M) / (solid_fraction_2*phi_m2+phi_M) ;
+      double sat_liq_eff = s_l_M ; // ne pas considerer les grains 
     
-      /* tortuosity */
+      /* transfer coefficients */
       double tau_g   = TortuosityToGas(phi_M) ;
       double* vex  = vex0 + p*NVE ;
       double rho_l = x[I_RHO_L] ;
-      double rho_d = 0 ;
-      double kint  = IntrinsicPermeability(rho_d) ;
-      double k_h = rho_l*kint/mu_l*RelativePermeabilityToLiquid(pc) ;
-      double d_v = phi_M * s_g * tau_g * D_av0 ;
+      double rho_vap = MassDensityOfWaterVapor(p_l2) ;
+//      double rho_d_eff = rho_s * p_poudre / (solid_fraction_2+phi_M) ; // = ms/omega * ms2/Omega_matrice * Omega/ms)
+      double rho_d_eff = rho_s * (p_poudre+p_pellet) ; // en attendant homogenisation pour permeabilite, prendre la densite seche globale
+      double k_int_eff  = IntrinsicPermeability(k_int_m,k_int_M_a,k_int_M_b,rho_d_eff) ;
+      double k_h = rho_l*k_int_eff/mu_l*RelativePermeabilityToLiquid(sat_liq_eff) ;
+      double d_v = rho_vap * phi_M * s_g_M * tau_g * D_av0 ;
     
       K_L = k_h ;
       D_V = d_v ;
@@ -732,29 +734,42 @@ int  ComputeExplicitTerms(Element_t* el,double t)
   for(p = 0 ; p < NbOfIntPoints ; p++) {
     /* Variables */
     double* x = ComputeVariables(el,u,u,vim0,t,0,p) ;
-    
-    /* fluid mass density */
-    double rho_l = x[I_RHO_L] ;
+
+    /* strains and solid fractions */
+    double* eps                     =  x   + I_EPS ;
+    double tr_eps                   = eps[0] + eps[4] + eps[8] ; // deformation volumique mélange
+    double eps_2                    = x[I_EPSV_2] ; // deformation poudre
+    double initial_solid_fraction_2 = p_poudre*rho_s/initial_pel_dry_dens ;
+    double solid_fraction_2         = initial_solid_fraction_2 * (1.+eps_2)/(1.+ tr_eps ) ;
     
     /* pressures */
     double p_l2 = x[I_P_L2] ;
-    double pc = p_g - p_l2 ;
-    
-    /* saturation degrees */
-    double s_l = x[I_S_L] ;
-    double s_g = 1 - s_l ;
+
+    /* fluid mass density */
+    double rho_l = x[I_RHO_L] ;
+    double rho_vap = MassDensityOfWaterVapor(p_l2) ;
     
     /* porosity */
-    double phi_M = x[I_PHI_M] ;
+    double phi_M          = x[I_PHI_M] ;
+    double initial_e1     = rho_solid / initial_pel_dry_dens - 1. ; // indice des vides a partir de densite mesuree au labo
+    double initial_poro_1 = (initial_e1/(1.+initial_e1)) ; // porosite ini pellet
+    double phi_m2         = (initial_poro_1 + eps_2) / (1.+eps_2) ;
+    
+    /* saturation degrees */
+    double s_l_M = x[I_S_L] ;
+    double s_g_M = 1 - s_l_M ;
+//    double sat_liq_eff = (solid_fraction_2*phi_m2+s_l_M*phi_M) / (solid_fraction_2*phi_m2+phi_M) ;
+    double sat_liq_eff = s_l_M ; // ne pas considerer les grains 
     
     /* tortuosity */
     double tau_g   = TortuosityToGas(phi_M) ;
     
     /* permeability */
-    double rho_d = 0 ;
-    double kint = IntrinsicPermeability(rho_d) ;
-    double k_h = rho_l*kint/mu_l*RelativePermeabilityToLiquid(pc) ;
-    double d_v = phi_M * s_g * tau_g * D_av0 ;
+//    double rho_d_eff = rho_s * p_poudre / (solid_fraction_2+phi_M) ; // = ms/omega * ms2/Omega_matrice * Omega/ms)
+    double rho_d_eff = rho_s * (p_poudre+p_pellet) ; // en attendant homogenisation pour permeabilite, prendre la densite seche globale
+    double k_int_eff = IntrinsicPermeability(k_int_m,k_int_M_a,k_int_M_b,rho_d_eff) ;
+    double k_h = rho_l*k_int_eff/mu_l*RelativePermeabilityToLiquid(sat_liq_eff) ;
+    double d_v = rho_vap * phi_M * s_g_M * tau_g * D_av0 ;
     
     /* storage in vex */
     {
@@ -762,6 +777,7 @@ int  ComputeExplicitTerms(Element_t* el,double t)
       
       K_L = k_h ;
       D_V = d_v ;
+
     }
   }
   
@@ -983,7 +999,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 /** Compute the outputs (r) */
 {
-  int NbOfOutputs = 8 ;
+  int NbOfOutputs = 11 ;
   double* vex  = Element_GetExplicitTerm(el) ;
   double* vim  = Element_GetCurrentImplicitTerm(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
@@ -1027,6 +1043,8 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double sig[9] = {0,0,0,0,0,0,0,0,0} ;
     double hardv = 0 ;
     double k_h = 0 ;
+    double k_l = 0 ;
+    double d_v = 0 ;
     int    i ;
     
     for(i = 0 ; i < dim ; i++) {
@@ -1036,6 +1054,8 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     /* Averaging */
     for(i = 0 ; i < np ; i++ , vim += NVI , vex += NVE) {
       double* def =  FEM_ComputeLinearStrainTensor(fem,u,intfct,i,U_u) ;
+      double p_l2_i = FEM_ComputeUnknown(fem,u,intfct,i,U_p_l2) ;
+
       int j ;
       
       p_l1 += P_L_1/np ;
@@ -1049,8 +1069,14 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       for(j = 0 ; j < 9 ; j++) eps[j] += def[j]/np ;
       
       hardv += HARDV/np ;
-      
-      k_h += K_L/np ;
+
+    { 
+      double k_eff_i = (K_L + D_V * dMassDensityOfWaterVapor(p_l2_i)) ;
+      k_h += k_eff_i/np ;
+      k_l += K_L/np ;
+      d_v += (D_V * dMassDensityOfWaterVapor(p_l2_i))/np ;
+    }
+
     }
     
     tre = eps[0] + eps[4] + eps[8] ;
@@ -1065,6 +1091,9 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     Result_Store(r + i++,&e       ,"Void ratio variation",1) ;
     Result_Store(r + i++,eps_p    ,"Plastic strains",9) ;
     Result_Store(r + i++,&hardv   ,"Hardening variable",1) ;
+    Result_Store(r + i++,&k_l   ,"Liquid permeability",1) ;
+    Result_Store(r + i++,&d_v   ,"Vapour diffusion coefficient",1) ;
+    Result_Store(r + i++,&k_h   ,"Transfer coefficient",1) ;
   }
   
   return(NbOfOutputs) ;
@@ -1084,6 +1113,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
   Element_t* el  = FEM_GetElement(fem) ;
   double*  vim0   = Element_GetCurrentImplicitTerm(el) ;
   double*  vim0_n = Element_GetPreviousImplicitTerm(el) ;
+  double*  v0 = Element_GetConstantTerm(el) ;
 //  double*  vex0  = Element_GetExplicitTerm(el) ;
   double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
@@ -1140,10 +1170,18 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
             double* sig   = x + I_SIG ; // contraintes
 
             double* eps   =  x   + I_EPS ;
+            double tr_eps =  eps[0] + eps[4] + eps[8] ; // deformation volumique mélange ;
             double eps_1  = x[I_EPSV_1] ; // deformation pellets
             double eps_2  = x[I_EPSV_2] ; // deformation poudre
 
-            double bulk = bulkModulus(sig,eps,eps_1,eps_2,p_l1,p_l2);
+            double initial_solid_fraction_1 = p_pellet*rho_s/initial_pel_dry_dens ; // compacités
+            double initial_solid_fraction_2 = p_poudre*rho_s/initial_pel_dry_dens ;
+            double solid_fraction_1         = initial_solid_fraction_1 * (1.+eps_1)/(1.+ tr_eps ) ;
+            double solid_fraction_2         = initial_solid_fraction_2 * (1.+eps_2)/(1.+ tr_eps ) ;
+            double phi_ratio_limit          = solid_fraction_2 / (1.-solid_fraction_1) ;
+            double isgran = determinationIsGran(solid_fraction_1, p_l1, phi_ratio_limit) ;
+
+            double bulk = bulkModulus(sig,eps,eps_1,eps_2,p_l1,p_l2,isgran);
 
             double young = 3 * bulk * (1 - 2*poisson) ;
           
@@ -1196,11 +1234,25 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
     
         /* Coupling matrix */
         {
+          double p_l2 = x[I_P_L2] ;
+
+          double* eps       =  x   + I_EPS ;
+          double tr_eps     = eps[0] + eps[4] + eps[8] ; // deformation volumique mélange
+
+          double m_w        = x[I_M_water] ;
+
+          double  sat_liq_M = 0. + calculSaturationLiqMacro(p_l2) ; //saturation liquide dans les macropores. fixée à 0. ajouter eventuellement une wrc si besoin.
+          double  sat_gas_M = 1. - sat_liq_M ; //saturation vapeur eau dans les macropores.
+          double  rho_vap   = MassDensityOfWaterVapor(p_l2) ;
+          double  rho_l     = rho_l0 ;
+          double rhoMsatM   = rho_vap*sat_gas_M + rho_l*sat_liq_M ;
+
           double* c1 = c0 + 81 + 9 ;
           double deps = 1.e-6 ;
-          //double* dxdeps = ComputeVariableDerivatives(el,t,dt,x,deps,I_EPS) ;
-          //double dm_wdeps = dxdeps[I_EPS] ;
-          double dm_wdeps = 0 ;
+          double* dxdeps = ComputeVariableDerivatives(el,t,dt,x,deps,I_EPS) ;
+          double dm_wdeps = dxdeps[I_M_water] ;
+
+//          double dm_wdeps = - (m_w - rhoMsatM) / (1 + tr_eps) ; // mw augmente lorsque deps diminue (diminution volume) donc la derivee est negative. mw a priori > rhoMsatM.
           int i ;
 
           for(i = 0 ; i < 3 ; i++) B1(i,i) = dm_wdeps ;
@@ -1260,6 +1312,7 @@ int ComputeTransferCoefficients(FEM_t* fem,double dt,double* c)
       c1[0] = K_L + D_V * dMassDensityOfWaterVapor(pl) ;
       c1[4] = K_L + D_V * dMassDensityOfWaterVapor(pl) ;
       c1[8] = K_L + D_V * dMassDensityOfWaterVapor(pl) ;
+
     }
   }
   
@@ -1387,6 +1440,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   /* Inputs 
    * ------*/
   int dim = Element_GetDimensionOfSpace(el) ;
+  double* v0 = Element_GetConstantTerm(el) ;
   /* Strains */
   double* eps   =  x   + I_EPS ;
   double* eps_n =  x_n + I_EPS ;
@@ -1421,72 +1475,84 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       /* Elastic trial stresses at t */
       {
         
-        double tr_sig_n  = sig_n[0] + sig_n[4] + sig_n[8] ;
-        double sigm_n    = tr_sig_n/3. ;
-        double tr_eps_n  = eps_n[0] + eps_n[4] + eps_n[8] ;
-        double eps_1_n   = x_n[I_EPSV_1] ;
-        double eps_2_n   = x_n[I_EPSV_2] ;
+        double tr_sig_n = sig_n[0] + sig_n[4] + sig_n[8] ;
+        double sigm_n   = tr_sig_n/3. ;
+        double tr_eps_n = eps_n[0] + eps_n[4] + eps_n[8] ;
+        double eps_1_n  = x_n[I_EPSV_1] ;
+        double eps_2_n  = x_n[I_EPSV_2] ;
 
         double initial_solid_fraction_1 = p_pellet*rho_s/initial_pel_dry_dens ; // compacités
         double initial_solid_fraction_2 = p_poudre*rho_s/initial_pel_dry_dens ;
         double solid_fraction_1         = initial_solid_fraction_1 * (1.+eps_1_n)/(1.+ tr_eps_n ) ;
         double solid_fraction_2         = initial_solid_fraction_2 * (1.+eps_2_n)/(1.+ tr_eps_n ) ;
-
-// ---------------------------------------------       vérification des différentes conditions 
-        if(p_l2 - p_g >= p_limit) {
-// le mélange est "continu" car succion inf succion limite
-             isGran    = false ;
-        }
-
-        if((solid_fraction_2 / (1.-solid_fraction_1)) >= solid_fraction_1) {
-// le mélange est "continu" car compacite matrice = compacite assemblage de pellets
-             isGran    = false ;
-        }
-// --------------------------------------------- 
+        double phi_ratio_limit          = solid_fraction_2 / (1.-solid_fraction_1) ;
 
   #if 1
 // --------------------------------------------- calcul p_l1
+
+// vérification des différentes conditions 
+        double isgran = determinationIsGran(solid_fraction_1, p_l1n, phi_ratio_limit) ;
+
+// loi de transfert simplifiee
         {
-/* calcul temps caractéristique de diffusion */
-          double deps1ds_n = calcul_deps1ds(p_l1n,sigm_n,solid_fraction_1) ; // > 0
-          double C_diff_n = k_int_m / (mu_l * deps1ds_n) ; // > 0
-          double tau_hydro_n = initial_equivalent_radius * initial_equivalent_radius * (pow((1+eps_1_n),2./3.)) / C_diff_n ; // temps caractéristique de diffusion au temps t_n
-
-/* calcul beta, paramètre de transfert micro-macro */
-          double beta_hydro_n = beta_hydro_0*pow((-p_l1n),beta_hydro_a) ;
-
-/* calcul dmw/ds1 au temps t_n */
-          double dmwds1_n = - rho_l0*initial_solid_fraction_1*deps1ds_n ; // s diminue, mw augmente
-
-/* calcul succion micro */
-          double C_transfert = dt / (dt - dmwds1_n * tau_hydro_n/beta_hydro_n) ;
-          double p_l1 = p_l1n + C_transfert * (p_l2-p_l1n) ;
-/*
-          printf("p_l1 calcul. %e\n",p_l1) ;
-          printf("C_transfert calcul. %e\n",C_transfert) ;
-          printf("C_diff_n. %e\n",C_diff_n) ;
-          printf("deps1ds_n. %e\n",deps1ds_n) ;
-*/          
+          double deps1ds_n ; // > 0
+          double initial_e1 = rho_solid / initial_pel_dry_dens - 1. ; // indices des vides a partir de densite mesuree au labo
+          if(isgran < 0) {
+// le mélange est "continu"
+             double sigm1_n = sigm_n / (solid_fraction_1 + solid_fraction_2) ; // p1_n
+             double sigmeff1_n = sigm1_n + p_l1n ; // p'1_n
+             deps1ds_n = - kappa_m / (1.+initial_e1) / sigmeff1_n ; // > 0
+        } else {
+             deps1ds_n = calcul_deps1ds(p_l1n,sigm_n,solid_fraction_1) ; // > 0
+        }
+          double p_l1 = calculSuccionPellet(p_l1n, p_l2, dt, initial_solid_fraction_1, eps_1_n, deps1ds_n);
           x[I_P_L1] = p_l1 ;
-          //x[I_P_L1] = p_l2 ;
         }
 // --------------------------------------------- 
   #endif
 
+
+/*
+
+// ---------------------------------------------       vérification des différentes conditions 
+        if(x[I_P_L1] - p_g >= p_limit) {
+// le mélange est "continu" car succion inf succion limite
+             IS_GRAN    = -1 ;
+        }
+
+        if(phi_ratio_limit >= rvf*solid_fraction_1) {
+// le mélange est "continu" car compacite matrice = compacite assemblage de pellets
+             IS_GRAN    = -1 ;
+        }
+// --------------------------------------------- 
+
+*/
+
+// --------------------------------------------- calcul sigm (contrainte moyenne) et bulk modulus en elasticite
         {
-// ---------------------------------------------   calcul d_sigm par methode de Newton / sig_i+1 - sig_i = dsig_i = - f(sig_i) / ( df(sig_i)/dsig_i )
           double tr_deps = deps[0]+deps[4]+deps[8] ;
           double sigm = sigm_n ; // initialisation avant iterations
           double bulk ;
           double p_l1 = x[I_P_L1] ;
+
+          double tol = 2.e-5 ;
+          double f_test ;
+          double d_f_test ;
+          double tmp_dsigm ;
+          int itMax = 100 ;
         
-          if(isGran == true) {
-// calcul granulaire
+      /* calcul d_sigm par methode de Newton */
+      /* sig_i+1 - sig_i = dsig_i = - f(sig_i) / ( df(sig_i)/dsig_i ) */
+
+          if(isgran > 0) {
+
+             /* IS_GRAN == true <=> melange considere granulaire */
+             /* calcul de dsigm */
 
              double m_n = calcul_m(sigm_n,solid_fraction_1,p_l1n) ;
              double f_Mm = 1. ; // deformation variation volume pellets
-             
-             double tol = 1.e-8 ;
+
+             double f_test ;
 
              int it = 0 ;
              do
@@ -1498,27 +1564,74 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
                  double Delta_F_i = calcul_delta_epsilon_m(m,m_n,B_a,B_b) ; // F_i - F_n ; // deformation variation de m
                  double Delta_G_i = calcul_delta_epsilon_pel(sigm,solid_fraction_1,p_l1,sigm_n,p_l1n) ; // G_i - G_n ; // deformation variation volume pellets
 
-                 double f_test = tr_deps - Delta_F_i - f_Mm*Delta_G_i ;
                      
                  double dFdm        = calcul_dFdm(m,B_a,B_b); // " d_rond epsilon_V / d_rond m "
                  double dmdp        = calcul_dmdp(p_l1,sigm,solid_fraction_1) ; // " d_rond m / d_rond p "
                  double deps1dp     = calcul_deps1dp(p_l1,sigm,solid_fraction_1) ; // "d_rond epsilon_V1 / d_rond p "
 
-                 double d_f_test = - dFdm * dmdp - f_Mm * deps1dp ; // "d f_test / dp "
+                 f_test = tr_deps - Delta_F_i - f_Mm*Delta_G_i ;
 
-                 double tmp_dsigm = (d_f_test != 0.) ? - f_test / d_f_test : 0 ;
+                 d_f_test = - dFdm * dmdp - f_Mm * deps1dp ; // "d f_test / dp "
+
+                 tmp_dsigm = (d_f_test != 0.) ? - f_test / d_f_test : 0 ;
 
                  sigm = sigm + tmp_dsigm ;
                      
                  if (fabs(f_test) <= tol) break ;
 
-             } while ( it < 50 ) ;
-             
-             if(it >= 50) {
+             } while ( it < itMax ) ;
+
+             if(it >= itMax) {
+// reco avec dichotomie 
+               it = 0 ;
+               double sigm_test_a = 0 ;
+               double sigm_test_b = -10e6 ;
+               sigm = 0.5*(sigm_test_a+sigm_test_b) ;
+               do
+               {
+                 it = it + 1 ;
+
+                 double m = calcul_m(sigm,solid_fraction_1,p_l1) ;
+
+                 f_test = calcul_delta_epsilon_m(m,m_n,B_a,B_b)  + f_Mm * calcul_delta_epsilon_pel(sigm,solid_fraction_1,p_l1,sigm_n,p_l1n) - tr_deps ;
+
+                 if (f_test > 0) {
+// trop de gonflement, augmenter p
+                     sigm_test_a = sigm ;
+                 } else {
+                     sigm_test_b = sigm ;
+                 }
+                 sigm = 0.5*(sigm_test_a+sigm_test_b) ;
+                     
+                 if (fabs(f_test) <= tol) break ;
+
+               } while ( it < 10*itMax ) ;
+             }
+
+             if(it >= 10*itMax+1) {
+                printf("\n") ;
+                printf("\n") ;
+                printf("f_test = \n") ;
+                printf("%e", fabs(f_test)) ;
+                printf("\n") ;
+
+                printf("\n") ;
+                printf("pl2 (must be negative) = \n") ;
+                printf("%e", p_l2) ;
+                printf("\n") ;
+                printf("pl2n (must be negative) = \n") ;
+                printf("%e", p_l2n) ;
+                printf("\n") ;
+
+                printf("\n") ;
+                printf("tol = \n") ;
+                printf("%e", tol) ;
+                printf("\n") ;
                 arret("No convergence") ;
               }
              
              {
+             /* calcul granulaire : bulk modulus */
                double m       = calcul_m(sigm,solid_fraction_1,p_l1) ;
                double dFdm    = calcul_dFdm(m,B_a,B_b);
                double dmdp    = calcul_dmdp(p_l1,sigm,solid_fraction_1) ; // " d_rond m / d_rond p "
@@ -1528,12 +1641,12 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
              }
 
           } else {
-// calcul continu
-    
+
+             /* IS_GRAN == false <=> melange considere continu */
+             /* calcul de dsigm */
+
              double Delta_G_i = calcul_delta_epsilon_s1(sigm_n,p_l1,p_l1n,solid_fraction_1,solid_fraction_2) ; // deformation due aux variations de s1
              double Delta_H_i = calcul_delta_epsilon_s2(sigm_n,p_l2,p_l2n,solid_fraction_1,solid_fraction_2) ; // deformation due aux variations de s2
-
-             double tol = 1.e-8 ;
 
              int it = 0 ;
              do
@@ -1541,52 +1654,99 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
                  it = it + 1 ;
 
                  double Delta_F_i = calcul_delta_epsilon_sigm(sigm,sigm_n,p_l1n,p_l2n,solid_fraction_1,solid_fraction_2) ;
-
-                 double f_test = tr_deps - Delta_F_i - Delta_G_i - Delta_H_i ;
                  
                  double de1dp = calcul_de1dp(sigm,p_l1,solid_fraction_1,solid_fraction_2) ;
 
                  double de2dp = calcul_de2dp(sigm,p_l2,solid_fraction_1,solid_fraction_2) ;
                  double deMdp = calcul_deMdp(sigm) ;
+
+                 f_test = tr_deps - Delta_F_i - Delta_G_i - Delta_H_i ;
                  
-                 double d_f_test = - de1dp - de2dp - deMdp ;
+                 d_f_test = - de1dp - de2dp - deMdp ;
                  
-                 double tmp_dsigm = (d_f_test != 0.) ? - f_test / d_f_test : 0 ;
+                 tmp_dsigm = (d_f_test != 0.) ? - f_test / d_f_test : 0 ;
+
                  sigm = sigm + tmp_dsigm ;
                  
                  if (fabs(f_test) <= tol) break ;
 
-             } while ( it < 50 ) ;
+             } while ( it < itMax ) ;
+
+             if(it >= itMax) {
+// reco avec dichotomie 
+               it = 0 ;
+               double sigm_test_a = 0 ;
+               double sigm_test_b = -10e6 ;
+               sigm = 0.5*(sigm_test_a+sigm_test_b) ;
+               do
+               {
+                 it = it + 1 ;
+
+                 double m = calcul_m(sigm,solid_fraction_1,p_l1) ;
+
+                 f_test = calcul_delta_epsilon_s1(sigm_n,p_l1,p_l1n,solid_fraction_1,solid_fraction_2) + calcul_delta_epsilon_s2(sigm_n,p_l2,p_l2n,solid_fraction_1,solid_fraction_2) + calcul_delta_epsilon_sigm(sigm,sigm_n,p_l1n,p_l2n,solid_fraction_1,solid_fraction_2) - tr_deps ;
+
+                 if (f_test > 0) {
+// trop de gonflement, augmenter p
+                     sigm_test_a = sigm ;
+                 } else {
+                     sigm_test_b = sigm ;
+                 }
+                 sigm = 0.5*(sigm_test_a+sigm_test_b) ;
+                     
+                 if (fabs(f_test) <= tol) break ;
+
+               } while ( it < 10*itMax ) ;
+              }
              
-             if(it >= 50) {
+             if(it >= 10*itMax+1) {
+                printf("\n") ;
+                printf("\n") ;
+                printf("f_test = \n") ;
+                printf("%e", fabs(f_test)) ;
+                printf("\n") ;
+
+                printf("\n") ;
+                printf("pl2 (must be negative) = \n") ;
+                printf("%e", p_l2) ;
+                printf("\n") ;
+                printf("pl2n (must be negative) = \n") ;
+                printf("%e", p_l2n) ;
+                printf("\n") ;
+
+                printf("\n") ;
+                printf("tol = \n") ;
+                printf("%e", tol) ;
+                printf("\n") ;
                 arret("No convergence") ;
               }
              
              {
+             /* calcul continu : bulk modulus */
+
                double propPel = p_pellet / (p_pellet + p_poudre) ;
                double kappa_eq = calcul_kappa_eq(propPel,sigm,p_l1,p_l2,solid_fraction_1,solid_fraction_2) ;
-               // double initial_total_vr = rho_solid / rho_s - 1 ; // indice des vides total : micro et macro, à partir de la masse vol. de la bentonite et de la masse vol seche du mélange
 
                bulk = bulkModulusCont(kappa_eq);
              }
              
           }
-// ---------------------------------------------   fin calcul d_sigm par methode de Newton
+// fin calcul d_sigm par methode de Newton & bulk midulus
+ 
 
 
-
-// ---------------------------------------------       calcul de sigma
+      /* Calcul du tenseur des contraintes */
           {
-            double mu_elas = 3./2.*(1.-2.*poisson)/(1.+poisson)*bulk ; // G global
+            double mu_elas = 3./2.*(1.-2.*poisson)/(1.+poisson)*bulk ; // module de cisaillement "global"
             double dsigm = sigm - sigm_n ;
 
             for(i = 0 ; i < 9 ; i++) sig[i] = sig_n[i] + 2*mu_elas*deps[i] ;
       
             sig[0] = sig[0] + dsigm - 2./3.*mu_elas*tr_deps ;
             sig[4] = sig[4] + dsigm - 2./3.*mu_elas*tr_deps ;
-            sig[8] = sig[8] + dsigm - 2./3.*mu_elas*tr_deps ; // sig_ij = 2G eps_ij + (  (K-2/3G) tr_eps - biot s  ) * I, avec K tr_eps - biot s = sigm
+            sig[8] = sig[8] + dsigm - 2./3.*mu_elas*tr_deps ; // sig_ij = 2 mu eps_ij + ( (K-2/3mu) tr_eps - biot s  ) * I, avec sigm = K tr_eps - biot s
           }
-// ---------------------------------------------
+
         }
 
 
@@ -1621,6 +1781,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
     double* sig   = x + I_SIG ; // contraintes
     double sigm   = (sig[0] + sig[4] + sig[8])/3. ;
     double sigm_n = (sig_n[0] + sig_n[4] + sig_n[8])/3. ;
+    double p_l1 = x[I_P_L1] ;
   
     double tr_eps = eps[0] + eps[4] + eps[8] ; // deformation volumique mélange
     double eps_1n = x_n[I_EPSV_1] ; // deformation pellets t_n
@@ -1635,12 +1796,14 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
     double initial_solid_fraction_2 = p_poudre*rho_s/initial_pel_dry_dens ;
     double solid_fraction_1         = initial_solid_fraction_1 * (1.+eps_1n)/(1.+ tr_eps ) ;
     double solid_fraction_2         = initial_solid_fraction_2 * (1.+eps_2n)/(1.+ tr_eps ) ;
-    double p_l1 = x[I_P_L1] ;
+    double phi_ratio_limit          = solid_fraction_2 / (1.-solid_fraction_1) ;
 // ---------------------------------------------
     
- 
+
 // ---------------------------------------------       contraintes effectives et d epsilon
-    if(isGran == true) {
+// vérification des différentes conditions 
+    double isgran = determinationIsGran(solid_fraction_1, p_l1, phi_ratio_limit) ;
+    if(isgran > 0) {
          double sigm2 = 0. ;
          double sigm2_n = 0. ;
 
@@ -1665,52 +1828,36 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   /* Backup mass flow */
   #if 1
   {
-    /* Porosity */
     
+    /* strains */
     double tre  = eps[0] + eps[4] + eps[8] ;
     double eps1 = x[I_EPSV_1] ;
     double eps2 = x[I_EPSV_2] ;
     
+    /* solid fractions */
     double initial_solid_fraction_1 = p_pellet*rho_s/initial_pel_dry_dens ; // compacités
     double initial_solid_fraction_2 = p_poudre*rho_s/initial_pel_dry_dens ;
     double solid_fraction_1         = initial_solid_fraction_1 * (1.+eps1)/(1.+ tre ) ;
     double solid_fraction_2         = initial_solid_fraction_2 * (1.+eps2)/(1.+ tre ) ;
     
-    double initial_e1          = rho_solid / initial_pel_dry_dens - 1. ; // indice des vides a partir de densite mesuree au labo
-    double initial_poro_1      = (initial_e1/(1.+initial_e1)) ; // porosite ini pellet
+    /* initial void ratio pellet */
+    double initial_e1 = rho_solid / initial_pel_dry_dens - 1. ; // indice des vides a partir de densite mesuree au labo
     
-    double phi_M      = 1. - solid_fraction_1 - solid_fraction_2 ; // porosite macro = VvM/V = (V - V1 - V2)/V = 1 - sol.frac.1 - sol.frac.2
-    double phi_m1   = (initial_poro_1 + eps1) / (1.+eps1) ; // Vv1 / V1, multiplier par sol.frac.1 pour rapporter au volume global
-    double phi_m2   = (initial_poro_1 + eps2) / (1.+eps2) ; // idem pour Vv2/V2; densites poudre et pel identiques donc porosite ini identique
-    double phi_tot   = phi_M + phi_m1*solid_fraction_1 + phi_m2*solid_fraction_2 ; // Vv_M / V   +   Vv_m1 / V1 * V1 / V   +   Vv_m2 / V2 * V2 / V
+    /* Porosity */
+    double initial_poro_1 = (initial_e1/(1.+initial_e1)) ; // porosite ini pellet
+    double phi_M          = 1. - solid_fraction_1 - solid_fraction_2 ; // porosite macro = VvM/V = (V - V1 - V2)/V = 1 - sol.frac.1 - sol.frac.2
+    double phi_m1         = (initial_poro_1 + eps1) / (1.+eps1) ; // Vv1 / V1, multiplier par sol.frac.1 pour rapporter au volume global
+    double phi_m2         = (initial_poro_1 + eps2) / (1.+eps2) ; // idem pour Vv2/V2; densites poudre et pel identiques donc porosite ini identique
+    double phi_tot        = phi_M + phi_m1*solid_fraction_1 + phi_m2*solid_fraction_2 ; // Vv_M / V   +   Vv_m1 / V1 * V1 / V   +   Vv_m2 / V2 * V2 / V
     
     /* Fluid mass density */
     double rho_l = rho_l0 ;
     
     /* Fluid mass flow */
     {
-//  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       /* Transfer coefficient */ 
       double k_w = x_n[I_K_water] ;
 
-	  
-	  
-	  
-// FICK, besoin de tortuosite, phi_eq = VM2/(Vm2+VM2) ok via solid fractions, 1-SliqM ok, Dv, Ma masse molaire air environ 0.029 kg/ mol 
-// rho_g = Ma*p_a / RT + M_R_T * pvapM
-// pg = pa + pvap donc pour notre cas, pa = - pvap OU 0.1 - pvap
-// fick : flux = - tortuosite * phi_eq * (1 - Sw) * Dv * rho_g grad(rho_vap / rho_g)
-	  
-	  
-	  
-// DARCY : flux = - K_int_grain_de_poudre * krw / mu_l * grad(succion2)
-// K_int = B * exp ( - A * rho_d_matrice )
-// krw = Swmat ^ "3 à 10" sorti du chapeau
-// Swmat = omega_v2 / (omega 2 + omegaM)  * SwM * omegaM/ (omega 2 + omegaM) = phi_m2*solFrac2 / (solFrac2+1-solFrac1) * SwM * (1 - phi1-phi2)/(----------)
-	  
-	  
-	  
-//  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       /* Pressure gradient */
       double* gpl = x + I_GRD_P_L2 ;
     
@@ -1723,7 +1870,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
     
     /* Total liquid mass content and body force */
     {
-      double  sat_liq_M = 0. ; //saturation liquide dans les macropores. fixée à 0. ajouter eventuellement une wrc si besoin.
+      double  sat_liq_M = 0. + calculSaturationLiqMacro(p_l2) ; //saturation liquide dans les macropores. fixée à 0. ajouter eventuellement une wrc si besoin.
       double  sat_gas_M = 1. - sat_liq_M ; //saturation vapeur eau dans les macropores.
 
       double  rho_vap = MassDensityOfWaterVapor(p_l2) ;
@@ -1798,6 +1945,7 @@ double calcul_m(double sigm,double phi_1,double p_l1)
 /* 
 parametre m
 */
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double sigm1_eff = sigm/phi_1 + p_l1 ; // sigm <0 compression ; s < 0
   double bulk1 = exp(alpha*(-sigm1_eff))/beta ;
   double y_mod_eff_1 = bulk1 * 3.*(1. - 2.*poisson) / (1. - poisson*poisson) ;
@@ -1814,6 +1962,8 @@ parametre m
 double calcul_delta_epsilon_m(double m,double m_n,double f_epsilon_a,double f_epsilon_b)
 {
 /* 
+Pour le materiau granulaire
+
 m = (p / E/(1-nu*nu) )^(2/3)
 f_epsilon = delta epsilon_V / delta m
 
@@ -1841,8 +1991,10 @@ epsilon_V (m) = bilinear ; = f_epsilon_a*m (m<m_lim) ; = f_epsilon_b*m (m>=m_lim
 double calcul_delta_epsilon_pel(double sigm,double phi_1,double p_l1,double sigm_n,double p_l1n)
 {
  
-//pellet volumetric strain
+//pellet volumetric strain, granular domain
 
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
+  sigm_n = (sigm_n < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm_n: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double sigm1_eff   = sigm/phi_1 + p_l1 ; // sigm < 0 compression ; s < 0
   double sigm1_eff_n = sigm_n/phi_1 + p_l1n ; // sigm < 0 compression ; s < 0
 
@@ -1868,12 +2020,13 @@ double calcul_m_lim(void)
 double calcul_dFdm(double m,double f_epsilon_a,double f_epsilon_b)
 {
 /* 
-d_rond epsilon_V / d_rond m
+d_rond epsilon_V / d_rond m, granular domain
 */
   double res ;
   double m_lim = calcul_m_lim() ;
   if(m>=m_lim) {
      res  = f_epsilon_b ;
+     res  = f_epsilon_b ; // tester avec -succion pour transition progressive
   } else {
      res  = f_epsilon_a ;
   }
@@ -1885,8 +2038,9 @@ d_rond epsilon_V / d_rond m
 double calcul_deps1dp(double p_l1,double sigm,double phi_1)
 {
 /* 
-d_rond epsV1 / d_rond p
+d_rond epsV1 / d_rond p, granular domain
 */
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double sigm1_eff = sigm/phi_1 + p_l1 ;
   double res = beta * exp(- alpha * ( - sigm1_eff ) ) / phi_1 ;
   
@@ -1898,9 +2052,11 @@ d_rond epsV1 / d_rond p
 double calcul_deps1ds(double p_l1,double sigm,double phi_1)
 {
 /* 
+materiau granulaire
 d_rond epsV1 / d_rond s
 s diminue, augmentation de volume
 */
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double sigm1_eff = sigm/phi_1 + p_l1 ;
   double res = beta * exp(- alpha * ( - sigm1_eff ) ) ;
   
@@ -1912,9 +2068,10 @@ s diminue, augmentation de volume
 double calcul_dmdp(double p_l1,double sigm,double phi_1)
 {
 /* 
-d_rond m / d_rond p
+d_rond m / d_rond p, granular domain
 */
   
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double m_s = exp(-2./3.*alpha*(-p_l1)) ;
   double m_p = pow((-sigm),(2./3.))*exp(-2./3.*alpha*(-sigm)/phi_1);
   
@@ -1931,9 +2088,10 @@ d_rond m / d_rond p
 double calcul_dmds(double p_l1,double sigm,double phi_1)
 {
 /* 
-d_rond m / d_rond s
+d_rond m / d_rond s, granular domain
 */
   
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double m_s = exp(-2./3.*alpha*(-p_l1)) ;
   double m_p = pow((-sigm),(2./3.))*exp(-2./3.*alpha*(-sigm)/phi_1);
   
@@ -1950,6 +2108,9 @@ d_rond m / d_rond s
 
 double calcul_kappa_eq(double propPel,double sigm,double p_l1,double p_l2,double solid_fraction_1,double solid_fraction_2)
 {
+// homogeneous domain
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
+  sigm = (sigm < -1.e4) ? sigm: (-1e4) ;
   double sigm1   = sigm / (solid_fraction_1 + solid_fraction_2) ;
   double sigm2   = sigm1 ;
           
@@ -1965,10 +2126,12 @@ double calcul_kappa_eq(double propPel,double sigm,double p_l1,double p_l2,double
 
 double calcul_delta_epsilon_sigm(double sigm,double sigm_n,double p_l1n,double p_l2n,double solid_fraction_1,double solid_fraction_2)
 {
+//homogeneous domain
   double propPel          = p_pellet / (p_pellet + p_poudre) ;
   double propPou          = p_poudre / (p_pellet + p_poudre) ;
-  // double initial_total_vr = rho_solid / rho_s -1. ; // indice des vides total : micro et macro, à partir de la masse vol. de la bentonite et de la masse vol seche du mélange
   
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
+  sigm_n = (sigm_n < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm_n: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double sigm1_n = sigm_n / (solid_fraction_1 + solid_fraction_2) ; // p1_n
   double sigm2_n = sigm1_n ; // p2_n
              
@@ -1986,8 +2149,11 @@ double calcul_delta_epsilon_sigm(double sigm,double sigm_n,double p_l1n,double p
 
 double calcul_delta_epsilon_pel_cont(double sigm,double sigm_n,double p_l1,double p_l1n,double solid_fraction_1,double solid_fraction_2)
 {
+//homogeneous domain
   double initial_e1 = rho_solid / initial_pel_dry_dens - 1. ; // indices des vides a partir de densite mesuree au labo
   
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
+  sigm_n = (sigm_n < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm_n: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double sigm1_n = sigm_n / (solid_fraction_1 + solid_fraction_2) ; // p1_n
   double sigmeff1_n = sigm1_n + p_l1n ; // p'1_n
   
@@ -2000,8 +2166,11 @@ double calcul_delta_epsilon_pel_cont(double sigm,double sigm_n,double p_l1,doubl
 
 double calcul_delta_epsilon_pou_cont(double sigm,double sigm_n,double p_l2,double p_l2n,double solid_fraction_1,double solid_fraction_2)
 {
+// homogeneous domain
   double initial_e2 = rho_solid / initial_pel_dry_dens - 1. ; // indices des vides a partir de densite mesuree au labo
   
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
+  sigm_n = (sigm_n < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm_n: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double sigm2_n = sigm_n / (solid_fraction_1 + solid_fraction_2) ; // p2_n
   double sigmeff2_n = sigm2_n + p_l2n ; // p'2_n
   
@@ -2015,9 +2184,11 @@ double calcul_delta_epsilon_pou_cont(double sigm,double sigm_n,double p_l2,doubl
 
 double calcul_delta_epsilon_s1(double sigm_n,double p_l1,double p_l1n,double solid_fraction_1,double solid_fraction_2)
 {
+// homogeneous domain
   double propPel          = p_pellet / (p_pellet + p_poudre) ;
   // double initial_total_vr = rho_solid / rho_s -1. ; // indice des vides total : micro et macro, à partir de la masse vol. de la bentonite et de la masse vol seche du mélange
   
+  sigm_n = (sigm_n < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm_n: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double sigm1_n = sigm_n / (solid_fraction_1 + solid_fraction_2) ; // p1_n
              
   double sigmeff1_n = sigm1_n + p_l1n ; // p'1_n
@@ -2031,9 +2202,11 @@ double calcul_delta_epsilon_s1(double sigm_n,double p_l1,double p_l1n,double sol
 
 double calcul_delta_epsilon_s2(double sigm_n,double p_l2,double p_l2n,double solid_fraction_1,double solid_fraction_2)
 {
+//homogeneous domain
   double propPou          = p_poudre / (p_pellet + p_poudre) ;
   // double initial_total_vr = rho_solid / rho_s -1. ; // indice des vides total : micro et macro, à partir de la masse vol. de la bentonite et de la masse vol seche du mélange
   
+  sigm_n = (sigm_n < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm_n: ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double sigm2_n = sigm_n / (solid_fraction_1 + solid_fraction_2) ; // p2_n
              
   double sigmeff2_n = sigm2_n + p_l2n ; // p'2_n
@@ -2048,9 +2221,11 @@ double calcul_delta_epsilon_s2(double sigm_n,double p_l2,double p_l2n,double sol
 
 double calcul_de1dp(double sigm,double p_l1,double solid_fraction_1,double solid_fraction_2)
 {
+// homogeneous domain
   double propPel          = p_pellet / (p_pellet + p_poudre) ;
   // double initial_total_vr = rho_solid / rho_s -1. ; // indice des vides total : micro et macro, à partir de la masse vol. de la bentonite et de la masse vol seche du mélange
   
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm : ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double sigm1 = sigm / (solid_fraction_1 + solid_fraction_2) ; // p1
              
   double sigmeff1 = sigm1 + p_l1 ; // p'1
@@ -2064,9 +2239,11 @@ double calcul_de1dp(double sigm,double p_l1,double solid_fraction_1,double solid
 
 double calcul_de2dp(double sigm,double p_l2,double solid_fraction_1,double solid_fraction_2)
 {
+// homogeneous domain
   double propPou          = p_poudre / (p_pellet + p_poudre) ;
   // double initial_total_vr = rho_solid / rho_s -1. ; // indice des vides total : micro et macro, à partir de la masse vol. de la bentonite et de la masse vol seche du mélange
   
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm : ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double sigm2 = sigm / (solid_fraction_1 + solid_fraction_2) ; // p2
              
   double sigmeff2 = sigm2 + p_l2 ; // p'2
@@ -2080,8 +2257,10 @@ double calcul_de2dp(double sigm,double p_l2,double solid_fraction_1,double solid
 
 double calcul_deMdp(double sigm)
 {
+// homogeneous domain
 //  // double initial_total_vr = rho_solid / rho_s -1. ; // indice des vides total : micro et macro, à partir de la masse vol. de la bentonite et de la masse vol seche du mélange
 
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm : ((sig0[0] + sig0[4] + sig0[8])/3.) ;
   double res = - kappa_M / (1.+ e0) / sigm ;
 
   return(res) ;
@@ -2091,6 +2270,7 @@ double calcul_deMdp(double sigm)
 
 double bulkModulusGran(double dFdm, double dmdp, double deps1dp)
 {
+//granular domain
   double f_Mm = 1. ; // deformation variation volume pellets
   double res = dFdm * dmdp + f_Mm * deps1dp;
   res        = 1./res ;
@@ -2100,7 +2280,7 @@ double bulkModulusGran(double dFdm, double dmdp, double deps1dp)
 
 double bulkModulusCont(double kappa_eq)
 {
-
+//homogeneous domain
   double res = (1. + e0) / kappa_eq ;
 
   return(res) ;
@@ -2108,34 +2288,79 @@ double bulkModulusCont(double kappa_eq)
 
 
 
-double bulkModulus(double* sig, double* eps, double eps_1, double eps_2, double p_l1, double p_l2)
+double bulkModulus(double* sig, double* eps, double eps_1, double eps_2, double p_l1, double p_l2, double isGran)
 {
-            double bulk = 0 ;
+  double bulk = 0 ;
 
-            double sigm   = (sig[0] + sig[4] + sig[8])/3. ;
-            double tr_eps = eps[0] + eps[4] + eps[8] ; // deformation volumique mélange
-            double initial_solid_fraction_1 = p_pellet*rho_s/initial_pel_dry_dens ; // compacités
-            double initial_solid_fraction_2 = p_poudre*rho_s/initial_pel_dry_dens ;
-            double solid_fraction_1         = initial_solid_fraction_1 * (1.+eps_1)/(1.+ tr_eps ) ;
-            double solid_fraction_2         = initial_solid_fraction_2 * (1.+eps_2)/(1.+ tr_eps ) ;
+  double sigm   = (sig[0] + sig[4] + sig[8])/3. ;
+  sigm = (sigm < ((sig0[0] + sig0[4] + sig0[8])/3.)) ? sigm : ((sig0[0] + sig0[4] + sig0[8])/3.) ;
+  double tr_eps = eps[0] + eps[4] + eps[8] ; // deformation volumique mélange
+  double initial_solid_fraction_1 = p_pellet*rho_s/initial_pel_dry_dens ; // compacités
+  double initial_solid_fraction_2 = p_poudre*rho_s/initial_pel_dry_dens ;
+  double solid_fraction_1         = initial_solid_fraction_1 * (1.+eps_1)/(1.+ tr_eps ) ;
+  double solid_fraction_2         = initial_solid_fraction_2 * (1.+eps_2)/(1.+ tr_eps ) ;
 
-            if(isGran == true) {
-               double m       = calcul_m(sigm,solid_fraction_1,p_l1) ;
-               double dFdm    = calcul_dFdm(m,B_a,B_b);
-               double dmdp    = calcul_dmdp(p_l1,sigm,solid_fraction_1) ; // " d_rond m / d_rond p "
-               double deps1dp = calcul_deps1dp(p_l1,sigm,solid_fraction_1) ; // "d_rond epsilon_V1 / d_rond p "
-               bulk           = bulkModulusGran(dFdm, dmdp, deps1dp) ;
-            } else {
-               double propPel  = p_pellet / (p_pellet + p_poudre) ;
-               double kappa_eq = calcul_kappa_eq(propPel,sigm,p_l1,p_l2,solid_fraction_1,solid_fraction_2) ;
-               bulk            = bulkModulusCont(kappa_eq) ;
-            }
-   return (bulk) ;
+  if(isGran > 0) {
+     double m       = calcul_m(sigm,solid_fraction_1,p_l1) ;
+     double dFdm    = calcul_dFdm(m,B_a,B_b);
+     double dmdp    = calcul_dmdp(p_l1,sigm,solid_fraction_1) ; // " d_rond m / d_rond p "
+     double deps1dp = calcul_deps1dp(p_l1,sigm,solid_fraction_1) ; // "d_rond epsilon_V1 / d_rond p "
+     bulk           = bulkModulusGran(dFdm, dmdp, deps1dp) ;
+  } else {
+     double propPel  = p_pellet / (p_pellet + p_poudre) ;
+     double kappa_eq = calcul_kappa_eq(propPel,sigm,p_l1,p_l2,solid_fraction_1,solid_fraction_2) ;
+     bulk            = bulkModulusCont(kappa_eq) ;
+  }
+  return (bulk) ;
 }
 
 
+double calculSaturationLiqMacro(double p_l2)
+{
+  double param1  = 3.0 ;
+  double param2  = 0.33 ;
+  double succion = p_g-p_l2 ;        // succion en Pa
+  succion        = succion*(1.e-6) ; // les parametres sont pour une succion en MPa
+  double sat     = succion / param1 ;
+  sat            = 1. + pow( (sat) , (1./(1.-param2)) ) ;
+  sat            = pow( (sat) , (-param2) ) ;
+  return (sat) ;
+}
 
 
+double calculSuccionPellet(double p_l1n, double p_l2, double dt, double initial_solid_fraction_1, double eps_1_n, double deps1ds_n)
+{
+/* calcul temps caractéristique de diffusion */
+  double C_diff_n = k_int_m / (mu_l * deps1ds_n) ; // > 0
+  double tau_hydro_n = initial_equivalent_radius * initial_equivalent_radius * (pow((1+eps_1_n),2./3.)) / C_diff_n ; // temps caractéristique de diffusion au temps t_n
 
+/* calcul beta, paramètre de transfert micro-macro */
+  double beta_hydro_n = beta_hydro_0*pow((-p_l1n),beta_hydro_a) ;
 
+/* calcul dmw/ds1 au temps t_n */
+  double dmwds1_n = - rho_l0*initial_solid_fraction_1*deps1ds_n ; // s diminue, mw augmente
 
+/* calcul succion micro */
+  double C_transfert = dt / (dt - dmwds1_n * tau_hydro_n/beta_hydro_n) ;
+  double p_l1 = p_l1n + C_transfert * (p_l2-p_l1n) ;
+
+  return (p_l1) ;
+}
+
+double determinationIsGran(double solid_fraction_1, double p_l1, double phi_ratio_limit)
+{
+  double rvf = solid_fraction_1*1.00 ;
+  double isgran = 1 ;
+// ---------------------------------------------       vérification des différentes conditions 
+  if(p_l1 - p_g >= p_limit) {
+// le mélange est "continu" car succion inf succion limite
+     isgran    = -1 ;
+  } 
+  
+  if (phi_ratio_limit >= rvf) {
+// ou le mélange est "continu" car compacite matrice atteint le critere
+     isgran    = -1 ;
+  }
+
+  return (isgran) ;
+}

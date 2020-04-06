@@ -27,10 +27,10 @@
 
 /* Indices of equations */
 #define E_Eq1    (0)
-#define E_Eq2    (1)
+#define E_Eq2    (dim)
 /* Indices of unknowns */
 #define U_Unk1    (0)
-#define U_Unk2    (1)
+#define U_Unk2    (dim)
 
 
 /* Value of the nodal unknown (u and el must be used as pointers below) */
@@ -230,6 +230,18 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
       /* here j is equal to i + 1 ! */
       Element_GetIntFct(el) = IntFcts_GetIntFct(intfcts) + i ;
     }
+    
+    NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
+
+    /** Re-define the length of tables */
+    Element_GetNbOfImplicitTerms(el) = NVI*NbOfIntPoints ;
+    Element_GetNbOfExplicitTerms(el) = NVE*NbOfIntPoints ;
+    Element_GetNbOfConstantTerms(el) = NV0*NbOfIntPoints ;
+  }
+  
+  
+  #if 0 // This part is to be tested!
+  {
     /* Remove dof on some nodes 
      * (e.g. at the middle of the edges of a triangle) */
     {
@@ -243,6 +255,17 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
       }
     }
   }
+  #endif
+  
+  /* Dealing with zero-thickness interface element.
+   * (e.g. continuous pressure accross the interface element)
+   */
+  {
+    if(Element_HasZeroThickness(el)) {
+      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,U_Unk2) ;
+    }
+  }
+  
   return(0) ;
 }
 
@@ -276,7 +299,7 @@ int ComputeInitialState(Element_t* el,double t)
 {
   double* vi0 = Element_GetImplicitTerm(el) ;
   double* ve0 = Element_GetExplicitTerm(el) ;
-  double* v0 = Element_GetConstantTerm(el) ;
+  double* v0  = Element_GetConstantTerm(el) ;
   
   /* Usually we have to skip if the element is a submanifold, 
    * e.g. a surface in 3D or a line in 2D */
@@ -291,21 +314,28 @@ int ComputeInitialState(Element_t* el,double t)
   /* Compute here vi, ve and v0 for each integration points */
 
   /* Pre-initialization */
-  for(p = 0 ; p < NbOfIntPoints ; p++) {
+  {
+    DataFile_t* datafile = Element_GetDataFile(el) ;
+    IntFct_t*  intfct = Element_GetIntFct(el) ;
+    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
+    int    p ;
     
-    /* storage in vi */
-    {
-      double* vi  = vi0 + p*NVI ;
-      int    i ;
+    for(p = 0 ; p < NbOfIntPoints ; p++) {
+    
+      /* storage in vi */
+      {
+        double* vi  = vi0 + p*NVI ;
+        int    i ;
       
-      /* How to account for partial initialization? */
-      if(DataFile_ContextIsPartialInitialization(datafile)) {
-        for(i = 0 ; i < 9 ; i++) SIG0[i] = SIG[i] ;
-      } else {
-        for(i = 0 ; i < 9 ; i++) SIG0[i] = sig0[i] ;
-      }
+        /* How to account for partial initialization? */
+        if(DataFile_ContextIsPartialInitialization(datafile)) {
+          for(i = 0 ; i < 9 ; i++) SIG0[i] = SIG[i] ;
+        } else {
+          for(i = 0 ; i < 9 ; i++) SIG0[i] = sig0[i] ;
+        }
 
-      /* ... */
+        /* ... */
+      }
     }
   }
 
@@ -313,24 +343,30 @@ int ComputeInitialState(Element_t* el,double t)
   
     
   /* Loop on integration points */
-  for(p = 0 ; p < NbOfIntPoints ; p++) {
-    /* Variables */
-    double* x = ComputeVariables(el,u,u,vi0,t,0,p) ;
+  {
+    IntFct_t*  intfct = Element_GetIntFct(el) ;
+    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
+    int    p ;
     
-    /* storage in vi */
-    {
-      double* vi  = vi0 + p*NVI ;
-      int    i ;
+    for(p = 0 ; p < NbOfIntPoints ; p++) {
+      /* Variables */
+      double* x = ComputeVariables(el,u,u,vi0,t,0,p) ;
+    
+      /* storage in vi */
+      {
+        double* vi  = vi0 + p*NVI ;
+        int    i ;
       
-      /* ... */
-    }
+        /* ... */
+      }
     
     
-    /* storage in ve */
-    {
-      double* ve  = ve0 + p*NVE ;
+      /* storage in ve */
+      {
+        double* ve  = ve0 + p*NVE ;
 
-      /* ... */
+        /* ... */
+      }
     }
   }
 
@@ -345,9 +381,9 @@ int  ComputeExplicitTerms(Element_t* el,double t)
  *  whatever they are, nodal values or implicit terms.
  *  Return 0 if succeeded and -1 if failed */
 {
-  double* ve = Element_GetExplicitTerm(el) ;
+  double* ve0 = Element_GetExplicitTerm(el) ;
   /* If you need the implicit terms, use the previous ones */
-  double* vi = Element_GetPreviousImplicitTerm(el) ;
+  double* vi0 = Element_GetPreviousImplicitTerm(el) ;
   /* If you need the nodal values, use the previous ones */
   double** u = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   
@@ -361,8 +397,24 @@ int  ComputeExplicitTerms(Element_t* el,double t)
   
   
   /* Compute here ve */
+  /* Loop on integration points */
   {
-    /* ... */
+    IntFct_t*  intfct = Element_GetIntFct(el) ;
+    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
+    int    p ;
+    
+    for(p = 0 ; p < NbOfIntPoints ; p++) {
+      /* Variables */
+      double* x = ComputeVariables(el,u,u,vi0,t,0,p) ;
+    
+    
+      /* storage in ve */
+      {
+        double* ve  = ve0 + p*NVE ;
+
+        /* ... */
+      }
+    }
   }
   
   return(0) ;
@@ -382,6 +434,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
     We load some input data
   */
   GetProperties(el) ;
+  
   
   /* Compute here vi (with the help of vi_n if needed) */
   /* Loop on integration points */
@@ -412,7 +465,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 /** Compute the matrix (k) 
  *  Return 0 if succeeded and -1 if failed */
 {
-#define K(i,j)    (k[(i)*2*NEQ+(j)])
+#define K(i,j)    (k[(i)*ndof + (j)])
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
@@ -446,8 +499,8 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   {
     double c[IntFct_MaxNbOfIntPoints*100] ;
     int dec = ComputeTangentCoefficients(fem,t,dt,c) ;
-    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,1) ;
-    /* The matrix kp is stored as (u for displacement, s1,s2 for pressure)
+    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,1,0) ;
+    /* The matrix kp is stored as (u for displacement, p for pressure)
      * | Kuu  Kup  |
      * | Kpu  Kpp  |
      * i.e. the displacements u are in the positions 0 to dim-1 and
@@ -490,11 +543,86 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 /** Compute the residu (r) 
  *  Return 0 if succeeded and -1 if failed */
 {
-#define R(n,i)    (r[(n)*NEQ+(i)])
+#define R(n,i)    (r[(n)*NEQ + (i)])
+  double* vi_1 = Element_GetCurrentImplicitTerm(el) ;
+  double* vi_n = Element_GetPreviousImplicitTerm(el) ;
+  int nn = Element_GetNbOfNodes(el) ;
+  int dim = Element_GetDimensionOfSpace(el) ;
+  IntFct_t*  intfct = Element_GetIntFct(el) ;
+  int np = IntFct_GetNbOfPoints(intfct) ;
+  int ndof = nn*NEQ ;
+  FEM_t* fem = FEM_GetInstance(el) ;
+  
+  
+  /* Initialization */
+  {
+    int i ;
+    
+    for(i = 0 ; i < ndof ; i++) r[i] = zero ;
+  }
+
+  if(Element_IsSubmanifold(el)) return(0) ;
+  
 
   /* Compute here the residu R(n,i) */
+  
+
+
+  /* 1. Mechanics */
+  
+  /* 1.1 Stresses */
   {
-    /* ... */
+    double* vi = vi_1 ;
+    double* rw = FEM_ComputeStrainWorkResidu(fem,intfct,SIG,NVI) ;
+    int i ;
+    
+    for(i = 0 ; i < nn ; i++) {
+      int j ;
+      
+      for(j = 0 ; j < dim ; j++) R(i,E_mec + j) -= rw[i*dim + j] ;
+    }
+    
+  }
+  
+  /* 1.2 Body forces */
+  {
+    double* vi = vi_1 ;
+    double* rbf = FEM_ComputeBodyForceResidu(fem,intfct,F_MASS + dim - 1,NVI) ;
+    int i ;
+    
+    for(i = 0 ; i < nn ; i++) {
+      R(i,E_mec + dim - 1) -= -rbf[i] ;
+    }
+    
+  }
+  
+  
+  
+  /* 2. Hydraulics */
+  
+  /* 2.1 Accumulation Terms */
+  {
+    double* vi = vi_1 ;
+    double* vi_n = Element_GetPreviousImplicitTerm(el) ;
+    double g1[IntFct_MaxNbOfIntPoints] ;
+    int i ;
+    
+    for(i = 0 ; i < np ; i++ , vi += NVI , vi_n += NVI) g1[i] = M_L - M_L_n ;
+    
+    {
+      double* ra = FEM_ComputeBodyForceResidu(fem,intfct,g1,1) ;
+    
+      for(i = 0 ; i < nn ; i++) R(i,E_liq) -= ra[i] ;
+    }
+  }
+  
+  /* 2.2 Transport Terms */
+  {
+    double* vi = vi_1 ;
+    double* rf = FEM_ComputeFluxResidu(fem,intfct,W_L,NVI) ;
+    int i ;
+    
+    for(i = 0 ; i < nn ; i++) R(i,E_liq) -= -dt*rf[i] ;
   }
   
   return(0) ;

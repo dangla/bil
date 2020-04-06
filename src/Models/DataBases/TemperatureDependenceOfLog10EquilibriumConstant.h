@@ -2,10 +2,25 @@
 #define TEMPERATUREDEPENDENCEOFLOG10EQUILIBRIUMCONSTANT_H
 
 /* Refs. 
- * T. Thoenen and D. Kulik. Nagra/psi chemical thermodynamic data base 01/01 for the gem-selektor (v. 2-psi) geochemical modeling code: Release 28-02-03. Technical report, PSI Technical Report TM-44-03-04 about the GEMS version of Nagra/PSI chemical thermodynamic database 01/01, 2003.
+ * W. Hummel, U. Berner, E. Curti, F.J. Pearson, T. Thoenen
+ * Nagra/PSI, Chemical Thermodynamic Data Base 01/01, Technical Report 02-16, 2002.
 * */
 
+#include "Utils.h"
+
+
+#define TemperatureDependenceOfLog10EquilibriumConstant(...) \
+        Utils_CAT_NARG(TemperatureDependenceOfLog10EquilibriumConstant,__VA_ARGS__)(__VA_ARGS__)
+
+#define TemperatureDependenceOfLog10EquilibriumConstant_293(...) \
+        Utils_CAT(Utils_CAT_NARG(TemperatureDependenceOfLog10EquilibriumConstant,__VA_ARGS__),_293)(__VA_ARGS__)
+
+
+
+/* Implementation */
+
 #include <math.h>
+#include "PhysicalConstant.h"
 
 /*
  * The Gibbs free energy change of reaction, 
@@ -50,7 +65,23 @@
  * A5 = 0
  */
 
-#include "PhysicalConstant.h"
+
+/* Full expression */
+#define TemperatureDependenceOfLog10EquilibriumConstant6(T,a,b,c,d,e) \
+        ((a) + (b)*((T)) + (c)*(1/(T)) + (d)*log10((T)) + (e)*(1/((T)*(T))))
+
+
+#define TemperatureDependenceOfLog10EquilibriumConstant6_293(T,a0,b,c,d,e) \
+        ((a0) + (b)*((T) - 293.) + (c)*(1/(T) - 1/293.) + (d)*log10((T)/293.) + (e)*(1/((T)*(T)) - 1/(85849.)))
+        
+
+/* Three-term approximation */
+#define TemperatureDependenceOfLog10EquilibriumConstant4(T,DrH,DrS,DrCp) \
+        TemperatureDependenceOfLog10EquilibriumConstant6(T, \
+        TemperatureDependenceOfLog10EquilibriumConstant_A1(DrH,DrS,DrCp), 0, \
+        TemperatureDependenceOfLog10EquilibriumConstant_A3(DrH,DrS,DrCp), \
+        TemperatureDependenceOfLog10EquilibriumConstant_A4(DrH,DrS,DrCp), 0)
+        
 
 #define TemperatureDependenceOfLog10EquilibriumConstant_A1(DrH,DrS,DrCp) \
         (( (DrS) - (DrCp) * (1 + log(298.15)))/(log(10.) * PhysicalConstant(PerfectGasConstant)))
@@ -60,14 +91,8 @@
 
 #define TemperatureDependenceOfLog10EquilibriumConstant_A4(DrH,DrS,DrCp) \
         ((DrCp)/(PhysicalConstant(PerfectGasConstant)))
-
-
-#define TemperatureDependenceOfLog10EquilibriumConstant(T,a,b,c,d,e) \
-        ((a) + (b)*((T)) + (c)*(1/(T)) + (d)*log10((T)) + (e)*(1/((T)*(T))))
-
-
-#define TemperatureDependenceOfLog10EquilibriumConstant_293(T,a0,b,c,d,e) \
-        ((a0) + (b)*((T) - 293.) + (c)*(1/(T) - 1/293.) + (d)*log10((T)/293.) + (e)*(1/((T)*(T)) - 1/(85849.)))
+        
+        
 
 
 /*
@@ -76,5 +101,4 @@
          TemperatureDependenceOfLog10EquilibriumConstant(T   ,0,b,c,d,e) - \
          TemperatureDependenceOfLog10EquilibriumConstant(293.,0,b,c,d,e))
 */
-
 #endif

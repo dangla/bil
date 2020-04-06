@@ -31,118 +31,6 @@ Functions_t* (Functions_New)(const int n_fncts)
 
 
 
-#if 0
-//Functions_t* (Functions_Create)(DataFile_t* datafile,Materials_t* materials)
-Functions_t* (Functions_Create)(DataFile_t* datafile)
-{
-  int    i ;
-  int    i_fn ;
-  Functions_t* functions   = (Functions_t*) malloc(sizeof(Functions_t)) ;
-  int n_fncts ;
-  
-  if(!functions) arret("Functions_Create") ;
-
-  #if 0
-  {
-    int n_mats = Materials_GetNbOfMaterials(materials) ;
-    
-    for(i = 0 ; i < n_mats ; i++) {
-      Material_t* mat = Materials_GetMaterial(materials) + i ;
-      Material_GetFunctions(mat) = functions ;
-    }
-  }
-  #endif
-  
-  DataFile_OpenFile(datafile,"r") ;
-  
-  DataFile_SetFilePositionAfterKey(datafile,"FONC,FUNC,Functions",",",1) ;
-  
-  Message_Direct("Enter in %s","Functions") ;
-  Message_Direct("\n") ;
-
-  {
-    char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
-  
-    n_fncts = atoi(line) ;
-  }
-  
-  Functions_GetNbOfFunctions(functions) = n_fncts ;
-  Functions_GetFunction(functions) = NULL ;
-  
-  if(n_fncts <= 0) return(functions) ;
-
-  {
-    Function_t* function = (Function_t*) malloc(n_fncts*sizeof(Function_t)) ;
-    
-    if(!function) arret("Functions_Create (1) : impossible d\'allouer la memoire") ;
-    
-    Functions_GetFunction(functions) = function ;
-  }
-
-  for(i_fn = 0 ; i_fn < n_fncts ; i_fn++) {
-    Function_t* function = Functions_GetFunction(functions) + i_fn ;
-    char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
-
-    
-    if(!strncmp(line,"Ntimes",1)) {
-      char* pline = strchr(line,'=') + 1 ;
-      int n_tm ;
-      int j ;
-      
-      n_tm = atoi(pline) ;
-      
-      {
-        Function_t* fct = Function_New(n_tm) ;
-        
-        *function = *fct ;
-      }
-      
-      /* Read the F(T) */
-      for(j = 0 ; j < n_tm ; j++) {
-        pline = strstr(pline,"F(") ;
-        
-        if(!pline) {
-          pline = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
-          pline = strstr(pline,"F(") ;
-        }
-        
-        if(pline) {
-          sscanf(pline,"F(%lf)",Function_GetXValue(function) + j) ;
-          pline = strchr(pline,'=') + 1 ;
-          sscanf(pline,"%lf ",Function_GetFValue(function) + j) ;
-        } else {
-          arret("Functions_Create(3): not enough data") ;
-        }
-      }
-
-    } else if(!strncmp(line,"File",1)) {
-      char* pline = strchr(line,'=') + 1 ;
-      char name[Function_MaxLengthOfFileName] ;
-      
-      if(strlen(pline) > Function_MaxLengthOfFileName) {
-        arret("Functions_Create(5): too long file name") ;
-      }
-      
-      sscanf(pline,"%s",name) ;
-      
-      i_fn += lit_fonction(function,name) - 1 ;
-      
-      if(i_fn >= n_fncts) arret("Functions_Create : trop de fonctions") ;
-      
-    } else {
-      arret("Functions_Create(5): mot non connu") ;
-    }
-  }
-  
-  DataFile_CloseFile(datafile) ;
-  
-  return(functions) ;
-}
-#endif
-
-
-
-#if 1
 Functions_t* (Functions_Create)(DataFile_t* datafile)
 {
   char* filecontent = DataFile_GetFileContent(datafile) ;
@@ -155,11 +43,13 @@ Functions_t* (Functions_Create)(DataFile_t* datafile)
   Message_Direct("\n") ;
   
   
-  if(n_fncts <= 0) return(functions) ;
+  if(n_fncts <= 0) {
+    return(functions) ;
+  }
 
 
-  if(n_fncts > 0) {
-    int    i_fn ;
+  {
+    int i_fn ;
     
     c = String_SkipLine(c) ;
       
@@ -173,12 +63,15 @@ Functions_t* (Functions_Create)(DataFile_t* datafile)
       Message_Direct("\n") ;
       
       i_fn += Function_Scan(function,datafile) - 1 ;
+      
+      if(i_fn >= n_fncts) {
+        arret("Functions_Create: too many functions") ;
+      }
     }
   }
   
   return(functions) ;
 }
-#endif
 
 
 

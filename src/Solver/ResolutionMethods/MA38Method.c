@@ -1,15 +1,17 @@
+#ifdef BLASLIB
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
-#include "MA38Method.h"
 #include "Solver.h"
 #include "Message.h"
 #include "Matrix.h"
 
 
+#include "MA38Method.h"
 #include "CoordinateFormat.h"
 
 
@@ -87,5 +89,7 @@ int   MA38Method_Solve(Solver_t* solver)
   
   return(0) ;
 }
+
+#endif
 
 

@@ -1,5 +1,5 @@
 # Models: X-axis(1) MualemVanGenuchten(2)
-# Labels: s_l(1) k_r(2)
+# Labels: s_l(1) kl_r(2)
 0.000000e+00 0.000000e+00
 1.000000e-02 2.615440e-11
 2.000000e-02 8.053827e-10

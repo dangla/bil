@@ -11,8 +11,11 @@ struct Solution_s     ; typedef struct Solution_s     Solution_t ;
 
 
 /* Declaration of Macros, Methods and Structures */
+
+#include "Mesh.h"
  
-extern void (Solution_Copy)(Solution_t*,Solution_t*) ;
+extern Solution_t*  (Solution_Create)  (Mesh_t*) ;
+extern void         (Solution_Copy)    (Solution_t*,Solution_t*) ;
 
 
 #define Solution_GetTime(SOL)                 ((SOL)->t)

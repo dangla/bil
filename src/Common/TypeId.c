@@ -64,7 +64,7 @@ void  (TypeId_Delete)(TypeId_t typ,void* self)
     case TypeId_Loads_t         : break ;
     case TypeId_Material_t      : break ;
     case TypeId_Materials_t     : break ;
-    case TypeId_Math_t          : break ;
+    case TypeId_Math_t          : Math_Delete(self); return ;
     case TypeId_Matrix_t        : break ;
     case TypeId_Mesh_t          : break ;
     case TypeId_Message_t       : Message_Delete(self); return ;

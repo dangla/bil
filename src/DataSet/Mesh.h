@@ -15,10 +15,14 @@ struct Mesh_s         ; typedef struct Mesh_s         Mesh_t ;
 #include "Solutions.h"
 #include "Solver.h"
 
+
+extern Mesh_t*  (Mesh_New)(void) ;
 extern Mesh_t*  (Mesh_Create)(DataFile_t*,Materials_t*,Geometry_t*) ;
+extern void     (Mesh_CreateMore)(Mesh_t*) ;
 extern char*    (Mesh_Scan)(Mesh_t*,char*) ;
-extern void     (Mesh_SetMatrixPermutationNumbering)(Mesh_t*,BConds_t*,DataFile_t*) ;
-extern void     (Mesh_ResetMatrixNumbering)(Mesh_t*) ;
+extern int      (Mesh_SetMatrixRowColumnIndexes)(Mesh_t*,BConds_t*) ;
+extern int      (Mesh_UpdateMatrixRowColumnIndexes)(Mesh_t*) ;
+extern int      (Mesh_InitializeMatrixRowColumnIndexes)(Mesh_t*) ;
 extern void     (Mesh_WriteGraph)(Mesh_t*,const char*,const char*) ;
 extern void     (Mesh_WriteInversePermutation)(Mesh_t*,const char*,const char*) ;
 extern void     (Mesh_InitializeSolutionPointers)(Mesh_t*,Solutions_t*) ;
@@ -26,13 +30,10 @@ extern int      (Mesh_LoadCurrentSolution)(Mesh_t*,DataFile_t*,double*) ;
 extern int      (Mesh_StoreCurrentSolution)(Mesh_t*,DataFile_t*,double) ;
 extern void     (Mesh_SetCurrentUnknownsWithBoundaryConditions)(Mesh_t*,BConds_t*,double) ;
 extern void     (Mesh_UpdateCurrentUnknowns)(Mesh_t*,Solver_t*) ;
-extern void     (Mesh_CreateEquationContinuity)(Mesh_t*) ;
+//extern void     (Mesh_CreateEquationContinuity)(Mesh_t*,Materials_t*) ;
+extern void     (Mesh_SetEquationContinuity)(Mesh_t*) ;
+extern void     (Mesh_PrintData)(Mesh_t*,char*) ;
 
-
-#include "Mry.h"
-
-#define Mesh_New() \
-        (Mesh_t*) Mry_New(Mesh_t)
 
 
 /* Some constants */
@@ -43,6 +44,7 @@ extern void     (Mesh_CreateEquationContinuity)(Mesh_t*) ;
 
 
 /* Accessors */
+#define Mesh_GetDataFile(MSH)               ((MSH)->datafile)
 #define Mesh_GetGeometry(MSH)               ((MSH)->geometry)
 #define Mesh_GetNodes(MSH)                  ((MSH)->nodes)
 #define Mesh_GetElements(MSH)               ((MSH)->elements)
@@ -77,6 +79,9 @@ extern void     (Mesh_CreateEquationContinuity)(Mesh_t*) ;
 #define Mesh_GetElement(MSH) \
         Elements_GetElement(Mesh_GetElements(MSH))
 
+#define Mesh_GetNbOfConnectivities(MSH) \
+        Elements_GetNbOfConnectivities(Mesh_GetElements(MSH))
+
 
 
 /* Access to the nb of matrix rows/columns */
@@ -108,6 +113,7 @@ extern void     (Mesh_CreateEquationContinuity)(Mesh_t*) ;
 #include "Nodes.h"
 
 struct Mesh_s {
+  DataFile_t* datafile ;
   Geometry_t* geometry ;
   Elements_t* elements ;
   Nodes_t*    nodes ;

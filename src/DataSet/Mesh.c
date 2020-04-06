@@ -4,6 +4,7 @@
 #include <string.h>
 #include <strings.h>
 #include <assert.h>
+#include "Symmetry.h"
 #include "Elements.h"
 #include "Nodes.h"
 #include "Geometry.h"
@@ -32,24 +33,26 @@ extern void   mc43ad_(int*,int*,int*,int*,int*,int*,int*,int*,int*,int*,int*) ;
   }
 #endif
 
-static int*   (Mesh_ReadInversePermutationOfNodes)(DataFile_t*,int) ;
-static int*   (Mesh_ComputeInversePermutationOfNodes)(Mesh_t*,const char*) ;
-static int*   (Mesh_ComputeInversePermutationOfElements)(Mesh_t*,const char*) ;
+static int*      (Mesh_ComputeInversePermutationOfNodes)(Mesh_t*,const char*) ;
+static int*      (Mesh_ComputeInversePermutationOfElements)(Mesh_t*,const char*) ;
 static Graph_t*  (Mesh_CreateGraph)(Mesh_t*) ;
 
 
-static void   mail0d(Mesh_t*) ;
-static void   mail1dold(Mesh_t*,FILE*) ;
-static void   mail1d(Mesh_t*,char*) ;
+static void   mesh0d(Mesh_t*) ;
+
+static void   Mesh_ReadInline1d(Mesh_t*,char*) ;
+
+
+static void   Mesh_ReadFormatGmsh(Mesh_t*,const char*) ;
+static void   Mesh_ReadFormatGmsh_1(Mesh_t*,const char*) ;
+static void   Mesh_ReadFormatGmsh_2(Mesh_t*,const char*) ;
+static void   Mesh_Readm1d(Mesh_t*,const char*) ;
+static void   Mesh_ReadFormatCesar(Mesh_t*,const char*) ;
+
 static void   maillage(double*,int*,double,int,Node_t*) ;
-static int    mesh1d(double*,double*,int,Node_t**) ;
-static void   lit_mail_m1d(Mesh_t*,const char*) ;
-static void   lit_mail_gmsh(Mesh_t*,const char*) ;
-static void   lit_mail_gmsh_1(Mesh_t*,const char*) ;
-static void   lit_mail_gmsh_2(Mesh_t*,const char*) ;
-static void   lit_mail_cesar(Mesh_t*,const char*) ;
-static void   ecrit_mail_msh_1(Mesh_t*,const char*) ;
-static void   ecrit_mail_msh_2(Mesh_t*,const char*) ;
+static int    mesh1dnew(double*,double*,int,Node_t*) ;
+//static void   ecrit_mail_msh_1(Mesh_t*,const char*) ;
+//static void   ecrit_mail_msh_2(Mesh_t*,const char*) ;
 static int    gmsh_ElmType(int,int) ;
 static int    gmsh_NbNodes(int) ;
 static int    gmsh_DimElement(int) ;
@@ -62,9 +65,23 @@ static int    gmsh_DimElement(int) ;
 
 
 
+Mesh_t*  Mesh_New(void)
+{
+  Mesh_t* mesh = (Mesh_t*) Mry_New(Mesh_t) ;
+  
+  Mesh_GetElements(mesh) = (Elements_t*) Mry_New(Elements_t) ;
+  
+  Mesh_GetNodes(mesh) = (Nodes_t*) Mry_New(Nodes_t) ;
+  
+  return(mesh) ;
+}
+
+
+
 Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geometry)
 {
-  Mesh_t* mesh = Mesh_New() ;
+  //Mesh_t* mesh = Mesh_New() ;
+  Mesh_t* mesh = (Mesh_t*) Mry_New(Mesh_t) ;
   
   {
     char* filecontent = DataFile_GetFileContent(datafile) ;
@@ -84,10 +101,7 @@ Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geo
   Message_Direct("\n") ;
   
   Mesh_GetGeometry(mesh) = geometry ;
-  
-  Mesh_GetElements(mesh) = Elements_New() ;
-  
-  Mesh_GetNodes(mesh) = Nodes_New() ;
+  Mesh_GetDataFile(mesh) = datafile ;
 
 
   {
@@ -95,36 +109,42 @@ Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geo
     //char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
 
     /* 1. Allocation memory for the mesh i.e. 
-     *    node, coordinates, element and node numbering
-     * ------------------------------------------------*/
+     *    node, coordinates, element and connectivity
+     * ----------------------------------------------*/
   
     if(!Mesh_Scan(mesh,line)) {
       Message_FatalError("Mesh_Create: No such file name") ;
     }
-  }
-  
-  {
-    char* filename = DataFile_GetFileName(datafile) ;
     
-    ecrit_mail_msh_2(mesh,filename) ;
+    /* Allocation of space for the connectivity of nodes */
+    Mesh_CreateMore(mesh) ;
   }
   
   
-  /* 1. Link up elements and materials
-   * ---------------------------------*/
-   Elements_LinkUp(Mesh_GetElements(mesh),materials) ;
+  /* 1. Link up elements and materials (no allocation)
+   * -------------------------------------------------*/
+  Elements_LinkUp(Mesh_GetElements(mesh),materials) ;
 
-  /* 2. Allocation memory for unknown and equation positions
-   * -------------------------------------------------------*/
+  /* 2. Allocation memory space in elements for 
+   *   - unknown and equation positions
+   * -------------------------------------------*/
   Elements_CreateMore(Mesh_GetElements(mesh)) ;
-
-  /* 3. Allocation memory for names of equations and unknowns
-   * --------------------------------------------------------*/
-  Mesh_CreateEquationContinuity(mesh) ;
   
-  /* 4. Allocation memory for matrix row and column indexes
-   * ------------------------------------------------------*/
+  /* 3. Allocation memory space in nodes for 
+   *   - the names of equations and unknowns
+   *   - the indexes of matrix rows, matrix columns
+   *   - the indexes of objective values
+   * -----------------------------------------------*/
   Nodes_CreateMore(Mesh_GetNodes(mesh)) ;
+
+  /* 4. Allocation memory for
+   *   - the names of equations and unknowns
+   * ----------------------------------------*/
+  //Mesh_CreateEquationContinuity(mesh,materials) ;
+
+  /* 4. Set the continuity of equations at nodes (no allocation)
+   * -----------------------------------------------------------*/
+  Mesh_SetEquationContinuity(mesh) ;
 
 
   return(mesh) ;
@@ -142,27 +162,31 @@ char*  Mesh_Scan(Mesh_t* mesh,char* line)
   /* Treatment after filename extension */
   if(strstr(nom_mail,".msh")) {
     
-    lit_mail_gmsh(mesh,nom_mail) ;
+    Mesh_ReadFormatGmsh(mesh,nom_mail) ;
+    //lit_mail_gmsh(mesh,nom_mail) ;
     
   } else if(strstr(nom_mail,".m1d")) {
     
-    lit_mail_m1d(mesh,nom_mail) ;
+    Mesh_Readm1d(mesh,nom_mail) ;
+    //lit_mail_m1d(mesh,nom_mail) ;
     
   } else if(strstr(nom_mail,".ces")) {
     
-    lit_mail_cesar(mesh,nom_mail) ;
+    Mesh_ReadFormatCesar(mesh,nom_mail) ;
+    //lit_mail_cesar(mesh,nom_mail) ;
     
   } else {
     int dim = Mesh_GetDimension(mesh) ;
     
     if(dim == 0) {
       
-      mail0d(mesh) ;
+      mesh0d(mesh) ;
       
     } else if(dim == 1) {
       
       /* Read directly in the data file */
-      mail1d(mesh,line) ;
+      Mesh_ReadInline1d(mesh,line) ;
+      //mail1d(mesh,line) ;
       
     } else {
       
@@ -172,6 +196,102 @@ char*  Mesh_Scan(Mesh_t* mesh,char* line)
   }
   
   return(line) ;
+}
+
+
+void Mesh_CreateMore(Mesh_t* mesh)
+{
+  /* The number of elements per node */
+  {
+    int nno = Mesh_GetNbOfNodes(mesh) ;
+    Node_t* node = Mesh_GetNode(mesh) ;
+    int jn ;
+      
+    for(jn = 0 ; jn < nno ; jn++) {
+      Node_t* node_j = node + jn ;
+        
+      Node_GetNbOfElements(node_j) = 0 ;
+    }
+  }
+  
+  {
+    int nel = Mesh_GetNbOfElements(mesh) ;
+    Element_t* el = Mesh_GetElement(mesh) ;
+    
+    {
+      int ie ;
+    
+      for(ie = 0 ; ie < nel ; ie++) {
+        Element_t* el_i = el + ie ;
+        int nn = Element_GetNbOfNodes(el_i) ;
+        int jn ;
+      
+        for(jn = 0 ; jn < nn ; jn++) {
+          Node_t* node_j = Element_GetNode(el_i,jn) ;
+        
+          Node_GetNbOfElements(node_j) += 1 ;
+        }
+      }
+    }
+  }
+  
+  /* Allocation of space for the pointers to elements */
+  {
+    int nc = Mesh_GetNbOfConnectivities(mesh) ;
+    Element_t** pel = (Element_t**) Mry_New(Element_t*[nc]) ;
+    int nno = Mesh_GetNbOfNodes(mesh) ;
+    Node_t* node = Mesh_GetNode(mesh) ;
+    
+    {
+      int jn ;
+      
+      nc = 0 ;
+      for(jn = 0 ; jn < nno ; jn++) {
+        Node_t* node_j = node + jn ;
+        
+        Node_GetPointerToElement(node_j) = pel + nc ;
+        nc += Node_GetNbOfElements(node_j) ;
+      }
+    }
+  }
+  
+  /* Initialize the pointers to elements per node */
+  {
+    int nno = Mesh_GetNbOfNodes(mesh) ;
+    Node_t* node = Mesh_GetNode(mesh) ;
+    
+    {
+      int jn ;
+    
+      for(jn = 0 ; jn < nno ; jn++) {
+        Node_GetNbOfElements(node + jn) = 0 ;
+      }
+    }
+  }
+  
+  {
+    int nel = Mesh_GetNbOfElements(mesh) ;
+    Element_t* el = Mesh_GetElement(mesh) ;
+    
+    {
+      int ie ;
+    
+      for(ie = 0 ; ie < nel ; ie++) {
+        Element_t* el_i = el + ie ;
+        int nn = Element_GetNbOfNodes(el_i) ;
+        int jn ;
+      
+        for(jn = 0 ; jn < nn ; jn++) {
+          Node_t* node_j = Element_GetNode(el_i,jn) ;
+          int je = Node_GetNbOfElements(node_j) ;
+          
+          Node_GetElement(node_j,je) = el_i ;
+        
+          Node_GetNbOfElements(node_j) += 1 ;
+        }
+      }
+    }
+  }
 }
 
 
@@ -297,75 +417,68 @@ Graph_t* Mesh_CreateGraph(Mesh_t* mesh)
 
 
 
-void  Mesh_SetMatrixPermutationNumbering(Mesh_t* mesh,BConds_t* bconds,DataFile_t* datafile)
+int  Mesh_SetMatrixRowColumnIndexes(Mesh_t* mesh,BConds_t* bconds)
 /** Set matrix row (column) index which node equation (unknown) points to
- *  by using the inverse permutation vector 
+ *  by using the inverse permutation vector.
  **/
 {
+  /* Set indexes to arbitrary >= 0 value */
+  Mesh_InitializeMatrixRowColumnIndexes(mesh) ;
 
-  /* Reset to 0 */
-  Mesh_ResetMatrixNumbering(mesh) ;
-
-  /* Accounting for BC (set indexes to -1) */
-  BConds_ResetMatrixNumbering(bconds,mesh) ;
-
-  /* Accounting for periodic mesh/BC (set indexes of slave nodes to -1) */
-  Periodicities_ResetMatrixPermutationNumbering(mesh) ;
-
-  /* We set up the system */
-  {
-    int   n_no = Mesh_GetNbOfNodes(mesh) ;
-    Node_t* no = Mesh_GetNode(mesh) ;
-    int*  perm = Mesh_ReadInversePermutationOfNodes(datafile,n_no) ;
-    int NbOfMatrixRows = 0 ;
-    int NbOfMatrixColumns = 0 ;
-    int    i ;
-    
-    
-    /* In the order of the permuted nodes */
-    for(i = 0 ; i < n_no ; i++) {
-      Node_t* node_i = no + perm[i] ;
-      int   j ;
-
-      for(j = 0 ; j < Node_GetNbOfUnknowns(node_i) ; j++) {
-        int icol = Node_GetMatrixColumnIndex(node_i)[j] ;
-        
-        if(icol == 0) {
-          Node_GetMatrixColumnIndex(node_i)[j] = NbOfMatrixColumns ;
-          NbOfMatrixColumns += 1 ;
-        }
-      }
-
-      for(j = 0 ; j < Node_GetNbOfEquations(node_i) ; j++) {
-        int irow = Node_GetMatrixRowIndex(node_i)[j] ;
-        
-        if(irow == 0) {
-          Node_GetMatrixRowIndex(node_i)[j] = NbOfMatrixRows ;
-          NbOfMatrixRows += 1 ;
-        }
-      }
-    }
+  /* Accounting for BC 
+   * (set indexes to arbitray < 0 value) */
+  BConds_EliminateMatrixRowColumnIndexes(bconds,mesh) ;
   
-    free(perm) ;
+  /* Set up the system */
+  Mesh_UpdateMatrixRowColumnIndexes(mesh) ;
   
-  
-    if(NbOfMatrixColumns != NbOfMatrixRows) {
-      arret("Mesh_SetMatrixPermutationNumbering(3)") ;
-    }
-  
-    Nodes_GetNbOfMatrixRows(Mesh_GetNodes(mesh)) = NbOfMatrixRows ;
-    Nodes_GetNbOfMatrixColumns(Mesh_GetNodes(mesh)) = NbOfMatrixColumns ;
-  }
-  
-  
-  /* Update indexes of slave nodes for periodic mesh */
-  Periodicities_UpdateMatrixPermutationNumbering(mesh) ;
+  return(Mesh_GetNbOfMatrixColumns(mesh)) ;
 }
 
 
 
-void  Mesh_ResetMatrixNumbering(Mesh_t* mesh)
-/** Initialize the Matrix Row/Column Indexes to 0 */
+int  Mesh_UpdateMatrixRowColumnIndexes(Mesh_t* mesh)
+/** Set matrix row (column) index which node equation (unknown) points to
+ *  by using the inverse permutation vector.
+ **/
+{
+  /* Accounting for periodic mesh/BC 
+   * (set indexes of slave nodes to arbitray < 0 value) */
+  Periodicities_EliminateMatrixRowColumnIndexes(mesh) ;
+  
+  /* Accounting continuous unknowns across zero-thickness elements 
+   * (set indexes of overlapping nodes to arbitray < 0 value) */
+  {
+    Elements_t* elements = Mesh_GetElements(mesh) ;
+    
+    Elements_EliminateMatrixRowColumnIndexesOfOverlappingNodes(elements) ;
+  }
+
+  /* We set up the system */
+  {
+    Nodes_t* nodes = Mesh_GetNodes(mesh) ;
+    DataFile_t* datafile = Mesh_GetDataFile(mesh) ;
+    
+    Nodes_SetMatrixRowColumnIndexes(nodes,datafile) ;
+  }
+
+  /* Update indexes of slave nodes for periodic mesh */
+  Periodicities_UpdateMatrixRowColumnIndexes(mesh) ;
+  
+  /* Update indexes of overlapping nodes of zero-thickness elements */
+  {
+    Elements_t* elements = Mesh_GetElements(mesh) ;
+    
+    Elements_UpdateMatrixRowColumnIndexesOfOverlappingNodes(elements) ;
+  }
+  
+  return(Mesh_GetNbOfMatrixColumns(mesh)) ;
+}
+
+
+
+int  Mesh_InitializeMatrixRowColumnIndexes(Mesh_t* mesh)
+/** Initialize the Matrix Row/Column Indexes to >= 0 */
 {
 
   /* Initialization to arbitrarily negative value (-1) 
@@ -415,12 +528,12 @@ void  Mesh_ResetMatrixNumbering(Mesh_t* mesh)
             int ij = i*neq + j ;
             int jj ;
           
-            /*  columns (unknowns) */
+            /*  columns (unknowns) set to arbitrary >= 0 */
             if((jj = Element_GetUnknownPosition(elt_i)[ij]) >= 0) {
               Node_GetMatrixColumnIndex(node_i)[jj] = 0 ;
             }
           
-            /*  rows (equations) */
+            /*  rows (equations) set to arbitrary >= 0 */
             if((jj = Element_GetEquationPosition(elt_i)[ij]) >= 0) {
               Node_GetMatrixRowIndex(node_i)[jj] = 0 ;
             }
@@ -429,7 +542,15 @@ void  Mesh_ResetMatrixNumbering(Mesh_t* mesh)
       }
     }
   }
-
+  
+  /* Set up the system without restrictions */
+  {
+    Nodes_t* nodes = Mesh_GetNodes(mesh) ;
+    
+    Nodes_SetMatrixRowColumnIndexes(nodes,NULL) ;
+  }
+  
+  return(Mesh_GetNbOfMatrixColumns(mesh)) ;
 }
 
 
@@ -777,98 +898,150 @@ int*   Mesh_ComputeInversePermutationOfElements(Mesh_t* mesh,const char* format)
 
 
 
-void Mesh_CreateEquationContinuity(Mesh_t* mesh)
+#if 0
+void Mesh_CreateEquationContinuity(Mesh_t* mesh,Materials_t* materials)
 /** Compute some informations needed to describe the continuity of 
  *  equations and unknowns at nodes, i.e.:
  *  - the number and names of equations at nodes
  *  - the position of equations and unknowns of elements at nodes
  */
 {
-  Element_t* el = Mesh_GetElement(mesh) ;
-  Node_t* no = Mesh_GetNode(mesh) ;
-  int n_no = Mesh_GetNbOfNodes(mesh) ;
-  int n_el = Mesh_GetNbOfElements(mesh) ;
-  int    ie,in ;
-
-
   /* Allocate memory space for names of equations and unknwons */
   {
-    int    n_names = n_no*Model_MaxNbOfEquations ;
-    char** uname = (char**) Mry_New(char*[2*n_names]) ;
-    char** ename = uname + n_names ;
-  
-    for(in = 0 ; in < n_no ; in++) {
-      Node_GetNameOfUnknown(no + in)  = uname + in*Model_MaxNbOfEquations ;
-      Node_GetNameOfEquation(no + in) = ename + in*Model_MaxNbOfEquations ;
-    }
-  }
-
-  /** Compute
-   *  - the number of equations per node: Node_GetNbOfEquations(no)
-   *  - the number of unknowns per node:  Node_GetNbOfUnknowns(no)
-   *  - the position of equations of each element at nodes: Element_GetEquationPosition(el)
-   *  - the position of unknowns of each element at nodes:  Element_GetUnknownPosition(el)
-   */
-  for(in = 0 ; in < n_no ; in++) {
-    Node_GetNbOfUnknowns(no + in) = 0 ;
-    Node_GetNbOfEquations(no + in) = 0 ;
-  }
-
-  for(ie = 0 ; ie < n_el ; ie++) {
-    Material_t* mat = Element_GetMaterial(el + ie) ;
+    int maxnbofequationspernode = 0 ;
     
-    if(mat) {
-      int nn = Element_GetNbOfNodes(el + ie) ;
-      int neq = Element_GetNbOfEquations(el + ie) ;
-      char** mat_name_unk = Material_GetNameOfUnknown(mat) ;
-      char** mat_name_eqn = Material_GetNameOfEquation(mat) ;
-      Node_t** pnode = Element_GetPointerToNode(el + ie) ;
-      short int*  unk_pos = Element_GetUnknownPosition(el + ie) ;
-      short int*  eqn_pos = Element_GetEquationPosition(el + ie) ;
+    {
+      Model_t* usedmodel = Materials_GetUsedModel(materials) ;
+      int n_usedmodels = Materials_GetNbOfUsedModels(materials) ;
       int i ;
       
-      for(i = 0 ; i < nn ; i++) {
-        Node_t* node_i = pnode[i] ;
-        char** node_name_unk = Node_GetNameOfUnknown(node_i) ;
-        char** node_name_eqn = Node_GetNameOfEquation(node_i) ;
-        int ieq ;
+      for(i = 0 ; i < n_usedmodels ; i++) {
+        maxnbofequationspernode += Model_GetNbOfEquations(usedmodel + i) ;
+      }
+    }
+  
+    {
+      Node_t* no = Mesh_GetNode(mesh) ;
+      int n_no = Mesh_GetNbOfNodes(mesh) ;
+      int    n_names = n_no*maxnbofequationspernode ;
+      char** uname = (char**) Mry_New(char*[2*n_names]) ;
+      char** ename = uname + n_names ;
+      int in ;
+  
+      for(in = 0 ; in < n_no ; in++) {
+        Node_GetNameOfUnknown(no + in)  = uname + in*maxnbofequationspernode ;
+        Node_GetNameOfEquation(no + in) = ename + in*maxnbofequationspernode ;
+      }
+    }
+  }
+  
+  Mesh_SetEquationContinuity(mesh) ;
+}
+#endif
+
+
+
+
+void Mesh_SetEquationContinuity(Mesh_t* mesh)
+/** Set the continuity of unknowns/equations at nodes, i.e.:
+ *  - the number and names of unknowns/equations at nodes
+ *  - the position of unknowns/equations of elements at nodes
+ */
+{
+   
+  /* Initialize the nb of unknowns/equations at nodes */
+  {
+    Node_t* no = Mesh_GetNode(mesh) ;
+    int n_no = Mesh_GetNbOfNodes(mesh) ;
+    int in ;
+    
+    for(in = 0 ; in < n_no ; in++) {
+      Node_GetNbOfUnknowns(no + in) = 0 ;
+      Node_GetNbOfEquations(no + in) = 0 ;
+    }
+  }
+  
+  /* Compute
+   *  - the number of equations per node: Node_GetNbOfEquations(no)
+   *  - the number of unknowns  per node: Node_GetNbOfUnknowns(no)
+   *  - the position of equations at nodes of each element: Element_GetEquationPosition(el)
+   *  - the position of unknowns  at nodes of each element: Element_GetUnknownPosition(el)
+   */
+  {
+    Element_t* el = Mesh_GetElement(mesh) ;
+    int n_el = Mesh_GetNbOfElements(mesh) ;
+    int ie ;
+    
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Element_t* el_i = el + ie ;
+      Material_t* mat = Element_GetMaterial(el_i) ;
+    
+      if(mat) {
+        int nn = Element_GetNbOfNodes(el_i) ;
+        int neq = Element_GetNbOfEquations(el_i) ;
+        char** mat_name_unk = Material_GetNameOfUnknown(mat) ;
+        char** mat_name_eqn = Material_GetNameOfEquation(mat) ;
+        short int*  unk_pos = Element_GetUnknownPosition(el_i) ;
+        short int*  eqn_pos = Element_GetEquationPosition(el_i) ;
+        int in ;
+      
+        for(in = 0 ; in < nn ; in++) {
+          Node_t* node_i = Element_GetNode(el_i,in) ;
+          char** node_name_unk = Node_GetNameOfUnknown(node_i) ;
+          char** node_name_eqn = Node_GetNameOfEquation(node_i) ;
+          int ieq ;
         
-        for(ieq = 0 ; ieq < neq ; ieq++) {
-          int ij = i*neq + ieq ;
-          int jun ;
-          int jeq ;
+          for(ieq = 0 ; ieq < neq ; ieq++) {
+            int ij = in*neq + ieq ;
 
-          /* Continuity of unknowns: 
-           * - number of unknowns: Node_GetNbOfUnknowns(node_i), 
-           * - name of unknowns: Node_GetNameOfUnknown(node_i) 
-           * - position of unknowns at nodes: Element_GetUnknownPosition(el + ie)
-           */
-          for(jun = 0 ; jun < Node_GetNbOfUnknowns(node_i) ; jun++) {
-            if(!strcmp(node_name_unk[jun],mat_name_unk[ieq])) break ;
-          }
+            /* Continuity of unknowns: 
+             * - number of unknowns: Node_GetNbOfUnknowns(node_i), 
+             * - name of unknowns:   Node_GetNameOfUnknown(node_i) 
+             * - position of unknowns at nodes: Element_GetUnknownPosition(el_i)
+             */
+            if(unk_pos[ij] >= 0) { /* if < 0 no unknown at this node */
+              int jun ;
+
+              for(jun = 0 ; jun < Node_GetNbOfUnknowns(node_i) ; jun++) {
+                if(!strcmp(node_name_unk[jun],mat_name_unk[ieq])) break ;
+              }
           
-          if(unk_pos[ij] >= 0) { /* if < 0 no unknown at this node */
-            unk_pos[ij] = jun ;
-            if(jun == Node_GetNbOfUnknowns(node_i)) {
-              Node_GetNbOfUnknowns(node_i) += 1 ;
-              node_name_unk[jun] = mat_name_unk[ieq] ;
+              {
+                /* Set the position of unknown ij at the node i */
+                unk_pos[ij] = jun ;
+                /* Skip if this unknown has already been met? */
+                if(jun == Node_GetNbOfUnknowns(node_i)) {
+                  /* Increment the number of unknowns at node i */
+                  Node_GetNbOfUnknowns(node_i) += 1 ;
+                  /* Set the name of the unknown ij */
+                  node_name_unk[jun] = mat_name_unk[ieq] ;
+                }
+              }
             }
-          }
 
-          /* Continuity of equations:
-           * - number of equations: Node_GetNbOfEquations(node_i)
-           * - name of equations: Node_GetNameOfEquation(node_i)
-           * - position of equations: Element_GetEquationPosition(el + ie)
-           */
-          for(jeq = 0 ; jeq < Node_GetNbOfEquations(node_i) ; jeq++) {
-            if(!strcmp(node_name_eqn[jeq],mat_name_eqn[ieq])) break ;
-          }
+            /* Continuity of equations:
+             * - number of equations: Node_GetNbOfEquations(node_i)
+             * - name of equations:   Node_GetNameOfEquation(node_i)
+             * - position of equations: Element_GetEquationPosition(el_i)
+             */
+            if(eqn_pos[ij] >= 0) { /* if < 0 no equation at this node */
+              int jeq ;
+            
+              for(jeq = 0 ; jeq < Node_GetNbOfEquations(node_i) ; jeq++) {
+                if(!strcmp(node_name_eqn[jeq],mat_name_eqn[ieq])) break ;
+              }
           
-          if(eqn_pos[ij] >= 0) { /* if < 0 no equation at this node */
-            eqn_pos[ij] = jeq ;
-            if(jeq == Node_GetNbOfEquations(node_i)) {
-              Node_GetNbOfEquations(node_i) += 1 ;
-              node_name_eqn[jeq] = mat_name_eqn[ieq] ;
+              {
+                /* Set the position of equation ij at the node i */
+                eqn_pos[ij] = jeq ;
+                /* Skip if this equation has already been met? */
+                if(jeq == Node_GetNbOfEquations(node_i)) {
+                  /* Increment the number of equations */
+                  Node_GetNbOfEquations(node_i) += 1 ;
+                  /* Set the name of the equation ij */
+                  node_name_eqn[jeq] = mat_name_eqn[ieq] ;
+                }
+              }
             }
           }
         }
@@ -876,11 +1049,16 @@ void Mesh_CreateEquationContinuity(Mesh_t* mesh)
     }
   }
 
-
+/* No need to compress (2020/01/08) */
+#if 0
   /* Checking */
-  for(in = 0 ; in < n_no ; in++) {
-    if(Node_GetNbOfUnknowns(no + in) != Node_GetNbOfEquations(no + in)) {
-      arret("Mesh_SetEquationContinuity(2)") ;
+  {
+    int in ;
+    
+    for(in = 0 ; in < n_no ; in++) {
+      if(Node_GetNbOfUnknowns(no + in) != Node_GetNbOfEquations(no + in)) {
+        arret("Mesh_SetEquationContinuity(2)") ;
+      }
     }
   }
 
@@ -888,34 +1066,38 @@ void Mesh_CreateEquationContinuity(Mesh_t* mesh)
   /* Compression of the memory space */
   {
     int    n_u = 0 ;
-    char** p = Node_GetNameOfUnknown(no) ;
     
-    /* Compress the memory space for Node_GetNameOfUnknown(no + in) */
-    for(in = 0 ; in < n_no ; in++) {
-      char** node_name_unk = Node_GetNameOfUnknown(no + in) ;
-      int j ;
+    {
+      char** p = Node_GetNameOfUnknown(no) ;
+      int in ;
     
-      for(j = 0 ; j < Node_GetNbOfUnknowns(no + in) ; j++) {
-        p[j] = node_name_unk[j] ;
+      /* Compress the memory space for Node_GetNameOfUnknown(no + in) */
+      for(in = 0 ; in < n_no ; in++) {
+        char** node_name_unk = Node_GetNameOfUnknown(no + in) ;
+        int j ;
+    
+        for(j = 0 ; j < Node_GetNbOfUnknowns(no + in) ; j++) {
+          p[j] = node_name_unk[j] ;
+        }
+    
+        Node_GetNameOfUnknown(no + in) = p ;
+        p   += Node_GetNbOfUnknowns(no + in) ;
+        n_u += Node_GetNbOfUnknowns(no + in) ;
       }
-    
-      Node_GetNameOfUnknown(no + in) = p ;
-      p   += Node_GetNbOfUnknowns(no + in) ;
-      n_u += Node_GetNbOfUnknowns(no + in) ;
-    }
   
-    /* Compress the memory space for Node_GetNameOfEquation(no + in) */
-    for(in = 0 ; in < n_no ; in++) {
-      char** node_name_eqn = Node_GetNameOfEquation(no + in) ;
-      int j ;
+      /* Compress the memory space for Node_GetNameOfEquation(no + in) */
+      for(in = 0 ; in < n_no ; in++) {
+        char** node_name_eqn = Node_GetNameOfEquation(no + in) ;
+        int j ;
     
-      for(j = 0 ; j < Node_GetNbOfEquations(no + in) ; j++) {
-        p[j] = node_name_eqn[j] ;
+        for(j = 0 ; j < Node_GetNbOfEquations(no + in) ; j++) {
+          p[j] = node_name_eqn[j] ;
+        }
+    
+        Node_GetNameOfEquation(no + in) = p ;
+        p   += Node_GetNbOfEquations(no + in) ;
+        n_u += Node_GetNbOfEquations(no + in) ;
       }
-    
-      Node_GetNameOfEquation(no + in) = p ;
-      p   += Node_GetNbOfEquations(no + in) ;
-      n_u += Node_GetNbOfEquations(no + in) ;
     }
   
   
@@ -924,28 +1106,29 @@ void Mesh_CreateEquationContinuity(Mesh_t* mesh)
   
   
     /* We shrink the allocated memory */
-    p = (char**) realloc(Node_GetNameOfUnknown(no),n_u*sizeof(char*)) ;
-    
-    if(!p) {
-      arret("Mesh_SetEquationContinuity(3): memory allocation impossible") ;
-    }
-    
-    if(Node_GetNameOfUnknown(no) != p) {
-      /* arret("Mesh_SetEquationContinuity(4): memory allocation impossible") ; */
-      Message_Warning("Mesh_SetEquationContinuity(4): new memory allocation") ;
-      /* Compress the memory space for Node_GetNameOfUnknown(no + in) */
-      for(in = 0 ; in < n_no ; in++) {
-        Node_GetNameOfUnknown(no + in) = p ;
-        p   += Node_GetNbOfUnknowns(no + in) ;
-      }
+    {
+      char** p = (char**) Mry_Realloc(Node_GetNameOfUnknown(no),n_u*sizeof(char*)) ;
+      int in ;
+
+      if(Node_GetNameOfUnknown(no) != p) {
+        /* arret("Mesh_SetEquationContinuity(4): memory allocation impossible") ; */
+        Message_Warning("Mesh_SetEquationContinuity(4): new memory allocation") ;
+        
+        /* Compress the memory space for Node_GetNameOfUnknown(no + in) */
+        for(in = 0 ; in < n_no ; in++) {
+          Node_GetNameOfUnknown(no + in) = p ;
+          p   += Node_GetNbOfUnknowns(no + in) ;
+        }
   
-      /* Compress the memory space for Node_GetNameOfEquation(no + in) */
-      for(in = 0 ; in < n_no ; in++) {
-        Node_GetNameOfEquation(no + in) = p ;
-        p   += Node_GetNbOfEquations(no + in) ;
+        /* Compress the memory space for Node_GetNameOfEquation(no + in) */
+        for(in = 0 ; in < n_no ; in++) {
+          Node_GetNameOfEquation(no + in) = p ;
+          p   += Node_GetNbOfEquations(no + in) ;
+        }
       }
     }
   }
+#endif
 }
 
 
@@ -1197,7 +1380,7 @@ void (Mesh_SetCurrentUnknownsWithBoundaryConditions)(Mesh_t* mesh,BConds_t* bcon
 /* Set the current values.. */
 {
   /*
-	  1. .. with previous ones
+    1. .. with previous ones
   */
   {
     unsigned int   nb_nodes = Mesh_GetNbOfNodes(mesh) ;
@@ -1250,10 +1433,1197 @@ void (Mesh_UpdateCurrentUnknowns)(Mesh_t* mesh,Solver_t* solver)
 }
 
 
+
+
 /* Intern functions */
 
 
+void mesh0d(Mesh_t* mesh)
+{
+  int n_el = 1 ;
+  int n_no = 1 ;
+  
+  Mesh_GetNbOfElements(mesh) = n_el ;
+  Mesh_GetNbOfNodes(mesh) = n_no ;
+  
+  {
+    int dim = 3 ;
+    int n_c = 1 ;
+    
+    Mesh_GetNodes(mesh) = Nodes_New(n_no,dim,n_c) ;
+    Mesh_GetElements(mesh) = Elements_New(n_el,n_c) ;
+  }
 
+  {
+    Element_t* el = Mesh_GetElement(mesh) ;
+    Node_t* no = Mesh_GetNode(mesh) ;
+    
+    Element_GetElementIndex(el) = 0 ;
+    Element_GetMaterialIndex(el) = 0 ;
+    Element_GetRegionIndex(el) = 1 ;
+
+    Element_GetNbOfNodes(el) = 1 ;
+    Element_GetDimension(el) = 0 ;
+
+    /* numerotation */
+    Element_GetNode(el,0) = no ;
+  }
+}
+
+
+
+void Mesh_ReadInline1d(Mesh_t* mesh,char* str)
+/* 1D Mesh */
+{
+  int     npt ;
+  double* pt ;
+  int*    ne ;
+  double  dx_ini ;
+
+  /* Nb of points */
+  str += String_Scan(str,"%d",&npt) ;
+
+  pt = (double*) Mry_New(double[npt]) ;
+
+  ne = (int*) Mry_New(int[npt]) ;
+
+  /* Points */
+  {
+    int i ;
+    
+    for(i = 0 ; i < npt ; i++) {
+      str += String_Scan(str,"%le",pt + i) ;
+    }
+  }
+  
+  /* Length of the first element */
+  {
+    str += String_Scan(str,"%lf",&dx_ini) ;
+  }
+  
+  /* Nb of elements */
+  {
+    int i ;
+    
+    for(i = 0 ; i < npt - 1 ; i++) {
+      str += String_Scan(str,"%d",ne + i) ;
+    }
+  }
+  
+  /* Allocate memory */
+  {
+    int dim = Mesh_GetDimension(mesh) ;
+    int n_no ;
+    int n_el = 0 ;
+    int n_c ;
+    int i ;
+  
+    /* Nb of elements */
+    for(i = 0 ; i < npt - 1 ; i++) {
+      n_el += ne[i] ;
+    }
+
+    /* Nb of nodes */
+    n_no = n_el + 1 ;
+    
+    n_c = 2*n_el ;
+    
+    Mesh_GetNodes(mesh) = Nodes_New(n_no,dim,n_c) ;
+    Mesh_GetElements(mesh) = Elements_New(n_el,n_c) ;
+  }
+
+  /* The region and material indexes */
+  {
+    Element_t* el = Mesh_GetElement(mesh) ;
+    int i ;
+    int k = 0 ;
+    
+    for(k = 0 , i = 0 ; i < npt - 1 ; i++)  {
+      int j ;
+      int imat ;
+      
+      str += String_Scan(str,"%d",&imat) ;
+    
+      for(j = k ; j < k + ne[i] ; j++) {
+        Element_GetMaterialIndex(el + j) = imat - 1 ;
+        Element_GetRegionIndex(el + j) = i + 1 ;
+      }
+      k += ne[i] ;
+    }
+  }
+
+  /* Set the node coordinates */
+  {
+    Node_t* no = Mesh_GetNode(mesh) ;
+    
+    maillage(pt,ne,dx_ini,npt,no) ;
+  }
+
+  free(pt) ;
+  free(ne) ;
+
+
+  /* Set the remaining attributes of element */
+  {
+    int n_el = Mesh_GetNbOfElements(mesh) ;
+    Element_t* el = Mesh_GetElement(mesh) ;
+    Node_t* no = Mesh_GetNode(mesh) ;
+    Node_t** pno = Element_GetPointerToNode(el) ;
+    int i ;
+    int n_c = 0 ;
+    
+    for(i = 0 ; i < n_el ; i++) {
+      int nn = 2 ;
+      int j ;
+      
+      Element_GetNbOfNodes(el + i) = nn ;
+      Element_GetDimension(el + i) = 1 ;
+      Element_GetPointerToNode(el + i) = pno + n_c ;
+      n_c += Element_GetNbOfNodes(el + i) ;
+      
+      for(j = 0 ; j < nn ; j++) {
+        Element_GetNode(el + i,j) = no + i + j ;
+      }
+    }
+
+    /* Special case of elements at the surface i=0 et i=n_el-1 */
+    if(n_el > 0) {
+      if(Node_GetCoordinate(no)[0] == Node_GetCoordinate(no + 1)[0]) {
+        Element_GetNbOfNodes(el) = 1 ;
+        Element_GetDimension(el) = 0 ;
+        Element_GetNode(el,0) = no + 1 ;
+      }
+      
+      if(n_el > 1) {
+        if(Node_GetCoordinate(no + n_el - 1)[0] == Node_GetCoordinate(no + n_el)[0]) {
+          Element_GetNbOfNodes(el + n_el - 1) = 1 ;
+          Element_GetDimension(el + n_el - 1) = 0 ;
+          Element_GetNode(el + n_el - 1,0) = no + n_el - 1 ;
+        }
+      }
+    }
+  }
+}
+
+
+
+
+
+
+void Mesh_ReadFormatGmsh(Mesh_t* mesh,const char* nom_msh)
+/* Read a mesh in a file under the format GMSH */
+{
+  char   line[Mesh_MaxLengthOfTextLine] ;
+  FILE*  fic_msh ;
+
+  /* ouverture du fichier */
+  fic_msh = fopen(nom_msh,"r") ;
+  if(!fic_msh) {
+    arret("lit_mail_gmsh (1) :impossible d\'ouvrir le fichier") ;
+  }
+
+  do {
+    fgets(line,sizeof(line),fic_msh) ;
+  } while(line[0] != '$') ;
+
+  /* fermeture du fichier */
+  fclose(fic_msh) ;
+
+  if(!strncmp(&line[1],"NOD",3)) { /* Version 1.0 */
+    Mesh_ReadFormatGmsh_1(mesh,nom_msh) ;
+    return ;
+  } else if(!strncmp(&line[1],"MeshFormat",10)) { /* Version 2.0 */
+    Mesh_ReadFormatGmsh_2(mesh,nom_msh) ;
+    return ;
+  }
+  arret("Mesh_ReadFormatGmsh: not available") ;
+}
+
+
+
+void Mesh_ReadFormatGmsh_1(Mesh_t* mesh,const char* name)
+/* Read a mesh in a file under the format GMSH version 1.0 */
+{
+  TextFile_t* textfile = TextFile_Create(name) ;
+  FILE*  strfile = TextFile_OpenFile(textfile,"r") ;
+  char   mot[Mesh_MaxLengthOfKeyWord] ;
+  char   line[Mesh_MaxLengthOfTextLine] ;
+  int n_no ;
+  int n_el ;
+  int n_c ;
+
+  /* The file should begin by $NOD */
+  fscanf(strfile,"%s",mot) ;
+  
+  if(strcmp(mot,"$NOD") != 0) {
+    arret("Mesh_ReadFormatGmsh_1: no $NOD") ;
+  }
+
+  /* Read the nb of nodes */
+  //TextFile_ReadLineFromCurrentFilePosition(textfile,line,sizeof(line)) ;
+  {
+    int n_no_lu ;
+    int i ;
+    
+    fscanf(strfile,"%d",&n_no_lu) ;
+    
+    n_no = 0 ;
+    for(i = 0 ; i < n_no_lu ; i++) {
+      int n ;
+      
+      /* le numero du noeud */
+      fscanf(strfile,"%d",&n) ;
+      if(n_no < n) n_no = n ;
+      /* on lit le reste de la ligne */
+      if(fgets(line,sizeof(line),strfile) == NULL) {
+        fprintf(stdout,"erreur ou fin de fichier\n") ;
+      }
+    }
+    
+    //Mesh_GetNbOfNodes(mesh) = n_no ;
+  }
+  
+  fscanf(strfile,"%s",mot) ;
+  
+  if(strcmp(mot,"$ENDNOD") != 0) {
+    arret("Mesh_ReadFormatGmsh_1 (2) : pas de $ENDNOD") ;
+  }
+
+
+  /* Read the nb of elements */
+  fscanf(strfile,"%s",mot) ;
+  
+  if(strcmp(mot,"$ELM") != 0) {
+    arret("Mesh_ReadFormatGmsh_1 (3) : pas de $ELM") ;
+  }
+  
+  
+  /* Read the nb of elements and the cumulative nb of nodes */
+  {
+    int n_el_lu ;
+    int i ;
+
+    /* nombre d'elements lus */
+    fscanf(strfile,"%d",&n_el_lu) ;
+    
+    n_el = 0 ;
+    n_c = 0 ;
+    for(i = 0 ; i < n_el_lu ; i++) {
+      int n ;
+      unsigned short int   nn ;
+      
+      /* le numero d'element */
+      fscanf(strfile,"%d",&n) ;
+      if(n_el < n) n_el = n ;
+      /* on lit le reste de la ligne */
+      if(fgets(line,sizeof(line),strfile) == NULL) {
+        fprintf(stdout,"erreur ou fin de fichier\n") ;
+      }
+      /* elm_type, identificateurs et nb de noeuds */
+      sscanf(line,"%*d %*d %*d %hu",&nn) ;
+      n_c += nn ;
+    }
+    
+    //Mesh_GetNbOfElements(mesh) = n_el ;
+    //Mesh_GetNbOfConnectivities(mesh) = n_c ;
+  }
+  
+  fscanf(strfile,"%s",mot) ;
+  
+  if(strcmp(mot,"$ENDELM") != 0) {
+    arret("Mesh_ReadFormatGmsh_1 (4) : pas de $ENDELM") ;
+  }
+  
+  
+  
+  /* Allocation of space for "nodes" and "elements" */
+  {
+    //int n_no = Mesh_GetNbOfNodes(mesh) ;
+    //int n_el = Mesh_GetNbOfElements(mesh) ;
+    //int n_c  = Mesh_GetNbOfConnectivities(mesh) ;
+    int dim  = Mesh_GetDimension(mesh) ;
+    Nodes_t* nodes = Nodes_New(n_no,dim,n_c) ;
+    Elements_t* elements = Elements_New(n_el,n_c) ;
+  
+    Mesh_GetNodes(mesh) = nodes ;
+    Mesh_GetElements(mesh) = elements ;
+  }
+
+
+  /* Re-start */
+  rewind(strfile) ;
+
+
+  /* Nodes */
+  {
+    Node_t* no = Mesh_GetNode(mesh) ;
+    int dim  = Mesh_GetDimension(mesh) ;
+    int n_no_lu ;
+    int i ;
+
+    fscanf(strfile,"%s",mot) ;
+    
+    /* nombre de noeuds */
+    fscanf(strfile,"%d",&n_no_lu) ;
+    
+    for(i = 0 ; i < n_no_lu ; i++) {
+      int j,n ;
+      
+      /* le numero du noeud */
+      fscanf(strfile,"%d",&n) ;
+      n -= 1 ;
+      
+      /* les coordonnees*/
+      for(j = 0 ; j < dim ; j++) {
+        fscanf(strfile,"%le",Node_GetCoordinate(no + n) + j) ;
+      }
+      /* on lit le reste de la ligne */
+      if(fgets(line,sizeof(line),strfile) == NULL) {
+        fprintf(stdout,"erreur ou fin de fichier\n") ;
+      }
+    }
+    
+    fscanf(strfile,"%s",mot) ;
+  }
+  
+
+  /* Elements */
+  {
+    Node_t* no = Mesh_GetNode(mesh) ;
+    Element_t* el = Mesh_GetElement(mesh) ;
+    Node_t** p_node = Element_GetPointerToNode(el) ;
+    int n_el_lu ;
+    int i ;
+    
+    fscanf(strfile,"%s",mot) ;
+    
+    /* nombre d'elements */
+    fscanf(strfile,"%d",&n_el_lu) ;
+    
+    /* les elements */
+    n_c = 0 ;
+    for(i = 0 ; i < n_el_lu ; i++) {
+      int j,n ;
+      int imat, reg, nn ;
+      int type ;
+      
+      /* le numero d'element */
+      fscanf(strfile,"%d",&n) ; n -= 1 ;
+      /* elm_type */
+      fscanf(strfile,"%d",&type) ;
+      /* identificateurs et nb de noeuds */
+      fscanf(strfile,"%d %d %d",&imat,&reg,&nn) ;
+    
+      Element_GetElementIndex(el + n) = n ;
+      Element_GetMaterialIndex(el + n) = imat - 1 ;
+      Element_GetNbOfNodes(el + n) = nn ;
+      Element_GetRegionIndex(el + n) = reg ;
+      Element_GetDimension(el + n) = gmsh_DimElement(type) ;
+      if(Element_GetNbOfNodes(el + n) > Element_MaxNbOfNodes) arret("trop de noeuds") ;
+      /* numerotation */
+      Element_GetPointerToNode(el + n) = p_node + n_c ;
+      
+      n_c += nn ;
+      
+      for(j = 0 ; j < nn ; j++) {
+        int nodeindex ;
+        
+        fscanf(strfile,"%d",&nodeindex) ;
+        Element_GetNode(el + n,j) = no + nodeindex - 1 ;
+      }
+    }
+  
+    fscanf(strfile,"%s",mot) ;
+  }
+  
+  TextFile_Delete(&textfile) ;
+}
+
+
+
+
+void Mesh_ReadFormatGmsh_2(Mesh_t* mesh,const char* nom_msh)
+/* Read a mesh in a file under the format GMSH version 2.0 */
+{
+  TextFile_t* textfile = TextFile_Create(nom_msh) ;
+  FILE*  fic_msh = TextFile_OpenFile(textfile,"r") ;
+  double version ;
+  int    file_type,data_size ;
+  char   mot[Mesh_MaxLengthOfKeyWord] ;
+  char   line[Mesh_MaxLengthOfTextLine] ;
+  int n_no = 0 ;
+  int n_el = 0 ;
+  int n_c = 0 ;
+
+  /* Which version? */
+  fscanf(fic_msh,"%s",mot) ;
+  if(strcmp(mot,"$MeshFormat")) arret("lit_mail_gmsh_2 (2) : pas de $MeshFormat") ;
+  fscanf(fic_msh, "%lf %d %d\n",&version,&file_type,&data_size) ;
+  if(floor(version) != 2) arret("Error: Wrong msh file version") ;
+  fscanf(fic_msh,"%s",mot) ;
+  if(strcmp(mot,"$EndMeshFormat")) arret("lit_mail_gmsh_2 (2) : pas de $EndFormat") ;
+
+
+  /* The file should begin by $Nodes */
+  fscanf(fic_msh,"%s",mot) ;
+  if(strcmp(mot,"$Nodes")) {
+    arret("lit_mail_gmsh_2 (2) : pas de $Nodes") ;
+  }
+  
+  /* Read the nb of nodes */
+  {
+    int  nb_nodes ;
+    int i ;
+    
+    fscanf(fic_msh,"%d",&nb_nodes) ;
+    
+    n_no = 0 ;
+    for(i = 0 ; i < nb_nodes ; i++) {
+      int n ;
+      
+      /* le numero du noeud */
+      fscanf(fic_msh,"%d",&n) ;
+      
+      if(n_no < n) n_no = n ;
+      
+      /* on lit le reste de la ligne */
+      if(!fgets(line,sizeof(line),fic_msh)) {
+        arret("lit_mail_gmsh_2 (3) : erreur ou fin de fichier") ;
+      }
+    }
+    
+    //Mesh_GetNbOfNodes(mesh) = n_no ;
+  }
+
+  fscanf(fic_msh,"%s",mot) ;
+  if(strcmp(mot,"$EndNodes")) arret("lit_mail_gmsh_2 (4) : pas de $EndNodes") ;
+
+
+
+  /* Elements */
+  fscanf(fic_msh,"%s",mot) ;
+  if(strcmp(mot,"$Elements")) {
+    arret("lit_mail_gmsh_2 (5) : pas de $Elements") ;
+  }
+
+  /* Read the nb of elements */
+  {
+    int nb_elements ;
+    int i ;
+    
+    fscanf(fic_msh,"%d",&nb_elements) ;
+    
+    /* calcul de n_el et de n_c */
+    n_el = 0 ;
+    n_c = 0 ;
+    for(i = 0 ; i < nb_elements ; i++) {
+      int n,elm_type ;
+      
+      /* le numero d'element */
+      fscanf(fic_msh,"%d",&n) ;
+      
+      if(n_el < n) n_el = n ;
+      
+      /* on lit le reste de la ligne */
+      if(!fgets(line,sizeof(line),fic_msh)) {
+        arret("lit_mail_gmsh_2 (6) : erreur ou fin de fichier") ;
+      }
+      
+      /* elm_type */
+      sscanf(line,"%d",&elm_type) ;
+      
+      n_c += gmsh_NbNodes(elm_type) ;
+    }
+    
+    //Mesh_GetNbOfElements(mesh) = n_el ;
+    //Mesh_GetNbOfConnectivities(mesh) = n_c ;
+  }
+  
+  fscanf(fic_msh,"%s",mot) ;
+  if(strcmp(mot,"$EndElements")) {
+    arret("lit_mail_gmsh_2 (7) : pas de $EndElements") ;
+  }
+  
+  
+  
+  /* Allocation of space for "nodes" and "elements" */
+  {
+    //int n_no = Mesh_GetNbOfNodes(mesh) ;
+    //int n_el = Mesh_GetNbOfElements(mesh) ;
+    //int n_c  = Mesh_GetNbOfConnectivities(mesh) ;
+    int dim  = Mesh_GetDimension(mesh) ;
+    Nodes_t* nodes = Nodes_New(n_no,dim,n_c) ;
+    Elements_t* elements = Elements_New(n_el,n_c) ;
+  
+    Mesh_GetNodes(mesh) = nodes ;
+    Mesh_GetElements(mesh) = elements ;
+  }
+  
+
+  /* Re-start */
+  rewind(fic_msh) ;
+
+  /* FORMAT */
+  fscanf(fic_msh,"%s",mot) ;
+  fscanf(fic_msh, "%lf %d %d\n",&version,&file_type,&data_size) ;
+  fscanf(fic_msh,"%s",mot) ;
+  
+
+  /* Nodes */
+  {
+    Node_t* no = Mesh_GetNode(mesh) ;
+    int dim  = Mesh_GetDimension(mesh) ;
+    int nb_nodes ;
+    int i ;
+    
+    fscanf(fic_msh,"%s",mot) ;
+    /* nombre de noeuds */
+    fscanf(fic_msh,"%d",&nb_nodes) ;
+  
+
+    for(i = 0 ; i < nb_nodes ; i++) {
+      int n,j ;
+      
+      /* le numero du noeud */
+      fscanf(fic_msh,"%d",&n) ; n -= 1 ;
+      
+      /* les coordonnees*/
+      for(j = 0 ; j < dim ; j++) {
+        fscanf(fic_msh,"%le",Node_GetCoordinate(no + n) + j) ;
+      }
+      
+      /* on lit le reste de la ligne */
+      if(!fgets(line,sizeof(line),fic_msh)) {
+        arret("lit_mail_gmsh_2 (10) : erreur ou fin de fichier") ;
+      }
+    }
+    
+    fscanf(fic_msh,"%s",mot) ;
+  }
+  
+
+  /* Elements */
+  {
+    Node_t* no = Mesh_GetNode(mesh) ;
+    Element_t* el = Mesh_GetElement(mesh) ;
+    Node_t** p_node = Element_GetPointerToNode(el) ;
+    int nb_elements ;
+    int i ;
+    
+    fscanf(fic_msh,"%s",mot) ;
+    /* nombre d'elements */
+    fscanf(fic_msh,"%d",&nb_elements) ;
+
+
+    n_c = 0 ;
+    for(i = 0 ; i < nb_elements ; i++) {
+      int n ;
+      int j ;
+      int elm_type,nb_tags ;
+      int physical,elementary,partition ;
+      
+      /* le numero d'element */
+      fscanf(fic_msh,"%d",&n) ; n -= 1 ;
+      
+      /* elm_type */
+      fscanf(fic_msh,"%d %d",&elm_type,&nb_tags) ;
+      
+      elementary = physical = partition = 1;
+      
+      for(j = 0; j < nb_tags; j++){
+        int tag ;
+        
+        fscanf(fic_msh, "%d", &tag);
+          
+        if(j == 0)      physical   = tag ;
+        else if(j == 1) elementary = tag ;
+        else if(j == 2) partition  = tag ;
+        /* ignore any other tags for now */
+      }
+      
+      Element_GetElementIndex(el + n) = n ;
+      Element_GetMaterialIndex(el + n) = physical - 1 ;
+      Element_GetRegionIndex(el + n) = elementary ;
+      Element_GetNbOfNodes(el + n) = gmsh_NbNodes(elm_type) ;
+      Element_GetDimension(el + n) = gmsh_DimElement(elm_type) ;
+      
+      if(!Element_GetNbOfNodes(el + n)){
+        arret("lit_mail_gmsh_2 (13) : Error: Unknown type for element"); 
+      }
+      
+      if(Element_GetNbOfNodes(el + n) > Element_MaxNbOfNodes) {
+        arret("lit_mail_gmsh_2 (14) : trop de noeuds") ;
+      }
+      
+      /* numerotation */
+      Element_GetPointerToNode(el + n) = p_node + n_c ;
+      
+      n_c += Element_GetNbOfNodes(el + n) ;
+      
+      for(j = 0; j < Element_GetNbOfNodes(el + n) ; j++) {
+        int nodeindex ;
+        
+        fscanf(fic_msh,"%d",&nodeindex) ;
+        
+        Element_GetNode(el + n,j) = no + nodeindex - 1 ;
+      }
+    }
+  
+    fscanf(fic_msh,"%s",mot) ;
+  }
+  
+  TextFile_Delete(&textfile) ;
+}
+
+
+
+void Mesh_Readm1d(Mesh_t* mesh,const char* nom_m1d)
+/* Read a 1D mesh under the format m1d */
+{
+  TextFile_t* textfile = TextFile_Create(nom_m1d) ;
+  FILE*  fic_m1d = TextFile_OpenFile(textfile,"r") ;
+  int    nreg ;
+  double* pt ;
+  double* lc ;
+
+  /* Read the points and the characteristic lengths */
+  {
+    int npt ;
+    int i ;
+
+    /* nombre de points */
+    fscanf(fic_m1d,"%d",&npt) ;
+
+    pt = (double*) Mry_New(double[2*npt]) ;
+
+    lc = pt + npt ;
+    
+    for(i = 0 ; i < npt ; i++) {
+      fscanf(fic_m1d,"%le %le",pt + i,lc + i) ;
+    }
+    
+    nreg = npt - 1 ;
+  }
+  
+
+  /* Allocate memory */
+  {
+    int dim = 1 ;
+    int n_el = mesh1dnew(pt,lc,nreg,NULL) ;
+    int n_no = n_el + 1 ;
+    int n_c  = 2*n_el ;
+    
+    Mesh_GetNodes(mesh) = Nodes_New(n_no,dim,n_c) ;
+    Mesh_GetElements(mesh) = Elements_New(n_el,n_c) ;
+  }
+  
+
+  /* Nodes */
+  {
+    Node_t* no = Mesh_GetNode(mesh) ;
+    
+    mesh1dnew(pt,lc,nreg,no) ;
+  }
+
+  /* Elements */
+  {
+    int n_el = Mesh_GetNbOfElements(mesh) ;
+    Element_t* el = Mesh_GetElement(mesh) ;
+    Node_t* no = Mesh_GetNode(mesh) ;
+    int k = 0 ;
+    int ireg ;
+
+    /* les materiaux et les regions */
+    for(k = 0 , ireg = 0 ; ireg < nreg ; ireg++)  {
+      int imat ;
+      
+      fscanf(fic_m1d,"%d",&imat) ; /* materiau */
+      
+      while(k < n_el) {
+        Element_GetMaterialIndex(el + k) = imat - 1 ;
+        Element_GetRegionIndex(el + k) = ireg + 1 ;
+        k++ ;
+        if(fabs(pt[ireg + 1] - Node_GetCoordinate(no + k)[0]) < lc[ireg + 1]*0.1) break ;
+      }
+    }
+  }
+
+  free(pt) ;
+  
+  /* Set the remaining attributes of element */
+  {
+    int n_el = Mesh_GetNbOfElements(mesh) ;
+    Element_t* el = Mesh_GetElement(mesh) ;
+    Node_t* no = Mesh_GetNode(mesh) ;
+    Node_t** pno = Element_GetPointerToNode(el) ;
+    int i ;
+    int j = 0 ;
+    
+    for(i = 0 ; i < n_el ; i++) {
+      int k ;
+      int nn = 2 ;
+      
+      Element_GetNbOfNodes(el + i) = nn ;
+      Element_GetDimension(el + i) = 1 ;
+      Element_GetPointerToNode(el + i) = pno + j ;
+      
+      for(k = 0 ; k < nn ; k++) {
+        Element_GetNode(el + i,k) = no + i + k ;
+      }
+      
+      j += nn ;
+    }
+  
+    /* cas d'elements de surface i=0 et i=n_el-1 */
+    if(n_el > 0) {
+      if(Node_GetCoordinate(no)[0] == Node_GetCoordinate(no + 1)[0]) {
+        Element_GetNbOfNodes(el) = 1 ;
+        Element_GetDimension(el) = 0 ;
+        Element_GetNode(el,0) = no + 1 ;
+      }
+      if(n_el > 1) {
+        if(Node_GetCoordinate(no + n_el - 1)[0] == Node_GetCoordinate(no + n_el)[0]) {
+          Element_GetNbOfNodes(el + n_el - 1) = 1 ;
+          Element_GetDimension(el + n_el - 1) = 0 ;
+          Element_GetNode(el + n_el - 1,0) = no + n_el - 1 ;
+        }
+      }
+    }
+  }
+  
+  TextFile_Delete(&textfile) ;
+}
+
+
+
+void Mesh_ReadFormatCesar(Mesh_t* mesh,const char* nom)
+/* Read a mesh in a file under the format CESAR */
+{
+  TextFile_t* textfile = TextFile_Create(nom) ;
+  FILE*  fic_ces = TextFile_OpenFile(textfile,"r") ;
+  int    dim_el[3][8]  = {{0,1,1,-1,-1,-1,-1,-1},{0,1,2,2,-1,2,-1,2},{0,1,2,3,-1,-1,-1,3}} ;
+  /*
+    char   type_el[3][8] = {{'P','L'},{'P','L','T','Q'},{'P','L','T','S','Y','I',' ','H'}} ; 
+  */
+  char   mot[Mesh_MaxLengthOfKeyWord] ;
+  int n_no ;
+  int n_el ;
+  int n_c ;
+
+
+  /* Nb of nodes */
+  {
+    fscanf(fic_ces,"%s",mot) ;
+  
+    if(strcmp(mot,"COOR") != 0) {
+      arret("pas de COOR !\n") ;
+    }
+    
+    fscanf(fic_ces,"%*d %*d %d %*d",&n_no) ;
+    
+    //Mesh_GetNbOfNodes(mesh) = n_no ;
+    
+    {
+      int dim  = Mesh_GetDimension(mesh) ;
+      int i ;
+
+      for(i = 0 ; i < n_no*dim ; i++) {
+        fscanf(fic_ces,"%*e") ;
+      }
+    }
+  }
+
+  
+  /* Nb of elements */
+  {
+    fscanf(fic_ces,"%s",mot) ;
+  
+    if(strcmp(mot,"ELEM") != 0) {
+      arret("pas de ELEM !\n") ;
+    }
+    
+    fscanf(fic_ces,"%*d %*d %d %*d",&n_el) ;
+    
+    /* The nb of connectivities is the last integer */
+    {
+      int i ;
+      
+      for(i = 0 ; i < n_el + 1 ; i++) {
+        fscanf(fic_ces,"%d",&n_c) ;
+      }
+    }
+    
+    //Mesh_GetNbOfElements(mesh) = n_el ;
+    //Mesh_GetNbOfConnectivities(mesh) = n_c ;
+  }
+  
+  
+  /* Allocation of space for "nodes" and "elements" */
+  {
+    //int n_no = Mesh_GetNbOfNodes(mesh) ;
+    //int n_el = Mesh_GetNbOfElements(mesh) ;
+    //int n_c  = Mesh_GetNbOfConnectivities(mesh) ;
+    int dim  = Mesh_GetDimension(mesh) ;
+    Nodes_t* nodes = Nodes_New(n_no,dim,n_c) ;
+    Elements_t* elements = Elements_New(n_el,n_c) ;
+  
+    Mesh_GetNodes(mesh) = nodes ;
+    Mesh_GetElements(mesh) = elements ;
+  }
+  
+  
+  /* Re-start */
+  rewind(fic_ces) ;
+
+
+  /* Nodes */
+  {
+    fscanf(fic_ces,"%s",mot) ;
+  
+    if(strcmp(mot,"COOR") != 0) {
+      arret("pas de COOR !\n") ;
+    }
+  
+    /* Coordinates */
+    {
+      int dim  = Mesh_GetDimension(mesh) ;
+      Node_t* no = Mesh_GetNode(mesh) ;
+      int i ;
+    
+      fscanf(fic_ces,"%*d %*d %d %*d",&n_no) ;
+      
+      n_no =  Mesh_GetNbOfNodes(mesh) ;
+
+      for(i = 0 ; i < n_no ; i++) {
+        Node_t* node_i = no + i ;
+        double* x = Node_GetCoordinate(node_i) ;
+        int j ;
+        
+        for(j = 0 ; j < dim ; j++) {
+          fscanf(fic_ces,"%le",x + j) ;
+        }
+      }
+    }
+  }
+  
+
+  /* Elements */
+  {
+    int dim  = Mesh_GetDimension(mesh) ;
+    Element_t* el = Mesh_GetElement(mesh) ;
+    Node_t* no = Mesh_GetNode(mesh) ;
+    Node_t** p_node = Element_GetPointerToNode(el) ;
+    int i ;
+    
+    fscanf(fic_ces,"%s",mot) ;
+  
+    if(strcmp(mot,"ELEM") != 0) {
+      arret("pas de ELEM !\n") ;
+    }
+    
+    fscanf(fic_ces,"%*d %*d %d %*d",&n_el) ;
+    
+    fscanf(fic_ces,"%d",&n_c) ;
+    
+    
+    n_el = Mesh_GetNbOfElements(mesh) ;
+    n_c = 0 ;
+    
+    for(i = 0 ; i < n_el ; i++) {
+      int j = n_c ;
+      int nn ;
+      
+      Element_GetPointerToNode(el + i) = p_node + n_c ;
+      
+      fscanf(fic_ces,"%d",&n_c) ;
+      
+      nn = n_c - j ;
+      
+      if(nn > Element_MaxNbOfNodes) {
+        arret("trop de noeuds\n") ;
+      }
+      
+      Element_GetElementIndex(el + i) = i ;
+      Element_GetNbOfNodes(el + i) = nn ;
+      Element_GetDimension(el + i) = dim_el[dim - 1][nn - 1] ;
+    }
+  
+    /* Connectivity */
+    for(i = 0 ; i < n_el ; i++) {
+      int nn = Element_GetNbOfNodes(el + i) ;
+      int j ;
+      
+      for(j = 0 ; j < nn ; j++) {
+        int nodeindex ;
+        
+        fscanf(fic_ces,"%d",&nodeindex) ;
+        
+        Element_GetNode(el + i,j) = no + nodeindex - 1 ;
+      }
+    }
+  
+    /* Regions */
+    for(i = 0 ; i < n_el ; i++) {
+      int    n_type = 4 ;
+      char   nom_el[][5] = {"OBS2","OBS3","OBT3","OBQ4"} ;
+      int j ;
+      
+      fscanf(fic_ces,"%s",mot) ;
+      
+      Element_GetRegionIndex(el + i) = 0 ;
+      
+      for(j = 0 ; j < n_type ; j++) {
+        if(!strncmp(mot,nom_el[j],4)) {
+          Element_GetRegionIndex(el + i) = j + 1 ;
+        }
+      }
+      
+      if(Element_GetRegionIndex(el + i)  == 0) {
+        arret("Mesh_ReadFormatCesar: pas de region") ;
+      }
+    }
+
+    /* Material indexes */
+    for(i = 0 ; i < n_el ; i++) {
+      int imat ;
+      
+      fscanf(fic_ces,"%d",&imat) ;
+      
+      imat -= 1 ;
+      Element_GetMaterialIndex(el + i) = imat ;
+      /* Region index is not defined in CESAR so we assume the following formula */
+      Element_GetRegionIndex(el + i) = 10*Element_GetRegionIndex(el + i) + imat ;
+    }
+  }
+
+  TextFile_Delete(&textfile) ;
+}
+
+
+
+
+
+void maillage(double* pt,int* ne,double dx_ini,int npt,Node_t* no)
+/* Calcul des coordonnees (no) d'un maillage 1D */
+{
+  int    npt1 = npt - 1 ;
+  double dx = dx_ini ;
+  int    i ;
+
+  Node_GetCoordinate(no)[0] = pt[0] ;
+  
+  for(i = 0 ; i < npt1 ; i++) {
+    double e ;
+    int j ;
+    
+    if(ne[i] > 1) {
+      e = log(fabs(pt[i + 1] - pt[i])/dx)/log((double) ne[i]) ;
+    } else {
+      e = 1. ;
+    }
+    
+    for(j = 1 ; j <= ne[i] ; j++) {
+      double a = ((double) j)/ne[i] ;
+      
+      no += 1 ;
+      
+      Node_GetCoordinate(no)[0] = pt[i] + (pt[i + 1] - pt[i])*pow(a,e) ;
+    }
+    
+    {
+      double a = fabs(Node_GetCoordinate(no)[0] - Node_GetCoordinate(no - 1)[0]) ;
+    
+      if(a > 0.) dx = a ;
+    }
+  }
+}
+
+
+
+int mesh1dnew(double* point, double* l_c, int n_reg, Node_t* no)
+/* Calcul des coordonnees (no) d'un maillage 1D
+   et retourne le nombre d'elements */
+{
+#define MAX_NREG 100
+  int    n_el ;
+  int    ne[MAX_NREG] ;
+
+  if(n_reg > MAX_NREG) {
+    arret("mesh1d : trop de regions") ;
+  }
+#undef MAX_NREG
+
+  {
+    int reg ;
+    n_el = 0 ;
+    
+    for(reg = 0 ; reg < n_reg ; reg++) {
+      double l = fabs(point[reg + 1] - point[reg]) ;
+      double b = l_c[reg + 1]/l_c[reg] ;
+      double a = (l - l_c[reg])/(l - l_c[reg + 1]) ;
+      int n ;
+
+      if(l <= l_c[reg] || l <= l_c[reg + 1]) {
+        n = 1 ;
+      } else {
+        if(a == 1.) n = floor(l/l_c[reg] + 0.5) ;
+        else n = floor(log(b)/log(a) + 0.5) + 1 ;
+      }
+
+      ne[reg] = n ;
+
+      n_el += n ;
+    }
+  }
+  
+  if(!no) return(n_el) ;
+
+
+  {
+    Node_t* p = no ;
+    int reg ;
+    
+    for(reg = 0 ; reg < n_reg ; reg++) {
+      double l = fabs(point[reg + 1] - point[reg]) ;
+      double b = l_c[reg + 1]/l_c[reg] ;
+      double a ;
+      double l_i ;
+      int n = ne[reg] ;
+      int i ;
+
+      /* a = (l - l_c[reg])/(l - l_c[reg+1]) ; */
+      if(l_c[reg + 1] == l_c[reg]) a = 1. ;
+      else if(n > 1) a = exp(log(b)/(n - 1)) ;
+      else a = 0 ;
+    
+      /* l_i  = l_c[reg] ; */
+      if(a == 1.) l_i = l/n ;
+      else l_i = l*(1. - a)/(1. - a*b) ;
+
+      Node_GetCoordinate(p)[0] = point[reg] ;
+      Node_GetCoordinate(p + n)[0] = point[reg + 1] ;
+      
+      for(i = 1 ; i < n ; i++) {
+        Node_GetCoordinate(p + i)[0] = Node_GetCoordinate(p + i - 1)[0] + l_i ;
+        l_i *= a ;
+      }
+      p   += n ;
+    }
+  }
+
+  return(n_el) ;
+}
+
+
+
+int gmsh_ElmType(int dim,int nn)
+/* N = i(Vertices) + j(Edges) + k(Faces) + l(Volume) */
+{
+  if(dim == 0) {
+    switch (nn) {
+    case 1 : return 15;             /* point */
+    default: return 0;
+    }
+  } else if(dim == 1) {
+    switch (nn) {
+    case 2 : return 1;              /* line 1 */
+    case 3 : return 8;              /* line 2 */
+    default: return 0;
+    }
+  } else if(dim == 2) {
+    switch (nn) {
+    case 3 : return 2;              /* triangle 1 */
+    case 6 : return 9;              /* triangle 2 */
+    case 4 : return 3;              /* quadrangle 1 */
+    case 9 : return 10;             /* quadrangle 2 */
+    case 8 : return 16;             /* quadrangle 2 */
+    default: return 0;
+    }
+  } else if(dim == 3) {
+    switch (nn) {
+    case 4 : return 4;              /* tetrahedron 1 */
+    case 10: return 11;             /* tetrahedron 2 */
+    case 8 : return 5;              /* hexahedron 1 */
+    case 27: return 12;             /* hexahedron 2 */
+    case 20: return 17;             /* hexahedron 2 */
+    case 6 : return 6;              /* prism 1 */
+    case 18: return 13;             /* prism 2 */
+    case 15: return 18;             /* prism 2 */
+    case 5 : return 7;              /* pyramid 1 */
+    case 14: return 14;             /* pyramid 2 */
+    case 13: return 19;             /* pyramid 2 */
+    default: return 0;
+    }
+  } else {
+    arret("gmsh_ElmType : dimension incorrect") ;
+    return 0 ;
+  }
+}
+
+
+
+int gmsh_NbNodes(int type)
+/* N = i(Vertices) + j(Edges) + k(Faces) + l(Volume) */
+{
+  switch (type) {
+  case 15: return 1;              /* point */
+  case 1 : return 2;              /* line 1 */
+  case 8 : return 2 + 1;          /* line 2 */
+  case 2 : return 3;              /* triangle 1 */
+  case 9 : return 3 + 3;          /* triangle 2 */
+  case 3 : return 4;              /* quadrangle 1 */
+  case 10: return 4 + 4 + 1;      /* quadrangle 2 */
+  case 16: return 4 + 4;          /* quadrangle 2 */
+  case 4 : return 4;              /* tetrahedron 1 */
+  case 11: return 4 + 6;          /* tetrahedron 2 */
+  case 5 : return 8;              /* hexahedron 1 */
+  case 12: return 8 + 12 + 6 + 1; /* hexahedron 2 */
+  case 17: return 8 + 12;         /* hexahedron 2 */
+  case 6 : return 6;              /* prism 1 */
+  case 13: return 6 + 9 + 3;      /* prism 2 */
+  case 18: return 6 + 9;          /* prism 2 */
+  case 7 : return 5;              /* pyramid 1 */
+  case 14: return 5 + 8 + 1;      /* pyramid 2 */
+  case 19: return 5 + 8;          /* pyramid 2 */
+  default: return 0;
+  }
+}
+
+
+
+int gmsh_DimElement(int type)
+{
+  switch (type) {
+  case 15: return 0;              /* point */
+  case 1 : return 1;              /* line 1 */
+  case 8 : return 1;              /* line 2 */
+  case 2 : return 2;              /* triangle 1 */
+  case 9 : return 2;              /* triangle 2 */
+  case 3 : return 2;              /* quadrangle 1 */
+  case 10: return 2;              /* quadrangle 2 */
+  case 16: return 2;              /* quadrangle 2 */
+  case 4 : return 3;              /* tetrahedron 1 */
+  case 11: return 3;              /* tetrahedron 2 */
+  case 5 : return 3;              /* hexahedron 1 */
+  case 12: return 3;              /* hexahedron 2 */
+  case 17: return 3;              /* hexahedron 2 */
+  case 6 : return 3;              /* prism 1 */
+  case 13: return 3;              /* prism 2 */
+  case 18: return 3;              /* prism 2 */
+  case 7 : return 3;              /* pyramid 1 */
+  case 14: return 3;              /* pyramid 2 */
+  case 19: return 3;              /* pyramid 2 */
+  default: return -1;
+  }
+}
+
+
+
+
+/* Not used anymore */
+
+
+#if 0
 #define MESH          (mesh)
 #define GEOMETRY      Mesh_GetGeometry(MESH) 
 #define DIM           Mesh_GetDimension(MESH)
@@ -1263,495 +2633,12 @@ void (Mesh_UpdateCurrentUnknowns)(Mesh_t* mesh,Solver_t* solver)
 #define NO            Mesh_GetNode(MESH)
 #define N_EL          Mesh_GetNbOfElements(MESH)
 #define EL            Mesh_GetElement(MESH)
+#endif
 
 
 
-void mail0d(Mesh_t* mesh)
-/* MAILLAGE 0D */
-{
-  /* nombre d'elements */
-  N_EL = 1 ;
 
-  /* nombre de noeuds */
-  N_NO = 1 ;
-
-  /* les noeuds */
-  NO = (Node_t*) malloc(N_NO*sizeof(Node_t)) ;
-  if(NO == NULL) arret("mail0d(1) : impossible d\'allouer la memoire") ;
-
-  {
-    double* x = (double*) malloc(N_NO*3*sizeof(double)) ;
-    if(x == NULL) arret("mail0d(2) : impossible d\'allouer la memoire") ;
-  
-    Node_GetCoordinate(NO) = x ;
-    Node_GetNodeIndex(NO)  = 0 ;
-  }
-
-  /* les elements */
-  EL = (Element_t*) malloc(N_EL*sizeof(Element_t)) ;
-  if(EL == NULL) {
-    fprintf(stderr,"impossible d\'allouer la memoire") ;
-    exit(EXIT_FAILURE) ;
-  }
-
-  /* Indexes */
-  Element_GetElementIndex(EL) = 0 ;
-
-  Element_GetMaterialIndex(EL) = 0 ;
-  Element_GetRegionIndex(EL) = 1 ;
-
-  Element_GetNbOfNodes(EL) = 1 ;    /* nb de noeuds */
-  Element_GetDimension(EL) = 0 ;
-
-  
-  {
-    Node_t** no = (Node_t**) malloc(sizeof(Node_t*)) ; /* pointeurs */
-    if(!no) arret("mail0d : impossible d\'allouer la memoire") ;
-    
-    Element_GetPointerToNode(EL) = no ;
-  }
-
-  /* numerotation */
-  Element_GetNode(EL,0) = NO ;
-}
-
-
-
-void mail1dold(Mesh_t* mesh,FILE *ficd)
-/* MAILLAGE 1D */
-{
-  int    npt ;
-  double* pt ;
-  int    *ne,imat ;
-  double dx_ini ;
-  double* x ;
-  int    i,j,k ;
-
-  /* nombre de points */
-  fscanf(ficd,"%d",&npt) ;
-
-  pt = (double*) malloc(npt*sizeof(double)) ;
-  if(pt == NULL) arret("mail1d (1) : impossible d\'allouer la memoire") ;
-
-  ne = (int*) malloc(npt*sizeof(int)) ;
-  if(ne == NULL) arret("mail1d (2) : impossible d\'allouer la memoire") ;
-
-  /* les points */
-  for(i = 0 ; i < npt ; i++) fscanf(ficd,"%le",pt + i) ;
-  
-  /* longueur du premier element */
-  fscanf(ficd,"%lf",&dx_ini) ;
-  
-  /* nombre d'elements de volume */
-  for(i = 0 ; i < npt - 1 ; i++) fscanf(ficd,"%d",ne + i) ;
-
-  N_EL = 0 ;
-  for(i = 0 ; i < npt - 1 ; i++) N_EL += ne[i] ;
-
-  /* nombre de noeuds */
-  if(N_EL > 0) N_NO = N_EL + 1 ; else N_NO = 0 ;
-
-  /* les noeuds */
-  NO = (Node_t*) malloc(N_NO*sizeof(Node_t)) ;
-  if(NO == NULL) arret("mail1dold(1) : impossible d\'allouer la memoire") ;
-
-  x = (double*) malloc(N_NO*DIM*sizeof(double)) ;
-  if(x == NULL) arret("mail1dold(2) : impossible d\'allouer la memoire") ;
-  
-  for(i = 0 ; i < (int) N_NO ; i++) {
-    Node_GetCoordinate(NO + i) = x + i*DIM ;
-    Node_GetNodeIndex(NO + i) = i ;
-  }
-
-  maillage(pt,ne,dx_ini,npt,NO) ;
-
-  /* les elements */
-  EL = (Element_t*) malloc(N_EL*sizeof(Element_t)) ;
-  if(EL == NULL) {
-    fprintf(stderr,"impossible d\'allouer la memoire") ;
-    exit(EXIT_FAILURE) ;
-  }
-
-  /* Indexes */
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    Element_GetElementIndex(EL + i) = i ;
-  }
-
-  for(k = 0 , i = 0 ; i < npt - 1 ; i++)  {
-    fscanf(ficd,"%d",&imat) ; /* les groupes d'elements */
-    for(j = k ; j < k + ne[i] ; j++) {
-      Element_GetMaterialIndex(EL + j) = imat - 1 ;
-      Element_GetRegionIndex(EL + j) = i + 1 ;
-    }
-    k += ne[i] ;
-  }
-
-  free(pt) ;
-  free(ne) ;
-
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    Element_GetNbOfNodes(EL + i) = 2 ;    /* nb de noeuds */
-    Element_GetDimension(EL + i) = 1 ;
-  }
-
-  for(j = 0 , i = 0 ; i < (int) N_EL ; i++) j += Element_GetNbOfNodes(EL + i) ;
-  
-  {
-    Node_t** no = (Node_t**) malloc(j*sizeof(Node_t*)) ; /* pointeurs */
-    if(!no) arret("mail1d : impossible d\'allouer la memoire") ;
-    
-    j = 0 ;
-    for(i = 0 ; i < (int) N_EL ; i++) {
-      Element_GetPointerToNode(EL + i) = no + j ;
-      j += Element_GetNbOfNodes(EL + i) ;
-    }
-  }
-
-  /* numerotation */
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    for(j = 0 ; j < 2 ; j++) {
-      Element_GetNode(EL + i,j) = NO + i + j ;
-    }
-  }
-
-  /* cas d'elements de surface i=0 et i=n_el-1 */
-  if(N_EL > 0) {
-    if(Node_GetCoordinate(NO)[0] == Node_GetCoordinate(NO + 1)[0]) {
-      Element_GetNbOfNodes(EL) = 1 ;
-      Element_GetDimension(EL) = 0 ;
-      Element_GetNode(EL,0) = NO + 1 ;
-    }
-    if(N_EL > 1) {
-      if(Node_GetCoordinate(NO + N_EL - 1)[0] == Node_GetCoordinate(NO + N_EL)[0]) {
-        Element_GetNbOfNodes(EL + N_EL - 1) = 1 ;
-        Element_GetDimension(EL + N_EL - 1) = 0 ;
-        Element_GetNode(EL + N_EL - 1,0) = NO + N_EL - 1 ;
-      }
-    }
-  }
-}
-
-
-
-void mail1d(Mesh_t* mesh,char* str)
-/* MAILLAGE 1D */
-{
-  int    npt ;
-  double* pt ;
-  int    *ne,imat ;
-  double dx_ini ;
-  double* x ;
-  int    i,j,k ;
-
-  /* nombre de points */
-  str += String_Scan(str,"%d",&npt) ;
-
-  pt = (double*) malloc(npt*sizeof(double)) ;
-  if(pt == NULL) arret("mail1d (1) : impossible d\'allouer la memoire") ;
-
-  ne = (int*) malloc(npt*sizeof(int)) ;
-  if(ne == NULL) arret("mail1d (2) : impossible d\'allouer la memoire") ;
-
-  /* les points */
-  for(i = 0 ; i < npt ; i++) {
-    str += String_Scan(str,"%le",pt + i) ;
-  }
-  
-  /* longueur du premier element */
-  {
-    str += String_Scan(str,"%lf",&dx_ini) ;
-  }
-  
-  /* nombre d'elements de volume */
-  for(i = 0 ; i < npt - 1 ; i++) {
-    str += String_Scan(str,"%d",ne + i) ;
-  }
-
-  N_EL = 0 ;
-  for(i = 0 ; i < npt - 1 ; i++) N_EL += ne[i] ;
-
-  /* nombre de noeuds */
-  if(N_EL > 0) N_NO = N_EL + 1 ; else N_NO = 0 ;
-
-  /* les noeuds */
-  NO = (Node_t*) malloc(N_NO*sizeof(Node_t)) ;
-  if(NO == NULL) arret("mail1d(1) : impossible d\'allouer la memoire") ;
-
-  x = (double*) malloc(N_NO*DIM*sizeof(double)) ;
-  if(x == NULL) arret("mail1d(2) : impossible d\'allouer la memoire") ;
-  
-  for(i = 0 ; i < (int) N_NO ; i++) {
-    Node_GetCoordinate(NO + i) = x + i*DIM ;
-    Node_GetNodeIndex(NO + i) = i ;
-  }
-
-  maillage(pt,ne,dx_ini,npt,NO) ;
-
-  /* les elements */
-  EL = (Element_t*) malloc(N_EL*sizeof(Element_t)) ;
-  if(EL == NULL) {
-    fprintf(stderr,"impossible d\'allouer la memoire") ;
-    exit(EXIT_FAILURE) ;
-  }
-
-  /* Indexes */
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    Element_GetElementIndex(EL + i) = i ;
-  }
-
-  for(k = 0 , i = 0 ; i < npt - 1 ; i++)  {
-    str += String_Scan(str,"%d",&imat) ;
-    
-    for(j = k ; j < k + ne[i] ; j++) {
-      Element_GetMaterialIndex(EL + j) = imat - 1 ;
-      Element_GetRegionIndex(EL + j) = i + 1 ;
-    }
-    k += ne[i] ;
-  }
-
-  free(pt) ;
-  free(ne) ;
-
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    Element_GetNbOfNodes(EL + i) = 2 ;    /* nb de noeuds */
-    Element_GetDimension(EL + i) = 1 ;
-  }
-
-  for(j = 0 , i = 0 ; i < (int) N_EL ; i++) j += Element_GetNbOfNodes(EL + i) ;
-  
-  {
-    Node_t** no = (Node_t**) malloc(j*sizeof(Node_t*)) ; /* pointeurs */
-    if(!no) arret("mail1d : impossible d\'allouer la memoire") ;
-    
-    j = 0 ;
-    for(i = 0 ; i < (int) N_EL ; i++) {
-      Element_GetPointerToNode(EL + i) = no + j ;
-      j += Element_GetNbOfNodes(EL + i) ;
-    }
-  }
-
-  /* numerotation */
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    for(j = 0 ; j < 2 ; j++) {
-      Element_GetNode(EL + i,j) = NO + i + j ;
-    }
-  }
-
-  /* cas d'elements de surface i=0 et i=n_el-1 */
-  if(N_EL > 0) {
-    if(Node_GetCoordinate(NO)[0] == Node_GetCoordinate(NO + 1)[0]) {
-      Element_GetNbOfNodes(EL) = 1 ;
-      Element_GetDimension(EL) = 0 ;
-      Element_GetNode(EL,0) = NO + 1 ;
-    }
-    if(N_EL > 1) {
-      if(Node_GetCoordinate(NO + N_EL - 1)[0] == Node_GetCoordinate(NO + N_EL)[0]) {
-        Element_GetNbOfNodes(EL + N_EL - 1) = 1 ;
-        Element_GetDimension(EL + N_EL - 1) = 0 ;
-        Element_GetNode(EL + N_EL - 1,0) = NO + N_EL - 1 ;
-      }
-    }
-  }
-}
-
-
-
-void lit_mail_m1d(Mesh_t* mesh,const char* nom_m1d)
-/* MAILLAGE 1D */
-{
-  int    npt,nreg ;
-  double* pt,*lc ;
-  int    ireg ;
-  int    i,j,k ;
-  FILE*  fic_m1d ;
-
-  /* ouverture du fichier */
-  fic_m1d = fopen(nom_m1d,"r") ;
-  if(fic_m1d == NULL) arret("lit_mail_m1d (1) :impossible d\'ouvrir le fichier") ;
-
-  /* nombre de points */
-  fscanf(fic_m1d,"%d",&npt) ;
-  nreg = npt - 1 ;
-
-  pt = (double*) malloc(npt*sizeof(double)) ;
-  if(!pt) arret("lit_mail_m1d (2) : impossible d\'allouer la memoire") ;
-
-  lc = (double*) malloc(npt*sizeof(double)) ;
-  if(!lc) arret("lit_mail_m1d (3) : impossible d\'allouer la memoire") ;
-
-  /* les points et longueurs caracteristiques */
-  for(i=0;i<npt;i++) fscanf(fic_m1d,"%le %le",pt+i,lc+i) ;
-
-  N_NO = mesh1d(pt,lc,nreg,&NO) + 1 ;
-  
-  for(i = 0; i < (int) N_NO; i++) {
-    Node_GetNodeIndex(NO + i) = i ;
-  }
-
-  /* les elements */
-  N_EL = N_NO - 1 ;
-  EL = (Element_t*) malloc(N_EL*sizeof(Element_t)) ;
-  if(!EL) arret("lit_mail_m1d (4) : impossible d\'allouer la memoire") ;
-
-  /* les materiaux et les regions */
-  for(k = 0 , ireg = 0 ; ireg < nreg ; ireg++)  {
-    int imat ;
-    fscanf(fic_m1d,"%d",&imat) ; /* materiau */
-    while(k < (int) N_EL) {
-      Element_GetMaterialIndex(EL + k) = imat - 1 ;
-      Element_GetRegionIndex(EL + k) = ireg + 1 ;
-      k++ ;
-      if(fabs(pt[ireg + 1] - Node_GetCoordinate(NO + k)[0]) < lc[ireg + 1]*0.1) break ;
-    }
-  }
-
-  free(pt) ;
-
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    Element_GetNbOfNodes(EL + i) = 2 ;    /* nb de noeuds */
-    Element_GetDimension(EL + i) = 1 ;
-  }
-
-  for(j = 0 , i = 0 ; i < (int) N_EL ; i++) j += Element_GetNbOfNodes(EL + i) ;
-  
-  {
-    Node_t** no = (Node_t**) malloc(j*sizeof(Node_t*)) ;/* pointeurs */
-    if(!no) arret("lit_mail_m1d (5) : impossible d\'allouer la memoire") ;
-    
-    j = 0 ;
-    for(i = 0 ; i < (int) N_EL ; i++) {
-      Element_GetPointerToNode(EL + i) = no + j ;
-      j += Element_GetNbOfNodes(EL + i) ;
-    }
-  }
-
-  /* numerotation */
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    for(j = 0 ; j < 2 ; j++) {
-      Element_GetNode(EL + i,j) = NO + i + j ;
-    }
-  }
-  
-  
-  /* cas d'elements de surface i=0 et i=n_el-1 */
-  if(N_EL > 0) {
-    if(Node_GetCoordinate(NO)[0] == Node_GetCoordinate(NO + 1)[0]) {
-      Element_GetNbOfNodes(EL) = 1 ;
-      Element_GetDimension(EL) = 0 ;
-      Element_GetNode(EL,0) = NO + 1 ;
-    }
-    if(N_EL > 1) {
-      if(Node_GetCoordinate(NO + N_EL - 1)[0] == Node_GetCoordinate(NO + N_EL)[0]) {
-        Element_GetNbOfNodes(EL + N_EL - 1) = 1 ;
-        Element_GetDimension(EL + N_EL - 1) = 0 ;
-        Element_GetNode(EL + N_EL - 1,0) = NO + N_EL - 1 ;
-      }
-    }
-  }
-}
-
-
-void maillage(double* pt,int* ne,double dx_ini,int npt,Node_t* no)
-/* Calcul des coordonnees (no) d'un maillage 1D */
-{
-  int    npt1 = npt - 1 ;
-  double a,e,dx ;
-  int    i ;
-
-  Node_GetCoordinate(no)[0] = pt[0] ;
-
-  dx = dx_ini ;
-  for(i = 0 ; i < npt1 ; i++) {
-    int j ;
-    if(ne[i] > 1) e = log(fabs(pt[i + 1] - pt[i])/dx)/log((double) ne[i]) ; else e = 1. ;
-    for(j = 1 ; j <= ne[i] ; j++) {
-      a = ((double) j)/ne[i] ;
-      Node_GetCoordinate(++no)[0] = pt[i] + (pt[i + 1] - pt[i])*pow(a,e) ;
-    }
-    a = fabs(Node_GetCoordinate(no)[0] - Node_GetCoordinate(no - 1)[0]) ;
-    if(a > 0.) dx = a ;
-  }
-}
-
-
-int mesh1d(double* point, double* l_c, int n_reg, Node_t** no)
-/* Calcul des coordonnees (no) d'un maillage 1D
-   et retourne le nombre d'elements */
-{
-#define MAX_NREG 100
-  int    i,reg,n_el,n_no ;
-  Node_t* p ;
-  int    ne[MAX_NREG] ;
-
-  if(n_reg > MAX_NREG) arret("mesh1d : trop de regions") ;
-
-  n_el = 0 ;
-  for(reg = 0 ; reg < n_reg ; reg++) {
-    double l = fabs(point[reg + 1] - point[reg]) ;
-    double b = l_c[reg + 1]/l_c[reg] ;
-    double a = (l - l_c[reg])/(l - l_c[reg + 1]) ;
-    int n ;
-
-    if(l <= l_c[reg] || l <= l_c[reg + 1]) {
-      n = 1 ;
-    } else {
-      if(a == 1.) n = floor(l/l_c[reg] + 0.5) ;
-      else n = floor(log(b)/log(a) + 0.5) + 1 ;
-    }
-
-    ne[reg] = n ;
-
-    n_el += n ;
-  }
-
-  n_no = n_el + 1 ;
-  
-  
-  {
-    Node_t* node = (Node_t*) malloc(n_no*sizeof(Node_t)) ;
-    double* x = (double*) malloc(n_no*sizeof(double)) ;
-    if(!node) arret("mesh1d(1) : impossible d\'allouer la memoire") ;
-    if(!x) arret("mesh1d(2) : impossible d\'allouer la memoire") ;
-  
-    *no = node ;
-    
-    for(i = 0 ; i < n_no ; i++) {
-      Node_GetCoordinate(node + i) = x + i ;
-    }
-  }
-
-
-  p = *no ;
-  for(reg = 0 ; reg < n_reg ; reg++) {
-    double l = fabs(point[reg + 1] - point[reg]) ;
-    double b = l_c[reg + 1]/l_c[reg] ;
-    double a ;
-    double l_i ;
-    int n = ne[reg] ;
-
-    /* a = (l - l_c[reg])/(l - l_c[reg+1]) ; */
-    if(l_c[reg + 1] == l_c[reg]) a = 1. ;
-    else if(n > 1) a = exp(log(b)/(n - 1)) ;
-    else a = 0 ;
-    
-    /* l_i  = l_c[reg] ; */
-    if(a == 1.) l_i = l/n ;
-    else l_i = l*(1. - a)/(1. - a*b) ;
-
-    Node_GetCoordinate(p)[0] = point[reg] ;
-    Node_GetCoordinate(p + n)[0] = point[reg + 1] ;
-    for(i = 1 ; i < n ; i++) {
-      Node_GetCoordinate(p + i)[0] = Node_GetCoordinate(p + i - 1)[0] + l_i ;
-      l_i *= a ;
-    }
-    p   += n ;
-  }
-
-  return n_el ;
-}
-
-
-
+#if 0
 void ecrit_mail_msh_1(Mesh_t* mesh,const char* nom)
 /* fichier de maillage au format GMSH "nom.msh" */
 {
@@ -1806,8 +2693,11 @@ void ecrit_mail_msh_1(Mesh_t* mesh,const char* nom)
   /* fermeture du ficher */
   fclose(fic_msh) ;
 }
+#endif
 
 
+
+#if 0
 void ecrit_mail_msh_2(Mesh_t* mesh,const char* nom)
 /* fichier de maillage au format GMSH "nom.msh" */
 {
@@ -1841,7 +2731,7 @@ void ecrit_mail_msh_2(Mesh_t* mesh,const char* nom)
     for(j=(int) DIM;j<3;j++) fprintf(fic_msh," 0") ;
     fprintf (fic_msh,"\n") ;
   }
-  fprintf(fic_msh,"$EndNoces\n") ;
+  fprintf(fic_msh,"$EndNodes\n") ;
 
   /* Les elements */
   fprintf(fic_msh,"$Elements\n") ;
@@ -1874,642 +2764,406 @@ void ecrit_mail_msh_2(Mesh_t* mesh,const char* nom)
   /* fermeture du ficher */
   fclose(fic_msh) ;
 }
+#endif
 
 
-int gmsh_ElmType(int dim,int nn)
-/* N = i(Vertices) + j(Edges) + k(Faces) + l(Volume) */
+
+
+#define PRINT(...) \
+        fprintf(stdout,__VA_ARGS__)
+        //Message_Direct(__VA_ARGS__)
+
+
+void Mesh_PrintData(Mesh_t* mesh,char* mot)
 {
-  if(dim == 0) {
-    switch (nn) {
-    case 1 : return 15;             /* point */
-    default: return 0;
-    }
-  } else if(dim == 1) {
-    switch (nn) {
-    case 2 : return 1;              /* line 1 */
-    case 3 : return 8;              /* line 2 */
-    default: return 0;
-    }
-  } else if(dim == 2) {
-    switch (nn) {
-    case 3 : return 2;              /* triangle 1 */
-    case 6 : return 9;              /* triangle 2 */
-    case 4 : return 3;              /* quadrangle 1 */
-    case 9 : return 10;             /* quadrangle 2 */
-    case 8 : return 16;             /* quadrangle 2 */
-    default: return 0;
-    }
-  } else if(dim == 3) {
-    switch (nn) {
-    case 4 : return 4;              /* tetrahedron 1 */
-    case 10: return 11;             /* tetrahedron 2 */
-    case 8 : return 5;              /* hexahedron 1 */
-    case 27: return 12;             /* hexahedron 2 */
-    case 20: return 17;             /* hexahedron 2 */
-    case 6 : return 6;              /* prism 1 */
-    case 18: return 13;             /* prism 2 */
-    case 15: return 18;             /* prism 2 */
-    case 5 : return 7;              /* pyramid 1 */
-    case 14: return 14;             /* pyramid 2 */
-    case 13: return 19;             /* pyramid 2 */
-    default: return 0;
-    }
-  } else {
-    arret("gmsh_ElmType : dimension incorrect") ;
-    return 0 ;
-  }
-}
-
-int gmsh_NbNodes(int type)
-/* N = i(Vertices) + j(Edges) + k(Faces) + l(Volume) */
-{
-  switch (type) {
-  case 15: return 1;              /* point */
-  case 1 : return 2;              /* line 1 */
-  case 8 : return 2 + 1;          /* line 2 */
-  case 2 : return 3;              /* triangle 1 */
-  case 9 : return 3 + 3;          /* triangle 2 */
-  case 3 : return 4;              /* quadrangle 1 */
-  case 10: return 4 + 4 + 1;      /* quadrangle 2 */
-  case 16: return 4 + 4;          /* quadrangle 2 */
-  case 4 : return 4;              /* tetrahedron 1 */
-  case 11: return 4 + 6;          /* tetrahedron 2 */
-  case 5 : return 8;              /* hexahedron 1 */
-  case 12: return 8 + 12 + 6 + 1; /* hexahedron 2 */
-  case 17: return 8 + 12;         /* hexahedron 2 */
-  case 6 : return 6;              /* prism 1 */
-  case 13: return 6 + 9 + 3;      /* prism 2 */
-  case 18: return 6 + 9;          /* prism 2 */
-  case 7 : return 5;              /* pyramid 1 */
-  case 14: return 5 + 8 + 1;      /* pyramid 2 */
-  case 19: return 5 + 8;          /* pyramid 2 */
-  default: return 0;
-  }
-}
-
-int gmsh_DimElement(int type)
-{
-  switch (type) {
-  case 15: return 0;              /* point */
-  case 1 : return 1;              /* line 1 */
-  case 8 : return 1;              /* line 2 */
-  case 2 : return 2;              /* triangle 1 */
-  case 9 : return 2;              /* triangle 2 */
-  case 3 : return 2;              /* quadrangle 1 */
-  case 10: return 2;              /* quadrangle 2 */
-  case 16: return 2;              /* quadrangle 2 */
-  case 4 : return 3;              /* tetrahedron 1 */
-  case 11: return 3;              /* tetrahedron 2 */
-  case 5 : return 3;              /* hexahedron 1 */
-  case 12: return 3;              /* hexahedron 2 */
-  case 17: return 3;              /* hexahedron 2 */
-  case 6 : return 3;              /* prism 1 */
-  case 13: return 3;              /* prism 2 */
-  case 18: return 3;              /* prism 2 */
-  case 7 : return 3;              /* pyramid 1 */
-  case 14: return 3;              /* pyramid 2 */
-  case 19: return 3;              /* pyramid 2 */
-  default: return -1;
-  }
-}
-
-
-
-
-void lit_mail_gmsh(Mesh_t* mesh,const char* nom_msh)
-/* lit le maillage au format GMSH dans un fichier */
-{
-  char   line[Mesh_MaxLengthOfTextLine] ;
-  FILE*  fic_msh ;
-
-  /* ouverture du fichier */
-  fic_msh = fopen(nom_msh,"r") ;
-  if(!fic_msh) arret("lit_mail_gmsh (1) :impossible d\'ouvrir le fichier") ;
-
-  do {
-    fgets(line,sizeof(line),fic_msh) ;
-  } while(line[0] != '$') ;
-
-  /* fermeture du fichier */
-  fclose(fic_msh) ;
-
-  if(!strncmp(&line[1],"NOD",3)) { /* Version 1.0 */
-    lit_mail_gmsh_1(mesh,nom_msh) ;
-    return ;
-  } else if(!strncmp(&line[1],"MeshFormat",10)) { /* Version 2.0 */
-    lit_mail_gmsh_2(mesh,nom_msh) ;
-    return ;
-  }
-  arret("lit_mail_gmsh (2) : non prevu") ;
-}
-
-
-void lit_mail_gmsh_1(Mesh_t* mesh,const char* nom_msh)
-/* lit le maillage au format GMSH version 1.0 dans un fichier */
-{
-  int    i,n_c ;
-  int    n_no_lu,n_el_lu ;
-  char   mot[Mesh_MaxLengthOfKeyWord],line[Mesh_MaxLengthOfTextLine] ;
-  Node_t** p_node ;
-  FILE*  fic_msh ;
-
-  /* ouverture du fichier */
-  fic_msh = fopen(nom_msh,"r") ;
-  if(fic_msh == NULL) arret("lit_mail_gmsh_1 (1) :impossible d\'ouvrir le fichier") ;
-
-  /* analyse du fichier pour le calcul de n_no */
-  fscanf(fic_msh,"%s",mot) ;
-  if(strcmp(mot,"$NOD") != 0) arret("lit_mail_gmsh_1 (1) : pas de $NOD") ;
-
-  /* nombre de noeuds lus */
-  fscanf(fic_msh,"%d",&n_no_lu) ;
-  /* calcul de n_no */
-  N_NO = 0 ;
-  for(i = 0 ; i < n_no_lu ; i++) {
-    int n ;
-    /* le numero du noeud */
-    fscanf(fic_msh,"%d",&n) ;
-    if((int) N_NO < n) N_NO = n ;
-    /* on lit le reste de la ligne */
-    if(fgets(line,sizeof(line),fic_msh) == NULL) {
-      fprintf(stdout,"erreur ou fin de fichier\n") ;
-    }
-  }
-  fscanf(fic_msh,"%s",mot) ;
-  if(strcmp(mot,"$ENDNOD") != 0) arret("lit_mail_gmsh_1 (2) : pas de $ENDNOD") ;
-
-  /* analyse du fichier pour le calcul de n_el */
-  fscanf(fic_msh,"%s",mot) ;
-  if(strcmp(mot,"$ELM") != 0) arret("lit_mail_gmsh_1 (3) : pas de $ELM") ;
-
-  /* nombre d'elements lus */
-  fscanf(fic_msh,"%d",&n_el_lu) ;
-  /* calcul de n_el et de n_c */
-  N_EL = 0 ;
-  n_c = 0 ;
-  for(i = 0 ; i < n_el_lu ; i++) {
-    int n ;
-    unsigned short int   nn ;
-    /* le numero d'element */
-    fscanf(fic_msh,"%d",&n) ;
-    if((int) N_EL < n) N_EL = n ;
-    /* on lit le reste de la ligne */
-    if(fgets(line,sizeof(line),fic_msh) == NULL) {
-      fprintf(stdout,"erreur ou fin de fichier\n") ;
-    }
-    /* elm_type, identificateurs et nb de noeuds */
-    sscanf(line,"%*d %*d %*d %hu",&nn) ;
-    n_c += nn ;
-  }
-  fscanf(fic_msh,"%s",mot) ;
-  if(strcmp(mot,"$ENDELM") != 0) arret("lit_mail_gmsh_1 (4) : pas de $ENDELM") ;
-
-  /* on recommence */
-  rewind(fic_msh) ;
-
-  /* NOEUDS */
-  fscanf(fic_msh,"%s",mot) ;
-  /* nombre de noeuds */
-  fscanf(fic_msh,"%d",&n_no_lu) ;
-  /* pointeurs */
-  NO = (Node_t*) malloc(N_NO*sizeof(Node_t)) ;
-  if(NO == NULL) arret("lit_mail_gmsh_1 (5) : impossible d\'allouer la memoire") ;
+  static int i_debug=0 ;
   
-  {
-    double* x = (double*) calloc(N_NO*DIM,sizeof(double)) ;
-    if(!x) arret("lit_mail_gmsh_1 (6) : impossible d\'allouer la memoire") ;
+  if(!strcmp(mot,"\0")) return ;
+
+  PRINT("\n") ;
+  PRINT("debug(%d)\n",i_debug++) ;
+  PRINT("-----\n") ;
+  
+
+  /* Geometry
+   * -------- */
+  if(Mesh_GetGeometry(mesh) && (!strncmp(mot,"geometry",4) || !strncmp(mot,"all",3))) {
+    int dim = Mesh_GetDimension(mesh) ;
+    Symmetry_t sym = Mesh_GetSymmetry(mesh) ;
     
-    for(i = 0 ; i < (int) N_NO ; i++) {
-      Node_GetCoordinate(NO + i) = x + i*DIM ;
-      Node_GetNodeIndex(NO + i) = i ;
-    }
-  }
-
-  /* les noeuds */
-  for(i = 0 ; i < n_no_lu ; i++) {
-    int j,n ;
-    /* le numero du noeud */
-    fscanf(fic_msh,"%d",&n) ; n -= 1 ;
-    /* les coordonnees*/
-    for(j = 0 ; j < DIM ; j++) {
-      fscanf(fic_msh,"%le",Node_GetCoordinate(NO + n) + j) ;
-    }
-    /* on lit le reste de la ligne */
-    if(fgets(line,sizeof(line),fic_msh) == NULL) {
-      fprintf(stdout,"erreur ou fin de fichier\n") ;
-    }
-  }
-  fscanf(fic_msh,"%s",mot) ;
-
-  /* ELEMENTS */
-  fscanf(fic_msh,"%s",mot) ;
-  /* nombre d'elements */
-  fscanf(fic_msh,"%d",&n_el_lu) ;
-  /* pointeurs */
-  EL = (Element_t*) malloc(N_EL*sizeof(Element_t)) ;
-  if(EL == NULL) {
-    fprintf(stderr,"impossible d\'allouer la memoire (lit_mail_gmsh_1)") ;
-    exit(EXIT_FAILURE) ;
-  }
-  
-  p_node = (Node_t**) malloc(n_c*sizeof(Node_t*)) ;
-  if(!p_node) arret("impossible d\'allouer la memoire (lit_mail_gmsh_1)") ;
-  
-  /* initialisation */
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    Element_GetNbOfNodes(EL + i) = 0 ;
-    Element_GetMaterialIndex(EL + i) = -1 ;
-    Element_GetRegionIndex(EL + i) = -1 ;
-    Element_GetDimension(EL + i) = 0 ;
-  }
-  n_c = 0 ;
-  /* les elements */
-  for(i = 0 ; i < n_el_lu ; i++) {
-    int j,n ;
-    int imat, reg, nn ;
-    int type ;
-    /* le numero d'element */
-    fscanf(fic_msh,"%d",&n) ; n -= 1 ;
-    /* elm_type */
-    fscanf(fic_msh,"%d",&type) ;
-    /* identificateurs et nb de noeuds */
-    fscanf(fic_msh,"%d %d %d",&imat,&reg,&nn) ;
+    PRINT("\n") ;
+    PRINT("Geometry:\n") ;
     
-    Element_GetElementIndex(EL + n) = n ;
-    Element_GetMaterialIndex(EL + n) = imat - 1 ;
-    Element_GetNbOfNodes(EL + n) = nn ;
-    Element_GetRegionIndex(EL + n) = reg ;
-    Element_GetDimension(EL + n) = gmsh_DimElement(type) ;
-    if(Element_GetNbOfNodes(EL + n) > Element_MaxNbOfNodes) arret("trop de noeuds") ;
-    /* numerotation */
-    Element_GetPointerToNode(EL + n) = p_node + n_c ;
-    n_c += nn ;
-    for(j = 0 ; j < nn ; j++) {
-      int nodeindex ;
-      fscanf(fic_msh,"%d",&nodeindex) ;
-      Element_GetNode(EL + n,j) = NO + nodeindex - 1 ;
-    }
-  }
-  
-  fscanf(fic_msh,"%s",mot) ;
-  /* fermeture du fichier */
-  fclose(fic_msh) ;
-}
-
-
-
-
-void lit_mail_gmsh_2(Mesh_t* mesh,const char* nom_msh)
-/* lit le maillage au format GMSH version 2.0 dans un fichier */
-{
-  double version ;
-  int    file_type,data_size ;
-  int    i,n_c ;
-  int    nb_nodes,nb_elements ;
-  Node_t** p_node ;
-  char   mot[Mesh_MaxLengthOfKeyWord],line[Mesh_MaxLengthOfTextLine] ;
-  FILE*  fic_msh ;
-
-  /* ouverture du fichier */
-  fic_msh = fopen(nom_msh,"r") ;
-  if(!fic_msh) arret("lit_mail_gmsh_2 (1) :impossible d\'ouvrir le fichier") ;
-
-  /* analyse du fichier pour le format */
-  fscanf(fic_msh,"%s",mot) ;
-  if(strcmp(mot,"$MeshFormat")) arret("lit_mail_gmsh_2 (2) : pas de $MeshFormat") ;
-  fscanf(fic_msh, "%lf %d %d\n",&version,&file_type,&data_size) ;
-  if(floor(version) != 2) arret("Error: Wrong msh file version") ;
-  fscanf(fic_msh,"%s",mot) ;
-  if(strcmp(mot,"$EndMeshFormat")) arret("lit_mail_gmsh_2 (2) : pas de $EndFormat") ;
-
-
-  /* analyse du fichier pour le calcul de n_no */
-  fscanf(fic_msh,"%s",mot) ;
-  if(strcmp(mot,"$Nodes")) arret("lit_mail_gmsh_2 (2) : pas de $Nodes") ;
-
-  /* nombre de noeuds lus */
-  fscanf(fic_msh,"%d",&nb_nodes) ;
-  /* calcul de n_no */
-  N_NO = 0 ;
-  for(i = 0 ; i < nb_nodes ; i++) {
-    int n ;
-    /* le numero du noeud */
-    fscanf(fic_msh,"%d",&n) ;
-    if((int) N_NO < n) N_NO = n ;
-    /* on lit le reste de la ligne */
-    if(!fgets(line,sizeof(line),fic_msh)) {
-      arret("lit_mail_gmsh_2 (3) : erreur ou fin de fichier") ;
-    }
-  }
-  fscanf(fic_msh,"%s",mot) ;
-  if(strcmp(mot,"$EndNodes")) arret("lit_mail_gmsh_2 (4) : pas de $EndNodes") ;
-
-  /* analyse du fichier pour le calcul de n_el */
-  fscanf(fic_msh,"%s",mot) ;
-  if(strcmp(mot,"$Elements")) arret("lit_mail_gmsh_2 (5) : pas de $Elements") ;
-
-  /* nombre d'elements lus */
-  fscanf(fic_msh,"%d",&nb_elements) ;
-  /* calcul de n_el et de n_c */
-  N_EL = 0 ;
-  n_c = 0 ; /* nb de numeros de noeuds cumules */
-  for(i = 0 ; i < nb_elements ; i++) {
-    int n,elm_type ;
-    /* le numero d'element */
-    fscanf(fic_msh,"%d",&n) ;
-    if((int) N_EL < n) N_EL = n ;
-    /* on lit le reste de la ligne */
-    if(!fgets(line,sizeof(line),fic_msh)) {
-      arret("lit_mail_gmsh_2 (6) : erreur ou fin de fichier") ;
-    }
-    /* elm_type */
-    sscanf(line,"%d",&elm_type) ;
-    n_c += gmsh_NbNodes(elm_type) ;
-  }
-  fscanf(fic_msh,"%s",mot) ;
-  if(strcmp(mot,"$EndElements")) arret("lit_mail_gmsh_2 (7) : pas de $EndElements") ;
-
-  /* on recommence */
-  rewind(fic_msh) ;
-
-  /* FORMAT */
-  fscanf(fic_msh,"%s",mot) ;
-  fscanf(fic_msh, "%lf %d %d\n",&version,&file_type,&data_size) ;
-  fscanf(fic_msh,"%s",mot) ;
-
-  /* NOEUDS */
-  fscanf(fic_msh,"%s",mot) ;
-  /* nombre de noeuds */
-  fscanf(fic_msh,"%d",&nb_nodes) ;
-  /* pointeurs */
-  NO = (Node_t*) malloc(N_NO*sizeof(Node_t)) ;
-  if(NO == NULL) arret("lit_mail_gmsh_2 (8) : impossible d\'allouer la memoire") ;
-  
-  {
-    double* x = (double*) calloc(N_NO*DIM,sizeof(double)) ;
-    if(!x) arret("lit_mail_gmsh_2 (9) : impossible d\'allouer la memoire") ;
+    PRINT("\t Dimension = %dD\n",dim) ;
+    PRINT("\t Symmetry = ") ;
     
-    for(i = 0 ; i < (int) N_NO ; i++) {
-      Node_GetCoordinate(NO + i) = x + i*DIM ;
-      Node_GetNodeIndex(NO + i) = i ;
-    }
-  }
-
-  /* les noeuds */
-  for(i = 0 ; i < nb_nodes ; i++) {
-    int n,j ;
-    /* le numero du noeud */
-    fscanf(fic_msh,"%d",&n) ; n -= 1 ;
-    /* les coordonnees*/
-    for(j = 0 ; j < DIM ; j++) {
-      fscanf(fic_msh,"%le",Node_GetCoordinate(NO + n) + j) ;
-    }
-    /* on lit le reste de la ligne */
-    if(!fgets(line,sizeof(line),fic_msh)) {
-      arret("lit_mail_gmsh_2 (10) : erreur ou fin de fichier") ;
-    }
-  }
-  fscanf(fic_msh,"%s",mot) ;
-
-  /* ELEMENTS */
-  fscanf(fic_msh,"%s",mot) ;
-  /* nombre d'elements */
-  fscanf(fic_msh,"%d",&nb_elements) ;
-  /* pointeurs */
-  EL = (Element_t*) malloc(N_EL*sizeof(Element_t)) ;
-  if(EL == NULL) {
-    arret("lit_mail_gmsh_2 (11) : impossible d\'allouer la memoire") ;
-  }
-  p_node = (Node_t**) malloc(n_c*sizeof(Node_t*)) ;
-  if(!p_node) arret("lit_mail_gmsh_2 (12) : impossible d\'allouer la memoire") ;
-
-  /* initialisation */
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    Element_GetNbOfNodes(EL + i) = 0 ;
-    Element_GetMaterialIndex(EL + i) = -1 ;
-    Element_GetRegionIndex(EL + i) = -1 ;
-    Element_GetDimension(EL + i) = 0 ;
-  }
-
-  n_c = 0 ; /* nb de numeros de noeuds cumules */
-  /* les elements */
-  for(i = 0 ; i < nb_elements ; i++) {
-    int n,elm_type,nb_tags,j ;
-    int physical,elementary,partition ;
-    /* le numero d'element */
-    fscanf(fic_msh,"%d",&n) ; n -= 1 ;
-    /* elm_type */
-    fscanf(fic_msh,"%d %d",&elm_type,&nb_tags) ;
-    elementary = physical = partition = 1;
-    for(j = 0; j < nb_tags; j++){
-      int tag ;
-      fscanf(fic_msh, "%d", &tag);	    
-      if(j == 0)      physical   = tag ;
-      else if(j == 1) elementary = tag ;
-      else if(j == 2) partition  = tag ;
-      /* ignore any other tags for now */
-    }
-    Element_GetElementIndex(EL + n) = n ;
-    Element_GetMaterialIndex(EL + n) = physical - 1 ;
-    Element_GetRegionIndex(EL + n) = elementary ;
-    Element_GetNbOfNodes(EL + n) = gmsh_NbNodes(elm_type) ;
-    Element_GetDimension(EL + n) = gmsh_DimElement(elm_type) ;
-    if(!Element_GetNbOfNodes(EL + n)){
-      arret("lit_mail_gmsh_2 (13) : Error: Unknown type for element"); 
-    }
-    if(Element_GetNbOfNodes(EL + n) > Element_MaxNbOfNodes) arret("lit_mail_gmsh_2 (14) : trop de noeuds") ;
-    /* numerotation */
-    Element_GetPointerToNode(EL + n) = p_node + n_c ;
-    n_c += Element_GetNbOfNodes(EL + n) ;
-    for(j = 0; j < Element_GetNbOfNodes(EL + n) ; j++) {
-      int nodeindex ;
-      fscanf(fic_msh,"%d",&nodeindex) ;
-      Element_GetNode(EL + n,j) = NO + nodeindex - 1 ;
-    }
-  }
-  
-  fscanf(fic_msh,"%s",mot) ;
-  /* fermeture du fichier */
-  fclose(fic_msh) ;
-}
-
-
-void lit_mail_cesar(Mesh_t* mesh,const char* nom)
-/* lit le maillage au format CESAR dans un fichier */
-{
-  int    dim_el[3][8]  = {{0,1,1,-1,-1,-1,-1,-1},{0,1,2,2,-1,2,-1,2},{0,1,2,3,-1,-1,-1,3}} ;
-  double* x ;
-  int    i,j ;
-  /*
-    char   type_el[3][8] = {{'P','L'},{'P','L','T','Q'},{'P','L','T','S','Y','I',' ','H'}} ; 
-  */
-  char   mot[Mesh_MaxLengthOfKeyWord] ;
-  FILE*  fic_ces ;
-
-  /* ouverture du fichier */
-  fic_ces = fopen(nom,"r") ;
-  if(fic_ces == NULL) {
-    fprintf(stderr,"erreur a l'ouverture du fichier %s\n",nom) ;
-    exit(EXIT_FAILURE) ;
-  }
-
-  /* les noeuds */
-  fscanf(fic_ces,"%s",mot) ;
-  if(strcmp(mot,"COOR") != 0) {
-    fprintf(stdout,"pas de COOR !\n") ;
-    exit(EXIT_SUCCESS) ;
-  }
-  
-  /* nombre de noeuds */
-  fscanf(fic_ces,"%*d %*d %u %*d",&N_NO) ;
-
-  /* les noeuds */
-  NO = (Node_t*) malloc(N_NO*sizeof(Node_t)) ;
-  if(NO == NULL) arret("lit_mail_cesar(1) : impossible d\'allouer la memoire") ;
-
-  x = (double*) malloc(N_NO*DIM*sizeof(double)) ;
-  if(x == NULL) arret("lit_mail_cesar(2) : impossible d\'allouer la memoire") ;
-  
-  for(i = 0 ; i < (int) N_NO ; i++) {
-    Node_GetCoordinate(NO + i) = x + i*DIM ;
-    Node_GetNodeIndex(NO + i) = i ;
-  }
-
-  for(i = 0 ; i < (int) N_NO*DIM ; i++) fscanf(fic_ces,"%le",x + i) ;
-
-  /* les elements */
-  fscanf(fic_ces,"%s",mot) ;
-  if(strcmp(mot,"ELEM") != 0) {
-    fprintf(stdout,"pas de ELEM !\n") ;
-    exit(EXIT_SUCCESS) ;
-  }
-  
-  /* nombre d'elements */
-  fscanf(fic_ces,"%*d %*d %u %*d",&N_EL) ;
-  
-  /* les elements */
-  EL = (Element_t*) malloc(N_EL*sizeof(Element_t)) ;
-  if(EL == NULL) {
-    fprintf(stderr,"impossible d\'allouer la memoire") ;
-    exit(EXIT_FAILURE) ;
-  }
-  
-  /* nb de noeuds par element */
-  fscanf(fic_ces,"%d",&j) ;
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    short unsigned int nn ;
-    fscanf(fic_ces,"%hu",&nn) ;
-    nn -= j ;
-    Element_GetElementIndex(EL + i) = i ;
-    Element_GetNbOfNodes(EL + i) = nn ;
-    Element_GetDimension(EL + i) = dim_el[DIM - 1][nn - 1] ;
-    j += nn ;
-  }
-  
-  for(i = 0 ; i < (int) N_EL ; i++) if(Element_GetNbOfNodes(EL + i) > Element_MaxNbOfNodes) {
-    fprintf(stdout,"trop de noeuds\n") ;
-    exit(EXIT_SUCCESS) ;
-  }
-  
-  /* pointeurs */
-  for(j = 0 , i = 0 ; i < (int) N_EL ; i++) j += Element_GetNbOfNodes(EL + i) ;
-  {
-    Node_t** no = (Node_t**) malloc(j*sizeof(Node_t*)) ;
-    if(!no) arret("impossible d\'allouer la memoire") ;
-    
-    j = 0 ;
-    for(i = 0 ; i < (int) N_EL ; i++) {
-      Element_GetPointerToNode(EL + i) = no + j ;
-      j += Element_GetNbOfNodes(EL + i) ;
-    }
-  }
-  
-  /* numerotation */
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    int nn = Element_GetNbOfNodes(EL + i) ;
-    for(j = 0 ; j < nn ; j++) {
-      int nodeindex ;
-      fscanf(fic_ces,"%d",&nodeindex) ;
-      Element_GetNode(EL + i,j) = NO + nodeindex - 1 ;
-    }
-  }
-  
-  /* les noms -> les regions */
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    int    n_type = 4 ;
-    char   nom_el[][5] = {"OBS2","OBS3","OBT3","OBQ4"} ;
-    fscanf(fic_ces,"%s",mot) ;
-    Element_GetRegionIndex(EL + i) = 0 ;
-    for(j = 0 ; j < n_type ; j++) {
-      if(!strncmp(mot,nom_el[j],4)) {
-        Element_GetRegionIndex(EL + i) = j + 1 ;
-      }
-    }
-    if(Element_GetRegionIndex(EL + i)  == 0) arret("lit_mail_cesar : pas de region") ;
-  }
-
-  /* les groupes -> les materiaux */
-  for(i = 0 ; i < (int) N_EL ; i++) {
-    int imat ;
-    fscanf(fic_ces,"%d",&imat) ;
-    imat -= 1 ;
-    Element_GetMaterialIndex(EL + i) = imat ;
-    Element_GetRegionIndex(EL + i) = 10*Element_GetRegionIndex(EL + i) + imat ; /* formule pas satisfaisante ! */
-  }
-
-  fclose(fic_ces) ;
-}
-
-
-
-
-int*  Mesh_ReadInversePermutationOfNodes(DataFile_t* datafile,int n_no)
-/** Read the inverse permutation vector of nodes in a file if it exists 
- *  or initialize it with identity function. Return a pointer to n_no int. 
- **/
-{
-  int    *perm = (int*) malloc(n_no*sizeof(int)) ;
-  
-  if(!perm) {
-    arret("Mesh_ReadInversePermutationOfNodes(1)") ;
-  }
-
-  {
-    char   nom_iperm[Mesh_MaxLengthOfFileName] ;
-    
-    {
-      char*  filename = DataFile_GetFileName(datafile) ;
-    
-      if(strlen(filename) + 12 > Mesh_MaxLengthOfFileName) {
-        arret("Mesh_ReadInversePermutationOfNodes(2)") ;
-      }
-    
-      sprintf(nom_iperm,"%s.graph.iperm",filename) ;
-    }
-  
-    {
-      FILE* fic_iperm = fopen(nom_iperm,"r") ;
-  
-      if(!fic_iperm) {
-        int  i ;
-    
-        for(i = 0 ; i < n_no ; i++) perm[i] = i ;
-    
-      } else {
-        int  i ;
-    
-        for(i = 0 ; i < n_no ; i++) {
-          int   j ;
+    if(0) {
       
-          fscanf(fic_iperm,"%d",&j) ;
-          perm[j] = i ;
-        }
+    } else if(Symmetry_IsCylindrical(sym)) {
+      PRINT("Axisymmetrical\n") ;
+      
+    } else if(Symmetry_IsSpherical(sym)) {
+      PRINT("Spherical\n") ;
+
+    } else if(Symmetry_IsPlane(sym)) {
+      PRINT("Plane\n") ;
+
+    } else {
+      PRINT("No symmetry\n") ;
+    }
+  }
+
+  /* Mesh
+   * ---- */
+  if(mesh && (!strncmp(mot,"mesh",4) || !strncmp(mot,"all",3))) {
+    int dim = Mesh_GetDimension(mesh) ;
+    int n_no = Mesh_GetNbOfNodes(mesh) ;
+    Node_t* no = Mesh_GetNode(mesh) ;
+    int n_el = Mesh_GetNbOfElements(mesh) ;
+    Element_t* el = Mesh_GetElement(mesh) ;
     
-        fclose(fic_iperm) ;
+    int i ;
+    int c1 = 14 ;
+    int c2 = 30 ;
+    int c3 = 45 ;
+    
+    PRINT("\n") ;
+    PRINT("Mesh:\n") ;
+    
+    PRINT("\t Nodes:\n") ;
+    PRINT("\t Nb of nodes = %d\n",n_no) ;
+    
+    for(i = 0 ; i < n_no ; i++) {
+      Node_t* node_i = no + i ;
+      int ne = Node_GetNbOfElements(node_i) ;
+      int n = PRINT("\t no(%d)",i) ;
+      int j ;
+      
+      while(n < c1) n += PRINT(" ") ;
+      
+      n += PRINT(":") ;
+      
+      for(j = 0 ; j < dim ; j++) {
+        n += PRINT(" % e",Node_GetCoordinate(node_i)[j]) ;
       }
+      
+      while(n < c3) n += PRINT(" ") ;
+      
+      if(ne) n += PRINT("  el(") ;
+      
+      for(j = 0 ; j < ne ; j++) {
+        n += PRINT("%d",Element_GetElementIndex(Node_GetElement(node_i,j))) ;
+        n += PRINT(((j < ne - 1) ? "," : ")")) ;
+      }
+      
+      PRINT("\n") ;
+    }
+    
+    PRINT("\n") ;
+    PRINT("\t Elements:\n") ;
+    PRINT("\t Nb of elements = %d\n",n_el) ;
+    
+    for(i = 0 ; i < n_el ; i++) {
+      Element_t* elt_i = el + i ;
+      int nn = Element_GetNbOfNodes(elt_i) ;
+      int n = PRINT("\t el(%d)",i) ;
+      int j ;
+      
+      while(n < c1) n += PRINT(" ") ;
+      
+      n += PRINT(":") ;
+      
+      n += PRINT("  reg(%d)",Element_GetRegionIndex(elt_i)) ;
+      
+      while(n < c2) n += PRINT(" ") ;
+      
+      n += PRINT("  mat(%d)",Element_GetMaterialIndex(elt_i)) ;
+      
+      while(n < c3) n += PRINT(" ") ;
+      
+      n += PRINT("  no(") ;
+      
+      for(j = 0 ; j < nn ; j++) {
+        n += PRINT("%d",Node_GetNodeIndex(Element_GetNode(elt_i,j))) ;
+        n += PRINT(((j < nn - 1) ? "," : ")")) ;
+      }
+      
+      
+      
+      PRINT("\n") ;
     }
   }
   
-  return(perm) ;
-}
 
+  /* Continuity
+   * ---------- */
+  if(mesh && (!strncmp(mot,"continuity",3))) {
+    int n_no = Mesh_GetNbOfNodes(mesh) ;
+    Node_t* no = Mesh_GetNode(mesh) ;
+    int n_el = Mesh_GetNbOfElements(mesh) ;
+    Element_t* el = Mesh_GetElement(mesh) ;
+    int i ;
+    
+    PRINT("\n") ;
+    PRINT("Continuity:\n") ;
+    
+    PRINT("\t Positions of unknowns and equations at nodes of elements\n") ;
+    
+    for(i = 0 ; i < n_el ; i++) {
+      Element_t* elt_i = el + i ;
+      int nn = Element_GetNbOfNodes(elt_i) ;
+      int neq = Element_GetNbOfEquations(elt_i) ;
+      char** name_unk = Element_GetNameOfUnknown(elt_i) ;
+      char** name_eqn = Element_GetNameOfEquation(elt_i) ;
+      int j ;
+      
+      PRINT("\t el(%d): %d nodes\n",i,nn) ;
+      
+      PRINT("\t    %d unknowns\n",neq) ;
+      
+      for(j = 0 ; j < nn ; j++) {
+        int k ;
+        
+        PRINT("\t    no(%d):",j) ;
+        
+        for(k = 0 ; k < neq ; k++) {
+          PRINT(" %s(%d)",name_unk[k],Element_GetUnknownPosition(elt_i)[j*neq + k]) ;
+        }
+        
+        PRINT("\n") ;
+      }
+      
+      PRINT("\t    %d equations\n",neq) ;
+      
+      for(j = 0 ; j < nn ; j++) {
+        int k ;
+        
+        PRINT("\t    no(%d):",j) ;
+        
+        for(k = 0 ; k < neq ; k++) {
+          PRINT(" %s(%d)",name_eqn[k],Element_GetEquationPosition(elt_i)[j*neq + k]) ;
+        }
+        
+        PRINT("\n") ;
+      }
+    }
+    
+    PRINT("\n") ;
+    PRINT("\t Equations and unknowns at nodes:\n") ;
+    
+    for(i = 0 ; i < n_no ; i++) {
+      Node_t* node_i = no + i ;
+      int nb_unk = Node_GetNbOfUnknowns(node_i) ;
+      int nb_eqn = Node_GetNbOfEquations(node_i) ;
+      int j ;
+      
+      PRINT("\t no(%d):\n",i) ;
+      PRINT("\t    %d unknowns:",nb_unk) ;
+      
+      for(j = 0 ; j < nb_unk ; j++) {
+        char* name = Node_GetNameOfUnknown(node_i)[j] ;
+        
+        PRINT(" %s",name) ;
+      }
+      
+      PRINT("\n") ;
+      PRINT("\t    %d equations:",nb_eqn) ;
+      
+      for(j = 0 ; j < nb_eqn ; j++) {
+        char* name = Node_GetNameOfEquation(node_i)[j] ;
+        
+        PRINT(" %s",name) ;
+      }
+      PRINT("\n") ;
+    }
+  }
+
+  /* Matrix numbering
+   * ---------------- */
+  if(mesh && !strncmp(mot,"numbering",3)) {
+    int n_no = Mesh_GetNbOfNodes(mesh) ;
+    Node_t* no = Mesh_GetNode(mesh) ;
+    int i ;
+    
+    PRINT("\n") ;
+    PRINT("Matrix numbering:\n") ;
+    
+    PRINT("\n") ;
+    PRINT("\t Matrix indexes of equations and unknowns at nodes:\n") ;
+    
+    for(i = 0 ; i < n_no ; i++) {
+      Node_t* node_i = no + i ;
+      int nb_unk = Node_GetNbOfUnknowns(node_i) ;
+      int nb_eqn = Node_GetNbOfEquations(node_i) ;
+      int j ;
+      
+      PRINT("\t node(%d):\n",i) ;
+      PRINT("\t    %d unknowns(col):",nb_unk) ;
+      
+      for(j = 0 ; j < nb_unk ; j++) {
+        char* name = Node_GetNameOfUnknown(node_i)[j] ;
+        int icol = Node_GetMatrixColumnIndex(node_i)[j] ;
+        
+        PRINT(" %s(%d)",name,icol) ;
+      }
+      
+      PRINT("\n") ;
+      PRINT("\t    %d equations(row):",nb_eqn) ;
+      
+      for(j = 0 ; j < nb_eqn ; j++) {
+        char* name = Node_GetNameOfEquation(node_i)[j] ;
+        int irow = Node_GetMatrixRowIndex(node_i)[j] ;
+        
+        PRINT(" %s(%d)",name,irow) ;
+      }
+      PRINT("\n") ;
+    }
+  }
+
+
+  /* Interpolation functions
+   * ----------------------- */
+  if(mesh && (!strncmp(mot,"interpolation",4))) {
+    Elements_t* elts = Mesh_GetElements(mesh) ;
+    IntFcts_t* intfcts = Elements_GetIntFcts(elts) ;
+    int n_fi = IntFcts_GetNbOfIntFcts(intfcts) ;
+    IntFct_t* intfct = IntFcts_GetIntFct(intfcts) ;
+    int i ;
+    
+    PRINT("\n") ;
+    PRINT("Interpolation:\n") ;
+    
+    PRINT("\t Nb of interpolation functions = %d\n",n_fi) ;
+    
+    for(i = 0 ; i < n_fi ; i++) {
+      int np = IntFct_GetNbOfPoints(intfct + i) ;
+      int nn = IntFct_GetNbOfFunctions(intfct + i) ;
+      int dim = IntFct_GetDimension(intfct + i) ;
+      
+      PRINT("\n") ;
+      
+      PRINT("\t Interpolation function %d\n",i) ;
+      
+      PRINT("\t Nb of integration points = %d",np) ;
+      
+      PRINT(", Dimension = %d\n",dim) ;
+      
+      if(np <= 0) continue ;
+      
+      
+      PRINT("\t Point Coordinates:\n") ;
+      
+      {
+        char axis[3] = {'x','y','z'} ;
+        int k ;
+        
+        for(k = 0 ; k < dim ; k++) {
+          int p ;
+      
+          PRINT("\t %c = ",axis[k]) ;
+        
+          for(p = 0 ; p < np ; p++) {
+            double* ap = IntFct_GetCoordinatesAtPoint(intfct + i,p) ;
+            
+            PRINT("% e ",ap[k]) ;
+          }
+        
+          PRINT("\n") ;
+        }
+      }
+      
+      
+      PRINT("\t Weights = ") ;
+      
+      {
+        double* w = IntFct_GetWeight(intfct + i) ;
+        int p ;
+        
+        for(p = 0 ; p < np ; p++) {
+          PRINT("%e ",w[p]) ;
+        }
+        
+        PRINT("\n") ;
+      }
+      
+      
+      PRINT("\t Nb of functions = %d\n",nn) ;
+      
+      
+      PRINT("\t Functions:\n") ;
+      
+      {
+        int k ;
+        
+        for(k = 0 ; k < nn ; k++) {
+          int p ;
+          
+          if(k == 0) {
+            
+            PRINT("\t hi = ") ;
+            
+            for(p = 0 ; p < np ; p++) {
+              PRINT(" hi(pt %d)     ",p) ;
+            }
+            
+            PRINT("\n") ;
+          }
+        
+          PRINT("\t h%d = ",k) ;
+        
+          for(p = 0 ; p < np ; p++) {
+            double* hp = IntFct_GetFunctionAtPoint(intfct + i,p) ;
+            
+            PRINT("% e ",hp[k]) ;
+          }
+        
+          PRINT("\n") ;
+        }
+      }
+      
+      
+      
+      PRINT("\t Function derivatives:\n") ;
+      
+      
+#define DHP(n,i)  (dhp[(n)*dim+(i)])
+      {
+        int l ;
+        
+        for(l = 0 ; l < nn ; l++) {
+          int k ;
+          char axis[3] = {'x','y','z'} ;
+          
+          if(l == 0) {
+            int p ;
+            
+            PRINT("\t hi,j = ") ;
+            
+            for(p = 0 ; p < np ; p++) {
+              PRINT(" hi,j(pt %d)   ",p) ;
+            }
+            
+            PRINT("\n") ;
+          }
+        
+          for(k = 0 ; k < dim ; k++) {
+            int p ;
+        
+            PRINT("\t h%d,%c = ",l,axis[k]) ;
+          
+            for(p = 0 ; p < np ; p++) {
+              double* dhp = IntFct_GetFunctionGradientAtPoint(intfct + i,p) ;
+              
+              PRINT("% e ",DHP(l,k)) ;
+            }
+        
+            PRINT("\n") ;
+          }
+        }
+      }
+#undef DHJ
+    }
+  }
+
+  fflush(stdout) ;
+}

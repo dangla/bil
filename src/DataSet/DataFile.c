@@ -67,31 +67,6 @@ void (DataFile_Delete)(void* self)
 }
 
 
-#if 0
-int (DataFile_CountNbOfKeyWords)(DataFile_t* datafile,const char* cle,const char* del)
-/** Return the number of times any token of the series of tokens
- *  that are delimited by any character of "del" in "cle,
- *  occurs in the filename "datafile". */
-{
-  char**  tok  = String_BreakIntoTokens(cle,del) ;
-  int     ntok = String_NbOfTokens(tok) ;
-  int     n = 0 ;
-  
-  /* Compute the nb of times we find the tokens in datafile */
-  {
-    char* c  = DataFile_GetFileContent(datafile) ;
-    int itok ;
-    
-    for(itok = 0 ; itok < ntok ; itok++) {
-      n += String_CountTokens(c,tok[itok]) ;
-    }
-  }
-  
-  return(n) ;
-}
-#endif
-
-
 
 char* (DataFile_SetFilePositionAfterKey)(DataFile_t* datafile,const char* cle,const char* del,short int n)
 /** The file "datafile" is assumed open for reading. Then set the file position of
@@ -167,8 +142,6 @@ char* (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t* datafile)
   do {
     
     c = TextFile_ReadLineFromCurrentFilePosition(textfile,line,n) ;
-    /* On going test */
-    //c = TextFile_ReadLineFromCurrentFilePositionInString(textfile,line,n) ;
       
   } while((c) && (c[0] == '#')) ;
 
@@ -178,7 +151,7 @@ char* (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t* datafile)
 
 
 char* (DataFile_ReadLineFromCurrentFilePositionInString)(DataFile_t* datafile)
-/** Reads the first non-commented line from the stream at the current position.
+/** Reads the first non-commented line from the datafile at the current position of its string.
  *  Return a pointer to the string line if succeeded or stop if failed. */
 {
   char* line = DataFile_GetTextLine(datafile) ;
@@ -194,6 +167,85 @@ char* (DataFile_ReadLineFromCurrentFilePositionInString)(DataFile_t* datafile)
 
   return(c) ;
 }
+
+
+
+
+
+
+int*  DataFile_ReadInversePermutationOfNodes(DataFile_t* datafile,int n_no)
+/** Read the inverse permutation vector of nodes in a file if it exists 
+ *  or initialize it with identity function. Return a pointer to n_no int. 
+ **/
+{
+  int* perm = (int*) Mry_New(int[n_no]) ;
+
+  {
+    char   nom_iperm[DataFile_MaxLengthOfFileName] ;
+    
+    {
+      char*  filename = DataFile_GetFileName(datafile) ;
+    
+      if(strlen(filename) + 12 > DataFile_MaxLengthOfFileName) {
+        arret("DataFile_ReadInversePermutationOfNodes") ;
+      }
+    
+      sprintf(nom_iperm,"%s.graph.iperm",filename) ;
+    }
+  
+    {
+      FILE* fic_iperm = fopen(nom_iperm,"r") ;
+  
+      if(!fic_iperm) {
+        int  i ;
+    
+        for(i = 0 ; i < n_no ; i++) perm[i] = i ;
+    
+      } else {
+        int  i ;
+    
+        for(i = 0 ; i < n_no ; i++) {
+          int   j ;
+      
+          fscanf(fic_iperm,"%d",&j) ;
+          perm[j] = i ;
+        }
+      }
+    
+      if(fic_iperm) fclose(fic_iperm) ;
+    }
+  }
+  
+  return(perm) ;
+}
+
+
+
+/* Not used from here */
+
+#if 0
+int (DataFile_CountNbOfKeyWords)(DataFile_t* datafile,const char* cle,const char* del)
+/** Return the number of times any token of the series of tokens
+ *  that are delimited by any character of "del" in "cle,
+ *  occurs in the filename "datafile". */
+{
+  char**  tok  = String_BreakIntoTokens(cle,del) ;
+  int     ntok = String_NbOfTokens(tok) ;
+  int     n = 0 ;
+  
+  /* Compute the nb of times we find the tokens in datafile */
+  {
+    char* c  = DataFile_GetFileContent(datafile) ;
+    int itok ;
+    
+    for(itok = 0 ; itok < ntok ; itok++) {
+      n += String_CountTokens(c,tok[itok]) ;
+    }
+  }
+  
+  return(n) ;
+}
+#endif
 
 
 

@@ -11,12 +11,10 @@ struct FieldConstant_s  ; typedef struct FieldConstant_s  FieldConstant_t ;
 
 
 #include "DataFile.h"
-#include "Geometry.h"
 
 extern Field_t*       (Field_New)                  (void) ;
 extern void           (Field_Delete)               (void*) ;
-extern Field_t*       (Field_Create)               (int) ;
-extern void           (Field_Scan)                 (Field_t*,DataFile_t*,Geometry_t*) ;
+extern void           (Field_Scan)                 (Field_t*,DataFile_t*) ;
 extern double         (Field_ComputeValueAtPoint)  (Field_t*,double*,int) ;
 
 
@@ -44,7 +42,7 @@ extern void           (FieldAffine_Delete) (void*) ;
 
 /* 4. FieldGrid */
 
-extern FieldGrid_t*   (FieldGrid_Create)(char*,int) ;
+extern FieldGrid_t*   (FieldGrid_Create)(char*) ;
 
 
 #define FieldGrid_GetFileName(FLD)                ((FLD)->name)

@@ -8,6 +8,13 @@
 struct Node_s         ; typedef struct Node_s         Node_t ;
 
 
+extern Node_t*  Node_Create(const int) ;
+
+
+#include "Model.h"
+
+#define Node_MaxNbOfEquations          Model_MaxNbOfEquations
+
 
 /* Accessors */
 #define Node_GetNodeIndex(NOD)            ((NOD)->index)
@@ -20,6 +27,16 @@ struct Node_s         ; typedef struct Node_s         Node_t ;
 #define Node_GetMatrixColumnIndex(NOD)    ((NOD)->colindex)
 #define Node_GetMatrixRowIndex(NOD)       ((NOD)->rowindex)
 #define Node_GetNodeSol(NOD)              ((NOD)->sol)
+#define Node_GetNbOfElements(NOD)         ((NOD)->nel)
+#define Node_GetPointerToElement(NOD)     ((NOD)->element)
+
+
+
+
+
+/* Access to elements */
+#define Node_GetElement(NOD,i) \
+        (Node_GetPointerToElement(NOD)[i])
 
 
 
@@ -45,11 +62,14 @@ struct Node_s         ; typedef struct Node_s         Node_t ;
 
 
 
+#include "Element.h"
 #include "NodeSol.h"
 
 
 struct Node_s {               /* noeud */
   unsigned int index ;        /* node index */
+  unsigned short int nel ;    /* nb of elements */
+  Element_t** element ;       /* pointers to elements */
   double* x ;                 /* coordonnees */
   unsigned short int neq ;    /* nombre d'equations au noeud */
   unsigned short int nin ;    /* nombre d'inconnues au noeud */

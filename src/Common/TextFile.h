@@ -94,6 +94,11 @@ extern char*           (TextFile_StoreFileContent)(TextFile_t*) ;
 #define TextFile_GetCurrentPositionInFileContent(TF) \
         (TextFile_GetFileContent(TF) + TextFile_GetCurrentPositionInString(TF))
 
+#define TextFile_SetCurrentPositionInFileContent(TF,C) \
+        do { \
+          TextFile_GetCurrentPositionInString(TF) = C - TextFile_GetFileContent(TF) ; \
+        } while(0)
+
 
 
 

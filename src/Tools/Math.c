@@ -5,15 +5,135 @@
 #include <ctype.h>
 #include <string.h>
 #include <strings.h>
+#include <assert.h>
 
+#include "Session.h"
+#include "GenericData.h"
 #include "Message.h"
 #include "Exception.h"
+#include "Mry.h"
 #include "Math.h"
+
+
+static Math_t* (Math_GetInstance)(void) ;
+static Math_t* (Math_Create)(void) ;
+
+
+
+Math_t* (Math_GetInstance)(void)
+{
+  GenericData_t* gdat = Session_FindGenericData(Math_t,"Math") ;
+  
+  if(!gdat) {
+    Math_t* math = Math_Create() ;
+    
+    gdat = GenericData_Create(1,math,Math_t,"Math") ;
+    
+    Session_AddGenericData(gdat) ;
+    
+    assert(gdat == Session_FindGenericData(Math_t,"Math")) ;
+  }
+  
+  {
+    Math_t* math = (Math_t*) GenericData_GetData(gdat) ;
+  
+    Math_FreeBuffer(math) ;
+  
+    return(math) ;
+  }
+}
+
+
+
+
+Math_t*  (Math_Create)(void)
+{
+  Math_t* math = (Math_t*) Mry_New(Math_t) ;
+  
+  /* Space allocation for buffer */
+  {
+    Buffer_t* buf = Buffer_Create(Math_SizeOfBuffer) ;
+    
+    Math_GetBuffer(math) = buf ;
+  }
+  
+  
+  Math_GetDelete(math) = Math_Delete ;
+  
+  return(math) ;
+}
+
+
+
+
+void Math_Delete(void* self)
+{
+  Math_t** pmath = (Math_t**) self ;
+  Math_t*   math = *pmath ;
+  
+  Buffer_Delete(&Math_GetBuffer(math))  ;
+  free(math) ;
+}
+
 
 
 /* 
    Extern Functions 
 */
+
+
+
+double Math_Compute3x3MatrixDeterminant(double* a)
+/** Return the determinant of a 3x3 matrix */
+{
+  double det ;
+  
+  {
+    det  = a[0] * a[4] * a[8] - a[0] * a[7] * a[5] \
+         + a[3] * a[7] * a[2] - a[3] * a[1] * a[8] \
+         + a[6] * a[1] * a[5] - a[6] * a[4] * a[2] ;
+  }
+  
+  return(det) ;
+}
+
+
+
+double* Math_Inverse3x3Matrix(double* a)
+/** Return a pointer to the inverse of a 3x3 matrix 
+ *  or NULL if not invertible. */
+{
+  double det = Math_Compute3x3MatrixDeterminant(a) ;
+  
+  if(det == 0) return(NULL) ;
+
+  {
+      Math_t* math = Math_GetInstance() ;
+      size_t SizeNeeded = 9*(sizeof(double)) ;
+      double* b = (double*) Math_AllocateInBuffer(math,SizeNeeded) ;
+        
+      b[0] = a[4] * a[8] - a[7] * a[5] ;
+      b[1] = a[7] * a[2] - a[1] * a[8] ;
+      b[2] = a[1] * a[5] - a[4] * a[2] ;
+      b[3] = a[5] * a[6] - a[8] * a[3] ;
+      b[4] = a[8] * a[0] - a[2] * a[6] ;
+      b[5] = a[2] * a[3] - a[5] * a[0] ;
+      b[6] = a[3] * a[7] - a[6] * a[4] ;
+      b[7] = a[6] * a[1] - a[0] * a[7] ;
+      b[8] = a[0] * a[4] - a[3] * a[1] ;
+  
+      {
+        double ted = 1./det ;
+        int i ;
+    
+        for(i = 0 ; i < 9 ; i++) {
+          b[i] *= ted ;
+        }
+      }
+
+      return(b) ;
+  }
+}
 
 
 
@@ -32,9 +152,10 @@ double Math_ComputeSecondDeviatoricStressInvariant(const double* sig)
 
 
 double* Math_SolveByGaussElimination(double* a,double* b,int n)
-/** Solve the system a.x = b by Gaussian elimination with 
- *  backsubstitution with partial pivoting (interchange of rows).
- *  The rhs vector is replaced by the solution vector. */
+/** Return a pointer to the solution x of the system a.x = b 
+ *  by Gaussian elimination with backsubstitution with partial 
+ *  pivoting (interchange of rows).
+ *  On output the rhs b is replaced by the solution x. */
 {
 #define  A(i,j)  (a[(i)*n+(j)])
 #define  SWAP(a,b) {double tmp=(a);(a)=(b);(b)=tmp;}

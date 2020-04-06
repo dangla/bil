@@ -12,6 +12,7 @@ struct FEM_s     ; typedef struct FEM_s     FEM_t ;
 #include "Element.h"
 #include "IntFct.h"
 #include "Load.h"
+#include "Utils.h"
 
 /* Extern Functions */
 
@@ -23,8 +24,14 @@ extern double*  FEM_ComputeElasticMatrix(FEM_t*,IntFct_t*,const double*,const in
 extern double*  FEM_ComputeMassMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
 extern double*  FEM_ComputeConductionMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
 extern double*  FEM_ComputeBiotMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
-extern double*  FEM_ComputePoroelasticMatrix(FEM_t*,IntFct_t*,const double*,const int,const int) ;
+extern double*  FEM_ComputePoroelasticMatrix6(FEM_t*,IntFct_t*,const double*,const int,const int,const int) ;
 extern void     FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t*,const int,const int,double*) ;
+
+#define FEM_ComputePoroelasticMatrix(...) \
+        Utils_CAT_NARG(FEM_ComputePoroelasticMatrix,__VA_ARGS__)(__VA_ARGS__)
+
+#define FEM_ComputePoroelasticMatrix5(...) \
+        FEM_ComputePoroelasticMatrix6(__VA_ARGS__,0)
 
 /* Residus */
 extern double*  FEM_ComputeSurfaceLoadResidu(FEM_t*,IntFct_t*,Load_t*,const double,const double) ;

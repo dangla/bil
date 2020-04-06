@@ -120,7 +120,7 @@ void (SignalHandler)(int sigid)
     case SIGFPE:
   
       Message_Direct("Floating-point error.\n") ;
-      Exception_ReiterateWithInitialTimeStep ;
+      Exception_BackupAndTerminate ;
       return ;
       
     case SIGINT:

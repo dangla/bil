@@ -19,6 +19,7 @@
 #include "BilVersion.h"
 #include "BilInfo.h"
 #include "Session.h"
+#include "Mry.h"
 
 
 
@@ -30,9 +31,7 @@ static void   (Bil_CLI)(Bil_t*) ;
 
 Bil_t*    (Bil_Create)(int argc,char** argv)
 {
-  Bil_t* bil = (Bil_t*) malloc(sizeof(Bil_t)) ;
-  
-  assert(bil) ;
+  Bil_t* bil = (Bil_t*) Mry_New(Bil_t) ;
   
   Session_Open() ;
   
@@ -56,7 +55,6 @@ void Bil_Delete(void* self)
   
   Context_Delete(&(Bil_GetContext(bil))) ;
   free(bil) ;
-  *pbil = NULL ;
 }
 
 

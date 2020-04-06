@@ -11,12 +11,15 @@ struct Math_s         ; typedef struct Math_s         Math_t ;
 #define Math_Pi           (3.14159265358979323846)
 #define Math_Ln10         (2.3025850929940456840179914546843642076011)
 
+extern void     (Math_Delete)(void*) ;
 extern double   (Math_ComputeSecondDeviatoricStressInvariant)(const double*) ;
 extern double*  (Math_SolveByGaussElimination)(double*,double*,int) ;
 extern int      (Math_ComputePolynomialEquationRoots)(double*,int) ;
 extern int      (Math_PolishPolynomialEquationRoot)(double*,int,double*,double,int) ;
 extern double   (Math_EvaluateExpression)(char*) ;
 extern double   (Math_EvaluateExpressions)(char*,char*) ;
+extern double   (Math_Compute3x3MatrixDeterminant)(double*) ;
+extern double*  (Math_Inverse3x3Matrix)(double*) ;
 
 
 #define Math_ComputeSecondDeviatoricStrainInvariant \
@@ -46,11 +49,37 @@ extern double   (Math_EvaluateExpressions)(char*,char*) ;
 #endif
 
 
-#define Math_GetOutputs(math)             ((math)->outputs)
 
+#define Math_MaxNbOfMatrices                      (4)
+#define Math_MaxSizeOfMatrix                      (9*sizeof(double))
+#define Math_SizeOfBuffer                         (Math_MaxNbOfMatrices*Math_MaxSizeOfMatrix)
+
+
+#define Math_GetOutputs(M)             ((M)->outputs)
+#define Math_GetBuffer(M)              ((M)->buffer)
+#define Math_GetDelete(M)              ((M)->Delete)
+
+
+
+/* Operations on buffer */
+#define Math_AllocateInBuffer(M,sz) \
+        (Buffer_Allocate(Math_GetBuffer(M),(sz)))
+        
+#define Math_FreeBuffer(M) \
+        (Buffer_Free(Math_GetBuffer(M)))
+        
+#define Math_FreeBufferFrom(M,p) \
+        (Buffer_FreeFrom(Math_GetBuffer(M),(char*) (p)))
+
+
+
+#include "Buffer.h"
+#include "GenericObject.h"
 
 struct Math_s {          /* some math methods */
   void* outputs ;
+  Buffer_t*  buffer ;         /* Buffer */
+  GenericObject_Delete_t* Delete ;
 } ;
 
 

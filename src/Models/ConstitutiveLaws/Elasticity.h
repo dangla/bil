@@ -14,6 +14,7 @@ extern void           (Elasticity_Delete)(void*) ;
 extern void           (Elasticity_SetParameters)           (Elasticity_t*,...) ;
 extern void           (Elasticity_SetParameter)            (Elasticity_t*,const char*,double) ;
 extern double*        (Elasticity_ComputeStiffnessTensor)  (Elasticity_t*,double*) ;
+extern void           (Elasticity_CopyStiffnessTensor)     (Elasticity_t*,double*) ;
 extern void           (Elasticity_PrintStiffnessTensor)    (Elasticity_t*) ;
 
 

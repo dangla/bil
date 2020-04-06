@@ -8,10 +8,10 @@ composite1.msh
 
 Periodicities
 4
-MasterRegion = 104 SlaveRegion = 13  PeriodVector = 2 0 0
-MasterRegion = 122 SlaveRegion = 112 PeriodVector = 2 0 0
-MasterRegion = 123 SlaveRegion = 105 PeriodVector = 0 2 0
-MasterRegion = 113 SlaveRegion = 14  PeriodVector = 0 2 0
+MasterRegion = 105 SlaveRegion = 13  PeriodVector = 2 0 0
+MasterRegion = 114 SlaveRegion = 125 PeriodVector = 2 0 0
+MasterRegion = 115 SlaveRegion = 104 PeriodVector = 0 2 0
+MasterRegion = 124 SlaveRegion = 14  PeriodVector = 0 2 0
 
 
 Material #1            # matrix

@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include <strings.h>
+#include "Mry.h"
 #include "Message.h"
 #include "AdjacencyList.h"
 
@@ -12,12 +13,7 @@
 AdjacencyList_t* (AdjacencyList_Create)(int nvert,int* vert_nedges)
 {
   int nedges ;
-  AdjacencyList_t* adj = (AdjacencyList_t*) malloc(nvert*sizeof(AdjacencyList_t)) ;
-    
-    
-  if(!adj) {
-    arret("AdjacencyList_Create(1)") ;
-  }
+  AdjacencyList_t* adj = (AdjacencyList_t*) Mry_New(AdjacencyList_t[nvert]) ;
   
   
   /* Nb of directed edges */
@@ -34,11 +30,7 @@ AdjacencyList_t* (AdjacencyList_Create)(int nvert,int* vert_nedges)
   /* Allocate memory for the adjacency list */
   {
     int i ;
-    int* list = (int*) malloc(nedges*sizeof(int)) ;
-      
-    if(!list) {
-      arret("AdjacencyList_Create(2)") ;
-    }
+    int* list = (int*) Mry_New(int[nedges]) ;
     
     for(i = 0 ; i < nedges ; i++) {
       list[i] = -1 ;
@@ -68,6 +60,6 @@ void (AdjacencyList_Delete)(void* self)
   
   free(AdjacencyList_GetNeighbor(adj)) ;
   free(adj) ;
-  *padj = NULL ;
+  //*padj = NULL ;
 }
 

@@ -7,7 +7,7 @@ UNAME = Linux
 #----------
 CC     := gcc -x c   -std=c11
 CPP    := gcc -x c++ -std=c++11
-F77    := gfortran
+F77    := gfortran -cpp
 LEX    := flex #-d
 YACC   := bison #-t
 

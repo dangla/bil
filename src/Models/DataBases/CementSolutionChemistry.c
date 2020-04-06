@@ -43,7 +43,9 @@ static double*   (CementSolutionChemistry_CreateValence)(void) ;
 static void      (CementSolutionChemistry_InitializeValence)(double*) ;
 
 
-static void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1(CementSolutionChemistry_t*) ;
+static void CementSolutionChemistry_SupplementSystemWith_SO3_1(CementSolutionChemistry_t*) ;
+
+static void CementSolutionChemistry_SupplementSystemWith_SO3_2(CementSolutionChemistry_t*) ;
 
 static double* instancevalence = NULL ;
 
@@ -402,7 +404,7 @@ void CementSolutionChemistry_PrintChemicalConstants(CementSolutionChemistry_t* c
 #define Input(U)              CementSolutionChemistry_GetInput(csc,U)
 #define Concentration(CPD)    CementSolutionChemistry_GetConcentrationOf(csc,CPD)
 #define LogConcentration(CPD) CementSolutionChemistry_GetLogConcentrationOf(csc,CPD)
-#define Activity(CPD)         CementSolutionChemistry_GetActivityOf(csc,CPD)
+//#define Activity(CPD)         CementSolutionChemistry_GetActivityOf(csc,CPD)
 #define LogActivity(CPD)      CementSolutionChemistry_GetLogActivityOf(csc,CPD)
 #define C0_ref                (1 * mol / Liter)
 #define LogC0_ref             log10(C0_ref)
@@ -562,6 +564,14 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O(CementSolut
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
   
   /* Supplement with CO2 */
+  CementSolutionChemistry_SupplementSystemWith_CO2(csc) ;
+}
+
+
+
+void CementSolutionChemistry_SupplementSystemWith_CO2(CementSolutionChemistry_t* csc)
+{
+  /* Supplement with CO2 */
   double loga_co2  = Input(LogA_CO2) ;
   
   
@@ -661,13 +671,11 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O(CementSolut
 
 void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(CementSolutionChemistry_t* csc)
 {
-  if(CementSolutionChemistry_InputIs(csc,SO3,LogA_H2SO4)) {
-    CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1(csc) ;
-    return ;
-  } else if(CementSolutionChemistry_InputIs(csc,SO3,LogA_SO4)) {
-    CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_2(csc) ;
-    return ;
-  }
+  /* Compute the system CaO-SiO2-Na2O-K2O */
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
+  
+  /* Supplement with SO3 */
+  CementSolutionChemistry_SupplementSystemWith_SO3(csc) ;
   
   arret("CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O") ;
 }
@@ -676,11 +684,26 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(CementSolut
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1(CementSolutionChemistry_t* csc)
+
+void CementSolutionChemistry_SupplementSystemWith_SO3(CementSolutionChemistry_t* csc)
 {
-  /* Compute the system CaO-SiO2-Na2O-K2O */
-  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
+  if(CementSolutionChemistry_InputSO3Is(csc,LogA_H2SO4)) {
+    CementSolutionChemistry_SupplementSystemWith_SO3_1(csc) ;
+    return ;
+  } else if(CementSolutionChemistry_InputSO3Is(csc,LogA_SO4)) {
+    CementSolutionChemistry_SupplementSystemWith_SO3_2(csc) ;
+    return ;
+  }
   
+  arret("CementSolutionChemistry_SupplementSystemWith_SO3") ;
+}
+
+
+
+
+
+void CementSolutionChemistry_SupplementSystemWith_SO3_1(CementSolutionChemistry_t* csc)
+{
   /* Supplement with SO3 */
   double loga_h2so4 = Input(LogA_H2SO4) ;
   
@@ -693,8 +716,19 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1(CementSol
 
   /* Sulfur compounds */
   double logk_h2so4 = LogKeq(H2SO4) ;
-  double loga_hso4  = loga_h2so4 - loga_h + logk_h2so4 ;
   double logk_hso4  = LogKeq(HSO4) ;
+  /*
+  if(CementSolutionChemistry_InputSO3Is(csc,LogA_H2SO4)) {
+    double loga_h2so4 = Input(LogA_H2SO4) ;
+    double loga_hso4  = loga_h2so4 - loga_h + logk_h2so4 ;
+    double loga_so4   = loga_hso4 - loga_h + logk_hso4 ;
+  } else if(CementSolutionChemistry_InputSO3Is(csc,LogA_SO4)) {
+    double loga_so4   = Input(LogA_SO4) ;
+    double loga_hso4  = loga_so4  + loga_h - logk_hso4 ;
+    double loga_h2so4 = loga_hso4 + loga_h - logk_h2so4 ;
+  }
+  */
+  double loga_hso4  = loga_h2so4 - loga_h + logk_h2so4 ;
   double loga_so4   = loga_hso4 - loga_h + logk_hso4 ;
   
   
@@ -753,11 +787,8 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1(CementSol
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_2(CementSolutionChemistry_t* csc)
+void CementSolutionChemistry_SupplementSystemWith_SO3_2(CementSolutionChemistry_t* csc)
 {
-  /* Compute the system CaO-SiO2-Na2O-K2O */
-  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
-  
   /* Supplement with SO3 */
   double loga_so4 = Input(LogA_SO4) ;
   
@@ -824,6 +855,139 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_2(CementSol
     LogConcentration(CaHSO4) = logc_cahso4 ;
     LogConcentration(CaSO4)  = logc_caso4 ;
   }
+}
+
+
+
+
+
+void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(CementSolutionChemistry_t* csc)
+{
+  /* Compute the system CaO-SiO2-Na2O-K2O */
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
+  
+  /* Supplement with Al2O3 */
+  double logq_ah3   = Input(LogQ_AH3) ;
+  
+
+  /* Water */
+  double loga_oh  = LogActivity(OH) ;
+  
+  
+  /* Chemical reactions involving compounds of type I. */
+
+  /* Aluminium compounds */
+  double loga_al     = 0.5*logq_ah3 - 3*loga_oh ;
+  double logk_alo4h4 = LogKeq(AlO4H4) ;
+  double loga_alo4h4 = loga_al + 4*loga_oh - logk_alo4h4 ;
+  
+  
+  /* Chemical reactions involving compounds of type II. */
+  
+  
+  /* Backup activities */
+  {
+    LogActivity(Al)     = loga_al ;
+    LogActivity(AlO4H4) = loga_alo4h4 ;
+  }
+  
+  
+  /* Backup concentrations */
+  {
+    /* Translate into concentrations providing ideality */
+    double logc0             = LogC0_ref ;
+    
+    double logc_al           = loga_al      + logc0 ;
+    double logc_alo4h4       = loga_alo4h4  + logc0 ;
+    
+    Concentration(Al)        = pow(10,logc_al) ;
+    Concentration(AlO4H4)    = pow(10,logc_alo4h4) ;
+  
+    LogConcentration(Al)     = logc_al ;
+    LogConcentration(AlO4H4) = logc_alo4h4 ;
+  }
+}
+
+
+
+
+
+void CementSolutionChemistry_SupplementSystemWith_Cl(CementSolutionChemistry_t* csc)
+{
+  /* Supplement with Cl */
+  double loga_cl   = Input(LogA_Cl) ;
+  
+  
+  /* Backup activities */
+  {
+    LogActivity(Cl)     = loga_cl ;
+  }
+  
+  
+  /* Backup concentrations */
+  {
+    /* Translate into concentrations providing ideality */
+    double logc0             = LogC0_ref ;
+    
+    double logc_cl           = loga_cl      + logc0 ;
+    
+    Concentration(Cl)        = pow(10,logc_cl) ;
+  
+    LogConcentration(Cl)     = logc_cl ;
+  }
+}
+
+
+
+
+
+void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_Cl_H2O(CementSolutionChemistry_t* csc)
+{
+  /* Compute the system CaO-SiO2-Na2O-Al2O3-K2O */
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(csc) ;
+  
+  /* Supplement with Cl */
+  CementSolutionChemistry_SupplementSystemWith_Cl(csc) ;
+}
+
+
+
+
+
+void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_H2O(CementSolutionChemistry_t* csc)
+{
+  /* Compute the system CaO-SiO2-Na2O-K2O-Al2O3 */
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(csc) ;
+  
+  /* Supplement with CO2 */
+  CementSolutionChemistry_SupplementSystemWith_CO2(csc) ;
+}
+
+
+
+
+
+void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_Cl_H2O(CementSolutionChemistry_t* csc)
+{
+  /* Compute the system CaO-SiO2-Na2O-K2O-Al2O3 */
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(csc) ;
+  
+  /* Supplement with CO2 and Cl */
+  CementSolutionChemistry_SupplementSystemWith_CO2(csc) ;
+  CementSolutionChemistry_SupplementSystemWith_Cl(csc) ;
+}
+
+
+
+
+
+void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_SO3_H2O(CementSolutionChemistry_t* csc)
+{
+  /* Compute the system CaO-SiO2-Na2O-K2O-Al2O3 */
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(csc) ;
+  
+  /* Supplement with SO3 */
+  CementSolutionChemistry_SupplementSystemWith_SO3(csc) ;
 }
 
 
@@ -1088,7 +1252,7 @@ int CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t* cs
       double loga_h  = LogActivity(H) ;
       double a_h     = pow(10,loga_h) ;
       double a_oh    = pow(10,loga_oh) ;
-      double y[6] = {a3,a2,a1,a0,b1,b2} ;
+      double y[6] = {a3,a2,a1,a0+b0,b1,b2} ;
       double tol = 1.e-4 ;
   
       x = poly4(a2,a1,a0+b0,b1,b2,a_h,a_oh) ;
@@ -1117,8 +1281,6 @@ int CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t* cs
       printf("b2    = %e\n",b2) ;
       
       if(x < 0) return(-1) ;
-      //Exception_Interrupt ;
-      //arret("CementSolutionChemistry_SolveElectroneutrality: c_h<0") ;
     }
   }
   
@@ -1159,6 +1321,8 @@ int CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t* cs
   
     Concentration(Al)       *= x3 ;
     Concentration(AlO4H4)   *= y ;
+    
+    //Concentration(Cl)       *= 1 ;
   
     //Concentration(CaH2SiO4) *= 1 ;
     Concentration(CaH3SiO4) *= x ;
@@ -1212,6 +1376,8 @@ int CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t* cs
     LogConcentration(Al)       += logx3 ;
     LogConcentration(AlO4H4)   += logy ;
   
+    //LogConcentration(Cl)       += 0 ;
+  
     //LogConcentration(CaH2SiO4) += 0 ;
     LogConcentration(CaH3SiO4) += logx ;
     
@@ -1235,6 +1401,7 @@ int CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t* cs
 
 
 
+#include "EquilibriumConstantOfHomogeneousReactionInWater.h"
 
 int CementSolutionChemistry_SolveExplicitElectroneutrality(CementSolutionChemistry_t* csc)
 /** Solve the electroneutrality equation, SUM(z_i c_i) = 0,
@@ -1247,7 +1414,9 @@ int CementSolutionChemistry_SolveExplicitElectroneutrality(CementSolutionChemist
   double q    = CementSolutionChemistry_GetChargeDensity(csc) ;
   double q0   = 0.5 * (q - c_h + c_oh) ;
   /* solve 2*q0 + c_h - c_oh = 0 */
-  double kw   = c_h*c_oh ;
+  double T    = CementSolutionChemistry_GetRoomTemperature(csc) ;
+  double kw   = EquilibriumConstantOfHomogeneousReactionInWater(H2O__H_OH,T) ;
+  //double kw   = c_h*c_oh ;
   
   if(q0 > 0) {
     c_oh =   q0 + sqrt(q0*q0 + kw) ;
@@ -1689,7 +1858,7 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
       printf("a_oh = %e\n",a_oh) ;
       // Raise an interrupt signal instead of exit
       Message_Warning("poly4: a_h = %e > 1 or a_oh = %e > 1!",x*a_h,a_oh/x) ;
-      Exception_Interrupt ;
+      return(-1) ;
     }
     */
   }
@@ -1747,7 +1916,7 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
       printf("a_oh = %e\n",a_oh) ;
       /* Raise an interrupt signal instead of exit */
       Message_Warning("poly4: a_h = %e > 1 or a_oh = %e > 1!",x*a_h,a_oh/x) ;
-      Exception_Interrupt ;
+      return(-1) ;
     }
   }
   

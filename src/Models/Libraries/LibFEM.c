@@ -29,7 +29,8 @@ void mxcpl(double *kc,double **x,IntFct_t fi,double *c,int dim,int dec,Symmetry_
 {
 #define NN          (fi.nn)
 #define KC(i,j)     (kc[(i)*NN+(j)])
-#define DH(n,i)     (dh[(n)*fi.dim+(i)])
+#define DH(n,i)     (dh[(n)*3+(i)])
+//#define DH(n,i)     (dh[(n)*fi.dim+(i)])
 #define C(i,j)      (c[(i)*3+(j)])
 #define CAJ(i,j)    (caj[(i)*dim+(j)])
   int    i,j,k,l,p ;
@@ -134,7 +135,8 @@ void mxcond(double *kc,double **x,IntFct_t fi,double *c,int dim,int dec,Symmetry
 {
 #define NN          (fi.nn)
 #define KC(i,j)     (kc[(i)*NN+(j)])
-#define DH(n,i)     (dh[(n)*fi.dim+(i)])
+#define DH(n,i)     (dh[(n)*3+(i)])
+//#define DH(n,i)     (dh[(n)*fi.dim+(i)])
 #define C(i,j)      (c[(i)*3+(j)])
 #define CAJ(i,j)    (caj[(i)*dim+(j)])
   int    i,j,k,l,p ;
@@ -189,7 +191,8 @@ void  mxrig(double *kr,double **x,IntFct_t fi,double *c,int dim,int dec,Symmetry
 {
 #define NN          (fi.nn)
 #define KR(i,j)     (kr[(i)*NN*dim+(j)])
-#define DH(n,i)     (dh[(n)*fi.dim+(i)])
+#define DH(n,i)     (dh[(n)*3+(i)])
+//#define DH(n,i)     (dh[(n)*fi.dim+(i)])
 #define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
 #define CAJ(i,j)    (caj[(i)*dim+(j)])
   int    i,j,k,l,r,s,p ;
@@ -384,7 +387,8 @@ void   rscont(double *r,double **x,IntFct_t fi,double *s,int dim,int dec,Symmetr
 /* Forces dues aux contraintes */
 {
 #define NN          (fi.nn)
-#define DH(n,i)     (dh[(n)*fi.dim+(i)])
+#define DH(n,i)     (dh[(n)*3+(i)])
+//#define DH(n,i)     (dh[(n)*fi.dim+(i)])
 #define S(i,j)      (s[(i)*3+(j)])
 #define CAJ(i,j)    (caj[(i)*dim+(j)])
 #define R(n,i)      (r[(n)*dim+(i)])
@@ -436,7 +440,8 @@ void   rsflux(double *r,double **x,IntFct_t fi,double *f,int dim,int dec,Symmetr
 /* Forces dues a un flux */
 {
 #define NN          (fi.nn)
-#define DH(n,i)     (dh[(n)*fi.dim+(i)])
+#define DH(n,i)     (dh[(n)*3+(i)])
+//#define DH(n,i)     (dh[(n)*fi.dim+(i)])
 #define CAJ(i,j)    (caj[(i)*dim+(j)])
   int    i,j,k,p ;
   double a,rayon ;
@@ -519,8 +524,8 @@ void chsurf(double **x,double *r,int dim,Symmetry_t sym,double dt,double t,Load_
 #define MAT     Element_GetMaterial(&el)
 #define NN      Element_GetNbOfNodes(&el)
 #define NP      IntFct_GetNbOfPoints(fi)
-#define H(p)    (IntFct_GetFunction(fi) + (p)*NN)
-#define DH(p)   (IntFct_GetFunctionGradient(fi) + (p)*NN*(dim - 1))
+#define H(p)    IntFct_GetFunctionAtPoint(fi,p)
+#define DH(p)   IntFct_GetFunctionGradientAtPoint(fi,p)
   int    ii,jj,ieq ;
   double zero = 0.,ft ;
   int    i ;
@@ -688,7 +693,8 @@ void def(double **x,double **u,double *h,double *dh,double *eps,int nn,int dim,S
 /* Tenseur des deformations (eps) */
 {
 #define U(n,i)   (u[(n)][inc+(i)])
-#define DH(n,i)  (dh[(n)*dim+(i)])
+#define DH(n,i)  (dh[(n)*3+(i)])
+//#define DH(n,i)  (dh[(n)*dim+(i)])
 #define EPS(i,j) (eps[(i)*3+(j)])
 #define CJ(i,j)  (cj[(i)*dim+(j)])
   int    i,j,k,l ;
@@ -726,7 +732,8 @@ void grad(double **x,double **u,double *dh,double *gu,int nn,int dim,int inc)
 /* Gradient du parametre i=inc (gu) */
 {
 #define U(n)     (u[(n)][(inc)])
-#define DH(n,i)  (dh[(n)*dim+(i)])
+#define DH(n,i)  (dh[(n)*3+(i)])
+//#define DH(n,i)  (dh[(n)*dim+(i)])
 #define CJ(i,j)  (cj[(i)*dim+(j)])
   int    i,k,l ;
   double cj[9] ;
@@ -755,7 +762,8 @@ void grad(double **x,double **u,double *dh,double *gu,int nn,int dim,int inc)
 double det(int dim,int nn,double **x,double *dh,int dim_h)
 /* Determinant de la matrice jacobienne */
 {
-#define DH(n,i) (dh[(n)*dim_h+(i)])
+#define DH(n,i) (dh[(n)*3+(i)])
+//#define DH(n,i) (dh[(n)*dim_h+(i)])
   int    i,j,k ;
   double c[3][3],dt ;
 
@@ -817,7 +825,8 @@ double jac(int dim,int nn,double **x,double *dh,double *cj)
 /* Determinant de la matrice jacobienne et son inverse (cj) */
 {
 #define CJ(i,j)  (cj[(i)*dim+(j)])
-#define DH(n,i)  (dh[(n)*dim_h+(i)])
+#define DH(n,i)  (dh[(n)*3+(i)])
+//#define DH(n,i)  (dh[(n)*dim_h+(i)])
   int    dim_h = dim ; /* ne reste plus qu'a mettre dim_h en argument */
   int    i,j,k ;
   double jc[3][3],dt,td,v ;
@@ -927,7 +936,8 @@ double jac(int dim,int nn,double **x,double *dh,double *cj)
 double*  ComputeNormalVector(Element_t *element,double *dh,int nn)
 /* Normale unitaire a un sous-espace de dimension dim-1 */
 {
-#define DH(n,i) (dh[(n)*dim_h+(i)])
+#define DH(n,i) (dh[(n)*3+(i)])
+//#define DH(n,i) (dh[(n)*dim_h+(i)])
   size_t SizeNeeded = 3*sizeof(double) ;
   double *norm = (double*) Element_AllocateInBuffer(element,SizeNeeded) ;
   int    dim_h = Element_GetDimension(element) ;

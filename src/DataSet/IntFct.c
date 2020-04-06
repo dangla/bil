@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "Mry.h"
 #include "Message.h"
 #include "Tools/Math.h"
+#include "ShapeFct.h"
 #include "IntFct.h"
 
 static void   IntFct_ComputeAtGaussPoints(IntFct_t*,int,int) ;
@@ -21,18 +23,19 @@ static void   (IntFct_AllocateMemory)(IntFct_t*) ;
 
 IntFct_t* (IntFct_Create)(int nn,int dim,const char* type)
 {
-  IntFct_t* intfct = (IntFct_t*) malloc(sizeof(IntFct_t)) ;
+  IntFct_t* intfct = (IntFct_t*) Mry_New(IntFct_t) ;
   
-  if(!intfct) {
-    arret("IntFct_Create(1)") ;
-  }
   
   IntFct_GetDimension(intfct) = dim ;
-  IntFct_GetNbOfNodes(intfct) = nn ;
+  IntFct_GetNbOfFunctions(intfct) = nn ;
+  
+  if(nn > IntFct_MaxNbOfFunctions) {
+    arret("IntFct_Create: too many functions") ;
+  }
   
   IntFct_AllocateMemory(intfct) ;
   
-  strcpy(IntFct_GetType(intfct),type) ;
+  IntFct_SetType(intfct,type) ;
     
   if(IntFct_TypeIs(intfct,"Nodes")) {
     IntFct_ComputeAtNodes(intfct,nn,dim) ;
@@ -54,21 +57,19 @@ void (IntFct_AllocateMemory)(IntFct_t* intfct)
 {
   
   {
-    char* p = (char*) malloc(IntFct_MaxLengthOfKeyWord*sizeof(char)) ;
-    
-    if(!p) arret("IntFct_AllocateMemory(1)") ;
+    char* p = (char*) Mry_New(char[IntFct_MaxLengthOfKeyWord]) ;
     
     IntFct_GetType(intfct) = p ;
   }
   
   {
-    int dim = IntFct_GetDimension(intfct) ;
-    int nn  = IntFct_GetNbOfNodes(intfct) ;
+    int dim = 3 ;
+    //int dim = IntFct_GetDimension(intfct) ;
+    int nn  = IntFct_MaxNbOfFunctions ;
+    //int nn  = IntFct_GetNbOfFunctions(intfct) ;
     int np  = IntFct_MaxNbOfIntPoints ;
     int k   = np*(1 + nn*(1 + dim) + dim) ;
-    double* weight = (double*) malloc(k*sizeof(double)) ;
-    
-    if(!weight) arret("IntFct_AllocateMemory(2)") ;
+    double* weight = (double*) Mry_New(double[k]) ;
     
     IntFct_GetWeight(intfct)           = weight ;
     IntFct_GetFunction(intfct)         = weight + np ;
@@ -105,209 +106,7 @@ double (IntFct_InterpolateAtPoint)(IntFct_t* intfct,double* var,int shift,int p)
 void (IntFct_ComputeIsoShapeFct)(int dim,int nn,double* x,double* h,double* dh)
 /* Compute Iso-shape functions (h) and their gradients (dh) at point x */
 {
-#define X         x[0]
-#define Y         x[1]
-#define Z         x[2]
-#define DH(n,i)  (dh[(n)*dim+(i)])
-#define DHx(n)    DH(n,0)
-#define DHy(n)    DH(n,1)
-#define DHz(n)    DH(n,2)
-  
-  /* 0D */
-  if(dim == 0) {
-    /* bord a 1 noeud */
-    if(nn == 1) {
-      h[0] = 1. ;
-      return ;
-    }
-    
-  /* 1D */
-  } else if(dim == 1) {
-    /* segment a 2 noeuds */
-    if(nn == 2) {
-      h[0]    = (1. - X)*0.5 ;
-      h[1]    = (1. + X)*0.5 ;
-      if(dh) {
-        DHx(0)  = -0.5 ;
-        DHx(1)  =  0.5 ;
-      }
-      return ;
-    /* segment a 3 noeuds */
-    } else if(nn == 3) {
-      h[0]    = -X*(1. - X)*0.5 ;
-      h[1]    =  X*(1. + X)*0.5 ;
-      h[2]    = (1. - X*X) ;
-      if(dh) {
-        DHx(0)  = -0.5 + X ;
-        DHx(1)  =  0.5 + X ;
-        DHx(2)  = -2.*X ;
-      }
-      return ;
-    }
-    
-  /* 2D */
-  } else if(dim == 2) {
-    /* triangle a 3 noeuds */
-    if(nn == 3) {
-      h[0]    = 1. - X - Y ;
-      h[1]    = X ;
-      h[2]    = Y ;
-      if(dh) {
-        DHx(0)  = -1. ;
-        DHy(0)  = -1. ;
-        DHx(1)  =  1. ;
-        DHy(1)  =  0. ;
-        DHx(2)  =  0. ;
-        DHy(2)  =  1. ;
-      }
-      return ;
-    /* quadrilatere a 4 noeuds */
-    } else if(nn == 4) {
-      h[0]    =  (1. - X)*(1. - Y)*0.25 ;
-      h[1]    =  (1. + X)*(1. - Y)*0.25 ;
-      h[2]    =  (1. + X)*(1. + Y)*0.25 ;
-      h[3]    =  (1. - X)*(1. + Y)*0.25 ;
-      if(dh) {
-        DHx(0)  = -(1. - Y)*0.25 ;
-        DHy(0)  = -(1. - X)*0.25 ;
-        DHx(1)  =  (1. - Y)*0.25 ;
-        DHy(1)  = -(1. + X)*0.25 ;
-        DHx(2)  =  (1. + Y)*0.25 ;
-        DHy(2)  =  (1. + X)*0.25 ;
-        DHx(3)  = -(1. + Y)*0.25 ;
-        DHy(3)  =  (1. - X)*0.25 ;
-      }
-      return ;
-    /* triangle a 6 noeuds */
-    } else if(nn == 6) {
-      h[0]    =  (1. - X - Y)*(1. - 2*X - 2*Y) ;
-      h[1]    = -(1. - 2*X)*X ;
-      h[2]    = -(1. - 2*Y)*Y ;
-      h[3]    =  (1. - X - Y)*X*4 ;
-      h[4]    =  X*Y*4 ;
-      h[5]    =  (1. - X - Y)*Y*4 ;
-      if(dh) {
-        DHx(0)  = -3 + 4*X + 4*Y ;
-        DHy(0)  = -3 + 4*X + 4*Y ;
-        DHx(1)  = -1. + 4*X ;
-        DHy(1)  =  0. ;
-        DHx(2)  =  0. ;
-        DHy(2)  = -1. + 4*Y ;
-        DHx(3)  =  4*(1. - 2*X - Y) ;
-        DHy(3)  = -4*X ;
-        DHx(4)  =  4*Y ;
-        DHy(4)  =  4*X ;
-        DHx(5)  = -4*Y ;
-        DHy(5)  =  4*(1. - X - 2*Y) ;
-      }
-      return ;
-    /* quadrilatere a 8 noeuds */
-    } else if(nn == 8) {
-      double DX = 2*X,X2 = X*X ;
-      double DY = 2*Y,Y2 = Y*Y ;
-      h[0]    = -(1. - X)*(1. - Y)*(1. + X + Y)*0.25 ;
-      h[1]    = -(1. + X)*(1. - Y)*(1. - X + Y)*0.25 ;
-      h[2]    = -(1. + X)*(1. + Y)*(1. - X - Y)*0.25 ;
-      h[3]    = -(1. - X)*(1. + Y)*(1. + X - Y)*0.25 ;
-      h[4]    =  (1. - X2)*(1. - Y )*0.5 ;
-      h[5]    =  (1. + X )*(1. - Y2)*0.5 ;
-      h[6]    =  (1. - X2)*(1. + Y )*0.5 ;
-      h[7]    =  (1. - X )*(1. - Y2)*0.5 ;
-      if(dh) {
-        DHx(0)  =  (1. - Y)*( DX + Y )*0.25 ;
-        DHy(0)  =  (1. - X)*( X  + DY)*0.25 ;
-        DHx(1)  = -(1. - Y)*(-DX + Y )*0.25 ;
-        DHy(1)  =  (1. + X)*(-X  + DY)*0.25 ;
-        DHx(2)  = -(1. + Y)*(-DX - Y )*0.25 ;
-        DHy(2)  = -(1. + X)*(-X  - DY)*0.25 ;
-        DHx(3)  =  (1. + Y)*( DX - Y )*0.25 ;
-        DHy(3)  = -(1. - X)*( X  - DY)*0.25 ;
-        DHx(4)  = -(1. - Y)*X ;
-        DHy(4)  = -(1. - X2)*0.5 ;
-        DHx(5)  =  (1. - Y2)*0.5 ;
-        DHy(5)  = -(1. + X)*Y ;
-        DHx(6)  = -(1. + Y)*X ;
-        DHy(6)  =  (1. - X2)*0.5 ;
-        DHx(7)  = -(1. - Y2)*0.5 ;
-        DHy(7)  = -(1. - X)*Y ;
-      }
-      return ;
-    }
-    
-    /* 3D */
-  } else if(dim == 3) {
-    /* tetraedre a 4 noeuds */
-    if(nn == 4) {
-      h[0]    = 1. - X - Y - Z;
-      h[1]    = X ;
-      h[2]    = Y ;
-      h[3]    = Z ;
-      if(dh) {
-        DHx(0)  = -1. ;
-        DHy(0)  = -1. ;
-        DHz(0)  = -1. ;
-        DHx(1)  =  1. ;
-        DHy(1)  =  0. ;
-        DHz(1)  =  0. ;
-        DHx(2)  =  0. ;
-        DHy(2)  =  1. ;
-        DHz(2)  =  0. ;
-        DHx(3)  =  0. ;
-        DHy(3)  =  0. ;
-        DHz(3)  =  1. ;
-      }
-      return ;
-    /* hexaedre a 8 noeuds */
-    } else if(nn == 8) {
-      h[0]    =  (1. - X)*(1. - Y)*(1. - Z)*0.125 ;
-      h[1]    =  (1. + X)*(1. - Y)*(1. - Z)*0.125 ;
-      h[2]    =  (1. + X)*(1. + Y)*(1. - Z)*0.125 ;
-      h[3]    =  (1. - X)*(1. + Y)*(1. - Z)*0.125 ;
-      h[4]    =  (1. - X)*(1. - Y)*(1. + Z)*0.125 ;
-      h[5]    =  (1. + X)*(1. - Y)*(1. + Z)*0.125 ;
-      h[6]    =  (1. + X)*(1. + Y)*(1. + Z)*0.125 ;
-      h[7]    =  (1. - X)*(1. + Y)*(1. + Z)*0.125 ;
-      if(dh) {
-        DHx(0)  = -(1. - Y)*(1. - Z)*0.125 ;
-        DHy(0)  = -(1. - X)*(1. - Z)*0.125 ;
-        DHz(0)  = -(1. - X)*(1. - Y)*0.125 ;
-        DHx(1)  =  (1. - Y)*(1. - Z)*0.125 ;
-        DHy(1)  = -(1. + X)*(1. - Z)*0.125 ;
-        DHz(1)  = -(1. + X)*(1. - Y)*0.125 ;
-        DHx(2)  =  (1. + Y)*(1. - Z)*0.125 ;
-        DHy(2)  =  (1. + X)*(1. - Z)*0.125 ;
-        DHz(2)  = -(1. + X)*(1. + Y)*0.125 ;
-        DHx(3)  = -(1. + Y)*(1. - Z)*0.125 ;
-        DHy(3)  =  (1. - X)*(1. - Z)*0.125 ;
-        DHz(3)  = -(1. - X)*(1. + Y)*0.125 ;
-        DHx(4)  = -(1. - Y)*(1. + Z)*0.125 ;
-        DHy(4)  = -(1. - X)*(1. + Z)*0.125 ;
-        DHz(4)  =  (1. - X)*(1. - Y)*0.125 ;
-        DHx(5)  =  (1. - Y)*(1. + Z)*0.125 ;
-        DHy(5)  = -(1. + X)*(1. + Z)*0.125 ;
-        DHz(5)  =  (1. + X)*(1. - Y)*0.125 ;
-        DHx(6)  =  (1. + Y)*(1. + Z)*0.125 ;
-        DHy(6)  =  (1. + X)*(1. + Z)*0.125 ;
-        DHz(6)  =  (1. + X)*(1. + Y)*0.125 ;
-        DHx(7)  = -(1. + Y)*(1. + Z)*0.125 ;
-        DHy(7)  =  (1. - X)*(1. + Z)*0.125 ;
-        DHz(7)  =  (1. - X)*(1. + Y)*0.125 ;
-      }
-      return ;
-    }
-  }
-
-  
-  arret("IntFct_ComputeIsoShapeFct") ;
-  
-  return ;
-#undef X
-#undef Y
-#undef Z
-#undef DH
-#undef DHx
-#undef DHy
-#undef DHz
+  ShapeFct_ComputeValuesAtPoint(dim,nn,x,h,dh) ;
 }
 
 
@@ -349,7 +148,7 @@ void   IntFct_ComputeAtGaussPoints(IntFct_t* f,int nn,int dim)
     if(nn == 1) {
       int np = 1 ;
       double* w = IntFct_GetWeight(f) ;
-      double* h = IntFct_GetFunction(f) ;
+      double* h = IntFct_GetFunctionAtPoint(f,0) ;
       
       IntFct_GetNbOfPoints(f) = np  ;
       h[0] = 1. ;
@@ -363,8 +162,8 @@ void   IntFct_ComputeAtGaussPoints(IntFct_t* f,int nn,int dim)
     /* segment a 2 ou 3 noeuds */
     if(nn == 2 || nn == 3) {
       int np = 2 ;
-      //double a[3*IntFct_MaxNbOfIntPoints] ;
-      double* a = IntFct_GetPointCoordinates(f) ;
+      double a[IntFct_MaxNbOfIntPoints] ;
+      //double* a = IntFct_GetPointCoordinates(f) ;
       double* w = IntFct_GetWeight(f) ;
       int p ;
       
@@ -372,13 +171,17 @@ void   IntFct_ComputeAtGaussPoints(IntFct_t* f,int nn,int dim)
       if(np > IntFct_MaxNbOfIntPoints) {
         arret("IntFct_ComputeAtGaussPoints (1)") ;
       }
+      
       gaussp(np,a,w) ;
       
       for(p = 0 ; p < np ; p++) {
-        double* h  = IntFct_GetFunction(f)  + p*nn ;
-        double* dh = IntFct_GetFunctionGradient(f) + p*nn*dim ;
+        double* h  = IntFct_GetFunctionAtPoint(f,p) ;
+        double* dh = IntFct_GetFunctionGradientAtPoint(f,p) ;
+        double* x  = IntFct_GetCoordinatesAtPoint(f,p) ;
         
-        IntFct_ComputeIsoShapeFct(dim,nn,a+p*dim,h,dh) ;
+        x[0] = a[p] ;
+        
+        IntFct_ComputeIsoShapeFct(dim,nn,x,h,dh) ;
       }
       
       return ;
@@ -389,18 +192,26 @@ void   IntFct_ComputeAtGaussPoints(IntFct_t* f,int nn,int dim)
     /* triangle a 3 ou 6 noeuds */
     if(nn == 3 || nn == 6) {
       int p,np = 3 ;
-      //double a[3*IntFct_MaxNbOfIntPoints] ;
-      double* a = IntFct_GetPointCoordinates(f) ;
+      double a[2*IntFct_MaxNbOfIntPoints] ;
+      //double* a = IntFct_GetPointCoordinates(f) ;
       double* w = IntFct_GetWeight(f) ;
       
       IntFct_GetNbOfPoints(f) = np ;
-      if(np > IntFct_MaxNbOfIntPoints) arret("IntFct_ComputeAtGaussPoints (2)") ;
+      if(np > IntFct_MaxNbOfIntPoints) {
+        arret("IntFct_ComputeAtGaussPoints (2)") ;
+      }
+      
       hammer(np,a,w) ;
       
       for(p = 0 ; p < np ; p++) {
-        double* h  = IntFct_GetFunction(f)  + p*nn ;
-        double* dh = IntFct_GetFunctionGradient(f) + p*nn*dim ;
-        IntFct_ComputeIsoShapeFct(dim,nn,a+p*dim,h,dh) ;
+        double* h  = IntFct_GetFunctionAtPoint(f,p) ;
+        double* dh = IntFct_GetFunctionGradientAtPoint(f,p) ;
+        double* x  = IntFct_GetCoordinatesAtPoint(f,p) ;
+        
+        x[0] = a[2*p] ;
+        x[1] = a[2*p+1] ;
+        
+        IntFct_ComputeIsoShapeFct(dim,nn,x,h,dh) ;
       }
       
       return ;
@@ -411,14 +222,17 @@ void   IntFct_ComputeAtGaussPoints(IntFct_t* f,int nn,int dim)
       double w[IntFct_MaxNbOfIntPoints] ;
       
       IntFct_GetNbOfPoints(f) = np ;
-      if(np > IntFct_MaxNbOfIntPoints) arret("IntFct_ComputeAtGaussPoints (3)") ;
+      if(np > IntFct_MaxNbOfIntPoints) {
+        arret("IntFct_ComputeAtGaussPoints (3)") ;
+      }
+      
       gaussp(2,a,w) ;
       
       for(i = 0 ; i < 2 ; i++) for(j = 0 ; j < 2 ; j++) {
         int p = 2*i + j ;
-        double* h  = IntFct_GetFunction(f)  + p*nn ;
-        double* dh = IntFct_GetFunctionGradient(f) + p*nn*dim ;
-        double* x = IntFct_GetPointCoordinates(f) + p*dim ;
+        double* h  = IntFct_GetFunctionAtPoint(f,p) ;
+        double* dh = IntFct_GetFunctionGradientAtPoint(f,p) ;
+        double* x  = IntFct_GetCoordinatesAtPoint(f,p) ;
         
         IntFct_GetWeight(f)[p]   = w[i]*w[j] ;
         x[0] = a[i] ;
@@ -434,19 +248,27 @@ void   IntFct_ComputeAtGaussPoints(IntFct_t* f,int nn,int dim)
     /* tetraedre a 4 ou 10 noeuds */
     if(nn == 4 || nn == 10) {
       int p,np = 4 ;
-      //double a[3*IntFct_MaxNbOfIntPoints] ;
-      double* a = IntFct_GetPointCoordinates(f) ;
+      double a[3*IntFct_MaxNbOfIntPoints] ;
+      //double* a = IntFct_GetPointCoordinates(f) ;
       double* w = IntFct_GetWeight(f) ;
       
       IntFct_GetNbOfPoints(f) = np ;
-      if(np > IntFct_MaxNbOfIntPoints) arret("IntFct_ComputeAtGaussPoints (4)") ;
+      if(np > IntFct_MaxNbOfIntPoints) {
+        arret("IntFct_ComputeAtGaussPoints (4)") ;
+      }
+      
       gauss_tetraedre(np,a,w) ;
       
       for(p = 0 ; p < np ; p++) {
-        double* h  = IntFct_GetFunction(f)  + p*nn ;
-        double* dh = IntFct_GetFunctionGradient(f) + p*nn*dim ;
+        double* h  = IntFct_GetFunctionAtPoint(f,p) ;
+        double* dh = IntFct_GetFunctionGradientAtPoint(f,p) ;
+        double* x  = IntFct_GetCoordinatesAtPoint(f,p) ;
         
-        IntFct_ComputeIsoShapeFct(dim,nn,a+p*dim,h,dh) ;
+        x[0] = a[3*p] ;
+        x[1] = a[3*p+1] ;
+        x[2] = a[3*p+2] ;
+        
+        IntFct_ComputeIsoShapeFct(dim,nn,x,h,dh) ;
       }
       
       return ;
@@ -462,9 +284,9 @@ void   IntFct_ComputeAtGaussPoints(IntFct_t* f,int nn,int dim)
       
       for(i = 0 ; i < 2 ; i++) for(j = 0 ; j < 2 ; j++) for(k = 0 ; k < 2 ; k++) {
         int p = 4*i + 2*j + k ;
-        double* h  = IntFct_GetFunction(f)  + p*nn ;
-        double* dh = IntFct_GetFunctionGradient(f) + p*nn*dim ;
-        double* x = IntFct_GetPointCoordinates(f) + p*dim ;
+        double* h  = IntFct_GetFunctionAtPoint(f,p) ;
+        double* dh = IntFct_GetFunctionGradientAtPoint(f,p) ;
+        double* x  = IntFct_GetCoordinatesAtPoint(f,p) ;
         
         IntFct_GetWeight(f)[p]   = w[i]*w[j]*w[k] ;
         
@@ -496,7 +318,7 @@ void   IntFct_ComputeAtNodes(IntFct_t* f,int nn,int dim)
   if(dim == 0) {
     /* 1 noeud */
     if(nn == 1) {
-      double* h  = IntFct_GetFunction(f) ;
+      double* h  = IntFct_GetFunctionAtPoint(f,0) ;
       
       h[0] = 1. ;
       
@@ -508,7 +330,8 @@ void   IntFct_ComputeAtNodes(IntFct_t* f,int nn,int dim)
     /* segment a 2 */
     if(nn == 2) {
       int p ;
-      double* a = IntFct_GetPointCoordinates(f) ;
+      double a[IntFct_MaxNbOfIntPoints] ;
+      //double* a = IntFct_GetPointCoordinates(f) ;
       double* w = IntFct_GetWeight(f) ;
       
       a[0] = -1. ;
@@ -517,9 +340,13 @@ void   IntFct_ComputeAtNodes(IntFct_t* f,int nn,int dim)
       w[1] = 1. ;
       
       for(p = 0 ; p < np ; p++) {
-        double* h  = IntFct_GetFunction(f)  + p*nn ;
-        double* dh = IntFct_GetFunctionGradient(f) + p*nn*dim ;
-        IntFct_ComputeIsoShapeFct(dim,nn,a+p,h,dh) ;
+        double* h  = IntFct_GetFunctionAtPoint(f,p) ;
+        double* dh = IntFct_GetFunctionGradientAtPoint(f,p) ;
+        double* x  = IntFct_GetCoordinatesAtPoint(f,p) ;
+        
+        x[0] = a[p] ;
+        
+        IntFct_ComputeIsoShapeFct(dim,nn,x,h,dh) ;
       }
       
       return ;
@@ -530,8 +357,8 @@ void   IntFct_ComputeAtNodes(IntFct_t* f,int nn,int dim)
     /* triangle a 3 */
     if(nn == 3) {
       int p ;
-      //double a[3*IntFct_MaxNbOfIntPoints] ;
-      double* a = IntFct_GetPointCoordinates(f) ;
+      double a[2*IntFct_MaxNbOfIntPoints] ;
+      //double* a = IntFct_GetPointCoordinates(f) ;
       double* w = IntFct_GetWeight(f) ;
       
       a[0]  = 0.  ; a[1]  = 0.  ;
@@ -542,17 +369,22 @@ void   IntFct_ComputeAtNodes(IntFct_t* f,int nn,int dim)
       w[2] = w[0] ;
       
       for(p = 0 ; p < np ; p++) {
-        double* h  = IntFct_GetFunction(f)  + p*nn ;
-        double* dh = IntFct_GetFunctionGradient(f) + p*nn*dim ;
-        IntFct_ComputeIsoShapeFct(dim,nn,a+p*dim,h,dh) ;
+        double* h  = IntFct_GetFunctionAtPoint(f,p) ;
+        double* dh = IntFct_GetFunctionGradientAtPoint(f,p) ;
+        double* x  = IntFct_GetCoordinatesAtPoint(f,p) ;
+        
+        x[0] = a[2*p] ;
+        x[1] = a[2*p+1] ;
+        
+        IntFct_ComputeIsoShapeFct(dim,nn,x,h,dh) ;
       }
       
       return ;
     /* quadrilatere a 4 */
     } else if(nn == 4) {
       int p ;
-      //double a[3*IntFct_MaxNbOfIntPoints] ;
-      double* a = IntFct_GetPointCoordinates(f) ;
+      double a[2*IntFct_MaxNbOfIntPoints] ;
+      //double* a = IntFct_GetPointCoordinates(f) ;
       double* w = IntFct_GetWeight(f) ;
       
       a[0]  = -1.  ; a[1]  = -1.  ;
@@ -565,9 +397,14 @@ void   IntFct_ComputeAtNodes(IntFct_t* f,int nn,int dim)
       w[3] = w[0] ;
       
       for(p = 0 ; p < np ; p++) {
-        double* h  = IntFct_GetFunction(f)  + p*nn ;
-        double* dh = IntFct_GetFunctionGradient(f) + p*nn*dim ;
-        IntFct_ComputeIsoShapeFct(dim,nn,a+p*dim,h,dh) ;
+        double* h  = IntFct_GetFunctionAtPoint(f,p) ;
+        double* dh = IntFct_GetFunctionGradientAtPoint(f,p) ;
+        double* x  = IntFct_GetCoordinatesAtPoint(f,p) ;
+        
+        x[0] = a[2*p] ;
+        x[1] = a[2*p+1] ;
+        
+        IntFct_ComputeIsoShapeFct(dim,nn,x,h,dh) ;
       }
       
       return ;
@@ -578,8 +415,8 @@ void   IntFct_ComputeAtNodes(IntFct_t* f,int nn,int dim)
     /* tetraedre a 4 */
     if(nn == 4) {
       int p ;
-      //double a[3*IntFct_MaxNbOfIntPoints] ;
-      double* a = IntFct_GetPointCoordinates(f) ;
+      double a[3*IntFct_MaxNbOfIntPoints] ;
+      //double* a = IntFct_GetPointCoordinates(f) ;
       double* w = IntFct_GetWeight(f) ;
       
       a[0]  = 0.  ; a[1]  = 0.  ; a[2]  = 0.  ;
@@ -592,17 +429,23 @@ void   IntFct_ComputeAtNodes(IntFct_t* f,int nn,int dim)
       w[3] = w[0] ;
       
       for(p = 0 ; p < np ; p++) {
-        double* h  = IntFct_GetFunction(f)  + p*nn ;
-        double* dh = IntFct_GetFunctionGradient(f) + p*nn*dim ;
-        IntFct_ComputeIsoShapeFct(dim,nn,a+p*dim,h,dh) ;
+        double* h  = IntFct_GetFunctionAtPoint(f,p) ;
+        double* dh = IntFct_GetFunctionGradientAtPoint(f,p) ;
+        double* x  = IntFct_GetCoordinatesAtPoint(f,p) ;
+        
+        x[0] = a[3*p] ;
+        x[1] = a[3*p+1] ;
+        x[2] = a[3*p+2] ;
+        
+        IntFct_ComputeIsoShapeFct(dim,nn,x,h,dh) ;
       }
       
       return ;
     /* hexaedre a 8 */
     } else if(nn == 8) {
       int p ;
-      //double a[3*IntFct_MaxNbOfIntPoints] ;
-      double* a = IntFct_GetPointCoordinates(f) ;
+      double a[3*IntFct_MaxNbOfIntPoints] ;
+      //double* a = IntFct_GetPointCoordinates(f) ;
       double* w = IntFct_GetWeight(f) ;
       
       a[0]  = -1.  ; a[1]  = -1.  ; a[2]  = -1.  ;
@@ -623,9 +466,15 @@ void   IntFct_ComputeAtNodes(IntFct_t* f,int nn,int dim)
       w[7] = w[0] ;
       
       for(p = 0 ; p < np ; p++) {
-        double* h  = IntFct_GetFunction(f)  + p*nn ;
-        double* dh = IntFct_GetFunctionGradient(f) + p*nn*dim ;
-        IntFct_ComputeIsoShapeFct(dim,nn,a+p*dim,h,dh) ;
+        double* h  = IntFct_GetFunctionAtPoint(f,p) ;
+        double* dh = IntFct_GetFunctionGradientAtPoint(f,p) ;
+        double* x  = IntFct_GetCoordinatesAtPoint(f,p) ;
+        
+        x[0] = a[3*p] ;
+        x[1] = a[3*p+1] ;
+        x[2] = a[3*p+2] ;
+        
+        IntFct_ComputeIsoShapeFct(dim,nn,x,h,dh) ;
       }
       
       return ;
@@ -645,7 +494,8 @@ void   IntFct_ComputeAtMidSurfacePoints(IntFct_t* f,int nn,int dim)
   if(dim >= 0 || dim <= 3) {
     if(nn == dim + 1) {
       int np = (dim > 1) ? dim + 1 : 1 ;
-      double* a = IntFct_GetPointCoordinates(f) ;
+      double a[3*IntFct_MaxNbOfIntPoints] ;
+      //double* a = IntFct_GetPointCoordinates(f) ;
       //double* w = IntFct_GetWeight(f) ;
       
       IntFct_GetNbOfPoints(f) = np ;
@@ -659,10 +509,17 @@ void   IntFct_ComputeAtMidSurfacePoints(IntFct_t* f,int nn,int dim)
         int p ;
         
         for(p = 0 ; p < np ; p++) {
-          double* h  = IntFct_GetFunction(f)  + p*nn ;
-          double* dh = IntFct_GetFunctionGradient(f) + p*nn*dim ;
+          double* h  = IntFct_GetFunctionAtPoint(f,p) ;
+          double* dh = IntFct_GetFunctionGradientAtPoint(f,p) ;
+          double* x  = IntFct_GetCoordinatesAtPoint(f,p) ;
+          int j ;
+          
+          for(j = 0 ; j < dim ; j++) {
+            x[j] = a[p*dim+j] ;
+          }
+          
         
-          IntFct_ComputeIsoShapeFct(dim,nn,a+p*dim,h,dh) ;
+          IntFct_ComputeIsoShapeFct(dim,nn,x,h,dh) ;
         }
       }
       
@@ -803,7 +660,8 @@ void midpoints(double* a,double dim)
 void  IntFct_ComputeIsoShapeFctInActualSpace(int dim,int nn,double** x_e,double* x,int dim_e,double* h,double* dh)
 /* fonction d'interpolation (h) et ses derivees (dh) en x */
 {
-#define DH(n,i)  (dh[(n)*dim_e+(i)])
+#define DH(n,i)  (dh[(n)*3 + (i)])
+//#define DH(n,i)  (dh[(n)*dim_e + (i)])
   int    i,iter,max_iter = 10 ;
   double r[3],k[9],a[3] = {0.,0.,0},unorm[3] ;
   double x_max[3],x_min[3],d ;
@@ -885,7 +743,8 @@ void  IntFct_ComputeIsoShapeFctInActualSpace(int dim,int nn,double** x_e,double*
 void normale(int dim,int nn,double** x,double* dh,double* norm)
 /* Normale unitaire a un sous-espace de dimension dim-1 */
 {
-#define DH(n,i) (dh[(n)*dim_h+(i)])
+#define DH(n,i) (dh[(n)*3 + (i)])
+//#define DH(n,i) (dh[(n)*dim_h + (i)])
   int    dim_h = dim - 1 ;
   int    i,j,k ;
   double c[3][3],v ;

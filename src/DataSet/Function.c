@@ -43,6 +43,8 @@ int Function_Scan(Function_t* function,DataFile_t* datafile)
 
   line = String_SkipBlankChars(line) ;
   
+  
+    /* Read direct */
     if(String_Is(line,"Ntimes",1)) {
       int n_tm = 0 ;
       int n = String_FindAndScanExp(line,"N",","," = %d",&n_tm) ;
@@ -64,11 +66,17 @@ int Function_Scan(Function_t* function,DataFile_t* datafile)
         c = String_FindToken(c,"F") ;
         
         if(c) {
+          
           String_ScanArrays(c,n_tm," F( %lf ) = %lf",t,f) ;
+          
           c = String_GetAdvancedPosition ;
+          
           DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+          
         } else {
+          
           arret("Function_Scan: no key F() found") ;
+          
         }
         
         #if 0
@@ -96,8 +104,12 @@ int Function_Scan(Function_t* function,DataFile_t* datafile)
       }
       
       return(1) ;
+    }
 
-    } else if(String_Is(line,"File",2)) {
+
+
+    /* Read in a file */
+    if(String_Is(line,"File",2)) {
       char name[Function_MaxLengthOfFileName] ;
       int n_fn ;
       
@@ -114,8 +126,11 @@ int Function_Scan(Function_t* function,DataFile_t* datafile)
       }
       
       return(n_fn) ;
-      
-    } else {
+    }
+
+
+
+    {
       arret("Function_Scan: keyword not known") ;
     }
     

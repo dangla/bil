@@ -39,6 +39,11 @@ all: exec diff
 
 
 
+
+#=======================================================================
+# Target rules for diff
+#=======================================================================
+
 diff: diff1 diff2
 
 
@@ -66,8 +71,21 @@ diff2:
 
 
 
+
 #=======================================================================
-# Target rules for iperm
+# Target rules for exec
+# To pass the variable "-r" to make, use: make exec opt=-r
+#=======================================================================
+
+exec: iperm
+	for i in ${BASE_DIRS}; do (\
+	cd $$i && \
+	echo "\n\nExecution of $$i:" && \
+	echo "-----------------------------------------" && \
+	bil ${opt} toto \
+	); done ; echo "\n\n\n";
+
+
 
 iperm: clean
 	for i in ${BASE_DIRS}; do (\
@@ -80,20 +98,6 @@ iperm: clean
 
 
 
-#=======================================================================
-# Target rules for exec
-# To pass the variable "-r" to make, use: make exec opt=-r
-
-exec: iperm
-	for i in ${BASE_DIRS}; do (\
-	cd $$i && \
-	echo "\n\nExecution of $$i:" && \
-	echo "-----------------------------------------" && \
-	bil ${opt} toto \
-	); done ; echo "\n\n\n";
-
-
-
 ref:
 	for i in ${BASE_DIRS}; do (\
 	cd $$i && \
@@ -102,6 +106,38 @@ ref:
 	); done
 
 
+
+#=======================================================================
+# Target rules for execfem
+# To pass the variable "-r" to make, use: make exec opt=-r
+#=======================================================================
+
+
+
+BASEFEM_DIRS := Elast M10-2 M10-3 MechaMic Niko_1 Niko_2 Plast Poroplast usoil
+execfem: iperm
+	for i in ${BASEFEM_DIRS}; do (\
+	cd $$i && \
+	echo "\n\nExecution of $$i:" && \
+	echo "-----------------------------------------" && \
+	bil ${opt} toto \
+	); done ; echo "\n\n\n";
+
+
+
+plotdifft1fem:
+	for i in ${BASEFEM_DIRS}; do (\
+	echo "Plot $$i.t1 and toto.t1" && \
+	cd $$i && \
+	../../utils/bilplotdiff.sh $$i.t1 toto.t1 ${opt} \
+	); done
+
+
+
+
+#=======================================================================
+# Target rules for clean
+#=======================================================================
 
 clean:
 	rm -f ${DIFF_FILE}.t*
@@ -116,7 +152,7 @@ plotdifft1:
 	for i in ${BASE_DIRS}; do (\
 	echo "Plot $$i.t1 and toto.t1" && \
 	cd $$i && \
-	gnuplot -e "call '${BASEDIR}/diff.gp' \"$$i.t1\" \"toto.t1\" " \
+	../../utils/bilplotdiff.sh $$i.t1 toto.t1 ${opt} \
 	); done
 
 
@@ -125,7 +161,7 @@ plotdifft2:
 	for i in ${BASE_DIRS}; do (\
 	echo "Plot $$i.t1 and toto.t1" && \
 	cd $$i && \
-	gnuplot -e "call '${BASEDIR}/diff.gp' \"$$i.t2\" \"toto.t2\" " \
+	../../utils/bilplotdiff.sh $$i.t2 toto.t2 ${opt} \
 	); done
 
 
@@ -134,7 +170,7 @@ plotdiffp:
 	for i in ${BASE_DIRS}; do (\
 	echo "Plot $$i.p1 and toto.p1" && \
 	cd $$i && \
-	gnuplot -e "call '${BASEDIR}/diffp.gp' \"$$i.p1\" \"toto.p1\" " \
+	../../utils/bilplotdiff.sh $$i.p1 toto.p1 ${opt} \
 	); done
 
 
@@ -166,6 +202,12 @@ plotdiffp1:
 	); done
 
 
+
+
+
+#=======================================================================
+# Other target rules
+#=======================================================================
 
 list:
 	for i in ${BASE_DIRS}; do (\

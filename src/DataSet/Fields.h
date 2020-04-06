@@ -10,11 +10,10 @@ struct Fields_s       ; typedef struct Fields_s       Fields_t ;
 //#include "Materials.h"
 #include "Field.h"
 #include "DataFile.h"
-#include "Geometry.h"
 
 
 extern Fields_t*   (Fields_New)     (const int) ;
-extern Fields_t*   (Fields_Create)  (DataFile_t*,Geometry_t*) ;
+extern Fields_t*   (Fields_Create)  (DataFile_t*) ;
 
 
 #define Fields_GetNbOfFields(FLDS)    ((FLDS)->n_ch)
