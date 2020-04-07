@@ -31,13 +31,21 @@ def main():
         elif opt in ('-f', '--file'):
             file_name = optval
 
+    if(cracktip_id == -1):
+        print 'Error: Must specify crack tip ID with -t'
+        sys.exit(1)
+    if(oneside_id == -1):
+        print 'Error: Must specify one side of crack ID with -s'
+        sys.exit(1)
+    if(crack_id == -1):
+        print 'Error: Must specify crack ID with -c'
+        sys.exit(1)
+
     if(not file_name):
         print 'Error: Must specify mesh file with -f'
         sys.exit(1)
 
-    nodes = []
-    elements = []
-    M = Mesh(nodes,elements)
+    M = Mesh()
 
     M.read(file_name)
     
