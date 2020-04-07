@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python ${BIL}/scripts/gmshCrack.py $@
+python ${BIL}/utils/gmshcrack/gmshCrack.py $@
