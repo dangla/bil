@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <ctype.h>
 #include "Message.h"
 #include "String.h"
 
@@ -304,6 +305,30 @@ int String_NbOfUncommentedLines(const char* str,const char* cmt)
   }
   
   return(n) ;
+}
+
+
+
+int    (String_FindPositionIndex)(const char* str,const char** ss,const int n)
+/** Return the position index in ss whose name is pointed to by str 
+ *  or -1 if it fails. */
+{
+  int    i ;
+
+  if(isdigit(str[0])) {
+    
+    i  = atoi(str) - 1 ;
+    
+  } else {
+    
+    for(i = 0 ; i < n ; i++) {
+      if(String_Is(str,ss[i])) break ;
+    }
+    
+    if(i == n) i = -1 ;
+  }
+
+  return(i) ;
 }
 
 

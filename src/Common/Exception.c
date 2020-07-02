@@ -35,9 +35,9 @@ Exception_t*  (Exception_GetInstance)(void)
   GenericData_t* gdat = Session_FindGenericData(Exception_t,"Exception") ;
   
   if(!gdat) {
-    Exception_t* msg = Exception_Create() ;
+    Exception_t* exc = Exception_Create() ;
     
-    gdat = GenericData_Create(1,msg,Exception_t,"Exception") ;
+    gdat = GenericData_Create(1,exc,Exception_t,"Exception") ;
     
     Session_AddGenericData(gdat) ;
     
@@ -114,6 +114,7 @@ void (SignalHandler)(int sigid)
       Message_Direct("Segmentation fault. ") ;
       Message_Direct("Possible sources:\n") ;
       Message_Direct("- Bad \"iperm\" file (remove it!)\n") ;
+      Message_Direct("- Mesh with physical index out of range\n") ;
       Exception_BackupAndTerminate ;
       return ;
     

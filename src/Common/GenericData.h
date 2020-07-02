@@ -17,14 +17,14 @@ struct GenericData_s     ; typedef struct GenericData_s     GenericData_t ;
 
 extern GenericData_t* (GenericData_New)          (void) ;
 extern void           (GenericData_Delete)       (void*) ;
-extern GenericData_t* (GenericData_Create_)      (int,void*,TypeId_t,char const*) ;
-extern void           (GenericData_Initialize_)  (GenericData_t*,int,void*,TypeId_t,char const*) ;
+extern GenericData_t* (GenericData_Create_)      (int,void*,TypeId_t,const char*) ;
+extern void           (GenericData_Initialize_)  (GenericData_t*,int,void*,TypeId_t,const char*) ;
 //extern void           (GenericData_InsertBefore) (GenericData_t*,GenericData_t*) ;
 //extern void           (GenericData_InsertAfter)  (GenericData_t*,GenericData_t*) ;
 extern GenericData_t* (GenericData_Append)       (GenericData_t*,GenericData_t*) ;
 extern GenericData_t* (GenericData_First)        (GenericData_t*) ;
 extern GenericData_t* (GenericData_Last)         (GenericData_t*) ;
-extern GenericData_t* (GenericData_Find_)        (GenericData_t*,TypeId_t,char const*) ;
+extern GenericData_t* (GenericData_Find_)        (GenericData_t*,TypeId_t,const char*) ;
 
 
 

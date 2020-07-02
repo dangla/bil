@@ -8,6 +8,7 @@
 struct Element_s      ; typedef struct Element_s      Element_t ;
 
 
+#include "Node.h"
 
 extern double** (Element_ComputePointerToCurrentNodalUnknowns)  (Element_t*) ;
 extern double** (Element_ComputePointerToPreviousNodalUnknowns) (Element_t*) ;
@@ -17,8 +18,8 @@ extern double*  (Element_ComputeIncrementalNodalUnknowns)       (Element_t*) ;
 extern double*  (Element_ComputeDeepNodalUnknowns)              (Element_t*,unsigned int) ;
 extern double** (Element_ComputePointerToNodalCoordinates)      (Element_t*) ;
 extern double*  (Element_ComputeNodalCoordinates)               (Element_t*) ;
-extern int      (Element_FindUnknownPositionIndex)              (Element_t*,char*) ;
-extern int      (Element_FindEquationPositionIndex)             (Element_t*,char*) ;
+extern int      (Element_FindUnknownPositionIndex)              (Element_t*,const char*) ;
+extern int      (Element_FindEquationPositionIndex)             (Element_t*,const char*) ;
 extern double*  (Element_ComputeIncrementalImplicitTerms)       (Element_t*) ;
 extern double*  (Element_ComputeNormalVector)                   (Element_t*,double*,int,const int) ;
 extern double*  (Element_ComputeCoordinateInReferenceFrame)     (Element_t*,double*) ;
@@ -33,7 +34,9 @@ extern double*  (Element_ComputeJacobianMatrix)                 (Element_t*,doub
 extern int      (Element_OverlappingNode)                       (Element_t*,const int) ;
 extern int      (Element_HasZeroThickness)                      (Element_t*) ;
 extern int      (Element_NbOfOverlappingNodes)                  (Element_t*) ;
-
+extern void     (Element_MakeUnknownContinuousAcrossZeroThicknessElement)(Element_t*,const char*);
+extern void     (Element_MakeEquationContinuousAcrossZeroThicknessElement)(Element_t*,const char*);
+extern int      (Element_FindNodeIndex)                         (Element_t*,const Node_t*) ;
 
 /* Synonyms */
 #define  Element_ComputePointerToNodalUnknowns \
@@ -158,6 +161,9 @@ extern int      (Element_NbOfOverlappingNodes)                  (Element_t*) ;
 
 #define Element_GetNodeCoordinate(ELT,i) \
         Node_GetCoordinate(Element_GetNode(ELT,i))
+        
+#define Element_GetNodeIndex(ELT,i) \
+        Node_GetNodeIndex(Element_GetNode(ELT,i))
 
 
 
@@ -307,48 +313,6 @@ extern int      (Element_NbOfOverlappingNodes)                  (Element_t*) ;
         Model_GetDataFile(Element_GetModel(ELT))
         
         
-        
-/* Zero-thickness element */
-#define Element_MakeUnknownContinuousAcrossZeroThicknessElement(ELT,IEQ) \
-        do { \
-          int neq = Element_GetNbOfEquations(ELT) ; \
-          ShapeFct_t* shapefct = Element_GetShapeFct(ELT) ; \
-          int nf = ShapeFct_GetNbOfFunctions(shapefct) ; \
-          int in ; \
-          for(in = 0 ; in < nf ; in++) { \
-            int jn = Element_OverlappingNode(ELT,in) ; \
-            Node_t* node_i = Element_GetNode(ELT,in) ; \
-            Node_t* node_j = Element_GetNode(ELT,jn) ; \
-            int ineq = in*neq + IEQ ; \
-            int jneq = jn*neq + IEQ ; \
-            { \
-              int ii = Element_GetUnknownPosition(ELT)[ineq] ; \
-              int jj = Element_GetUnknownPosition(ELT)[jneq] ; \
-              if(ii >= 0 && jj >= 0) { \
-                int ki = Node_GetMatrixColumnIndex(node_i)[ii] ; \
-                int kj = Node_GetMatrixColumnIndex(node_j)[ii] ; \
-                if(ki >= 0) { \
-                  Node_GetMatrixColumnIndex(node_j)[jj] = ki ; \
-                } else if(kj >= 0) { \
-                  Node_GetMatrixColumnIndex(node_i)[jj] = kj ; \
-                } \
-              } \
-            } \
-            { \
-              int ii = Element_GetEquationPosition(ELT)[ineq] ; \
-              int jj = Element_GetEquationPosition(ELT)[jneq] ; \
-              if(ii >= 0 && jj >= 0) { \
-                int ki = Node_GetMatrixRowIndex(node_i)[ii] ; \
-                int kj = Node_GetMatrixRowIndex(node_j)[ii] ; \
-                if(ki >= 0) { \
-                  Node_GetMatrixRowIndex(node_j)[jj] = ki ; \
-                } else if(kj >= 0) { \
-                  Node_GetMatrixRowIndex(node_i)[jj] = kj ; \
-                } \
-              } \
-            } \
-          } \
-        } while(0)
 
 
 
@@ -356,7 +320,6 @@ extern int      (Element_NbOfOverlappingNodes)                  (Element_t*) ;
 #include "IntFct.h"
 #include "ShapeFct.h"
 #include "Material.h"
-#include "Node.h"
 #include "Buffer.h"
 #include "ElementSol.h"
 

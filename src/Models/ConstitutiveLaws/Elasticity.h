@@ -16,12 +16,15 @@ extern void           (Elasticity_SetParameter)            (Elasticity_t*,const 
 extern double*        (Elasticity_ComputeStiffnessTensor)  (Elasticity_t*,double*) ;
 extern void           (Elasticity_CopyStiffnessTensor)     (Elasticity_t*,double*) ;
 extern void           (Elasticity_PrintStiffnessTensor)    (Elasticity_t*) ;
+extern double         (Elasticity_ComputeElasticEnergy)    (Elasticity_t*,const double*) ;
+extern double*        (Elasticity_ComputeStressTensor)     (Elasticity_t*,const double*,double*);
 
 
 /* Accessors */
 #define Elasticity_GetStiffnessTensor(EL)      ((EL)->cijkl)
 #define Elasticity_GetType(EL)                 ((EL)->type)
 #define Elasticity_GetParameter(EL)            ((EL)->parameter)
+#define Elasticity_GetStressTensor(EL)         ((EL)->stress)
 
 
 #define Elasticity_MaxLengthOfKeyWord     (100)
@@ -82,6 +85,7 @@ struct Elasticity_s {
   double* cijkl ;
   char*   type ;
   double* parameter ;
+  double* stress ;
 } ;
 
 #endif

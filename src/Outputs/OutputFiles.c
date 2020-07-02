@@ -1110,7 +1110,9 @@ Views_t* (OutputFiles_CreateGlobalViews)(OutputFiles_t* outputfiles,Models_t* us
             char*  p ;
             int j ;
             
-            sscanf(pline,"%s",name) ;
+            //sscanf(pline,"%s",name) ;
+            //sscanf(pline,"%*[ ]%[^(]",name) ;
+            String_ScanStringUntil(pline,name,"(") ;
             
             if((p = strrchr(name,'('))) *p = '\0' ;
             

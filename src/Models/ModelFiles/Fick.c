@@ -787,7 +787,7 @@ double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,do
   int j ;
   
   /* Primary Variables */
-  for(j = 0 ; j < NEQ ; j++) {
+  for(j = 0 ; j < NbOfVariables ; j++) {
     dx[j] = x[j] ;
   }
 

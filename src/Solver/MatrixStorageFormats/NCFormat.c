@@ -47,12 +47,12 @@ NCFormat_t* NCFormat_Create(Mesh_t* mesh)
       
       for(ieq = 0 ; ieq < neq ; ieq++) {
         int ij = i*neq + ieq ;
-        int jj = Element_GetUnknownPosition(el + ie)[ij] ;
+        int ii = Element_GetUnknownPosition(el + ie)[ij] ;
         int jcol ;
         
-        if(jj < 0) continue ;
+        if(ii < 0) continue ;
         
-        jcol = Node_GetMatrixColumnIndex(node_i)[jj] ;
+        jcol = Node_GetMatrixColumnIndex(node_i)[ii] ;
         
         if(jcol < 0) continue ;
         colptr0[jcol+1] += Element_GetNbOfNodes(el + ie)*neq ;

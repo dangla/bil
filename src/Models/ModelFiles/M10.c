@@ -164,7 +164,8 @@ int DefineElementProp(Element_t *el,IntFcts_t *intfcts)
   /* Continuity of pressure across zero-thickness element */
   {
     if(Element_HasZeroThickness(el)) {
-      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,U_P_L) ;
+      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,"p_l") ;
+      Element_MakeEquationContinuousAcrossZeroThicknessElement(el,"liq") ;
     }
   }
   
@@ -367,7 +368,7 @@ int  ComputeMatrix(Element_t *el,double t,double dt,double *k)
   for(i = 0 ; i < ndof*ndof ; i++) k[i] = zero ;
 
   /* We skip if the element is a submanifold */
-  //if(Element_IsSubmanifold(el)) return(0) ;
+  if(Element_IsSubmanifold(el)) return(0) ;
 
 
   /*
@@ -418,7 +419,7 @@ int  ComputeResidu(Element_t *el,double t,double dt,double *r)
   /* Initialisation */
   for(i = 0 ; i < ndof ; i++) r[i] = zero ;
 
-  //if(Element_IsSubmanifold(el)) return(0) ;
+  if(Element_IsSubmanifold(el)) return(0) ;
   
   
   /* 1 Accumulation Terms */

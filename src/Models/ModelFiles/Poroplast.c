@@ -356,7 +356,8 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
   /* Continuity of pressure across zero-thickness element */
   {
     if(Element_HasZeroThickness(el)) {
-      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,U_p_l) ;
+      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,"p_l") ;
+      Element_MakeEquationContinuousAcrossZeroThicknessElement(el,"liq") ;
     }
   }
   

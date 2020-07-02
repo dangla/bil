@@ -68,10 +68,10 @@ LDUSKLFormat_t* LDUSKLFormat_Create(Mesh_t* mesh)
       
               for(j = 0 ; j < neq ; j++) {
                 int ij = i*neq + j ;
-                int jj = Element_GetUnknownPosition(el + ie)[ij] ;
+                int ii = Element_GetUnknownPosition(el + ie)[ij] ;
         
-                if(jj >= 0) {
-                  int k  = Node_GetMatrixColumnIndex(node_i)[jj] ;
+                if(ii >= 0) {
+                  int k  = Node_GetMatrixColumnIndex(node_i)[ii] ;
                   if(k >= 0 && k < k0) k0 = k ;
                 }
               }
@@ -83,10 +83,10 @@ LDUSKLFormat_t* LDUSKLFormat_Create(Mesh_t* mesh)
       
               for(j = 0 ; j < neq ; j++) {
                 int ij = i*neq + j ;
-                int jj = Element_GetUnknownPosition(el + ie)[ij] ;
+                int ii = Element_GetUnknownPosition(el + ie)[ij] ;
         
-                if(jj >= 0) {
-                  int k  = Node_GetMatrixColumnIndex(node_i)[jj] ;
+                if(ii >= 0) {
+                  int k  = Node_GetMatrixColumnIndex(node_i)[ii] ;
                   if(k >= 0 && k - k0 > hc[k]) hc[k] = k - k0 ;
                 }
               }

@@ -337,19 +337,21 @@ Model_t* (Model_Initialize)(Model_t* model,const char* codename,Geometry_t* geom
   Model_SetModelProp_t* xModel_SetModelProp[] = {Models_ListOfSetModelProp} ;
   int i = 0 ;
   
+  Model_GetGeometry(model) = geom ; /* Important! */
+  Model_GetDataFile(model) = datafile ;
+  
   while(i < n_models && strcmp(modelnames[i],codename)) i++ ;
     
   if(i < n_models) {
     Model_CopyCodeNameOfModel(model,modelnames[i]) ;
-    Model_GetGeometry(model) = geom ; /* Important ! */
-    Model_GetDataFile(model) = datafile ;
     Model_GetSetModelProp(model) = xModel_SetModelProp[i] ;
     Model_SetModelProp(model) ; /* Call to SetModelProp */
     
     return(model) ;
   }
   
-  return(NULL) ;
+  //return(NULL) ;
+  return(model) ;
 }
 
 

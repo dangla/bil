@@ -8,11 +8,13 @@ struct BCond_s        ; typedef struct BCond_s        BCond_t ;
 
 
 #include "DataFile.h"
+#include "Node.h"
 
 
 extern BCond_t*  (BCond_New)     (void) ;
 extern BCond_t*  (BCond_Create)  (void) ;
 extern void      (BCond_Scan)    (BCond_t*,DataFile_t*) ;
+extern void      (BCond_AssignBoundaryConditionsAtOverlappingNodes)(BCond_t*,Node_t*,int,double);
 
 
 #define BCond_MaxLengthOfKeyWord        (30)

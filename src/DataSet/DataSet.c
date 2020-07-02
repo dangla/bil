@@ -214,7 +214,7 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   
   /* Other printings in debug mode */
   if(!strcmp(debug,"continuity")) DataSet_PrintData(jdd,debug) ;
-  if(!strcmp(debug,"numbering")) DataSet_PrintData(jdd,debug) ;
+  //if(!strcmp(debug,"numbering")) DataSet_PrintData(jdd,debug) ;
   //if(!strcmp(debug,"inter")) DataSet_PrintData(jdd,debug) ;
   if(!strcmp(debug,"all")) DataSet_PrintData(jdd,debug) ;
 

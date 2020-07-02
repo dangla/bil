@@ -15,6 +15,22 @@
 #include "Math.h"
 
 
+
+#ifdef LAPACKLIB
+#if defined(__cplusplus)
+  extern "C" {
+#endif
+
+static void dgeev_(const char *jobvl, const char *jobvr, int *n, double *a,
+                   int *lda, double *wr, double *wi, double *vl, int *ldvl, 
+                   double *vr, int *ldvr, double *work, int *lwork, int *info);
+
+#if defined(__cplusplus)
+  }
+#endif
+#endif
+
+
 static Math_t* (Math_GetInstance)(void) ;
 static Math_t* (Math_Create)(void) ;
 
@@ -82,8 +98,112 @@ void Math_Delete(void* self)
 */
 
 
+double* Math_ComputeRealEigenvaluesAndEigenvectorsOf3x3Matrix(double* a,const char job)
+/** Return a pointer to a 3-term array composed of the eigenvalues of "a".
+ *  On output the matrix components of "a" are lost and replaced by the
+ *  eigenvectors stored in the same order as their eigenvalues.
+ *  if job = 'l' left eigenvectors are stored  (i.e. vl * a = lambda vl)
+ *  if job = 'r' right eigenvectors are stored (i.e. a * vr = lambda vr)
+ */
+{
+  Math_t* math = Math_GetInstance() ;
+  size_t SizeNeeded = 3*(sizeof(double)) ;
+  double* eval = (double*) Math_AllocateInBuffer(math,SizeNeeded) ;
+  
+  #ifdef LAPACKLIB
+  {
+    double wr[3] ; /* real part */
+    double wi[3] ; /* imaginary part (not used) */
+    double vl[9] ;
+    double vr[9] ;
+    
+    {
+      int N = 3 ;
+      int info;
+      int lwork = 10 * N;
+      double work[lwork];
+      char  jobvr = (job == 'r') ? 'V' : 'N' ;
+      char  jobvl = (job == 'l') ? 'V' : 'N' ;
+      int i ;
+    
+      dgeev_(&jobvl,&jobvr,&N,a,&N,wr,wi,vl,&N,vr,&N,work,&lwork,&info);
+    
+      if(!info) {
+        Message_RuntimeError("dgeev of LAPACK has not converged") ;
+      }
+    }
+    
+    {
+      double* vec = (job == 'l') ? vl : vr ;
+      int i ;
+      
+      for(i = 0 ; i < 9 ; i++) {
+        a[i] = vec[i] ;
+      }
+    
+      for(i = 0 ; i < 3 ; i++) {
+        eval[i] = wr[i] ;
+      }
+    }
+    
+    return(eval) ;
+  }
+  #endif
+  
+  Message_RuntimeError("LAPACK is needed") ;
+  
+  return(eval) ;
+}
 
-double Math_Compute3x3MatrixDeterminant(double* a)
+
+
+double* Math_ComputePrincipalStresses(const double* sig)
+/** Return a pointer to a 3-term vector composed of the 
+ *  principal stresses of "sig", i.e. as roots of the cubic equation:
+ *  x^3 - I1*x^2 + I2*x - I3 = 0
+ *  where I1, I2, I3 are the invariants of "sig":
+ *  I1 = tr(sig) = sig11 + sig22 + sig33
+ *  I2 = 1/2 * (tr(sig)^2 - tr(sig.sig)) 
+ *     = sig11 * sig22 + sig22 * sig33 + sig33 * sig11
+ *     - sig12 * sig21 - sig23 * sig32 - sig31 * sig13
+ *  I3 = det(sig)
+ */
+{
+  Math_t* math = Math_GetInstance() ;
+  size_t SizeNeeded = 3*(sizeof(double)) ;
+  double* sigp = (double*) Math_AllocateInBuffer(math,SizeNeeded) ;
+    
+  double I1 = sig[0] + sig[4] + sig[8] ;
+  double I3 = Math_Compute3x3MatrixDeterminant(sig) ;
+  double I2 = sig[0]*sig[4] + sig[4]*sig[8] + sig[8]*sig[0] \
+            - sig[1]*sig[3] - sig[5]*sig[7] - sig[6]*sig[2] ;
+
+  double p = I2 / 3 - I1 * I1 / 9 ; /* p < 0 provided that sig is symmetric */
+  double q = 0.5 * I3 + I1 * I1 * I1 / 27 - I1 * I2 / 6 ;
+  
+  assert(p < 0) ;
+  
+  {
+    double sqrp = sqrt(-p) ;
+    double t = acos(q/(p*sqrp)) / 3 ; /* 0 < t < Pi/3 */
+    double ct = sqrp * cos(t) ; /* ct > 0 */
+    double st = sqrp * sin(t) ; /* st > 0 */
+    double sqr3 = sqrt(3.) ;
+    double b1 = 2 * ct             + I1 / 3 ;
+    double b2 =    -ct + sqr3 * st + I1 / 3 ;
+    double b3 =    -ct - sqr3 * st + I1 / 3 ;
+      
+    sigp[0] = b1 ;
+    sigp[1] = b2 ;
+    sigp[2] = b3 ;
+  }
+
+  return(sigp) ;
+}
+
+
+
+double Math_Compute3x3MatrixDeterminant(const double* a)
 /** Return the determinant of a 3x3 matrix */
 {
   double det ;
@@ -99,7 +219,7 @@ double Math_Compute3x3MatrixDeterminant(double* a)
 
 
 
-double* Math_Inverse3x3Matrix(double* a)
+double* Math_Inverse3x3Matrix(const double* a)
 /** Return a pointer to the inverse of a 3x3 matrix 
  *  or NULL if not invertible. */
 {
@@ -147,6 +267,24 @@ double Math_ComputeSecondDeviatoricStressInvariant(const double* sig)
   double j2b = SIG(0,1)*SIG(1,0) + SIG(1,2)*SIG(2,1) + SIG(2,0)*SIG(0,2) ;
   return(j2a/6. + j2b) ;
 #undef SIG
+}
+
+
+
+double Math_ComputeFirstStressInvariant(const double* sig)
+/** First invariant of stress tensor */
+{
+  return(sig[0] + sig[4] + sig[8]);
+}
+
+
+
+double Math_ComputeSecondStressInvariant(const double* sig)
+/** Second invariant of stress tensor */
+{
+  double i2a = sig[0]*sig[0] + sig[4]*sig[4] + sig[8]*sig[8] ;
+  double i2b = sig[1]*sig[3] + sig[2]*sig[6] + sig[5]*sig[7] ;
+  return(0.5*i2a + i2b) ;
 }
 
 
@@ -208,7 +346,31 @@ double* Math_SolveByGaussElimination(double* a,double* b,int n)
 
 
 
-#ifdef NOTDEFINED  /* Not used */
+
+void Math_PrintStiffnessTensor(double* c)
+/** Print a 4th rank tensor.
+ **/
+{
+  {
+    int i ;
+    
+    for(i = 0 ; i < 9 ; i++) {
+      int j = i - (i/3)*3 ;
+        
+      printf("C%d%d--:",i/3 + 1,j + 1) ;
+        
+      for (j = 0 ; j < 9 ; j++) {
+        printf(" % e",c[i*9 + j]) ;
+      }
+        
+      printf("\n") ;
+    }
+  }
+}
+
+
+
+#if 0  /* Not used */
 extern double* (Math_SolveByGaussJordanElimination)(double*,double*,int,int) ;
 
 double* Math_SolveByGaussJordanElimination(double* a,double* b,int n,int m)

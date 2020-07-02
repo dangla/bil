@@ -17,7 +17,7 @@
  */
 
 /* Nb of equations of the model */
-#define NEQ   (2)     /* Here let's consider an example with 2 equations */
+#define NEQ   (dim+1)     /* Here let's consider an example with dim+1 scalar equations */
 
 /* Nb of terms per point */
 #define NVI   (14)    /*  14 implicit terms per point */
@@ -146,12 +146,12 @@ int SetModelProp(Model_t* model)
   Model_GetNbOfEquations(model) = NEQ ;
   
   /** Names of these equations */
-  Model_CopyNameOfEquation(model,E_Eq1,"first") ;
-  Model_CopyNameOfEquation(model,E_Eq2,"second") ;
+  Model_CopyNameOfEquation(model,E_Eq1,"first_eqn") ;
+  Model_CopyNameOfEquation(model,E_Eq2,"second_eqn") ;
   
   /** Names of the main (nodal) unknowns */
-  Model_CopyNameOfUnknown(model,U_Unk1,"x") ;
-  Model_CopyNameOfUnknown(model,U_Unk2,"y") ;
+  Model_CopyNameOfUnknown(model,U_Unk1,"first_unk") ;
+  Model_CopyNameOfUnknown(model,U_Unk2,"second_unk") ;
   
   return(0) ;
 }
@@ -180,13 +180,13 @@ int PrintModelProp(Model_t* model,FILE* ficd)
   
   printf("\n") ;
   printf("The set of equations is:\n") ;
-  printf("\t- First equation      (name of Eq. 1)\n") ;
-  printf("\t- Second equation     (name of Eq. 2)\n") ;
+  printf("\t- First equation      (first_eqn)\n") ;
+  printf("\t- Second equation     (second_eqn)\n") ;
   
   printf("\n") ;
   printf("The primary unknowns are:\n") ;
-  printf("\t- First unknown       (name of Unk. 1)\n") ;
-  printf("\t- Second unknown      (name of Unk. 2)\n") ;
+  printf("\t- First unknown       (first_unk)\n") ;
+  printf("\t- Second unknown      (second_unk)\n") ;
   
   printf("\n") ;
   printf("Example of input data\n") ;
@@ -262,7 +262,8 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
    */
   {
     if(Element_HasZeroThickness(el)) {
-      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,U_Unk2) ;
+      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,"second_unk") ;
+      Element_MakeEquationContinuousAcrossZeroThicknessElement(el,"second_eqn") ;
     }
   }
   

@@ -1,0 +1,139 @@
+Geometry
+2 plane
+
+
+
+Mesh
+cracked_halfCrack.msh   # gmshcrack -f halfCrack -c 70 -t 7 -s 200,50
+
+
+
+
+Material # Layer 1 (stiff)
+Modele = Poroplast
+gravity = 0       # gravity
+rho_s = 2350      # mass density of solid skeleton
+young = 5.8e+09   # Young's modulus
+poisson = 0.3     # Poisson's ratio
+porosity = 0.15   # porosity
+rho_l = 1000      # mass density of fluid
+p_l0 = 0.e+06    # initial pressure of fluid
+k_l = 2e+09       # compression modulus of fluid
+k_int = 1e-19     # intrinsic permeability
+mu_l = 0.001      # viscosity of liquid
+b = 0.8           # Biot's coefficient
+N = 4.e-11        # compressibility of pores
+cohesion = 1e+06  # cohesion
+friction = 25     # friction angle
+dilatancy = 25    # dilatancy angle 
+beta = 0.8        # plastic Biot's coefficient
+
+
+Material # Layer 1 (stiff)
+Modele = Poroplast
+gravity = 0       # gravity
+rho_s = 2350      # mass density of solid skeleton
+young = 5.8e+09   # Young's modulus
+poisson = 0.3     # Poisson's ratio
+porosity = 0.15   # porosity
+rho_l = 1000      # mass density of fluid
+p_l0 = 0.e+06    # initial pressure of fluid
+k_l = 2e+09       # compression modulus of fluid
+k_int = 1e-19     # intrinsic permeability
+mu_l = 0.001      # viscosity of liquid
+b = 0.8           # Biot's coefficient
+N = 4.e-11        # compressibility of pores
+cohesion = 1e+06  # cohesion
+friction = 25     # friction angle
+dilatancy = 25    # dilatancy angle 
+beta = 0.8        # plastic Biot's coefficient
+
+
+
+Material # Layer 1 (stiff)
+Modele = Poroplast
+gravity = 0       # gravity
+rho_s = 2350      # mass density of solid skeleton
+young = 5.8e+09   # Young's modulus
+poisson = 0.3     # Poisson's ratio
+porosity = 0.15   # porosity
+rho_l = 1000      # mass density of fluid
+p_l0 = 0.e+06    # initial pressure of fluid
+k_l = 2e+09       # compression modulus of fluid
+k_int = 1e-10     # intrinsic permeability
+mu_l = 0.001      # viscosity of liquid
+b = 1             # Biot's coefficient
+N = 4.e-11        # compressibility of pores
+cohesion = 1e+06  # cohesion
+friction = 25     # friction angle
+dilatancy = 25    # dilatancy angle 
+beta = 1          # plastic Biot's coefficient
+
+
+
+
+
+Fields
+1
+Value = 1.   Gradient = 0 0 0   Point = 0 0 0
+
+
+
+Initialization
+2
+Region = 100    Unknown = p_l   Field = 1   Function = 1
+Region = 200    Unknown = p_l   Field = 1   Function = 1
+
+
+
+Functions
+1
+N = 2   F(0) = 0   F(86400) = 1.e6
+
+
+
+Boundary Conditions
+5
+Region = 1    Unknown = u_1   Field = 0   Function = 0
+Region = 1    Unknown = u_2   Field = 0   Function = 0
+Region = 2    Unknown = u_2   Field = 0   Function = 0
+Region = 50    Unknown = p_l   Field = 1   Function = 1
+Region = 60    Unknown = p_l   Field = 1   Function = 1
+#Region = 20    Unknown = p_l   Field = 1   Function = 0
+#Region = 30    Unknown = p_l   Field = 1   Function = 0
+
+
+
+Loads
+0
+
+
+
+Points
+0
+
+
+
+Dates
+7
+0  21600  43200  86400  172800  345600  691200
+
+
+
+Objective Variations
+u_1 = 1.e-4
+u_2 = 1.e-4
+p_l = 1.e6
+
+
+
+Iterative Process
+Iter = 100
+Tol = 1.e-4
+Recom = 0
+
+
+
+Time Steps
+Dtini = 100 
+Dtmax = 1.e6

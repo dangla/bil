@@ -12,14 +12,19 @@ struct Math_s         ; typedef struct Math_s         Math_t ;
 #define Math_Ln10         (2.3025850929940456840179914546843642076011)
 
 extern void     (Math_Delete)(void*) ;
+extern double   (Math_ComputeFirstStressInvariant)(const double*) ;
+extern double   (Math_ComputeSecondStressInvariant)(const double*) ;
 extern double   (Math_ComputeSecondDeviatoricStressInvariant)(const double*) ;
 extern double*  (Math_SolveByGaussElimination)(double*,double*,int) ;
 extern int      (Math_ComputePolynomialEquationRoots)(double*,int) ;
 extern int      (Math_PolishPolynomialEquationRoot)(double*,int,double*,double,int) ;
 extern double   (Math_EvaluateExpression)(char*) ;
 extern double   (Math_EvaluateExpressions)(char*,char*) ;
-extern double   (Math_Compute3x3MatrixDeterminant)(double*) ;
-extern double*  (Math_Inverse3x3Matrix)(double*) ;
+extern double   (Math_Compute3x3MatrixDeterminant)(const double*) ;
+extern double*  (Math_Inverse3x3Matrix)(const double*) ;
+extern double*  (Math_ComputePrincipalStresses)(const double*) ;
+extern double*  (Math_ComputeRealEigenvaluesAndEigenvectorsOf3x3Matrix)(double*,const char) ;
+extern void     (Math_PrintStiffnessTensor)(double*) ;
 
 
 #define Math_ComputeSecondDeviatoricStrainInvariant \
@@ -30,9 +35,17 @@ extern double*  (Math_Inverse3x3Matrix)(double*) ;
 
 #define Math_Max(a,b)          (((a) > (b)) ? (a) : (b))
 #define Math_Min(a,b)          (((a) < (b)) ? (a) : (b))
-#define Math_Swap(a,b,Type_t)  {Type_t tmp = (a) ; (a) = (b) ; (b) = tmp ;}
+
+#define Math_Swap(a,b,Type_t) \
+        do { \
+          Type_t tmp = (a) ; \
+          (a) = (b) ; \
+          (b) = tmp ; \
+        } while(0)
+        
 #define Math_SwapDouble(a,b)   Math_Swap(a,b,double)
 #define Math_SwapInt(a,b)      Math_Swap(a,b,int)
+
 #define Math_Sign(a)           ((a < 0) ? -1 : (a > 0))
 
 
