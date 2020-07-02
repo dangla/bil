@@ -166,3 +166,45 @@ void BCond_Scan(BCond_t* bcond,DataFile_t* datafile)
     }
   }
 }
+
+
+
+
+
+void   BCond_AssignBoundaryConditionsAtOverlappingNodes(BCond_t* bcond,Node_t* node0,int dim,double t)
+/** Assign the boundary conditions at nodes */
+{
+  Function_t* function = BCond_GetFunction(bcond) ;
+  double ft = (function) ? Function_ComputeValue(function,t) : 1. ;
+  char*  unk = BCond_GetNameOfUnknown(bcond) ;
+  Field_t* field = BCond_GetField(bcond) ;
+  int n_nodes ;
+  Node_t* node = Node_OverlappingNodes(node0,&n_nodes) ;
+
+  /* We assign the prescribed value to the unknown */
+  {
+    int i ;
+        
+    for(i = 0 ; i < n_nodes ; i++) {
+      Node_t* node_i = node + i ;
+      int jj = Node_FindUnknownPositionIndex(node_i,unk) ;
+          
+      if(jj >= 0) {
+        double* u = Node_GetCurrentUnknown(node_i) ;
+            
+        if(field) {
+          double* x = Node_GetCoordinate(node_i) ;
+              
+          u[jj] = ft*Field_ComputeValueAtPoint(field,x,dim) ;
+              
+        } else {
+              
+          u[jj] = 0. ;
+              
+        }
+      }
+    }
+  }
+  
+  Node_FreeBufferFrom(node0,node) ;
+}

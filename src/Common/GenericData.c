@@ -43,7 +43,7 @@ GenericData_t* (GenericData_New)(void)
 
 
 
-GenericData_t* (GenericData_Create_)(int n,void* data,TypeId_t typ,char const* name)
+GenericData_t* (GenericData_Create_)(int n,void* data,TypeId_t typ,const char* name)
 {
   GenericData_t* gdat = GenericData_New() ;
   
@@ -94,7 +94,7 @@ void (GenericData_Remove)(GenericData_t** pgdat)
 
 
 
-void (GenericData_Initialize_)(GenericData_t* gdat,int n,void* data,TypeId_t typ,char const* name)
+void (GenericData_Initialize_)(GenericData_t* gdat,int n,void* data,TypeId_t typ,const char* name)
 {
   GenericData_GetTypeId(gdat) = typ ;
   GenericData_GetNbOfData(gdat) = n ;
@@ -163,7 +163,7 @@ GenericData_t* (GenericData_First)(GenericData_t* gdat)
 
 
 
-GenericData_t* (GenericData_Find_)(GenericData_t* gdat,TypeId_t typ,char const* name)
+GenericData_t* (GenericData_Find_)(GenericData_t* gdat,TypeId_t typ,const char* name)
 /** Return the generic data named as "name" or NULL pointer. */
 {
   {

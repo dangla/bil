@@ -62,7 +62,7 @@ int calcul(DataSet_t* jdd)
   
   /* Set up the system of equations */
     {
-      BConds_t* bconds = DataSet_GetBConds(jdd) ;
+      //BConds_t* bconds = DataSet_GetBConds(jdd) ;
       
       //Mesh_SetMatrixRowColumnIndexes(mesh,bconds) ;
     }
@@ -604,9 +604,9 @@ void ComputeResidu(Mesh_t* mesh,double t,double dt,double* r,Loads_t* loads)
         int    j ;
         for(j = 0 ; j < neq ; j++) {
           int ij = i*neq + j ;
-          int jj = Element_GetUnknownPosition(el + ie)[ij] ;
-          if(jj >= 0) {
-            int k = Node_GetMatrixColumnIndex(node_i)[jj] ;
+          int ii = Element_GetUnknownPosition(el + ie)[ij] ;
+          if(ii >= 0) {
+            int k = Node_GetMatrixColumnIndex(node_i)[ii] ;
             if(k >= 0) r[k] += re[ij] ;
           }
         }
@@ -634,9 +634,9 @@ void ComputeResidu(Mesh_t* mesh,double t,double dt,double* r,Loads_t* loads)
           int    j ;
           for(j = 0 ; j < neq ; j++) {
             int ij = i*neq + j ;
-            int jj = Element_GetUnknownPosition(el + ie)[ij] ;
-            if(jj >= 0) {
-              int k = Node_GetMatrixColumnIndex(node_i)[jj] ;
+            int ii = Element_GetUnknownPosition(el + ie)[ij] ;
+            if(ii >= 0) {
+              int k = Node_GetMatrixColumnIndex(node_i)[ii] ;
               if(k >= 0) r[k] += re[ij] ;
             }
           }

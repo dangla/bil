@@ -15,17 +15,18 @@ static char* String_pchar ;
 
 //extern char*       (String_Create)         (const char*) ;
 //extern void        (String_Delete)         (void*) ;
-extern char*       (String_FindToken3)          (const char*,const char*,const char*) ;
-extern char*       (String_FindAndSkipToken3)   (const char*,const char*,const char*) ;
-extern char*       (String_FindNthToken3)       (const char*,const char*,const int) ;
-extern char*       (String_FindNthToken4)       (const char*,const char*,const char*,const int) ;
-extern int         (String_CountTokens2)        (const char*,const char*) ;
-extern int         (String_CountTokens3)        (const char*,const char*,const char*) ;
-extern char**      (String_BreakIntoTokens)     (const char*,const char*) ;
-extern int         (String_NbOfTokens)          (char**) ;
-extern char*       (String_CopyLine)            (const char*) ;
+extern char*       (String_FindToken3)           (const char*,const char*,const char*) ;
+extern char*       (String_FindAndSkipToken3)    (const char*,const char*,const char*) ;
+extern char*       (String_FindNthToken3)        (const char*,const char*,const int) ;
+extern char*       (String_FindNthToken4)        (const char*,const char*,const char*,const int) ;
+extern int         (String_CountTokens2)         (const char*,const char*) ;
+extern int         (String_CountTokens3)         (const char*,const char*,const char*) ;
+extern char**      (String_BreakIntoTokens)      (const char*,const char*) ;
+extern int         (String_NbOfTokens)           (char**) ;
+extern char*       (String_CopyLine)             (const char*) ;
 extern const char* (String_SkipRemainingComments)(const char*) ;
-extern int         (String_NbOfUncommentedLines)(const char*,const char*) ;
+extern int         (String_NbOfUncommentedLines) (const char*,const char*) ;
+extern int         (String_FindPositionIndex)    (const char*,const char**,const int) ;
 
 
 
@@ -47,6 +48,7 @@ extern int         (String_NbOfUncommentedLines)(const char*,const char*) ;
 #include "Tuple.h"
 #include "Algos.h"
 #include "Logic.h"
+#include "Utils.h"
 
 
 /* Scan string
@@ -55,6 +57,10 @@ extern int         (String_NbOfUncommentedLines)(const char*,const char*) ;
 #define String_Scan(...) \
         Logic_IF(Logic_GE(Arg_NARG(__VA_ARGS__),3))\
         (String_ScanN,String_Scan2)(__VA_ARGS__)
+
+
+#define String_ScanStringUntil(STR,KEY,END) \
+        String_Scan(STR,"%*[ ]%[^"END"]",KEY)
 
 
 #define String_ScanAffectedKeyphrase(STR,KEY) \

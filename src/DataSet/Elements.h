@@ -19,6 +19,7 @@ extern int          (Elements_ComputeNbOfMatrixEntries) (Elements_t*) ;
 extern void         (Elements_UpdateMatrixRowColumnIndexes)(Elements_t*) ;
 extern void         (Elements_EliminateMatrixRowColumnIndexesOfOverlappingNodes)(Elements_t*) ;
 extern void         (Elements_UpdateMatrixRowColumnIndexesOfOverlappingNodes)(Elements_t*) ;
+extern void         (Elements_InitializeMatrixRowColumnIndexes)(Elements_t*) ;
 
 
 /* Accessors */

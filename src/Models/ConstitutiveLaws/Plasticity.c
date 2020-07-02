@@ -424,6 +424,7 @@ double Plasticity_UpdateElastoplasticTensor(Plasticity_t* plasty,double* c)
   
   return(det) ;
 #undef CEP
+#undef CEL
 }
 
 
@@ -462,14 +463,20 @@ void Plasticity_PrintTangentStiffnessTensor(Plasticity_t* plasty)
 /* Local functions */
 double Plasticity_ComputeFunctionGradientsDruckerPrager(Plasticity_t* plasty,const double* sig,const double* hardv)
 /** Drucker-Prager criterion. 
+ * 
  *  Inputs are: 
- *  the stresses (sig), the cumulative plastic shear strain (gam_p). 
+ *  the stresses (sig),
+ *  the cumulative plastic shear strain (gam_p). 
+ * 
  *  Parameters are:
- *  the friction angle (af), the dilatancy angle (ad) and the cohesion.
+ *  the friction angle (af),
+ *  the dilatancy angle (ad) and the cohesion.
+ * 
  *  On outputs the following values are modified:
  *  dfsds = derivative of the yield function wrt stresses
  *  dgsds = derivative of the potential function wrt stresses
  *  hm    = hardening modulus
+ * 
  *  Return the value of the yield function. */
 {
   Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
@@ -602,16 +609,19 @@ double Plasticity_ComputeFunctionGradientsDruckerPrager(Plasticity_t* plasty,con
 
 double Plasticity_ReturnMappingDruckerPrager(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
 /** Drucker-Prager return mapping.
+ * 
  *  Parameters are:
  *  the Young modulus (young),
  *  the Poisson's ratio (poisson),
  *  the friction angle (af), 
  *  the dilatancy angle (ad),
  *  the cohesion (cohesion).
+ * 
  *  On outputs, the following values are modified:
  *  the stresses (sig), 
  *  the plastic strains (eps_p), 
- *  the cumulative plastic shear strain (gam_p).
+ *  the cumulative plastic shear strain (gam_p = hardv[0]).
+ * 
  *  Return the value of the yield function. */
 {
   Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
@@ -843,19 +853,24 @@ double Plasticity_ComputeFunctionGradientsCamClayEp(Plasticity_t* plasty,const d
 
 
 double Plasticity_ReturnMappingCamClayEp(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
-/** Modified Cam-Clay return mapping. Inputs are: 
+/** Modified Cam-Clay return mapping.
+ *  Algorithm from Borja & Lee 1990 modified by Dangla.
+ * 
+ *  Inputs are: 
  *  the slope of the swelling line (kappa),
  *  the slope of the virgin consolidation line (lambda),
  *  the shear modulus (mu),
  *  the slope of the critical state line (m),
  *  the initial pre-consolidation pressure (pc),
  *  the initial void ratio (e0).
+ * 
  *  On outputs, the following values are modified:
  *  the stresses (sig), 
  *  the plastic strains (eps_p), 
  *  the plastic void ratio (e_p = hardv[0]).
+ * 
  *  Return the value of the yield function. 
- *  Algorithm from Borja & Lee 1990 modified by Dangla. */
+ **/
 {
   Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
   double young   = Elasticity_GetYoungModulus(elasty) ;
@@ -1052,19 +1067,24 @@ double Plasticity_ComputeFunctionGradientsCamClay(Plasticity_t* plasty,const dou
 
 
 double Plasticity_ReturnMappingCamClay(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
-/** Modified Cam-Clay return mapping. Inputs are: 
+/** Modified Cam-Clay return mapping.
+ *  Algorithm from Borja & Lee 1990 modified by Dangla.
+ * 
+ *  Inputs are: 
  *  the slope of the swelling line (kappa),
  *  the slope of the virgin consolidation line (lambda),
  *  the shear modulus (mu),
  *  the slope of the critical state line (M),
  *  the pre-consolidation pressure (pc),
  *  the initial void ratio (e0).
+ * 
  *  On outputs, the following values are modified:
  *  the stresses (sig), 
  *  the plastic strains (eps_p), 
  *  the pre-consolidation pressure (pc=hardv[0]).
+ * 
  *  Return the value of the yield function. 
- *  Algorithm from Borja & Lee 1990 modified by Dangla. */
+ **/
 {
   Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
   double young   = Elasticity_GetYoungModulus(elasty) ;
@@ -1255,19 +1275,25 @@ double Plasticity_ComputeFunctionGradientsCamClayOffset(Plasticity_t* plasty,con
 
 
 double Plasticity_ReturnMappingCamClayOffset(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
-/** Modified Cam-Clay return mapping. Inputs are: 
+/** Modified Cam-Clay return mapping.
+ *  Algorithm from Borja & Lee 1990 modified by Dangla.
+ * 
+ *  Inputs are: 
  *  the slope of the swelling line (kappa),
  *  the slope of the virgin consolidation line (lambda),
  *  the shear modulus (mu),
  *  the slope of the critical state line (M),
  *  the pre-consolidation pressure (pc),
  *  the initial void ratio (e0).
+ *  The tensile strength offsetting (ps=hardv[1]).
+ * 
  *  On outputs, the following values are modified:
  *  the stresses (sig), 
  *  the plastic strains (eps_p), 
  *  the pre-consolidation pressure (pc=hardv[0]).
+ * 
  *  Return the value of the yield function. 
- *  Algorithm from Borja & Lee 1990 modified by Dangla. */
+ **/
 {
   Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
   double young   = Elasticity_GetYoungModulus(elasty) ;

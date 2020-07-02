@@ -4,6 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "String.h"
 #include "Mry.h"
 #include "Node.h"
 #include "Element.h"
@@ -265,41 +266,49 @@ double* (Element_ComputeIncrementalImplicitTerms)(Element_t* element)
 
 
 
-int    (Element_FindUnknownPositionIndex)(Element_t* element,char* s)
+int    (Element_FindUnknownPositionIndex)(Element_t* element,const char* s)
 /** Find the unknown position index whose name is pointed to by s */
 {
   int n = Element_GetNbOfEquations(element) ;
   char** ss = Element_GetNameOfUnknown(element) ;
-  int    i ;
+  int    i = String_FindPositionIndex(s,ss,n) ;
+  
+  return(i) ;
 
   if(isdigit(s[0])) { /* donne sous forme numerique */
     i  = atoi(s) - 1 ;
   } else {            /* donne sous forme alphabetique */
-    for(i = 0 ; i < n ; i++) if(!strncmp(s,ss[i],strlen(s))) break ;
+    for(i = 0 ; i < n ; i++) {
+      if(!strncmp(s,ss[i],strlen(s))) break ;
+    }
     if(i == n) i = -1 ;
   }
 
-  if(i < 0) arret("Element_FindUnknownPositionIndex: unknown position of %s",s) ;
+  //if(i < 0) arret("Element_FindUnknownPositionIndex: unknown position of %s",s) ;
   return(i) ;
 }
 
 
 
-int    (Element_FindEquationPositionIndex)(Element_t* element,char* s)
+int    (Element_FindEquationPositionIndex)(Element_t* element,const char* s)
 /** Find the equation position index whose name is pointed to by s */
 {
   int n = Element_GetNbOfEquations(element) ;
   char** ss = Element_GetNameOfEquation(element) ;
-  int    i ;
+  int    i = String_FindPositionIndex(s,ss,n) ;
+  
+  return(i) ;
 
   if(isdigit(s[0])) { /* donne sous forme numerique */
     i  = atoi(s) - 1 ;
   } else {            /* donne sous forme alphabetique */
-    for(i = 0 ; i < n ; i++) if(!strncmp(s,ss[i],strlen(s))) break ;
+    for(i = 0 ; i < n ; i++) {
+      if(!strncmp(s,ss[i],strlen(s))) break ;
+    }
     if(i == n) i = -1 ;
   }
 
-  if(i < 0) arret("Element_FindEquationPositionIndex: unknown position of %s",s) ;
+  //if(i < 0) arret("Element_FindEquationPositionIndex: unknown position of %s",s) ;
   return(i) ;
 }
 
@@ -951,11 +960,11 @@ int* (Element_ComputeMatrixRowAndColumnIndices)(Element_t* el)
     
     for(j = 0 ; j < neq ; j++) {
       int ij = i*neq + j ;
-      int jj_col = Element_GetUnknownPosition(el)[ij] ;
-      int jj_row = Element_GetEquationPosition(el)[ij] ;
+      int ii_col = Element_GetUnknownPosition(el)[ij] ;
+      int ii_row = Element_GetEquationPosition(el)[ij] ;
       
-      colind[ij] = (jj_col >= 0) ? Node_GetMatrixColumnIndex(node_i)[jj_col] : -1 ;
-      rowind[ij] = (jj_row >= 0) ? Node_GetMatrixRowIndex(node_i)[jj_row] : -1 ;
+      colind[ij] = (ii_col >= 0) ? Node_GetMatrixColumnIndex(node_i)[ii_col] : -1 ;
+      rowind[ij] = (ii_row >= 0) ? Node_GetMatrixRowIndex(node_i)[ii_row] : -1 ;
     }
   }
   
@@ -1287,4 +1296,55 @@ int Element_ComputeNbOfMatrixEntries(Element_t* element)
   }
   
   return(len) ;
+}
+
+
+
+
+void Element_MakeUnknownContinuousAcrossZeroThicknessElement(Element_t* element,const char* name)
+{
+  ShapeFct_t* shapefct = Element_GetShapeFct(element) ;
+  int nf = ShapeFct_GetNbOfFunctions(shapefct) ;
+  int in ;
+  
+  for(in = 0 ; in < nf ; in++) {
+    Node_t* node = Element_GetNode(element,in) ;
+          
+    Node_MakeUnknownContinuousAtOverlappingNodes(node,name) ;
+  }
+}
+
+
+
+void Element_MakeEquationContinuousAcrossZeroThicknessElement(Element_t* element,const char* name)
+{
+  ShapeFct_t* shapefct = Element_GetShapeFct(element) ;
+  int nf = ShapeFct_GetNbOfFunctions(shapefct) ;
+  int in ;
+  
+  for(in = 0 ; in < nf ; in++) {
+    Node_t* node = Element_GetNode(element,in) ;
+          
+    Node_MakeEquationContinuousAtOverlappingNodes(node,name) ;
+  }
+}
+
+
+
+
+
+int Element_FindNodeIndex(Element_t* element,const Node_t* node)
+/** Return the local node index matching that of node
+ *  or -1 if it fails. */
+{
+  int nn  = Element_GetNbOfNodes(element) ;
+  int in ;
+          
+  for(in = 0 ; in < nn ; in++) {
+    if(Node_GetNodeIndex(node) == Element_GetNodeIndex(element,in)) {
+      return(in) ;
+    }
+  }
+          
+  return(-1) ;
 }

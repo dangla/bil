@@ -1,0 +1,171 @@
+Geometry
+2 plan
+
+
+
+# gmshcrack -f halfCrack -c 70 -t 7 -s 2000,50
+# gmshcrack -f cracked_halfCrack.msh -r 1000,2000 -p 4
+Mesh
+cracked_cracked_halfCrack.msh
+
+
+
+
+Material
+Model = Poroplast
+gravity = 0
+rho_s = 2350
+young = 5.8e+09
+poisson = 0.3
+porosity = 0.15
+rho_l = 1000
+p_l0 = 4.7e+06
+k_l = 2e+09
+k_int = 1e-19
+mu_l = 0.001
+b = 0.8
+N = 4.e-11
+cohesion = 1e+16
+friction = 25
+dilatancy = 25
+beta = 0.8
+sig0_11 = 0 
+sig0_22 = 0 
+sig0_33 = 0
+
+
+
+
+Material
+Model = Poroplast
+gravity = 0
+rho_s = 2350
+young = 5.8e+09
+poisson = 0.3
+porosity = 0.15
+rho_l = 1000
+p_l0 = 4.7e+06
+k_l = 2e+09
+k_int = 1e-19
+mu_l = 0.001
+b = 0.8
+N = 4.e-11
+cohesion = 1e+16
+friction = 25
+dilatancy = 25
+beta = 0.8
+sig0_11 = 0 
+sig0_22 = 0 
+sig0_33 = 0
+
+
+
+Material
+Model = Poroplast
+gravity = 0
+rho_s = 2350
+young = 5.8e+09
+poisson = 0.3
+porosity = 0.15
+rho_l = 1000
+p_l0 = 4.7e+06
+k_l = 2e+09
+k_int = 1e-16
+mu_l = 0.001
+b = 0.8
+N = 4.e-11
+cohesion = 1e+16
+friction = 25
+dilatancy = 25
+beta = 0.8
+sig0_11 = 0 
+sig0_22 = 0 
+sig0_33 = 0
+
+
+
+Material
+Model = Poroplast
+gravity = 0
+rho_s = 2350
+young = 5.8e+09
+poisson = 0.3
+porosity = 0.15
+rho_l = 1000
+p_l0 = 4.7e+06
+k_l = 2e+09
+k_int = 1e-19
+mu_l = 0.001
+b = 0.8
+N = 4.e-11
+cohesion = 1e+16
+friction = 25
+dilatancy = 25
+beta = 0.8
+sig0_11 = 0 
+sig0_22 = 0 
+sig0_33 = 0
+
+
+
+
+Fields
+1
+Value = 1   Gradient = 0 0 0   Point = 0 0 0
+
+
+
+Initialization
+0
+
+
+
+Functions
+1
+N = 2 F(0.) = 0 F(86400) = 2.e6
+
+
+
+
+Boundary Conditions
+4
+Region = 1     Unknown = u_1   Field = 0   Function = 0
+Region = 1     Unknown = u_2   Field = 0   Function = 0
+Region = 2     Unknown = u_2   Field = 0   Function = 0
+Region = 6     Unknown = p_l   Field = 1   Function = 1
+
+
+
+Loads
+0
+
+
+
+Points
+0
+
+
+
+Dates
+7
+0  21600  43200  86400  172800  345600  691200
+
+
+
+Objective Variations
+u_1 = 1.e-4
+u_2 = 1.e-4
+p_l = 1.e5
+
+
+
+Iterative Process
+Iter = 20
+Tol = 1.e-4
+Recom = 0
+
+
+
+Time Steps
+Dtini = 1
+Dtmax = 1.e5

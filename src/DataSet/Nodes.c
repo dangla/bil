@@ -256,6 +256,49 @@ void  Nodes_CreateMore(Nodes_t* nodes)
       }
     }
   }
+
+  /* Space allocation for buffer */
+  {
+    Buffer_t* buf = Buffer_Create(Node_SizeOfBuffer) ;
+    int i ;
+  
+    /* ATTENTION: same memory space (buffer) for all nodes */
+    for(i = 0 ; i < n_no ; i++) {
+      Node_GetBuffer(node + i) = buf ;
+    }
+  }
+}
+
+
+
+void  Nodes_InitializeMatrixRowColumnIndexes(Nodes_t* nodes)
+/** Initialization to arbitrarily negative value (-1) 
+  * so as to eliminate dof of isolated nodes or
+  * dof of negative position (see below).
+  */
+{
+  {
+    Node_t* no = Nodes_GetNode(nodes) ;
+    int n_no = Nodes_GetNbOfNodes(nodes) ;
+    int    i ;
+    
+    for(i = 0 ; i < n_no ; i++) {
+      Node_t* node_i = no + i ;
+      int   j ;
+    
+      for(j = 0 ; j < Node_GetNbOfUnknowns(node_i) ; j++)  {
+        char* unk = Node_GetNameOfUnknown(node_i)[j] ;
+        
+        Node_EliminateMatrixColumnIndexForBCond(node_i,unk) ;
+      }
+    
+      for(j = 0 ; j < Node_GetNbOfEquations(node_i) ; j++) {
+        char* eqn = Node_GetNameOfEquation(node_i)[j] ;
+              
+        Node_EliminateMatrixRowIndexForBCond(node_i,eqn) ;
+      }
+    }
+  }
 }
 
 

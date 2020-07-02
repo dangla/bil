@@ -43,6 +43,13 @@ Elasticity_t*  (Elasticity_Create)(void)
     Elasticity_GetParameter(elasty) = c ;
   }
   
+  /* Allocation of space for the stress tensor */
+  {
+    double* c = (double*) Mry_New(double[9]) ;
+    
+    Elasticity_GetStressTensor(elasty) = c ;
+  }
+  
   return(elasty) ;
 }
 
@@ -56,6 +63,7 @@ void  (Elasticity_Delete)(void* self)
   free(Elasticity_GetStiffnessTensor(elasty)) ;
   free(Elasticity_GetType(elasty)) ;
   free(Elasticity_GetParameter(elasty)) ;
+  free(Elasticity_GetStressTensor(elasty)) ;
   
   free(*pelasty) ;
 }
@@ -308,5 +316,65 @@ double* Elasticity_ComputeTransverselyIsotropicStiffnessTensor(Elasticity_t* ela
   
 #undef C
 #undef AXIS
+}
+
+
+
+
+
+double Elasticity_ComputeElasticEnergy(Elasticity_t* elasty,const double* strain)
+/** Return the elastic energy associated to the strain tensor.
+ **/
+{
+  double energy = 0 ;
+  
+  #define C(i,j)  (c[(i)*9+(j)])
+  {
+    double* c = Elasticity_GetStiffnessTensor(elasty) ;
+    int i ;
+    
+    for(i = 0 ; i < 9 ; i++) {
+      double stress = 0 ;
+      int j ;
+      
+      for(j = 0 ; j < 9 ; j++) {
+        stress += C(i,j) * strain[j] ;
+      }
+      
+      energy += strain[i] * stress ;
+    }
+    
+    energy *= 0.5 ;
+  }
+  #undef C
+  
+  return(energy) ;
+}
+
+
+
+
+
+double* Elasticity_ComputeStressTensor(Elasticity_t* elasty,const double* strain,double* stress0)
+/** Return the elastic stress tensor associated to the strain tensor.
+ **/
+{
+  #define C(i,j)  (c[(i)*9+(j)])
+  double* c = Elasticity_GetStiffnessTensor(elasty) ;
+  double* stress = (stress0) ? stress0 : Elasticity_GetStressTensor(elasty) ;
+  int i ;
+    
+  for(i = 0 ; i < 9 ; i++) {
+    int j ;
+      
+    stress[i] = 0 ;
+      
+    for(j = 0 ; j < 9 ; j++) {
+      stress[i] += C(i,j) * strain[j] ;
+    }
+  }
+  #undef C
+  
+  return(stress) ;
 }
 

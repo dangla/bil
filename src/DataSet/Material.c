@@ -166,13 +166,16 @@ int  (Material_ReadProperties)(Material_t* material,DataFile_t* datafile)
   
   if(model) {
     Model_ReadMaterialProperties_t* readmatprop = Model_GetReadMaterialProperties(model) ;
-    int n = readmatprop(material,datafile) ;
     
-    if(n > Material_MaxNbOfProperties) {
-      Message_RuntimeError("Material_ReadProperties: too many properties") ;
+    if(readmatprop) {
+      int n = readmatprop(material,datafile) ;
+    
+      if(n > Material_MaxNbOfProperties) {
+        Message_RuntimeError("Material_ReadProperties: too many properties") ;
+      }
+    
+      return(n) ;
     }
-    
-    return(n) ;
   }
   
   Material_ScanProperties(material,datafile,NULL) ;

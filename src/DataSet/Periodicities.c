@@ -269,6 +269,7 @@ Graph_t*  (Periodicities_ComputeGraph)(Mesh_t* mesh)
               Material_t* mat_j = Element_GetMaterial(elt_j) ;
               int eltreg_j = Element_GetRegionIndex(elt_j) ;
       
+              if(!mat_j) continue ;
               /* Skip material different from that of slave region */
               //if(mat_j != mat_i) continue ; /* Changed 29/02/2016 */
           
@@ -466,33 +467,15 @@ void  (Periodicities_UpdateMatrixRowColumnIndexes)(Mesh_t* mesh)
             int k ;
               
             for(k = 0 ; k < n_unk ; k++) {
-              int ki = Node_GetMatrixColumnIndex(node_i)[k] ;
-              int kj = Node_GetMatrixColumnIndex(node_j)[k] ;
-
-              /* The slave is i, the master is j */
-              if(kj >= 0 && ki == -1) {
-                Node_GetMatrixColumnIndex(node_i)[k] = kj ;
-              }
-
-              /* The slave is j, the master is i */
-              if(ki >= 0 && kj == -1) {
-                Node_GetMatrixColumnIndex(node_j)[k] = ki ;
-              }
+              char* unk = Node_GetNameOfUnknown(node_i)[k] ;
+              
+              Node_UpdateMatrixColumnIndexForPeriodicity(node_i,node_j,unk) ;
             }
 
             for(k = 0 ; k < n_equ ; k++) {
-              int ki = Node_GetMatrixRowIndex(node_i)[k] ;
-              int kj = Node_GetMatrixRowIndex(node_j)[k] ;
-                
-              /* The slave is i, the master is j */
-              if(kj >= 0 && ki == -1) {
-                Node_GetMatrixRowIndex(node_i)[k] = kj ;
-              }
-                
-              /* The slave is j, the master is i */
-              if(ki >= 0 && kj == -1) {
-                Node_GetMatrixRowIndex(node_j)[k] = ki ;
-              }
+              char* eqn = Node_GetNameOfEquation(node_i)[k] ;
+              
+              Node_UpdateMatrixRowIndexForPeriodicity(node_i,node_j,eqn) ;
             }
           }
         }
@@ -539,21 +522,28 @@ void  (Periodicities_EliminateMatrixRowColumnIndexes)(Mesh_t* mesh)
           int i ;
 
           for(i = 0 ; i < nn ; i++) {
-            Node_t *node_i = Element_GetNode(elt_i,i) ;
+            Node_t* node_i = Element_GetNode(elt_i,i) ;
             int   j ;
 
             for(j = 0 ; j < neq ; j++) {
-              int ij = i*neq + j ;
-              int jj ;
+              //int ij = i*neq + j ;
           
               /*  columns (unknowns) */
-              if((jj = Element_GetUnknownPosition(elt_i)[ij]) >= 0) {
-                Node_GetMatrixColumnIndex(node_i)[jj] = -1 ;
+              {
+                char* unk = Element_GetNameOfUnknown(elt_i)[j] ;
+                //int ii = Node_FindUnknownPositionIndex(node_i,unk) ;
+                //int ii = Element_GetUnknownPosition(elt_i)[ij] ;
+                
+                Node_EliminateMatrixColumnIndexForPeriodicity(node_i,unk) ;
               }
           
               /*  rows (equations) */
-              if((jj = Element_GetEquationPosition(elt_i)[ij]) >= 0) {
-                Node_GetMatrixRowIndex(node_i)[jj] = -1 ;
+              {
+                char* eqn = Element_GetNameOfEquation(elt_i)[j] ;
+                //int ii = Node_FindEquationPositionIndex(node_i,eqn) ;
+                //int ii = Element_GetEquationPosition(elt_i)[ij] ;
+                
+                Node_EliminateMatrixRowIndexForPeriodicity(node_i,eqn) ;
               }
             }
           }
@@ -561,6 +551,5 @@ void  (Periodicities_EliminateMatrixRowColumnIndexes)(Mesh_t* mesh)
       }
     }
   }
-  
 }
 

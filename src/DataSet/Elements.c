@@ -81,6 +81,7 @@ void Elements_LinkUp(Elements_t* elements,Materials_t* materials)
 {
   int n_el = Elements_GetNbOfElements(elements) ;
   Element_t* el = Elements_GetElement(elements) ;
+  int n_mat = Materials_GetNbOfMaterials(materials) ;
   
   
   /* Link up element and material */
@@ -90,7 +91,7 @@ void Elements_LinkUp(Elements_t* elements,Materials_t* materials)
     for(ie = 0 ; ie < n_el ; ie++) {
       int imat = Element_GetMaterialIndex(el + ie) ;
     
-      if(imat >= 0) {
+      if(imat >= 0 && imat < n_mat) {
         Element_GetMaterial(el + ie) = Materials_GetMaterial(materials) + imat ;
       } else {
         Element_GetMaterial(el + ie) = NULL ;
@@ -187,7 +188,7 @@ void Elements_CreateMore(Elements_t* elements)
             int dim_h = dim - 1 ;
             int j  = ShapeFcts_FindShapeFct(shapefcts,nf,dim_h) ;
 
-            Element_GetShapeFct(el_i) = ShapeFcts_GetShapeFct(shapefcts) + j ;
+            Element_GetShapeFct(el_i) = shapefct + j ;
           }
         }
       }
@@ -221,7 +222,7 @@ void Elements_CreateMore(Elements_t* elements)
             int dim_h = dim - 1 ;
             int j  = IntFcts_FindIntFct(intfcts,nf,dim_h,"Gauss") ;
 
-            Element_GetIntFct(el_i) = IntFcts_GetIntFct(intfcts) + j ;
+            Element_GetIntFct(el_i) = intfct + j ;
           }
         }
       }
@@ -359,9 +360,57 @@ int Elements_ComputeNbOfMatrixEntries(Elements_t* elements)
 
 
 
+void  Elements_InitializeMatrixRowColumnIndexes(Elements_t* elements)
+/** Initialize the Matrix Row/Column Indexes to 0 
+ *  for nodes belonging to elements */
+{
+  {
+    Element_t* el = Elements_GetElement(elements) ;
+    int n_el = Elements_GetNbOfElements(elements) ;
+    int    ie ;
+  
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Element_t* elt_i = el + ie ;
+      Material_t* mat = Element_GetMaterial(elt_i) ;
+    
+      if(mat) {
+        int    nn  = Element_GetNbOfNodes(elt_i) ;
+        int    neq = Element_GetNbOfEquations(elt_i) ;
+        int i ;
+
+        for(i = 0 ; i < nn ; i++) {
+          Node_t* node_i = Element_GetNode(elt_i,i) ;
+          int   j ;
+
+          for(j = 0 ; j < neq ; j++) {
+            int ij = i*neq + j ;
+          
+            /*  columns (unknowns) set to arbitrary >= 0 */
+            {
+              int ii = Element_GetUnknownPosition(elt_i)[ij] ;
+              
+              if(ii >= 0) Node_GetMatrixColumnIndex(node_i)[ii] = 0 ;
+            }
+          
+            /*  rows (equations) set to arbitrary >= 0 */
+            {
+              int ii = Element_GetEquationPosition(elt_i)[ij] ;
+              
+              if(ii >= 0) Node_GetMatrixRowIndex(node_i)[ii] = 0 ;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+
 void  (Elements_EliminateMatrixRowColumnIndexesOfOverlappingNodes)(Elements_t* elements)
-/** Merge indexes of specific unknowns at face-to-face 
- *  nodes of zero-thickness interface element.
+/** Elimninate indexes of specific unknowns at the overlapping nodes 
+ *  of zero-thickness interface element.
  **/
 {
   int n_el = Elements_GetNbOfElements(elements) ;
@@ -376,55 +425,30 @@ void  (Elements_EliminateMatrixRowColumnIndexesOfOverlappingNodes)(Elements_t* e
       ShapeFct_t* shapefct = Element_GetShapeFct(el_i) ;
       int nf = ShapeFct_GetNbOfFunctions(shapefct) ;
       int in ;
-        
+      
       for(in = 0 ; in < nf ; in++) {
-        int jn = Element_OverlappingNode(el_i,in) ;
-        Node_t* node_i = Element_GetNode(el_i,in) ;
-        Node_t* node_j = Element_GetNode(el_i,jn) ;
+        Node_t* node_in = Element_GetNode(el_i,in) ;
         int ieq ;
-        
-        /* No overlapping node! */
-        if(jn == in) continue ;
-          
-        /* Unknowns */
+    
         for(ieq = 0 ; ieq < neq ; ieq++) {
-          int ii = Element_GetUnknownPosition(el_i)[in*neq + ieq] ;
-          int jj = Element_GetUnknownPosition(el_i)[jn*neq + ieq] ;
+          char* unk = Element_GetNameOfUnknown(el_i)[ieq] ;
+          char* eqn = Element_GetNameOfEquation(el_i)[ieq] ;
           
-          if(ii >= 0 && jj >= 0) {
-            int ki = Node_GetMatrixColumnIndex(node_i)[ii] ;
-            int kj = Node_GetMatrixColumnIndex(node_j)[jj] ;
-              
-            if(ki == kj) {
-              Node_GetMatrixColumnIndex(node_j)[jj] = -1 ;
-            }
-          }
-        }
-          
-        /* Equations */
-        for(ieq = 0 ; ieq < neq ; ieq++) {
-          int ii = Element_GetEquationPosition(el_i)[in*neq + ieq] ;
-          int jj = Element_GetEquationPosition(el_i)[jn*neq + ieq] ;
-            
-          if(ii >= 0 && jj >= 0) {
-            int ki = Node_GetMatrixRowIndex(node_i)[ii] ;
-            int kj = Node_GetMatrixRowIndex(node_j)[jj] ;
-              
-            if(ki == kj) {
-              Node_GetMatrixRowIndex(node_j)[jj] = -1 ;
-            }
-          }
+          Node_EliminateMatrixColumnIndexForOverlappingNodes(node_in,unk) ;
+          Node_EliminateMatrixRowIndexForOverlappingNodes(node_in,eqn) ;
         }
       }
     }
   }
 }
+
+
 
 
 
 void  (Elements_UpdateMatrixRowColumnIndexesOfOverlappingNodes)(Elements_t* elements)
-/** Merge indexes of specific unknowns at face-to-face 
- *  nodes of zero-thickness interface element.
+/** Merge indexes of specific unknowns at the overlapping nodes 
+ *  of zero-thickness interface element.
  **/
 {
   int n_el = Elements_GetNbOfElements(elements) ;
@@ -439,46 +463,20 @@ void  (Elements_UpdateMatrixRowColumnIndexesOfOverlappingNodes)(Elements_t* elem
       ShapeFct_t* shapefct = Element_GetShapeFct(el_i) ;
       int nf = ShapeFct_GetNbOfFunctions(shapefct) ;
       int in ;
-        
+      
       for(in = 0 ; in < nf ; in++) {
-        int jn = Element_OverlappingNode(el_i,in) ;
-        Node_t* node_i = Element_GetNode(el_i,in) ;
-        Node_t* node_j = Element_GetNode(el_i,jn) ;
+        Node_t* node_in = Element_GetNode(el_i,in) ;
         int ieq ;
-        
-        /* No overlapping node! */
-        if(jn == in) continue ;
-          
-        /* Unknowns */
+    
         for(ieq = 0 ; ieq < neq ; ieq++) {
-          int ii = Element_GetUnknownPosition(el_i)[in*neq + ieq] ;
-          int jj = Element_GetUnknownPosition(el_i)[jn*neq + ieq] ;
+          char* unk = Element_GetNameOfUnknown(el_i)[ieq] ;
+          char* eqn = Element_GetNameOfEquation(el_i)[ieq] ;
           
-          if(ii >= 0 && jj >= 0) {
-            int ki = Node_GetMatrixColumnIndex(node_i)[ii] ;
-            int kj = Node_GetMatrixColumnIndex(node_j)[jj] ;
-              
-            if(ki >= 0 && kj < 0) {
-              Node_GetMatrixColumnIndex(node_j)[jj] = ki ;
-            }
-          }
-        }
-          
-        /* Equations */
-        for(ieq = 0 ; ieq < neq ; ieq++) {
-          int ii = Element_GetEquationPosition(el_i)[in*neq + ieq] ;
-          int jj = Element_GetEquationPosition(el_i)[jn*neq + ieq] ;
-            
-          if(ii >= 0 && jj >= 0) {
-            int ki = Node_GetMatrixRowIndex(node_i)[ii] ;
-            int kj = Node_GetMatrixRowIndex(node_j)[jj] ;
-              
-            if(ki >= 0 && kj < 0) {
-              Node_GetMatrixRowIndex(node_j)[jj] = ki ;
-            }
-          }
+          Node_UpdateMatrixColumnIndexForOverlappingNodes(node_in,unk) ;
+          Node_UpdateMatrixRowIndexForOverlappingNodes(node_in,eqn) ;
         }
       }
     }
   }
 }
+

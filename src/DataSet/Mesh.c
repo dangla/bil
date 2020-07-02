@@ -447,7 +447,7 @@ int  Mesh_UpdateMatrixRowColumnIndexes(Mesh_t* mesh)
   Periodicities_EliminateMatrixRowColumnIndexes(mesh) ;
   
   /* Accounting continuous unknowns across zero-thickness elements 
-   * (set indexes of overlapping nodes to arbitray < 0 value) */
+   * (set indexes of overlapping (slave) nodes to arbitray < 0 value) */
   {
     Elements_t* elements = Mesh_GetElements(mesh) ;
     
@@ -465,7 +465,7 @@ int  Mesh_UpdateMatrixRowColumnIndexes(Mesh_t* mesh)
   /* Update indexes of slave nodes for periodic mesh */
   Periodicities_UpdateMatrixRowColumnIndexes(mesh) ;
   
-  /* Update indexes of overlapping nodes of zero-thickness elements */
+  /* Update indexes of overlapping (slave) nodes of zero-thickness elements */
   {
     Elements_t* elements = Mesh_GetElements(mesh) ;
     
@@ -486,61 +486,17 @@ int  Mesh_InitializeMatrixRowColumnIndexes(Mesh_t* mesh)
    * dof of negative position (see below).
    */
   {
-    Node_t* no = Mesh_GetNode(mesh) ;
-    int n_no = Mesh_GetNbOfNodes(mesh) ;
-    int    i ;
+    Nodes_t* nodes = Mesh_GetNodes(mesh) ;
     
-    for(i = 0 ; i < n_no ; i++) {
-      Node_t* node_i = no + i ;
-      int   j ;
-    
-      for(j = 0 ; j < Node_GetNbOfUnknowns(node_i) ; j++)  {
-        Node_GetMatrixColumnIndex(node_i)[j] = -1 ;
-      }
-    
-      for(j = 0 ; j < Node_GetNbOfEquations(node_i) ; j++) {
-        Node_GetMatrixRowIndex(node_i)[j] = -1 ;
-      }
-    }
+    Nodes_InitializeMatrixRowColumnIndexes(nodes) ;
   }
 
 
   /* Initialization to 0 for nodes belonging to elements */
   {
-    Element_t* el = Mesh_GetElement(mesh) ;
-    int n_el = Mesh_GetNbOfElements(mesh) ;
-    int    ie ;
-  
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Element_t* elt_i = el + ie ;
-      Material_t* mat = Element_GetMaterial(elt_i) ;
+    Elements_t* elements = Mesh_GetElements(mesh) ;
     
-      if(mat) {
-        int    nn  = Element_GetNbOfNodes(elt_i) ;
-        int    neq = Element_GetNbOfEquations(elt_i) ;
-        int i ;
-
-        for(i = 0 ; i < nn ; i++) {
-          Node_t* node_i = Element_GetNode(elt_i,i) ;
-          int   j ;
-
-          for(j = 0 ; j < neq ; j++) {
-            int ij = i*neq + j ;
-            int jj ;
-          
-            /*  columns (unknowns) set to arbitrary >= 0 */
-            if((jj = Element_GetUnknownPosition(elt_i)[ij]) >= 0) {
-              Node_GetMatrixColumnIndex(node_i)[jj] = 0 ;
-            }
-          
-            /*  rows (equations) set to arbitrary >= 0 */
-            if((jj = Element_GetEquationPosition(elt_i)[ij]) >= 0) {
-              Node_GetMatrixRowIndex(node_i)[jj] = 0 ;
-            }
-          }
-        }
-      }
-    }
+    Elements_InitializeMatrixRowColumnIndexes(elements) ;
   }
   
   /* Set up the system without restrictions */
@@ -552,6 +508,7 @@ int  Mesh_InitializeMatrixRowColumnIndexes(Mesh_t* mesh)
   
   return(Mesh_GetNbOfMatrixColumns(mesh)) ;
 }
+
 
 
 void Mesh_WriteGraph(Mesh_t* mesh,const char* nom,const char* format)

@@ -16,6 +16,7 @@ extern void      (Nodes_CreateMore)                  (Nodes_t*) ;
 extern int       (Nodes_ComputeNbOfUnknownFields)    (Nodes_t*) ;
 extern void      (Nodes_InitializeObValIndexes)      (Nodes_t*) ;
 extern void      (Nodes_SetMatrixRowColumnIndexes)   (Nodes_t*,DataFile_t*) ;
+extern void      (Nodes_InitializeMatrixRowColumnIndexes)(Nodes_t*) ;
 
 
 
