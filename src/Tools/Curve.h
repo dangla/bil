@@ -37,6 +37,15 @@ extern char*    (Curve_PrintInFile)(Curve_t*) ;
 
 
 
+/* Set the names of x-axis and y-axis */
+#define Curve_SetNameOfXAxis(CV,NAME) \
+        strcpy(Curve_GetNameOfXAxis(CV),NAME)
+
+#define Curve_SetNameOfYAxis(CV,NAME) \
+        strcpy(Curve_GetNameOfYAxis(CV),NAME)
+
+
+
 struct Curve_s {              /* courbe */
   char*  xname ;              /* Name of the x-axis */
   char*  yname ;              /* Name of the y-axis */

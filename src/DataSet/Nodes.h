@@ -10,9 +10,10 @@ struct Nodes_s        ; typedef struct Nodes_s        Nodes_t ;
 
 #include "DataFile.h"
 
-extern Nodes_t*  (Nodes_Create)                      (const int,const int) ;
 extern Nodes_t*  (Nodes_New)                         (const int,const int,const int) ;
+extern void      (Nodes_Delete)                      (void*) ;
 extern void      (Nodes_CreateMore)                  (Nodes_t*) ;
+extern void      (Nodes_DeleteMore)                  (void*) ;
 extern int       (Nodes_ComputeNbOfUnknownFields)    (Nodes_t*) ;
 extern void      (Nodes_InitializeObValIndexes)      (Nodes_t*) ;
 extern void      (Nodes_SetMatrixRowColumnIndexes)   (Nodes_t*,DataFile_t*) ;

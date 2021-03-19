@@ -15,22 +15,6 @@
 #include "Math.h"
 
 
-
-#ifdef LAPACKLIB
-#if defined(__cplusplus)
-  extern "C" {
-#endif
-
-static void dgeev_(const char *jobvl, const char *jobvr, int *n, double *a,
-                   int *lda, double *wr, double *wi, double *vl, int *ldvl, 
-                   double *vr, int *ldvr, double *work, int *lwork, int *info);
-
-#if defined(__cplusplus)
-  }
-#endif
-#endif
-
-
 static Math_t* (Math_GetInstance)(void) ;
 static Math_t* (Math_Create)(void) ;
 
@@ -124,11 +108,10 @@ double* Math_ComputeRealEigenvaluesAndEigenvectorsOf3x3Matrix(double* a,const ch
       double work[lwork];
       char  jobvr = (job == 'r') ? 'V' : 'N' ;
       char  jobvl = (job == 'l') ? 'V' : 'N' ;
-      int i ;
     
       dgeev_(&jobvl,&jobvr,&N,a,&N,wr,wi,vl,&N,vr,&N,work,&lwork,&info);
     
-      if(!info) {
+      if(info) {
         Message_RuntimeError("dgeev of LAPACK has not converged") ;
       }
     }
@@ -258,7 +241,8 @@ double* Math_Inverse3x3Matrix(const double* a)
 
 
 double Math_ComputeSecondDeviatoricStressInvariant(const double* sig)
-/** Second invariant du deviateur des contraintes */
+/** Second invariant of the deviatoric part of a stress tensor:
+    J2 = 1/2 tr(dev.dev)  (dev = sig - 1/3 tr(sig) Id) */
 {
 #define SIG(i,j) (sig[3*(i)+(j)])
   double j2a = (SIG(0,0) - SIG(1,1))*(SIG(0,0) - SIG(1,1))
@@ -272,7 +256,7 @@ double Math_ComputeSecondDeviatoricStressInvariant(const double* sig)
 
 
 double Math_ComputeFirstStressInvariant(const double* sig)
-/** First invariant of stress tensor */
+/** First invariant of a stress tensor: I1 = tr(sig) */
 {
   return(sig[0] + sig[4] + sig[8]);
 }
@@ -280,11 +264,37 @@ double Math_ComputeFirstStressInvariant(const double* sig)
 
 
 double Math_ComputeSecondStressInvariant(const double* sig)
-/** Second invariant of stress tensor */
+/** Second invariant of a symmetric stress tensor:
+    I2 = 1/2 tr(sig.sig) = 1/2 sig_ik sig_ki */
 {
   double i2a = sig[0]*sig[0] + sig[4]*sig[4] + sig[8]*sig[8] ;
   double i2b = sig[1]*sig[3] + sig[2]*sig[6] + sig[5]*sig[7] ;
   return(0.5*i2a + i2b) ;
+}
+
+
+
+double* Math_DeviatoricStress(const double* sig)
+/** Return a pointer to the deviator of sig */
+{
+  Math_t* math = Math_GetInstance() ;
+  size_t SizeNeeded = 9*(sizeof(double)) ;
+  double* sigd = (double*) Math_AllocateInBuffer(math,SizeNeeded) ;
+  double  sigm = Math_ComputeFirstStressInvariant(sig)/3 ;
+  
+  {
+    int i ;
+    
+    for(i = 0 ; i < 9 ; i++) {
+      sigd[i] = sig[i] ;
+    }
+        
+    sigd[0] -= sigm ;
+    sigd[4] -= sigm ;
+    sigd[8] -= sigm ;
+  }
+
+  return(sigd) ;
 }
 
 
@@ -347,7 +357,7 @@ double* Math_SolveByGaussElimination(double* a,double* b,int n)
 
 
 
-void Math_PrintStiffnessTensor(double* c)
+void Math_PrintStiffnessTensor(const double* c)
 /** Print a 4th rank tensor.
  **/
 {
@@ -361,6 +371,30 @@ void Math_PrintStiffnessTensor(double* c)
         
       for (j = 0 ; j < 9 ; j++) {
         printf(" % e",c[i*9 + j]) ;
+      }
+        
+      printf("\n") ;
+    }
+  }
+}
+
+
+
+
+void Math_PrintStressTensor(const double* c)
+/** Print a 2nd rank tensor.
+ **/
+{
+  {
+    int i ;
+    
+    for(i = 0 ; i < 3 ; i++) {
+      int j ;
+        
+      printf("S%d-:",i + 1) ;
+        
+      for (j = 0 ; j < 3 ; j++) {
+        printf(" % e",c[i*3 + j]) ;
       }
         
       printf("\n") ;
@@ -590,7 +624,7 @@ int Math_PolishPolynomialEquationRoot(double* x,int n,double* proot,double tol,i
     Message_Direct("\nthe %dth order polynomial equation:\n",n) ;
     
     for(i = 0 ; i <= n ; i++) {
-      Message_Direct("%d order coeffcient: %lf\n",n-i,x[i]) ;
+      Message_Direct("%d order coefficient: %lf\n",n-i,x[i]) ;
     }
     
     Message_Direct("\nhas not converged for the root %lf\n",root) ;

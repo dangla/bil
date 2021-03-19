@@ -1,0 +1,97 @@
+Geometry
+2 axis
+
+
+
+Mesh
+Q4.msh
+
+
+
+Material
+Model = CO2coal
+gravity = 0           # gravity
+rho_s = 0             # mass density of the dry material
+K_m = 1.04e9          # Compression modulus of the non fractured material
+phi0_M = 0.032        # Macroporosity
+p0_co2 = 0            # initial pressure of CO2
+k_int = 262e-15       # intrinsic permeability
+mu_co2 = 1.7857e-05   # dynamic viscosity of CO2
+sig0_11 = 0           # initial stress 11
+sig0_22 = 0           # initial stress 22
+sig0_33 = 0           # initial stress 33
+young =  1.12e+09     # Young's modulus of coal
+poisson = 0.26        # Poisson's ratio of coal
+young_3 =  1.12e+09
+poisson_3 = 0.26
+shear_3 = 4.44e8
+axis_3 = 2
+Curves = Ribolla_CO2
+#Curves = Ribolla_CO2   p = Range{x1 = 0 , x2 = 17.e6, n = 171}  n_co2 = Expressions(1){n_max = 4922 ; bp = 5.18e-7 ; n_co2 = n_max*bp*p/(1+bp*p)} rho_co2 = MolarDensityOfCO2(1){ T = 318 }
+#Curves = Ribolla_C   p = Range{x1 = 0 , x2 = 17.e6, n = 171}  c = Expressions(1){c = 3}
+#Curves = Ribolla_tangent_Biot   p = Range{x1 = 1 , x2 = 17.e6, n = 171}  tangent_biot = Expressions(1){tangent_biot = $3*$1/$2}
+#Curves = Ribolla_stress_ads   p = Range{x1 = 0 , x2 = 17.e6, n = 171}  stress_ads = Integral(1){name = t_biot }
+
+
+
+Fields
+1
+Value =  1.6e7 Gradient = 0 0 0 Point = 0 0 0
+
+
+
+Initialization
+0
+
+
+
+Functions
+1
+N = 2 F(0) = 0 F(10) = 1
+
+
+
+Boundary Conditions
+3
+Region = 4  Unknown = u_1   Field = 0 Function = 0
+Region = 1  Unknown = u_2   Field = 0 Function = 0
+Region = 10 Unknown = p_co2 Field = 1 Function = 1
+
+
+
+Loads
+2
+Region = 3 Equation = meca_1 Type = pressure Field = 1 Fonction = 1
+Region = 2 Equation = meca_1 Type = pressure Field = 1 Fonction = 1
+
+
+
+Points
+1
+0.5 0.5
+
+
+
+Dates
+2
+0 10
+
+
+
+Objective Variations
+u_1 = 1.e-4 
+u_2 = 1.e-4 
+p_co2 = 1000
+
+
+
+Iterative Process
+Iteration = 10
+Tolerance = 1e-06 
+Repetition = 0 
+
+
+
+Time Steps
+Dtini = 1.e-3
+Dtmax = 0.5

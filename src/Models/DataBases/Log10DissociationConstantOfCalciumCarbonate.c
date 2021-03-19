@@ -12,7 +12,7 @@ void Log10DissociationConstantOfCalciumCarbonate_Print(double T)
 
 #define REACTITLE(...) \
   {\
-    int c1 = 68 ;\
+    int c1 = 52 ;\
     int c2 = c1+11 ;\
     int n = printf(__VA_ARGS__) ;\
     while(n < c1) n += printf(" ") ;\
@@ -29,7 +29,7 @@ void Log10DissociationConstantOfCalciumCarbonate_Print(double T)
 #define PREACT(R,LogK) \
   {\
     double logk = LogK ;\
-    int c1 = 68 ;\
+    int c1 = 52 ;\
     int c2 = c1+11 ;\
     int n = printf(R) ;\
     while(n < c1) n += printf(" ") ;\

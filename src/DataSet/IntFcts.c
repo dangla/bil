@@ -30,6 +30,30 @@ IntFcts_t*  IntFcts_Create(void)
 
 
 
+void IntFcts_Delete(void* self)
+{
+  IntFcts_t** pintfcts = (IntFcts_t**) self ;
+  IntFcts_t*   intfcts = *pintfcts ;
+  
+  {
+    int n = IntFcts_GetNbOfIntFcts(intfcts) ;
+    IntFct_t* intfct = IntFcts_GetIntFct(intfcts) ;
+    int i ;
+    
+    for(i = 0 ; i < n ; i++) {
+      IntFct_t* intfct_i = intfct + i ;
+      
+      IntFct_Delete(&intfct_i) ;
+    }
+    
+    free(intfct) ;
+  }
+  
+  free(intfcts) ;
+}
+
+
+
 int IntFcts_FindIntFct(IntFcts_t* intfcts,int nn,int dim,const char* type)
 /** Find an Interpolation Function class defined by 
  *  nn = nb of functions 

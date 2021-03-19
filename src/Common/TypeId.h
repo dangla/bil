@@ -25,6 +25,7 @@ enum TypeId_e {
   TypeId_Curve_t,
   TypeId_Curves_t,
   TypeId_CurvesFile_t,
+  TypeId_Damage_t,
   TypeId_DataFile_t,
   TypeId_DataSet_t,
   TypeId_Date_t,

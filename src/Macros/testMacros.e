@@ -23,7 +23,7 @@ Test Algos:
 #define F(a,b)    Utils_CAT3(a,_,b)
 "T                  " = T
 "F(a,b)             " = "Utils_CAT3(a,_,b)"
-"Algos_FOLDL(T,P_,F)" = Algos_FOLDL(T,P_,F);
+"Algos_FOLDL(T,P_,F)" = Algos_FOLDL(T,P_,F)
 #undef T
 #undef F
 
@@ -33,7 +33,7 @@ Test Algos:
 #define F(a,b)    Utils_CAT3(a,_,b)
 "T                  " = T
 "F(a,b)             " = "Utils_CAT3(a,_,b)"
-"Algos_FOLDR(T,_P,F)" = Algos_FOLDR(T,_P,F);
+"Algos_FOLDR(T,_P,F)" = Algos_FOLDR(T,_P,F)
 #undef T
 #undef F
 
@@ -43,7 +43,7 @@ Test Algos:
 #define F(a,b)    Utils_CAT3(a,_,b)
 "T                  " = T
 "F(a,b)             " = "Utils_CAT3(a,_,b)"
-"Algos_SCANL(T,U,F)" = Algos_SCANL(T,U,F);
+"Algos_SCANL(T,U,F)" = Algos_SCANL(T,U,F)
 #undef T
 #undef F
 
@@ -53,7 +53,7 @@ Test Algos:
 #define F(a,b)    Utils_CAT3(a,_,b)
 "T                  " = T
 "F(a,b)             " = "Utils_CAT3(a,_,b)"
-"Algos_SCANR(T,U,F) " = Algos_SCANR(T,U,F);
+"Algos_SCANR(T,U,F) " = Algos_SCANR(T,U,F)
 #undef T
 #undef F
 
@@ -73,7 +73,17 @@ Test Algos:
 #define F(a)        Utils_CAT(_,a)
 "T              " = T
 "F(a)           " = "Utils_CAT(_,a)"
-"Algos_MAP(T,F) " = Algos_MAP(T,F);
+"Algos_MAP(T,F) " = Algos_MAP(T,F)
+#undef T
+#undef F
+
+
+
+#define T         (1,5,9,6,8,0,4)
+#define F(a,b)      Arith_ADD(a,b)
+"T              " = T
+"F(a)           " = "Utils_CAT(_,a)"
+"Algos_MAP(T,F) " = Algos_MAP(T,F)
 #undef T
 #undef F
 
@@ -85,7 +95,7 @@ Test Algos:
 "T1                 " = T1
 "T2                 " = T2
 "F(a,b)             " = "Utils_CAT3(a,_,b)"
-"Algos_MAP2(T1,T2,F)" = Algos_MAP2(T1,T2,F);
+"Algos_MAP2(T1,T2,F)" = Algos_MAP2(T1,T2,F)
 #undef T1
 #undef T2
 #undef F
@@ -100,7 +110,7 @@ Test Algos:
 "T2                    " = T2
 "T3                    " = T3
 "F(a,b,c)              " = "Utils_CAT3(a,b,c)"
-"Algos_MAP3(T1,T2,T3,F)" = Algos_MAP3(T1,T2,T3,F);
+"Algos_MAP3(T1,T2,T3,F)" = Algos_MAP3(T1,T2,T3,F)
 #undef T1
 #undef T2
 #undef T3
@@ -111,14 +121,14 @@ Test Algos:
 #define T         (A,b,C,d,E,f,G,h,I,j)
 "T                 " = T
 "Algos_SEP(T)      " = Algos_SEP(T);
-"Algos_SEPWITH(T, )" = Algos_SEPWITH(T, );
+"Algos_SEPWITH(T, )" = Algos_SEPWITH(T, )
 #undef T
 
 
 
 #define T           (aA,bB,cC,dD)
 "T                 " = T
-"Algos_SEPWITH(T,@)" = Algos_SEPWITH(T,@);
+"Algos_SEPWITH(T,@)" = Algos_SEPWITH(T,@)
 #undef T
 
 
@@ -132,9 +142,9 @@ Test TypeId:
 #define F(a,b)    Utils_CAT3(a,_,b)
 "T          " = T
 "F(a,b)     " = "Utils_CAT3(a,_,b)"
-"Utils_CAT(TypeId,Algos_FOLDL(Tuple_TUPLE(T),,F))" = Utils_CAT(TypeId,Algos_FOLDL(Tuple_TUPLE(T),,F));
+"Utils_CAT(TypeId,Algos_FOLDL(Tuple_TUPLE(T),,F))" = Utils_CAT(TypeId,Algos_FOLDL(Tuple_TUPLE(T),,F))
 
 
 
-"TypeId_Create(unsigned int)" = TypeId_Create(unsigned int);
+"TypeId_Create(unsigned int)" = TypeId_Create(unsigned int)
 #endif

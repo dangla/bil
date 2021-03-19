@@ -142,8 +142,8 @@ FEM_t*  (FEM_GetInstance)(Element_t* el)
 
 
 
-double*  FEM_ComputeElasticMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
-/** Return a pointer on a FE elastic matrix (Ndof*Ndof)
+double*  FEM_ComputeStiffnessMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
+/** Return a pointer on a FE stiffness matrix (Ndof*Ndof)
  *  with Ndof = N * dim and N = nb of nodes */
 {
 #define KR(i,j)     (kr[(i)*ndof + (j)])
@@ -173,7 +173,7 @@ double*  FEM_ComputeElasticMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const 
   }
   
   if(Element_IsSubmanifold(el)) {
-    arret("FEM_ComputeElasticMatrix") ;
+    arret("FEM_ComputeStiffnessMatrix") ;
   }
   
   {
@@ -206,7 +206,7 @@ double*  FEM_ComputeElasticMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const 
           int i,j,k,l ;
 
           if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-            arret("FEM_ComputeElasticMatrix: To be improved") ;
+            arret("FEM_ComputeStiffnessMatrix: To be improved") ;
           }
       
           /* */
@@ -852,7 +852,7 @@ double*  FEM_ComputePoroelasticMatrix6(FEM_t* fem,IntFct_t* fi,const double* c,c
  * 
  *  The outputs is provided in an order depending on "idis".
  *  The first displacement unknown U1 will be positionned at "idis".
- *  (1  ... idis ... Neq)
+ *  (0  ... idis ... Neq-1)
  *   |  ...  |   ...  |
  *   v       v        v
  *  (P1 ...  U1  ...  Pn)
@@ -887,7 +887,7 @@ double*  FEM_ComputePoroelasticMatrix6(FEM_t* fem,IntFct_t* fi,const double* c,c
   */
   /* 1.1 Elasticity */
   {
-    double* kr = FEM_ComputeElasticMatrix(fem,fi,c,dec) ;
+    double* kr = FEM_ComputeStiffnessMatrix(fem,fi,c,dec) ;
     
     #define KR(i,j)     (kr[(i)*nn*dim + (j)])
     
@@ -1443,6 +1443,47 @@ double*   FEM_ComputeFluxResidu(FEM_t* fem,IntFct_t* intfct,const double* f,cons
 }
 
 
+
+double* FEM_ComputeMassResidu(FEM_t* fem,IntFct_t* intfct,const double* f,const double* f_n,const int dec)
+/** Return a residu due to mass increment */
+{
+  int np = IntFct_GetNbOfPoints(intfct) ;
+  double g1[IntFct_MaxNbOfIntPoints] ;
+  
+  {
+    int i ;
+    
+    for(i = 0 ; i < np ; i++) {
+      g1[i] = f[i*dec] - f_n[i*dec] ;
+    }
+  }
+    
+  return(FEM_ComputeBodyForceResidu(fem,intfct,g1,1)) ;
+}
+
+
+
+double* FEM_ComputeMassBalanceEquationResidu(FEM_t* fem,IntFct_t* intfct,const double* f,const double* f_n,const double* w,const double dt,const int dec)
+/** Return a mass balance equation residu */
+{
+  Element_t* el = FEM_GetElement(fem) ;
+  int nn  = Element_GetNbOfNodes(el) ;
+  double* rm = FEM_ComputeMassResidu(fem,intfct,f,f_n,dec) ;
+  double* rw = FEM_ComputeFluxResidu(fem,intfct,w,dec) ;
+  
+  {
+    int i ;
+    
+    for(i = 0 ; i < nn ; i++) {
+      rm[i] += -dt*rw[i] ;
+    }
+  }
+  
+  return(rm) ;
+}
+
+
+
 double* FEM_ComputeSurfaceLoadResidu(FEM_t* fem,IntFct_t* intfct,Load_t* load,const double t,const double dt)
 /* Compute the residu force due to surface loads (r) */
 {
@@ -1811,6 +1852,7 @@ double   FEM_ComputeVolume(Mesh_t* mesh)
 
 /* FEM_Compute functions in the form (FEM_t*,double**,IntFct_t*,int,int) */
 
+
 double FEM_ComputeUnknown(FEM_t* fem,double** u,IntFct_t* intfct,int p,int inc)
 /** Compute the unknown located at "inc" at the interpolation point "p" */
 {
@@ -1899,24 +1941,40 @@ double* FEM_ComputeUnknownGradient(FEM_t* fem,double** u,IntFct_t* intfct,int p,
     int nn = IntFct_GetNbOfFunctions(intfct) ;
     /* interpolation functions */
     double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
-    /* inverse jacobian matrix (cj) */
-    double* cj = FEM_ComputeInverseJacobianMatrix(el,dh,nn,dim_h) ;
     double* gu = grad ;
-    int i ;
+    double grf[3] = {0,0,0} ;
   
-    /* initialisation of gu */
-    for(i = 0 ; i < 3 ; i++)  gu[i] = 0. ;
-  
-    /* the parameter gradient (gu) */
-    for(i = 0 ; i < dim ; i++) {
-      int k,l ;
+    /* the gradient in the reference frame */
+    {
+      int l ;
         
-      for(k = 0 ; k < nn ; k++) for(l = 0 ; l < dim_h ; l++) {
-        gu[i] += U(k)*DH(k,l)*CJ(l,i) ;
+      for(l = 0 ; l < dim_h ; l++) {
+        int k ;
+      
+        for(k = 0 ; k < nn ; k++) {
+          grf[l] += U(k) * DH(k,l) ;
+        }
       }
     }
+  
+    /* the parameter gradient (gu) */
+    {
+      /* inverse jacobian matrix (cj) */
+      double* cj = FEM_ComputeInverseJacobianMatrix(el,dh,nn,dim_h) ;
+      int i ;
       
-    Element_FreeBufferFrom(el,cj) ;
+      for(i = 0 ; i < 3 ; i++)  gu[i] = 0. ;
+  
+      for(i = 0 ; i < dim ; i++) {
+        int l ;
+        
+        for(l = 0 ; l < dim_h ; l++) {
+          gu[i] += grf[l] * CJ(l,i) ;
+        }
+      }
+      
+      Element_FreeBufferFrom(el,cj) ;
+    }
   }
   
   return(grad) ;
@@ -1969,37 +2027,54 @@ double* FEM_ComputeLinearStrainTensor(FEM_t* fem,double** u,IntFct_t* intfct,int
     /* displacement gradient (gu) */
     if(Element_HasZeroThickness(el)) {
       double* norm = Element_ComputeNormalVector(el,dh,nn,dim_h) ;
+      double du[3] = {0,0,0} ;
+      
+      /* the displacement discontinuity */
+      for(i = 0 ; i < dim ; i++) {
+        int k ;
+          
+        for(k = 0 ; k < nn ; k++) {
+          int kk = Element_OverlappingNode(el,k) ;
+            
+          du[i] += (U(k,i) - U(kk,i)) * h[k] ;
+        }
+      }
       
       #define NORM(i)  (norm[i])
       for(i = 0 ; i < dim ; i++) {
         int j ;
         
         for(j = 0 ; j < dim ; j++) {
-          int k ;
-          
-          for(k = 0 ; k < nn ; k++) {
-            int kk = Element_OverlappingNode(el,k) ;
-            
-            gu[i][j] += (U(k,i) - U(kk,i)) * h[k] * NORM(j) ;
-          }
+          gu[i][j] = du[i] * NORM(j) ;
         }
       }
       #undef NORM
       
     } else {
+      double  grf[3][3] = {{0,0,0},{0,0,0},{0,0,0}} ;
       
+      /* the gradient in the reference frame */
+      for(i = 0 ; i < dim ; i++) {
+        int l ;
+          
+        for(l = 0 ; l < dim_h ; l++) {
+          int k ;
+          
+          for(k = 0 ; k < nn ; k++) {
+            grf[i][l] += U(k,i) * DH(k,l) ;
+          }
+        }
+      }
+      
+      /* the gradient in the current frame */
       for(i = 0 ; i < dim ; i++) {
         int j ;
         
         for(j = 0 ; j < dim ; j++) {
-          int k ;
+          int l ;
           
-          for(k = 0 ; k < nn ; k++) {
-            int l ;
-          
-            for(l = 0 ; l < dim_h ; l++) {
-              gu[i][j] += U(k,i) * DH(k,l) * CJ(l,j) ;
-            }
+          for(l = 0 ; l < dim_h ; l++) {
+            gu[i][j] += grf[i][l] * CJ(l,j) ;
           }
         }
       }
@@ -2106,21 +2181,31 @@ double* FEM_ComputeCurrentUnknownGradient(FEM_t* fem,double* dh,int nn,int inc)
     /* inverse jacobian matrix (cj) */
     double* cj = FEM_ComputeInverseJacobianMatrix(el,dh,nn,dim_h) ;
     double* gu = grad ;
+    double grf[3] = {0,0,0} ;
     int    i ;
   
     /* initialisation of gu */
     for(i = 0 ; i < 3 ; i++)  gu[i] = 0. ;
   
+    /* the gradient in the reference frame */
+    {
+      int l ;
+        
+      for(l = 0 ; l < dim_h ; l++) {
+        int k ;
+      
+        for(k = 0 ; k < nn ; k++) {
+          grf[l] += U(k)*DH(k,l) ;
+        }
+      }
+    }
+  
     /* the parameter gradient (gu) */
     for(i = 0 ; i < dim ; i++) {
-      int k ;
-      
-      for(k = 0 ; k < nn ; k++) {
-        int l ;
+      int l ;
         
-        for(l = 0 ; l < dim_h ; l++) {
-          gu[i] += U(k)*DH(k,l)*CJ(l,i) ;
-        }
+      for(l = 0 ; l < dim_h ; l++) {
+        gu[i] += grf[l]*CJ(l,i) ;
       }
     }
   
@@ -2154,21 +2239,31 @@ double* FEM_ComputePreviousUnknownGradient(FEM_t* fem,double* dh,int nn,int inc)
     /* inverse jacobian matrix (cj) */
     double* cj = FEM_ComputeInverseJacobianMatrix(el,dh,nn,dim_h) ;
     double* gu = grad ;
+    double grf[3] = {0,0,0} ;
     int    i ;
   
     /* initialisation of gu */
     for(i = 0 ; i < 3 ; i++)  gu[i] = 0. ;
   
+    /* the gradient in the reference frame */
+    {
+      int l ;
+        
+      for(l = 0 ; l < dim_h ; l++) {
+        int k ;
+      
+        for(k = 0 ; k < nn ; k++) {
+          grf[l] += U(k)*DH(k,l) ;
+        }
+      }
+    }
+  
     /* the parameter gradient (gu) */
     for(i = 0 ; i < dim ; i++) {
-      int k ;
-      
-      for(k = 0 ; k < nn ; k++) {
-        int l ;
+      int l ;
         
-        for(l = 0 ; l < dim_h ; l++) {
-          gu[i] += U(k)*DH(k,l)*CJ(l,i) ;
-        }
+      for(l = 0 ; l < dim_h ; l++) {
+        gu[i] += grf[l]*CJ(l,i) ;
       }
     }
   
@@ -2208,7 +2303,7 @@ double* FEM_ComputeCurrentLinearStrainTensor(FEM_t* fem,double* h,double* dh,int
   /* initialisation of gu */
   for(i = 0 ; i < 3 ; i++) for(j = 0 ; j < 3 ; j++)  gu[i][j] = 0. ;
   
-  /* inverse jacobian matrix (cj): Note that cj = eps ! */
+  /* inverse jacobian matrix (cj) */
   cj = FEM_ComputeInverseJacobianMatrix(el,dh,nn,dim_h) ;
   
   /* displacement gradient (gu) */
@@ -2269,7 +2364,7 @@ double* FEM_ComputeIncrementalLinearStrainTensor(FEM_t* fem,double* h,double* dh
   /* initialisation of gu */
   for(i = 0 ; i < 3 ; i++) for(j = 0 ; j < 3 ; j++)  gu[i][j] = 0. ;
   
-  /* inverse jacobian matrix (cj): Note that cj = eps ! */
+  /* inverse jacobian matrix (cj) */
   cj = FEM_ComputeInverseJacobianMatrix(el,dh,nn,dim_h) ;
   
   /* displacement gradient (gu) */
@@ -2329,7 +2424,7 @@ double* FEM_ComputePreviousLinearStrainTensor(FEM_t* fem,double* h,double* dh,in
   /* initialisation of gu */
   for(i = 0 ; i < 3 ; i++) for(j = 0 ; j < 3 ; j++)  gu[i][j] = 0. ;
   
-  /* inverse jacobian matrix (cj): Note that cj = eps ! */
+  /* inverse jacobian matrix (cj) */
   cj = FEM_ComputeInverseJacobianMatrix(el,dh,nn,dim_h) ;
   
   /* displacement gradient (gu) */

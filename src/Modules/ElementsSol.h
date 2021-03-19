@@ -11,6 +11,7 @@ struct ElementsSol_s  ; typedef struct ElementsSol_s  ElementsSol_t ;
 #include "Mesh.h"
 
 extern ElementsSol_t*   (ElementsSol_Create)(Mesh_t*) ;
+extern void             (ElementsSol_Delete)(void*) ;
 extern void             (ElementsSol_AllocateMemoryForImplicitTerms)(ElementsSol_t*) ;
 extern void             (ElementsSol_AllocateMemoryForExplicitTerms)(ElementsSol_t*) ;
 extern void             (ElementsSol_AllocateMemoryForConstantTerms)(ElementsSol_t*) ;

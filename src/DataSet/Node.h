@@ -71,6 +71,9 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 
 /* Access to NodeSol
  * ----------------- */
+#define Node_GetCurrentNodeSol(NOD) \
+        Node_GetNodeSol(NOD)
+        
 #define Node_GetPreviousNodeSol(NOD) \
         NodeSol_GetPreviousNodeSol(Node_GetNodeSol(NOD))
 

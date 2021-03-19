@@ -37,6 +37,7 @@ extern int      (Element_NbOfOverlappingNodes)                  (Element_t*) ;
 extern void     (Element_MakeUnknownContinuousAcrossZeroThicknessElement)(Element_t*,const char*);
 extern void     (Element_MakeEquationContinuousAcrossZeroThicknessElement)(Element_t*,const char*);
 extern int      (Element_FindNodeIndex)                         (Element_t*,const Node_t*) ;
+extern double*  (Element_ComputeCoordinateVector)               (Element_t*,double*) ;
 
 /* Synonyms */
 #define  Element_ComputePointerToNodalUnknowns \
@@ -318,6 +319,14 @@ extern int      (Element_FindNodeIndex)                         (Element_t*,cons
 
 
 #include "IntFct.h"
+
+/* Loop on integration points */
+#define Element_LoopOnIntegrationPoints(ELT,p) \\
+        for(p = 0 ; p < IntFct_GetNbOfPoints(Element_GetIntFct(ELT)) ; p++)
+        
+
+
+
 #include "ShapeFct.h"
 #include "Material.h"
 #include "Buffer.h"

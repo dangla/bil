@@ -18,7 +18,8 @@ struct Mesh_s         ; typedef struct Mesh_s         Mesh_t ;
 
 extern Mesh_t*  (Mesh_New)(void) ;
 extern Mesh_t*  (Mesh_Create)(DataFile_t*,Materials_t*,Geometry_t*) ;
-extern void     (Mesh_CreateMore)(Mesh_t*) ;
+extern void     (Mesh_Delete)(void*) ;
+extern void     (Mesh_CreateMore)(Mesh_t*) ; // declared as extern only for Parser.y
 extern char*    (Mesh_Scan)(Mesh_t*,char*) ;
 extern int      (Mesh_SetMatrixRowColumnIndexes)(Mesh_t*,BConds_t*) ;
 extern int      (Mesh_UpdateMatrixRowColumnIndexes)(Mesh_t*) ;

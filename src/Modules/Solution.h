@@ -38,8 +38,8 @@ extern void         (Solution_Copy)    (Solution_t*,Solution_t*) ;
 #define Solution_GetNbOfDOF(SOL) \
         NodesSol_GetNbOfDOF(Solution_GetNodesSol(SOL))
 
-#define Solution_GetDOF(SOL) \
-        NodesSol_GetDOF(Solution_GetNodesSol(SOL))
+#define Solution_GetNodalValue(SOL) \
+        NodesSol_GetNodalValue(Solution_GetNodesSol(SOL))
 
 
 

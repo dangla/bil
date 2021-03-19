@@ -29,6 +29,22 @@ ShapeFct_t* ShapeFct_Create(int nn,int dim)
 
 
 
+void  ShapeFct_Delete(void* self)
+{
+  ShapeFct_t** pshapefct = (ShapeFct_t**) self ;
+  ShapeFct_t*   shapefct = *pshapefct ;
+  
+  {
+    double* b = ShapeFct_GetCoordinate(shapefct) ;
+    
+    free(b) ;
+  }
+  
+  //free(shapefct) ;
+}
+
+
+
 void ShapeFct_ComputeValuesAtPoint(int dim,int nn,double* x,double* h,double* dh)
 /* Compute shape functions (h) and their gradients (dh) at point x */
 {

@@ -9,6 +9,7 @@ struct IntFct_s       ; typedef struct IntFct_s       IntFct_t ;
 
 
 extern IntFct_t*  (IntFct_Create)(int,int,const char*) ;
+extern void       (IntFct_Delete)(void*) ;
 extern void       (IntFct_ComputeIsoShapeFctInActualSpace)(int,int,double**,double*,int,double*,double*) ;
 extern int        (IntFct_ComputeFunctionIndexAtPointOfReferenceFrame)(IntFct_t*,double*) ;
 extern double     (IntFct_InterpolateAtPoint)(IntFct_t*,double*,int,int) ;

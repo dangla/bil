@@ -111,10 +111,10 @@ void (SignalHandler)(int sigid)
   switch(sigid) {
     case SIGSEGV:
   
-      Message_Direct("Segmentation fault. ") ;
-      Message_Direct("Possible sources:\n") ;
-      Message_Direct("- Bad \"iperm\" file (remove it!)\n") ;
-      Message_Direct("- Mesh with physical index out of range\n") ;
+      Message_Direct("Segmentation fault.\n") ;
+      Message_Direct("Check the possible issues:\n") ;
+      Message_Direct("- A bad \"iperm\" file? (if so remove it!)\n") ;
+      Message_Direct("- A mesh with physical index out of range?\n") ;
       Exception_BackupAndTerminate ;
       return ;
     

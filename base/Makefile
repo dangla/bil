@@ -129,7 +129,7 @@ plotdifft1fem:
 	for i in ${BASEFEM_DIRS}; do (\
 	echo "Plot $$i.t1 and toto.t1" && \
 	cd $$i && \
-	../../utils/bilplotdiff.sh $$i.t1 toto.t1 ${opt} \
+	../../scripts/bilplotdiff.sh $$i.t1 toto.t1 ${opt} \
 	); done
 
 
@@ -152,7 +152,7 @@ plotdifft1:
 	for i in ${BASE_DIRS}; do (\
 	echo "Plot $$i.t1 and toto.t1" && \
 	cd $$i && \
-	../../utils/bilplotdiff.sh $$i.t1 toto.t1 ${opt} \
+	../../scripts/bilplotdiff.sh $$i.t1 toto.t1 ${opt} \
 	); done
 
 
@@ -161,7 +161,7 @@ plotdifft2:
 	for i in ${BASE_DIRS}; do (\
 	echo "Plot $$i.t1 and toto.t1" && \
 	cd $$i && \
-	../../utils/bilplotdiff.sh $$i.t2 toto.t2 ${opt} \
+	../../scripts/bilplotdiff.sh $$i.t2 toto.t2 ${opt} \
 	); done
 
 
@@ -170,7 +170,7 @@ plotdiffp:
 	for i in ${BASE_DIRS}; do (\
 	echo "Plot $$i.p1 and toto.p1" && \
 	cd $$i && \
-	../../utils/bilplotdiff.sh $$i.p1 toto.p1 ${opt} \
+	../../scripts/bilplotdiff.sh $$i.p1 toto.p1 ${opt} \
 	); done
 
 

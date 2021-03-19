@@ -1,0 +1,84 @@
+Geometry
+2 plan
+
+
+
+Mesh
+samplewithvoid.msh
+
+
+
+Material # Bulk
+Model = Elasd
+gravity = 0       # gravity
+rho_s = 2350      # mass density of solid skeleton
+young = 30.e+9   # Young's modulus
+poisson = 0.2     # Poisson's ratio
+max_elastic_strain = 1.e-4 # data from Pijaudier-Cabot-Mazars 2001
+A_c = 1
+A_t = 1
+B_c = 1.e3
+B_t = 1.e4
+
+
+
+Fields
+1
+Value = 1   Gradient = 0 0 0 Point = 0 0 0
+
+
+
+Initialization
+0
+
+
+
+Functions
+1
+N = 3  F(0) = 0  F(1) = 4.e-4  F(2) = -2.e-3
+
+
+
+Boundary Conditions
+3
+Region = 10   Unknown = u_2   Field = 0 Function = 0
+Region = 1    Unknown = u_1   Field = 0 Function = 0
+Region = 30   Unknown = u_2   Field = 1 Function = 1
+
+
+
+Loads
+0
+#Region = 10   Equation = meca_1  Type = pressure  Field = 1 Function = 1
+#Region = 30   Equation = meca_1  Type = pressure  Field = 1 Function = 1
+
+
+
+Points
+0
+
+
+
+Dates
+2
+0 0.1 0.12 0.14 0.16 0.18 0.2 0.22 0.24 0.26 0.28 0.3
+
+
+
+Objective Variations
+u_1   = 1.e-5
+u_2   = 1.e-5
+
+
+
+Iterative Process
+Iterations  = 50
+Tolerance   = 1.e-4
+Repetitions = 2
+
+
+
+Time Steps
+Dtini = 1.e-4
+Dtmax = 1.
+

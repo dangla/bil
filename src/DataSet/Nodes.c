@@ -69,6 +69,26 @@ Nodes_t*  Nodes_New(const int nn,const int dim,const int nc)
 
 
 
+void Nodes_Delete(void* self)
+{
+  Nodes_t** pnodes = (Nodes_t**) self ;
+  Nodes_t*   nodes = *pnodes ;
+  
+  {
+    Node_t* node = Nodes_GetNode(nodes) ;
+    double* x = Node_GetCoordinate(node) ;
+    Element_t** pel = Node_GetPointerToElement(node) ;
+    
+    free(node) ;
+    free(x) ;
+    free(pel) ;
+  }
+  
+  free(nodes) ;
+}
+
+
+
 
 void  Nodes_CreateMore(Nodes_t* nodes)
 /** Allocate memory space at each node for:
@@ -266,6 +286,29 @@ void  Nodes_CreateMore(Nodes_t* nodes)
     for(i = 0 ; i < n_no ; i++) {
       Node_GetBuffer(node + i) = buf ;
     }
+  }
+}
+
+
+
+void Nodes_DeleteMore(void* self)
+{
+  Nodes_t** pnodes = (Nodes_t**) self ;
+  Nodes_t*   nodes = *pnodes ;
+  
+  {
+    Node_t* node = Nodes_GetNode(nodes) ;
+    char** uname = Node_GetNameOfUnknown(node) ;
+    int* colind = Node_GetMatrixColumnIndex(node) ;
+    int* rowind = Node_GetMatrixRowIndex(node) ;
+    unsigned short int* index = Node_GetObValIndex(node) ;
+    Buffer_t* buf = Node_GetBuffer(node) ;
+    
+    free(uname) ;
+    free(colind) ;
+    free(rowind) ;
+    free(index) ;
+    Buffer_Delete(&buf) ;
   }
 }
 

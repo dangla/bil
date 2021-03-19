@@ -3,6 +3,7 @@
 
 #include "TypeId.h"
 #include "BCond.h"
+#include "ElementsSol.h"
 #include "GenericData.h"
 #include "Message.h"
 #include "FEM.h"
@@ -36,6 +37,7 @@ void  (TypeId_Delete)(TypeId_t typ,void* self)
     case TypeId_Curve_t         : break ;
     case TypeId_Curves_t        : break ;
     case TypeId_CurvesFile_t    : break ;
+    case TypeId_Damage_t        : break ;
     case TypeId_DataFile_t      : break ;
     case TypeId_DataSet_t       : break ;
     case TypeId_Date_t          : break ;
@@ -43,7 +45,7 @@ void  (TypeId_Delete)(TypeId_t typ,void* self)
     case TypeId_Element_t       : break ;
     case TypeId_Elements_t      : break ;
     case TypeId_ElementSol_t    : break ;
-    case TypeId_ElementsSol_t   : break ;
+    case TypeId_ElementsSol_t   : break ; //ElementsSol_Delete(self); return ;
     case TypeId_Exception_t     : Exception_Delete(self); return ;
     case TypeId_FEM_t           : FEM_Delete(self); return ;
     case TypeId_Field_t         : break ;

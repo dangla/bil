@@ -1,3 +1,6 @@
+
+#include "BilLib.h"
+
 #ifdef BLASLIB
 
 #include <stdio.h>
@@ -6,6 +9,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
+
 #include "Solver.h"
 #include "Message.h"
 #include "Matrix.h"

@@ -9,6 +9,7 @@ struct ShapeFcts_s      ; typedef struct ShapeFcts_s      ShapeFcts_t ;
 
 
 extern ShapeFcts_t*  (ShapeFcts_Create)(void) ;
+extern void          (ShapeFcts_Delete)(void*) ;
 extern int           (ShapeFcts_FindShapeFct)(ShapeFcts_t*,int,int) ;
 extern int           (ShapeFcts_AddShapeFct)(ShapeFcts_t*,int,int) ;
 

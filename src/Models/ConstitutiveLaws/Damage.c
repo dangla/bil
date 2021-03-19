@@ -48,6 +48,13 @@ Damage_t*  (Damage_Create)(void)
     Damage_GetPotentialFunctionGradient(damage) = c ;
   }
   
+  /* Allocation of space for the hardening variable */
+  {
+    double* c = (double*) Mry_New(double[Damage_MaxNbOfHardeningVariables]) ;
+    
+    Damage_GetHardeningVariable(damage) = c ;
+  }
+  
   /* Allocation of space for the hardening modulus */
   {
     double* c = (double*) Mry_New(double) ;
@@ -73,7 +80,7 @@ Damage_t*  (Damage_Create)(void)
   {
     double* c = (double*) Mry_New(double[81]) ;
     
-    Damage_GetTangentStiffnessTensor(damage) = c ;
+    Damage_GetStiffnessTensor(damage) = c ;
   }
   
   /* Elasticity */
@@ -112,6 +119,11 @@ void  (Damage_Delete)(void* self)
   }
   
   {
+    double* c = Damage_GetHardeningVariable(damage) ;
+    free(c) ;
+  }
+  
+  {
     double* c = Damage_GetHardeningModulus(damage) ;
     free(c) ;
   }
@@ -127,7 +139,7 @@ void  (Damage_Delete)(void* self)
   }
   
   {
-    double* c = Damage_GetTangentStiffnessTensor(damage) ;
+    double* c = Damage_GetStiffnessTensor(damage) ;
     free(c) ;
   }
   
@@ -173,14 +185,33 @@ void Damage_SetParameter(Damage_t* damage,const char* str,double v)
     if(0) {
     } else if(!strcmp(str,"max elastic strain")) {
       Damage_GetStrainAtUniaxialTensileStrength(damage)  = v ;
+      Damage_GetHardeningVariable(damage)[0]  = v ;
+    } else if(!strcmp(str,"A_c")) {
+      Damage_GetA_c(damage)  = v ;
+    } else if(!strcmp(str,"A_t")) {
+      Damage_GetA_t(damage)  = v ;
+    } else if(!strcmp(str,"B_c")) {
+      Damage_GetB_c(damage)  = v ;
+    } else if(!strcmp(str,"B_t")) {
+      Damage_GetB_t(damage)  = v ;
     }
     
   } else if(Damage_IsMarigoJirasek(damage)) {
+    Elasticity_t* elasty = Damage_GetElasticity(damage) ;
+    double young = Elasticity_GetYoungModulus(elasty) ;
+    
     if(0) {
-    } else if(!strcmp(str,"critical energy release rate")) {
-      Damage_GetCriticalEnergyReleaseRate(damage)  = v ;
-    } else if(!strcmp(str,"maximum energy release rate")) {
-      Damage_GetMaximumEnergyReleaseRate(damage)  = v ;
+    } else if(!strcmp(str,"uniaxial tensile strength")) {
+      double ft = v ;
+      double strain0 = ft/young ;
+      double g0   = 0.5*young*strain0*strain0 ;
+      
+      Damage_GetUniaxialTensileStrength(damage)  = ft ;
+      Damage_GetHardeningVariable(damage)[0] = g0 ;
+    } else if(!strcmp(str,"fracture energy")) {
+      Damage_GetFractureEnergy(damage)  = v ;
+    } else if(!strcmp(str,"crack band width")) {
+      Damage_GetCrackBandWidth(damage)  = v ;
     }
     
   } else {
@@ -198,11 +229,34 @@ void Damage_SetParameters(Damage_t* damage,...)
   va_start(args,damage) ;
   
   if(Damage_IsMazars(damage)) {
-    Damage_GetStrainAtUniaxialTensileStrength(damage)  = va_arg(args,double) ;
+    double strain0  = va_arg(args,double) ;
+    double A_c  = va_arg(args,double) ;
+    double A_t  = va_arg(args,double) ;
+    double B_c  = va_arg(args,double) ;
+    double B_t  = va_arg(args,double) ;
+    
+    Damage_GetStrainAtUniaxialTensileStrength(damage) = strain0 ;
+    Damage_GetA_c(damage)  = A_c ;
+    Damage_GetA_t(damage)  = A_t ;
+    Damage_GetB_c(damage)  = B_c ;
+    Damage_GetB_t(damage)  = B_t ;
+    
+    Damage_GetHardeningVariable(damage)[0] = strain0 ;
     
   } else if(Damage_IsMarigoJirasek(damage)) {
-    Damage_GetCriticalEnergyReleaseRate(damage)  = va_arg(args,double) ;
-    Damage_GetMaximumEnergyReleaseRate(damage)   = va_arg(args,double) ;
+    double ft  = va_arg(args,double) ;
+    double Gf  = va_arg(args,double) ;
+    double w   = va_arg(args,double) ;
+    Elasticity_t* elasty = Damage_GetElasticity(damage) ;
+    double E       = Elasticity_GetYoungModulus(elasty) ;
+    double strain0 = ft/E ;
+    double g0      = 0.5*E*strain0*strain0 ;
+    
+    Damage_GetUniaxialTensileStrength(damage)   = ft ;
+    Damage_GetFractureEnergy(damage)            = Gf ;
+    Damage_GetCrackBandWidth(damage)            = w ;
+    
+    Damage_GetHardeningVariable(damage)[0]      = g0 ;
     
   } else {
     Message_RuntimeError("Not known") ;
@@ -210,6 +264,24 @@ void Damage_SetParameters(Damage_t* damage,...)
   
 
   va_end(args) ;
+}
+
+
+
+
+
+void Damage_CopyStiffnessTensor(Damage_t* damage,double* c)
+/** Copy the 4th rank stiffness tensor in c. */
+{
+  double* cel = Damage_GetStiffnessTensor(damage) ;
+
+  {
+    int i ;
+        
+    for(i = 0 ; i < 81 ; i++) {
+      c[i] = cel[i] ;
+    }
+  }
 }
 
 
@@ -287,30 +359,16 @@ double Damage_UpdateTangentStiffnessTensor(Damage_t* damage,double* c)
 
 
 
-void Damage_PrintTangentStiffnessTensor(Damage_t* damage)
+void Damage_PrintStiffnessTensor(Damage_t* damage)
 /** Print the 4th rank tangent damage tensor.
  **/
 {
-  double* c = Damage_GetTangentStiffnessTensor(damage) ;
+  double* c = Damage_GetStiffnessTensor(damage) ;
   
   printf("\n") ;
   printf("4th rank tangent damage tensor:\n") ;
   
-  {
-    int i ;
-    
-    for(i = 0 ; i < 9 ; i++) {
-      int j = i - (i/3)*3 ;
-        
-      printf("C%d%d--:",i/3 + 1,j + 1) ;
-        
-      for (j = 0 ; j < 9 ; j++) {
-        printf(" % e",c[i*9 + j]) ;
-      }
-        
-      printf("\n") ;
-    }
-  }
+  Math_PrintStiffnessTensor(c) ;
 }
 
 
@@ -342,7 +400,6 @@ double Damage_ComputeFunctionGradientsMazars(Damage_t* damage,const double* stra
  *  Return the value of the yield function. */
 {
   Elasticity_t* elasty = Damage_GetElasticity(damage) ;
-  double* cijkl  = Damage_GetTangentStiffnessTensor(damage) ;
   double poisson = Elasticity_GetPoissonRatio(elasty) ;
   double* dfsde  = Damage_GetYieldFunctionGradient(damage) ;
   double* dgsde  = Damage_GetPotentialFunctionGradient(damage) ;
@@ -377,7 +434,7 @@ double Damage_ComputeFunctionGradientsMazars(Damage_t* damage,const double* stra
     int    i ;
     
     for(i = 0 ; i < 3 ; i++) {
-      strain_pos[i] = (strain_val[i] > 0) ? strain_val[i] : 0 ;
+      strain_pos[i] = Math_Max(strain_val[i],0) ;
     }
   }
   
@@ -407,7 +464,7 @@ double Damage_ComputeFunctionGradientsMazars(Damage_t* damage,const double* stra
   
   /*
     Function gradients
-    For for an isotropic function of the strain tensor both
+    For an isotropic function of the strain tensor both
     the strain and the function gradient have the same eigenvectors.
     Denote with (e1,e2,e3) the eigenvalues of the strain tensor
     and consider the function f(e1,e2,e3): the eigenvalues
@@ -484,16 +541,6 @@ double Damage_ComputeFunctionGradientsMazars(Damage_t* damage,const double* stra
     }
   }
   
-  /* Current stiffness matrix */
-  {
-    double* c = Elasticity_GetStiffnessTensor(elasty) ;
-    int i ;
-    
-    for(i = 0 ; i < 9 ; i++) {
-      cijkl[i] = (1 - d[0]) * c[i] ;
-    }
-  }
-  
   Damage_GetCriterionValue(damage) = crit ;
   return(crit) ;
 }
@@ -518,7 +565,7 @@ double Damage_ReturnMappingMazars(Damage_t* damage,double* strain,double* d,doub
  *  Return the value of the yield function. */
 {
   Elasticity_t* elasty = Damage_GetElasticity(damage) ;
-  double* cijkl  = Damage_GetTangentStiffnessTensor(damage) ;
+  double* cijkl  = Damage_GetStiffnessTensor(damage) ;
   double poisson = Elasticity_GetPoissonRatio(elasty) ;
   double kappa0  = Damage_GetStrainAtUniaxialTensileStrength(damage) ;
   double A_t     = Damage_GetA_t(damage) ;
@@ -550,7 +597,7 @@ double Damage_ReturnMappingMazars(Damage_t* damage,double* strain,double* d,doub
     int    i ;
     
     for(i = 0 ; i < 3 ; i++) {
-      strain_pos[i] = (strain_val[i] > 0) ? strain_val[i] : 0 ;
+      strain_pos[i] = Math_Max(strain_val[i],0) ;
     }
   }
   
@@ -627,7 +674,7 @@ double Damage_ReturnMappingMazars(Damage_t* damage,double* strain,double* d,doub
     double* c = Elasticity_GetStiffnessTensor(elasty) ;
     int i ;
     
-    for(i = 0 ; i < 9 ; i++) {
+    for(i = 0 ; i < 81 ; i++) {
       cijkl[i] = (1 - d[0]) * c[i] ;
     }
   }
@@ -654,8 +701,9 @@ double Damage_ComputeFunctionGradientsMarigoJirasek(Damage_t* damage,const doubl
  *  the largest energy release rate (kappa = hardv[0])
  * 
  *  Parameters are:
- *  the critical energy release rate (damage)
- *  the maximum energy release rate (failure)
+ *  the uniaxial tensile strength
+ *  the fracture energy
+ *  the width of the crack band
  * 
  *  On outputs, the following values are modified:
  *  dfsde = derivative of the yield function wrt strains
@@ -665,12 +713,20 @@ double Damage_ComputeFunctionGradientsMarigoJirasek(Damage_t* damage,const doubl
  *  Return the value of the yield function. */
 {
   Elasticity_t* elasty = Damage_GetElasticity(damage) ;
-  double* cijkl  = Damage_GetTangentStiffnessTensor(damage) ;
   double* dfsde  = Damage_GetYieldFunctionGradient(damage) ;
   double* dgsde  = Damage_GetPotentialFunctionGradient(damage) ;
   double* hm     = Damage_GetHardeningModulus(damage) ;
-  double kappa0  = Damage_GetCriticalEnergyReleaseRate(damage) ;
-  double kappaf  = Damage_GetMaximumEnergyReleaseRate(damage) ;
+  
+  double ft      = Damage_GetUniaxialTensileStrength(damage) ;
+  double Gf      = Damage_GetFractureEnergy(damage) ;
+  double w       = Damage_GetCrackBandWidth(damage) ;
+  double E       = Elasticity_GetYoungModulus(elasty) ;
+  
+  double eps0    = ft/E ;
+  double gf      = Gf/w ;
+  double epsf    = 0.5 * eps0 + gf/ft ;
+  double kappa0  = 0.5 * E * eps0 * eps0 ;
+  double kappaf  = 0.5 * E * epsf * epsf ;
 
   double crit ;
     
@@ -705,20 +761,12 @@ double Damage_ComputeFunctionGradientsMarigoJirasek(Damage_t* damage,const doubl
   /* Hardening modulus: H = - d(crit)/d(d) = d(kappa)/d(d) */
   {
     double kappa = hardv[0] ;
-    //double d1 = 1 - sqrt(kappa0 / kappa) * exp(-(sqrt(kappa)-sqrt(kappa0)) / (sqrt(kappaf)-sqrt(kappa0))) ;
+    /* 
+     * 1 - d = sqrt(kappa0/kappa) * exp(-(sqrt(kappa)-sqrt(kappa0)) / (sqrt(kappaf)-sqrt(kappa0)))
+     */
     double mh = 0.5 * (1 - d[0]) / kappa * (1 + sqrt(kappa)/(sqrt(kappaf)-sqrt(kappa0))) ;
     
     hm[0] = 1/mh ;
-  }
-  
-  /* Current stiffness matrix */
-  {
-    double* c = Elasticity_GetStiffnessTensor(elasty) ;
-    int i ;
-    
-    for(i = 0 ; i < 9 ; i++) {
-      cijkl[i] = (1 - d[0]) * c[i] ;
-    }
   }
   
   Damage_GetCriterionValue(damage) = crit ;
@@ -742,8 +790,9 @@ double Damage_ReturnMappingMarigoJirasek(Damage_t* damage,double* strain,double*
  *  the largest energy release rate (kappa = hardv[0])
  * 
  *  Parameters are:
- *  the critical energy release rate (damage)
- *  the maximum energy release rate (failure)
+ *  the uniaxial tensile strength
+ *  the fracture energy
+ *  the width of the crack band
  * 
  *  On outputs, the following values are modified:
  *  dfsde = derivative of the yield function wrt strains
@@ -752,9 +801,18 @@ double Damage_ReturnMappingMarigoJirasek(Damage_t* damage,double* strain,double*
  *  Return the value of the yield function. */
 {
   Elasticity_t* elasty = Damage_GetElasticity(damage) ;
-  double* cijkl  = Damage_GetTangentStiffnessTensor(damage) ;
-  double kappa0  = Damage_GetCriticalEnergyReleaseRate(damage) ;
-  double kappaf  = Damage_GetMaximumEnergyReleaseRate(damage) ;
+  double* cijkl  = Damage_GetStiffnessTensor(damage) ;
+  
+  double ft      = Damage_GetUniaxialTensileStrength(damage) ;
+  double Gf      = Damage_GetFractureEnergy(damage) ;
+  double w       = Damage_GetCrackBandWidth(damage) ;
+  double E       = Elasticity_GetYoungModulus(elasty) ;
+  
+  double eps0    = ft/E ;
+  double gf      = Gf/w ;
+  double epsf    = 0.5 * eps0 + gf/ft ;
+  double kappa0  = 0.5 * E * eps0 * eps0 ;
+  double kappaf  = 0.5 * E * epsf * epsf ;
 
   double G ;
   double crit ;
@@ -791,7 +849,7 @@ double Damage_ReturnMappingMarigoJirasek(Damage_t* damage,double* strain,double*
     double* c = Elasticity_GetStiffnessTensor(elasty) ;
     int i ;
     
-    for(i = 0 ; i < 9 ; i++) {
+    for(i = 0 ; i < 81 ; i++) {
       cijkl[i] = (1 - d[0]) * c[i] ;
     }
   }

@@ -32,6 +32,30 @@ ShapeFcts_t*  ShapeFcts_Create(void)
 
 
 
+void  ShapeFcts_Delete(void* self)
+{
+  ShapeFcts_t** pshapefcts = (ShapeFcts_t**) self ;
+  ShapeFcts_t*   shapefcts = *pshapefcts ;
+  
+  {
+    int n = ShapeFcts_GetNbOfShapeFcts(shapefcts) ;
+    ShapeFct_t* shapefct = ShapeFcts_GetShapeFct(shapefcts) ;
+    int i ;
+    
+    for(i = 0 ; i < n ; i++) {
+      ShapeFct_t* shapefct_i = shapefct + i ;
+      
+      ShapeFct_Delete(&shapefct_i) ;
+    }
+    
+    free(shapefct) ;
+  }
+  
+  free(shapefcts) ;
+}
+
+
+
 int ShapeFcts_FindShapeFct(ShapeFcts_t* shapefcts,int nn,int dim)
 /** Find a Shape Function class defined by 
  *  nn = Nb of nodes 

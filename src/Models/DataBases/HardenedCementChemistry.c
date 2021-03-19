@@ -957,7 +957,8 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(HardenedCem
   if(HardenedCementChemistry_InputCaOIs(hcc,SI_CH_CSH2)) {
     double si_ca      = Input(SI_CH_CSH2) ;
     
-    if(HardenedCementChemistry_InputSO3Is(hcc,LogA_H2SO4)) {
+    //if(HardenedCementChemistry_InputSO3Is(hcc,LogA_H2SO4)) {
+    if(HardenedCementChemistry_InputSO3Is(hcc,LogC_H2SO4)) {
       double loga_h2so4 = Input(LogA_H2SO4) ;
       double logs_ch    = Log10SaturationIndexOfCH_H2SO4(si_ca,loga_h2so4) ;
     
@@ -1014,12 +1015,14 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_0(HardenedC
     CementSolutionChemistry_SetInput(csc,LogA_K,loga_k) ;
     CementSolutionChemistry_SetInput(csc,LogA_OH,loga_oh) ;
     
-    if(HardenedCementChemistry_InputSO3Is(hcc,LogA_H2SO4)) {
+    //if(HardenedCementChemistry_InputSO3Is(hcc,LogA_H2SO4)) {
+    if(HardenedCementChemistry_InputSO3Is(hcc,LogC_H2SO4)) {
       double loga_h2so4 = Input(LogA_H2SO4) ;
       
       CementSolutionChemistry_SetInput(csc,LogA_H2SO4,loga_h2so4) ;
       
-    } else if(HardenedCementChemistry_InputSO3Is(hcc,LogA_SO4)) {
+    //} else if(HardenedCementChemistry_InputSO3Is(hcc,LogA_SO4)) {
+    } else if(HardenedCementChemistry_InputSO3Is(hcc,LogC_SO4)) {
       double loga_so4 = Input(LogA_SO4) ;
       
       CementSolutionChemistry_SetInput(csc,LogA_SO4,loga_so4) ;
@@ -1148,12 +1151,14 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_0(Har
     CementSolutionChemistry_SetInput(csc,LogA_OH,loga_oh) ;
     CementSolutionChemistry_SetInput(csc,LogQ_AH3,logq_ah3) ;
     
-    if(HardenedCementChemistry_InputSO3Is(hcc,LogA_H2SO4)) {
+    //if(HardenedCementChemistry_InputSO3Is(hcc,LogA_H2SO4)) {
+    if(HardenedCementChemistry_InputSO3Is(hcc,LogC_H2SO4)) {
       double loga_h2so4 = Input(LogA_H2SO4) ;
       
       CementSolutionChemistry_SetInput(csc,LogA_H2SO4,loga_h2so4) ;
       
-    } else if(HardenedCementChemistry_InputSO3Is(hcc,LogA_SO4)) {
+    //} else if(HardenedCementChemistry_InputSO3Is(hcc,LogA_SO4)) {
+    } else if(HardenedCementChemistry_InputSO3Is(hcc,LogC_SO4)) {
       double loga_so4 = Input(LogA_SO4) ;
       
       CementSolutionChemistry_SetInput(csc,LogA_SO4,loga_so4) ;

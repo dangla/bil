@@ -44,6 +44,21 @@ ElementsSol_t*   (ElementsSol_Create)(Mesh_t* mesh)
 
 
 
+void ElementsSol_Delete(void* self)
+{
+  ElementsSol_t** pelementssol = (ElementsSol_t**) self ;
+  ElementsSol_t*   elementssol = *pelementssol ;
+  
+  {
+    ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
+    
+  }
+  
+  free(elementssol) ;
+}
+
+
+
 void (ElementsSol_AllocateMemoryForImplicitTerms)(ElementsSol_t* elementssol)
 /**  Allocate the memory space for the implicit terms
  *   assuming that the numbers of these terms have been initialized

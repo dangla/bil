@@ -1,0 +1,83 @@
+Geometry
+2 plan
+
+
+
+Mesh
+samplewithvoid-fine.msh
+
+
+
+Material # Bulk
+Model = Elasd
+gravity = 0       # gravity
+rho_s = 2350      # mass density of solid skeleton
+young = 2.e+9   # Young's modulus
+poisson = 0.3     # Poisson's ratio
+critical_energy_release_rate = 1.e1    # G0 = 0.5 * E * strain0^2   -->  strain0 =  1.e-4
+maximum_energy_release_rate  = 9.e3    # strainf = 3.e-4 , stress = (1-d)*E*strain
+# 1-d = strain0/strain * exp(-(strain-strain0)/(strainf-strain0)))
+# stress = E * strain0 * exp(-(strain-strain0)/(strainf-strain0))
+
+
+
+Fields
+1
+Value = 1   Gradient = 0 0 0 Point = 0 0 0
+
+
+
+Initialization
+0
+
+
+
+Functions
+1
+N = 3  F(0) = 0  F(1) = 4.e-4  F(2) = -2.e-3
+
+
+
+Boundary Conditions
+3
+Region = 10   Unknown = u_2   Field = 0 Function = 0
+Region = 1    Unknown = u_1   Field = 0 Function = 0
+Region = 30   Unknown = u_2   Field = 1 Function = 1
+
+
+
+Loads
+0
+#Region = 10   Equation = meca_1  Type = pressure  Field = 1 Function = 1
+#Region = 30   Equation = meca_1  Type = pressure  Field = 1 Function = 1
+
+
+
+Points
+0
+
+
+
+Dates
+11
+0 0.1 0.12 0.14 0.16 0.18 0.2 0.22 0.24 0.26 0.28 0.3
+
+
+
+Objective Variations
+u_1   = 1.e-6
+u_2   = 1.e-6
+
+
+
+Iterative Process
+Iterations  = 50
+Tolerance   = 1.e-8
+Repetitions = 2
+
+
+
+Time Steps
+Dtini = 1.e-4
+Dtmax = 1.
+
