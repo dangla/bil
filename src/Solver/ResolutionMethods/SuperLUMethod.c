@@ -1,3 +1,5 @@
+#include "BilLib.h"
+
 #ifdef SUPERLULIB
 
 #include <stdio.h>
@@ -5,11 +7,10 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
-#include "BilLib.h"
+
 #include "Solver.h"
 #include "Message.h"
 #include "Matrix.h"
-
 
 #include "SuperLUMethod.h"
 #include "SuperLUFormat.h"

@@ -20,12 +20,16 @@ extern FEM_t*   (FEM_GetInstance)(Element_t*) ;
 extern void     (FEM_Delete)(void*) ;
 
 /* Matrices */
-extern double*  FEM_ComputeElasticMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  FEM_ComputeStiffnessMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
 extern double*  FEM_ComputeMassMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
 extern double*  FEM_ComputeConductionMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
 extern double*  FEM_ComputeBiotMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
 extern double*  FEM_ComputePoroelasticMatrix6(FEM_t*,IntFct_t*,const double*,const int,const int,const int) ;
 extern void     FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t*,const int,const int,double*) ;
+
+
+#define FEM_ComputeElasticMatrix(...) \
+        FEM_ComputeStiffnessMatrix(__VA_ARGS__)
 
 #define FEM_ComputePoroelasticMatrix(...) \
         Utils_CAT_NARG(FEM_ComputePoroelasticMatrix,__VA_ARGS__)(__VA_ARGS__)
@@ -39,6 +43,8 @@ extern double*  FEM_ComputeBodyForceResidu(FEM_t*,IntFct_t*,const double*,const 
 extern double*  FEM_ComputeStrainWorkResidu(FEM_t*,IntFct_t*,const double*,const int) ;
 extern double*  FEM_ComputeFluxResidu(FEM_t*,IntFct_t*,const double*,const int) ;
 extern void     FEM_TransformResiduFromDegree2IntoDegree1(FEM_t*,const int,double*) ;
+extern double*  FEM_ComputeMassResidu(FEM_t*,IntFct_t*,const double*,const double*,const int) ;
+extern double*  FEM_ComputeMassBalanceEquationResidu(FEM_t*,IntFct_t*,const double*,const double*,const double*,const double,const int) ;
 
 /* Compute Shape functions */
 extern double*  FEM_ComputeIsoShapeFctInActualSpace(FEM_t*,double*) ;
@@ -96,6 +102,7 @@ extern double   FEM_ComputeVolume(Mesh_t*) ;
 #define FEM_AllocateInBuffer(fem,sz)         (Buffer_Allocate(FEM_GetBuffer(fem),(sz)))
 #define FEM_FreeBuffer(fem)                  (Buffer_Free(FEM_GetBuffer(fem)))
 #define FEM_FreeBufferFrom(fem,p)            (Buffer_FreeFrom(FEM_GetBuffer(fem),(char*) (p)))
+
 
 
 #include "Buffer.h"

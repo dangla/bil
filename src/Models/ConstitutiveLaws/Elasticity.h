@@ -78,6 +78,20 @@ extern double*        (Elasticity_ComputeStressTensor)     (Elasticity_t*,const 
 /* Implementation */
 #define Elasticity_CopyType(EL,typ) \
         memcpy(Elasticity_GetType(EL),typ,MAX(strlen(typ),Elasticity_MaxLengthOfKeyWord))
+        
+        
+/* Add a tensor: a * I_ijkl  = a/2 ( d_ik*d_jl + d_il*d_jk ) */
+#define Elasticity_AddStiffnessTensorFromIdentity(EL,a) \
+        do { \
+          int i ; \
+          for(i = 0 ; i < 3 ; i++) { \
+            int j ; \
+            for(j = 0 ; j < 3 ; j++) { \
+              Elasticity_GetStiffnessTensor(EL)[((i*3 + j)*3 + i)*3 + j]) += 0.5*a ; \
+              Elasticity_GetStiffnessTensor(EL)[((i*3 + j)*3 + j)*3 + i]) += 0.5*a ; \
+            } \
+          } \
+        } while(0)
 
 
 

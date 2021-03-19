@@ -670,6 +670,35 @@ double* Element_ComputeInverseJacobianMatrix(Element_t* el,double* dh,int nn,con
 
 
 
+double* Element_ComputeCoordinateVector(Element_t* el,double* h)
+/** Compute the coordinate vector */
+{
+  int dim = Element_GetDimensionOfSpace(el) ;
+  int nn = Element_GetNbOfNodes(el) ;
+  size_t SizeNeeded = 3*sizeof(double) ;
+  double* coor = (double*) Element_AllocateInBuffer(el,SizeNeeded) ;
+
+  {
+    int i ;
+    
+    for(i = 0 ; i < 3 ; i++) coor[i] = 0 ;
+    
+    for(i = 0 ; i < nn ; i++) {
+      double* x = Element_GetNodeCoordinate(el,i) ;
+      int j ;
+      
+      for(j = 0 ; j < dim ; j++) {
+        coor[j] += h[i] * x[j] ;
+      }
+    }
+    
+  }
+
+  return(coor) ;
+}
+
+
+
 #if 1
 double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t* el,double* x)
 /** Compute the local coordinates in the reference element frame 
@@ -1304,7 +1333,7 @@ int Element_ComputeNbOfMatrixEntries(Element_t* element)
 void Element_MakeUnknownContinuousAcrossZeroThicknessElement(Element_t* element,const char* name)
 {
   ShapeFct_t* shapefct = Element_GetShapeFct(element) ;
-  int nf = ShapeFct_GetNbOfFunctions(shapefct) ;
+  int nf = ShapeFct_GetNbOfNodes(shapefct) ;
   int in ;
   
   for(in = 0 ; in < nf ; in++) {
@@ -1319,7 +1348,7 @@ void Element_MakeUnknownContinuousAcrossZeroThicknessElement(Element_t* element,
 void Element_MakeEquationContinuousAcrossZeroThicknessElement(Element_t* element,const char* name)
 {
   ShapeFct_t* shapefct = Element_GetShapeFct(element) ;
-  int nf = ShapeFct_GetNbOfFunctions(shapefct) ;
+  int nf = ShapeFct_GetNbOfNodes(shapefct) ;
   int in ;
   
   for(in = 0 ; in < nf ; in++) {

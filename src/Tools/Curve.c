@@ -249,9 +249,14 @@ double* Curve_CreateSamplingOfX(Curve_t *curve)
 double Curve_ComputeValue(Curve_t *cb,double a)
 /** Return the value at a */
 {
-  if(Curve_GetScaleType(cb) == 'n') return(courbe_nor(a,cb)) ;
-  else if(Curve_GetScaleType(cb) == 'l') return(courbe_log(a,cb)) ;
-  else arret("Curve_ComputeValue: option non prevue") ;
+  if(cb) {
+    if(Curve_GetScaleType(cb) == 'n') return(courbe_nor(a,cb)) ;
+    else if(Curve_GetScaleType(cb) == 'l') return(courbe_log(a,cb)) ;
+    else arret("Curve_ComputeValue: option non prevue") ;
+  } else {
+    arret("Curve_ComputeValue: undefined curve") ;
+  }
+  
   return(0.) ;
 }
 
@@ -260,9 +265,14 @@ double Curve_ComputeValue(Curve_t *cb,double a)
 double Curve_ComputeDerivative(Curve_t *cb,double a)
 /** Return the derivative at a */
 {
-  if(Curve_GetScaleType(cb) == 'n') return(dcourbe_nor(a,cb)) ;
-  else if(Curve_GetScaleType(cb) == 'l') return(dcourbe_log(a,cb)) ;
-  else arret("Curve_ComputeDerivative: option non prevue") ;
+  if(cb) {
+    if(Curve_GetScaleType(cb) == 'n') return(dcourbe_nor(a,cb)) ;
+    else if(Curve_GetScaleType(cb) == 'l') return(dcourbe_log(a,cb)) ;
+    else arret("Curve_ComputeDerivative: option non prevue") ;
+  } else {
+    arret("Curve_ComputeDerivative: undefined curve") ;
+  }
+  
   return(0.) ;
 }
 
@@ -271,9 +281,14 @@ double Curve_ComputeDerivative(Curve_t *cb,double a)
 double Curve_ComputeIntegral(Curve_t *cb,double a)
 /** Return the integral from begin to a */
 {
-  if(Curve_GetScaleType(cb) == 'n') return(icourbe_nor(a,cb)) ;
-  else if(Curve_GetScaleType(cb) == 'l') return(icourbe_log(a,cb)) ;
-  else arret("Curve_ComputeIntegral: option non prevue") ;
+  if(cb) {
+    if(Curve_GetScaleType(cb) == 'n') return(icourbe_nor(a,cb)) ;
+    else if(Curve_GetScaleType(cb) == 'l') return(icourbe_log(a,cb)) ;
+    else arret("Curve_ComputeIntegral: option non prevue") ;
+  } else {
+    arret("Curve_ComputeIntegral: undefined curve") ;
+  }
+  
   return(0.) ;
 }
 

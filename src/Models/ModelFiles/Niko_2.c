@@ -589,12 +589,20 @@ int  ComputeImplicitTerms(Element_t *el,double t,double dt)
     /* Stresses */
     double sig[9] ;
     
-    STRESS(1,1) = sig0_11 + lam1*(STRAIN(1,1) + STRAIN(2,2)) + lam2*STRAIN(3,3) + dmu1*STRAIN(1,1) - b1*(dp_co2 - dp_ads)  - dp_ads ;
-    STRESS(2,2) = sig0_22 + lam1*(STRAIN(1,1) + STRAIN(2,2)) + lam2*STRAIN(3,3) + dmu1*STRAIN(2,2) - b1*(dp_co2 - dp_ads)  - dp_ads ;
-    STRESS(3,3) = sig0_33 + lam2*(STRAIN(1,1) + STRAIN(2,2)) + lam3*STRAIN(3,3) + dmu3*STRAIN(3,3) - b3*(dp_co2 - dp_ads)  - dp_ads ;
+    STRESS(1,1) = sig0_11 ;
+    STRESS(2,2) = sig0_22 ;
+    STRESS(3,3) = sig0_33 ;
+    
+    STRESS(1,1) += lam1*(STRAIN(1,1) + STRAIN(2,2)) + lam2*STRAIN(3,3) + dmu1*STRAIN(1,1) ;
+    STRESS(2,2) += lam1*(STRAIN(1,1) + STRAIN(2,2)) + lam2*STRAIN(3,3) + dmu1*STRAIN(2,2) ;
+    STRESS(3,3) += lam2*(STRAIN(1,1) + STRAIN(2,2)) + lam3*STRAIN(3,3) + dmu3*STRAIN(3,3) ;
     STRESS(1,2) = dmu1*STRAIN(1,2) ; STRESS(2,1) = STRESS(1,2) ;
     STRESS(1,3) = dmu3*STRAIN(1,3) ; STRESS(3,1) = STRESS(1,3) ;
     STRESS(2,3) = dmu3*STRAIN(2,3) ; STRESS(3,2) = STRESS(2,3) ;
+    
+    STRESS(1,1) += - b1*(dp_co2 - dp_ads)  - dp_ads ;
+    STRESS(2,2) += - b1*(dp_co2 - dp_ads)  - dp_ads ;
+    STRESS(3,3) += - b3*(dp_co2 - dp_ads)  - dp_ads ;
     {
       /* molar content */
       /* in micropores */

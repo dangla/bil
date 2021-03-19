@@ -21,7 +21,8 @@ extern void           (Damage_Initialize)                  (Damage_t*) ;
 extern void           (Damage_SetParameters)               (Damage_t*,...) ;
 extern void           (Damage_SetParameter)                (Damage_t*,const char*,double) ;
 extern double         (Damage_UpdateTangentStiffnessTensor)(Damage_t*,double*) ;
-extern void           (Damage_PrintTangentStiffnessTensor) (Damage_t*) ;
+extern void           (Damage_PrintStiffnessTensor)        (Damage_t*) ;
+extern void           (Damage_CopyStiffnessTensor)         (Damage_t*,double*) ;
 //extern Damage_ComputeFunctionGradients_t     Damage_Criterion ;
 //extern Damage_ReturnMapping_t                Damage_ReturnMapping ;
 
@@ -31,20 +32,23 @@ extern void           (Damage_PrintTangentStiffnessTensor) (Damage_t*) ;
 #define Damage_GetCodeNameOfModel(D)            ((D)->codenameofmodel)
 #define Damage_GetYieldFunctionGradient(D)      ((D)->dfsds)
 #define Damage_GetPotentialFunctionGradient(D)  ((D)->dgsds)
-#define Damage_GetHardeningModulus(D)           ((D)->hm)
+#define Damage_GetHardeningVariable(D)          ((D)->hardv)
+#define Damage_GetHardeningModulus(D)           ((D)->hardm)
 #define Damage_GetCriterionValue(D)             ((D)->criterion)
 #define Damage_GetFjiCijkl(D)                   ((D)->fc)
 #define Damage_GetCijklGlk(D)                   ((D)->cg)
 #define Damage_GetFjiCijklGlk(D)                ((D)->fcg)
 #define Damage_GetTangentStiffnessTensor(D)     ((D)->cijkl)
+#define Damage_GetStiffnessTensor(D)            ((D)->cijkl)
 #define Damage_GetElasticity(D)                 ((D)->elasty)
 #define Damage_GetParameter(D)                  ((D)->parameter)
 #define Damage_GetComputeFunctionGradients(D)   ((D)->computefunctiongradients)
 #define Damage_GetReturnMapping(D)              ((D)->returnmapping)
 
 
-#define Damage_MaxLengthOfKeyWord     (100)
-#define Damage_MaxNbOfParameters      (6)
+#define Damage_MaxLengthOfKeyWord             (100)
+#define Damage_MaxNbOfParameters              (6)
+#define Damage_MaxNbOfHardeningVariables      (2)
 
 
 #include "Elasticity.h"
@@ -101,6 +105,15 @@ extern void           (Damage_PrintTangentStiffnessTensor) (Damage_t*) ;
         
 #define Damage_GetMaximumEnergyReleaseRate(D) \
         Damage_GetParameter(D)[1]
+        
+#define Damage_GetUniaxialTensileStrength(D) \
+        Damage_GetParameter(D)[2]
+        
+#define Damage_GetFractureEnergy(D) \
+        Damage_GetParameter(D)[3]
+        
+#define Damage_GetCrackBandWidth(D) \
+        Damage_GetParameter(D)[4]
 
 
 
@@ -164,14 +177,15 @@ struct Damage_s {
   char*   codenameofmodel ;
   double* dfsds ;  /** Yield function gradient */
   double* dgsds ;  /** Potential function gradient */
-  double* hm ;     /** Hardening modulus */
+  double* hardv ;  /** Hardening variable */
+  double* hardm ;  /** Hardening modulus */
   double  criterion ;     /** Value of the yield function criterion */
   double* fc ;     /** fc(k,l) = dfsds(j,i) * C(i,j,k,l) */
   double* cg ;     /** cg(i,j) = C(i,j,k,l) * dgsds(l,k) */
-  double  fcg ;    /** fcg = hm + dfsds(j,i) * C(i,j,k,l) * dgsds(l,k)) */
-  double* cijkl ;  /** Tangent stiffness tensor */
+  double  fcg ;    /** fcg = hardm + dfsds(j,i) * C(i,j,k,l) * dgsds(l,k)) */
+  double* cijkl ;  /** Stiffness tensor of the damaged material */
   double* parameter ;
-  GenericData_t* genericdata ;  /** Plastic properties */
+  GenericData_t* genericdata ;  /** Damage properties */
   Elasticity_t* elasty ;
   Damage_ComputeFunctionGradients_t*  computefunctiongradients ;
   Damage_ReturnMapping_t*             returnmapping ;

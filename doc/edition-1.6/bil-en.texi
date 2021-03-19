@@ -183,7 +183,7 @@ Bil is a modeling platform based on finite element/volume methods dedicated to c
 @sp 1
 Bil is intended to be used by students, engineers or reseachers to work out problems or develop their own models. Bil is written in C language. Thus provided that a C compiler was installed, it can run on any OS. However the complete installation of Bil (including documentations) can be achieved on Linux-based OS only (Debian, Ubuntu, etc..).
 
-Bil is developped for 1D, 2D and 3D problems. It doesn't include a mesh generator and post-processing treatment of outputs. However it can read mesh files created by the open-source free software Gmsh downloadable at @uref{http://www.geuz.org/gmsh/}. The output files created by Bil for 1D problems can be used easily by some plotting programs as Gnuplot. But as a general rule, post-processing options create output files which can be used by Gmsh for post-processing treatments (see Bil options).
+Bil is developped for 1D, 2D and 3D problems. It doesn't include a mesh generator and post-processing treatment of outputs. However it can read mesh files created by the open-source free software Gmsh downloadable at @uref{http://www.geuz.org/gmsh/}. The output files created by Bil for 1D problems can be used easily by some plotting programs such as Gnuplot. But as a general rule, post-processing options create output files which can be used by Gmsh for post-processing treatments (see Bil options).
 
 @c =========================================================================
 @c Running Bil
@@ -242,15 +242,15 @@ The file @file{my_file}, as mentionned above, provides the input data of the pro
 @item @strong{key-word}           @tab @strong{description}
 
 @item @code{Geometry}             @tab dimension and symmetry of the problem
-@item @code{Mesh}                 @tab mesh
+@item @code{Mesh}                 @tab define the mesh
 @item @code{Material}             @tab material properties of the material index 1
 @item @code{@enddots{}}           @tab @enddots{}
 @item @code{Material}             @tab material properties of the material index n
-@item @code{Fields}               @tab fields i.e. space functions
-@item @code{Initialization}       @tab initial conditions
-@item @code{Functions}            @tab time functions
-@item @code{Boundary Conditions}  @tab boundary conditions
-@item @code{Loads}                @tab loads
+@item @code{Fields}               @tab define fields i.e. space functions
+@item @code{Initialization}       @tab define the initial conditions
+@item @code{Functions}            @tab define time functions
+@item @code{Boundary Conditions}  @tab define the boundary conditions
+@item @code{Loads}                @tab define the loads
 @item @code{Points}               @tab define some points for output files
 @item @code{Dates}                @tab define the dates for output files
 @item @code{Objective Variations} @tab objective variations of the main unknowns
@@ -275,7 +275,7 @@ Each run produces 2 sets of output files. In the first set, output files are nam
 @sp 1
 @center @file{my_file.p@var{i}}
 @sp 1
-where @var{i} is an integer ranging from 1 to the number of points defined by the key-word @code{Points}. There is no file if there is no points. These files provide the results obtained at the specified points. The first column contains the times at which the results have been obtained. The other columns contain the value of specific quantities as implemented in the model defined in the key-word @code{Material}.
+where @var{i} is an integer ranging from 1 to the number of points defined by the key-word @code{Points}. If there is no point no file will be created. These files provide the results obtained at the specified points. The first column contains the times at which the results have been obtained. The other columns contain the value of specific quantities as implemented in the model defined in the key-word @code{Material}.
 
 In the second set, output files are named:
 @sp 1

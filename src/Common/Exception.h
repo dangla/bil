@@ -76,7 +76,7 @@ extern void            (Exception_Delete)(void*) ;
 
 struct Exception_s {        /* Exception handler */
   jmp_buf env ;             /* Environment */
-  int type ;                /* Signal sent by longjmp */
+  int type ;                /* Signal read by longjmp (1,2,3) and return by setjmp after a long jump */
   GenericObject_Delete_t* Delete ;
 } ;
 

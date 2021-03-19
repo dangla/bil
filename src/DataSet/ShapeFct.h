@@ -10,6 +10,7 @@ struct ShapeFct_s       ; typedef struct ShapeFct_s       ShapeFct_t ;
 
 
 extern ShapeFct_t* (ShapeFct_Create)              (int,int) ;
+extern void        (ShapeFct_Delete)              (void*) ;
 extern void        (ShapeFct_ComputeValuesAtPoint)(int,int,double*,double*,double*) ;
 
 

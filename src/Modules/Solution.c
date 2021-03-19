@@ -77,10 +77,10 @@ void Solution_CopyPreviousToCurrentValues(Solution_t* sol)
   unsigned int n_u  = Solution_GetNbOfDOF(sol) ;
   unsigned int n_vi = Solution_GetNbOfImplicitTerms(sol) ;
   unsigned int n_ve = Solution_GetNbOfExplicitTerms(sol) ;
-  double* u_1  = Solution_GetDOF(sol) ;
+  double* u_1  = Solution_GetNodalValue(sol) ;
   double* vi_1 = Solution_GetImplicitTerm(sol) ;
   double* ve_1 = Solution_GetExplicitTerm(sol) ;
-  double* u_n  = Solution_GetDOF(sol_p) ;
+  double* u_n  = Solution_GetNodalValue(sol_p) ;
   double* vi_n = Solution_GetImplicitTerm(sol_p) ;
   double* ve_n = Solution_GetExplicitTerm(sol_p) ;
   unsigned int    i ;

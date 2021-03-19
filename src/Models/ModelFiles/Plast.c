@@ -17,7 +17,7 @@
 /* Nb of equations */
 #define NEQ     (dim)
 /* Nb of (im/ex)plicit terms and constant terms */
-#define NVI     (23)
+#define NVI     (24)
 #define NVE     (0)
 #define NV0     (9)
 
@@ -33,6 +33,7 @@
 #define EPS_P         (vim + 12)
 #define HARDV         (vim + 21)[0]
 #define CRIT          (vim + 22)[0]
+#define DLAMBDA       (vim + 23)[0]
 
 #define SIG_n         (vim_n + 0)
 #define EPS_P_n       (vim_n + 12)
@@ -51,17 +52,20 @@ static void   GetProperties(Element_t*,double) ;
 static int    ComputeTangentCoefficients(FEM_t*,double,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double**,double*,double,double,int) ;
-static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
+static void    ComputeSecondaryVariables(Element_t*,double,double,double*,double*) ;
+//static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
 //static double* ComputeVariablesDerivatives(Element_t*,double,double,double*,double,int) ;
 
 static double* MacroGradient(Element_t*,double) ;
 static double* MacroStrain(Element_t*,double) ;
 
 
-#define ComputeFunctionGradients(...)  Plasticity_ComputeFunctionGradients(plasty,__VA_ARGS__)
-#define ReturnMapping(...)             Plasticity_ReturnMapping(plasty,__VA_ARGS__)
-#define CopyElasticTensor(...)         Plasticity_CopyElasticTensor(plasty,__VA_ARGS__)
-#define UpdateElastoplasticTensor(...) Plasticity_UpdateElastoplasticTensor(plasty,__VA_ARGS__)
+#define ComputeFunctionGradients(...)       Plasticity_ComputeFunctionGradients(plasty,__VA_ARGS__)
+#define ComputeTangentStiffnessTensor(...)  Plasticity_ComputeTangentStiffnessTensor(plasty,__VA_ARGS__)
+#define ReturnMapping(...)                  Plasticity_ReturnMapping(plasty,__VA_ARGS__)
+#define CopyElasticTensor(...)              Plasticity_CopyElasticTensor(plasty,__VA_ARGS__)
+#define CopyTangentStiffnessTensor(...)     Plasticity_CopyTangentStiffnessTensor(plasty,__VA_ARGS__)
+#define UpdateElastoplasticTensor(...)      Plasticity_UpdateElastoplasticTensor(plasty,__VA_ARGS__)
 
 
 /* Material parameters */
@@ -90,23 +94,29 @@ static int     plasticmodel ;
 #define ItIsPeriodic  (Geometry_IsPeriodic(Element_GetGeometry(el)))
 
 
-#define NbOfVariables     (63)
+/* We define some indices for the local variables */
+enum {
+I_U      = 0,
+I_U2     = I_U + 2,
+I_EPS,
+I_EPS8   = I_EPS + 8,
+I_SIG,
+I_SIG8   = I_SIG + 8,
+I_EPS_P,
+I_EPS_P8 = I_EPS_P + 8,
+I_Fmass,
+I_Fmass2 = I_Fmass + 2,
+I_HARDV,
+I_CRIT,
+I_DLAMBDA,
+I_Last
+} ;
+
+
+#define NbOfVariables     (I_Last)
 static double  Variable[NbOfVariables] ;
+static double  Variable_n[NbOfVariables] ;
 //static double dVariable[NbOfVariables] ;
-
-#define I_U            (0)
-
-#define I_EPS          (3)
-
-#define I_SIG          (12)
-#define I_EPS_P        (21)
-#define I_EPS_n        (30)
-#define I_EPS_P_n      (39)
-#define I_Fmass        (48)
-#define I_HARDV        (51)
-#define I_CRIT         (52)
-#define I_SIG_n        (53)
-#define I_HARDV_n      (62)
 
 
 
@@ -128,14 +138,8 @@ int pm(const char* s)
     
     return(4 + 3*i + j) ;
     
-    /* Pay attention below! 
-     * This is the location of the initial hardening variable (hardv0)
-     * (eg the initial pre-consolidation pressure). */
-  } else if(!strcmp(s,"hardv0")) {
-    return(13) ;
-    
     /* Model 1: Drucker-Prager */
-  } else if(!strcmp(s,"initial cumulative plastic shear strain")) {
+  } else if(!strcmp(s,"initial_cumulative_plastic_shear_strain")) {
     SetPlasticModel(1) ;
     return(13) ;
   } else if(!strcmp(s,"cohesion")) {
@@ -149,19 +153,19 @@ int pm(const char* s)
     return(16) ;
     
     /* Model 2: Cam-clay */
-  } else if(!strcmp(s,"initial pre-consolidation pressure")) {
+  } else if(!strcmp(s,"initial_pre-consolidation_pressure")) {
     SetPlasticModel(2) ;
     return(13) ;
-  } else if(!strcmp(s,"slope of swelling line")) {
+  } else if(!strcmp(s,"slope_of_swelling_line")) {
     SetPlasticModel(2) ;
     return(14) ;
-  } else if(!strcmp(s,"slope of virgin consolidation line")) {
+  } else if(!strcmp(s,"slope_of_virgin_consolidation_line")) {
     SetPlasticModel(2) ;
     return(15) ;
-  } else if(!strcmp(s,"slope of critical state line"))  {
+  } else if(!strcmp(s,"slope_of_critical_state_line"))  {
     SetPlasticModel(2) ;
     return(16) ;
-  } else if(!strcmp(s,"initial void ratio")) {
+  } else if(!strcmp(s,"initial_void_ratio")) {
     SetPlasticModel(2) ;
     return(17) ;
     
@@ -247,13 +251,14 @@ void GetProperties(Element_t* el,double t)
   gravity = GetProperty("gravity") ;
   rho_s   = GetProperty("rho_s") ;
   sig0    = &GetProperty("sig0") ;
-  hardv0  = GetProperty("hardv0") ;
+  //hardv0  = GetProperty("hardv0") ;
   
   plasty = Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
   {
     Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
     
     cijkl   = Elasticity_GetStiffnessTensor(elasty) ;
+    hardv0  = Plasticity_GetHardeningVariable(plasty)[0] ;
   }
 }
 
@@ -285,7 +290,7 @@ int SetModelProp(Model_t* model)
   Model_GetComputePropertyIndex(model) = pm ;
   
   Model_GetNbOfVariables(model) = NbOfVariables ;
-  Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
+  //Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
   
   return(0) ;
 }
@@ -346,11 +351,11 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       
       /* Cam-Clay */
       } else if(plasticmodel == 2) {
-        double kappa  = Material_GetPropertyValue(mat,"slope of swelling line") ;
-        double lambda = Material_GetPropertyValue(mat,"slope of virgin consolidation line") ;
-        double M      = Material_GetPropertyValue(mat,"slope of critical state line") ;
-        double pc0    = Material_GetPropertyValue(mat,"initial pre-consolidation pressure") ;
-        double e0     = Material_GetPropertyValue(mat,"initial void ratio") ;
+        double kappa  = Material_GetPropertyValue(mat,"slope_of_swelling_line") ;
+        double lambda = Material_GetPropertyValue(mat,"slope_of_virgin_consolidation_line") ;
+        double M      = Material_GetPropertyValue(mat,"slope_of_critical_state_line") ;
+        double pc0    = Material_GetPropertyValue(mat,"initial_pre-consolidation_pressure") ;
+        double e0     = Material_GetPropertyValue(mat,"initial_void_ratio") ;
         
         Plasticity_SetToCamClay(plasty) ;
         Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0) ;
@@ -506,6 +511,7 @@ int ComputeInitialState(Element_t* el,double t)
     
       CRIT = x[I_CRIT] ;
       HARDV = x[I_HARDV] ;
+      DLAMBDA = x[I_DLAMBDA] ;
     }
   }
   
@@ -558,6 +564,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
     
       CRIT = x[I_CRIT] ;
       HARDV = x[I_HARDV] ;
+      DLAMBDA = x[I_DLAMBDA] ;
     }
   }
   
@@ -802,8 +809,6 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
     {
       double* c1 = c0 ;
       
-      CopyElasticTensor(c1) ;
-      
       
       /* Tangent stiffness matrix */
       {
@@ -811,10 +816,16 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
         double crit = CRIT ;
         
         if(crit >= 0.) {
-          double crit1 = ComputeFunctionGradients(SIG,&HARDV) ;
-          double fcg = UpdateElastoplasticTensor(c1) ;
+          /* Continuum tangent stiffness matrix */
+          ComputeTangentStiffnessTensor(SIG,&HARDV) ;
+          /* Consistent tangent stiffness matrix */
+          //ComputeTangentStiffnessTensor(SIG,&HARDV,DLAMBDA) ;
+      
+          CopyTangentStiffnessTensor(c1) ;
           
-          if(fcg < 0) return(-1) ;
+        } else {
+      
+          CopyElasticTensor(c1) ;
         }
       }
     }
@@ -837,6 +848,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
   int dim = Element_GetDimensionOfSpace(el) ;
 //  double*   x      = Model_GetVariable(model,p) ;
   double*   x      = Variable ;
+  double*   x_n    = Variable_n ;
   
     
   /* Primary Variables */
@@ -890,41 +902,41 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       }
     
       for(i = 0 ; i < 9 ; i++) {
-        x[I_EPS_n   + i] = eps_n[i] ;
-        x[I_SIG_n   + i] = SIG_n[i] ;
-        x[I_EPS_P_n + i] = EPS_P_n[i] ;
+        x_n[I_EPS   + i] = eps_n[i] ;
+        x_n[I_SIG   + i] = SIG_n[i] ;
+        x_n[I_EPS_P + i] = EPS_P_n[i] ;
       }
       
-      x[I_HARDV_n] = HARDV_n ;
+      x_n[I_HARDV] = HARDV_n ;
       
       FEM_FreeBufferFrom(fem,eps_n) ;
     }
   }
     
-  ComputeSecondaryVariables(el,t,dt,x) ;
+  ComputeSecondaryVariables(el,t,dt,x_n,x) ;
   
   return(x) ;
 }
 
 
 
-void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
+void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,double* x)
 {
   int dim = Element_GetDimensionOfSpace(el) ;
   /* Strains */
   double* eps   =  x + I_EPS ;
-  double* eps_n =  x + I_EPS_n ;
+  double* eps_n =  x_n + I_EPS ;
   /* Plastic strains */
   double* eps_p  = x + I_EPS_P ;
-  double* eps_pn = x + I_EPS_P_n ;
+  double* eps_pn = x_n + I_EPS_P ;
     
 
 
   /* Backup stresses, plastic strains */
   {
     double* sig   = x + I_SIG ;
-    double* sig_n = x + I_SIG_n ;
-    double  hardv = x[I_HARDV_n] ;
+    double* sig_n = x_n + I_SIG ;
+    double  hardv = x_n[I_HARDV] ;
     
     
     {
@@ -953,9 +965,11 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
       /* Projection */
       {
         double crit = ReturnMapping(sig,eps_p,&hardv) ;
+        double dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
         
         x[I_CRIT]  = crit ;
         x[I_HARDV] = hardv ;
+        x[I_DLAMBDA] = dlambda ;
       }
     }
   }

@@ -24,7 +24,26 @@ extern double   (Math_Compute3x3MatrixDeterminant)(const double*) ;
 extern double*  (Math_Inverse3x3Matrix)(const double*) ;
 extern double*  (Math_ComputePrincipalStresses)(const double*) ;
 extern double*  (Math_ComputeRealEigenvaluesAndEigenvectorsOf3x3Matrix)(double*,const char) ;
-extern void     (Math_PrintStiffnessTensor)(double*) ;
+extern void     (Math_PrintStiffnessTensor)(const double*) ;
+extern void     (Math_PrintStressTensor)(const double*) ;
+extern double*  (Math_DeviatoricStress)(const double*) ;
+
+
+#include "BilLib.h"
+
+#ifdef LAPACKLIB
+#if defined(__cplusplus)
+  extern "C" {
+#endif
+
+extern void dgeev_(const char *jobvl, const char *jobvr, int *n, double *a,
+                   int *lda, double *wr, double *wi, double *vl, int *ldvl, 
+                   double *vr, int *ldvr, double *work, int *lwork, int *info);
+
+#if defined(__cplusplus)
+  }
+#endif
+#endif
 
 
 #define Math_ComputeSecondDeviatoricStrainInvariant \

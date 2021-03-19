@@ -284,6 +284,9 @@ void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(co
     
     if(!line) break ;
     
+    //String_ScanStringUntil(line,mot,"=") ;
+    //String_Scan(line,"%*[ ]%[^=]",mot) ;
+    //sscanf(line," %*[ ]%[^=]",mot) ;
     String_Scan(line," %[^= ]",mot) ;
     //String_Scan(line,"%*[ ]%[^=]",mot) ;
 

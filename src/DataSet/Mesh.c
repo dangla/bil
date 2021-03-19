@@ -36,9 +36,10 @@ extern void   mc43ad_(int*,int*,int*,int*,int*,int*,int*,int*,int*,int*,int*) ;
 static int*      (Mesh_ComputeInversePermutationOfNodes)(Mesh_t*,const char*) ;
 static int*      (Mesh_ComputeInversePermutationOfElements)(Mesh_t*,const char*) ;
 static Graph_t*  (Mesh_CreateGraph)(Mesh_t*) ;
+static void      (Mesh_DeleteMore)(void*) ;
 
 
-static void   mesh0d(Mesh_t*) ;
+static void   Mesh_OneNode(Mesh_t*) ;
 
 static void   Mesh_ReadInline1d(Mesh_t*,char*) ;
 
@@ -152,6 +153,42 @@ Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geo
 
 
 
+void Mesh_Delete(void* self)
+{
+  Mesh_t** pmesh = (Mesh_t**) self ;
+  Mesh_t*   mesh = *pmesh ;
+  
+  {
+    Nodes_t* nodes = Mesh_GetNodes(mesh) ;
+    Elements_t* elts = Mesh_GetElements(mesh) ;
+    
+    Mesh_DeleteMore(pmesh) ;
+    Nodes_DeleteMore(&nodes) ;
+    Elements_DeleteMore(&elts) ;
+    Nodes_Delete(&nodes) ;
+    Elements_Delete(&elts) ;
+  }
+  
+  free(mesh) ;
+}
+
+
+
+void Mesh_DeleteMore(void* self)
+{
+  Mesh_t** pmesh = (Mesh_t**) self ;
+  Mesh_t*   mesh = *pmesh ;
+  
+  {
+    Node_t* node = Mesh_GetNode(mesh) ;
+    Element_t** pel = Node_GetPointerToElement(node) ;
+    
+    free(pel) ;
+  }
+}
+
+
+
 char*  Mesh_Scan(Mesh_t* mesh,char* line)
 {
   char  nom_mail[Mesh_MaxLengthOfFileName] ;
@@ -177,12 +214,8 @@ char*  Mesh_Scan(Mesh_t* mesh,char* line)
     
   } else {
     int dim = Mesh_GetDimension(mesh) ;
-    
-    if(dim == 0) {
       
-      mesh0d(mesh) ;
-      
-    } else if(dim == 1) {
+    if(dim == 1) {
       
       /* Read directly in the data file */
       Mesh_ReadInline1d(mesh,line) ;
@@ -190,7 +223,10 @@ char*  Mesh_Scan(Mesh_t* mesh,char* line)
       
     } else {
       
-      return(NULL) ;
+      Mesh_OneNode(mesh) ;
+      Message_Direct("Mesh_Scan: a mesh with only one node is created!\n") ;
+      
+      //return(NULL) ;
       
     }
   }
@@ -1395,13 +1431,10 @@ void (Mesh_UpdateCurrentUnknowns)(Mesh_t* mesh,Solver_t* solver)
 /* Intern functions */
 
 
-void mesh0d(Mesh_t* mesh)
+void Mesh_OneNode(Mesh_t* mesh)
 {
   int n_el = 1 ;
   int n_no = 1 ;
-  
-  Mesh_GetNbOfElements(mesh) = n_el ;
-  Mesh_GetNbOfNodes(mesh) = n_no ;
   
   {
     int dim = 3 ;
@@ -1422,7 +1455,7 @@ void mesh0d(Mesh_t* mesh)
     Element_GetNbOfNodes(el) = 1 ;
     Element_GetDimension(el) = 0 ;
 
-    /* numerotation */
+    /* Numbering */
     Element_GetNode(el,0) = no ;
   }
 }

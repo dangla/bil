@@ -494,18 +494,14 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
       PasteColumn(MonlouisBonnaire,m) ;
       
     } else if(!strcmp(YMODEL,"Integral")){
-      int    coly ;
+      char   yname[Curve_MaxLengthOfCurveName] ;
       
-      sscanf(line,"{ %*s = %d }",&coly) ;
+      sscanf(line,"{ %*s = %s }",yname) ;
       
       {
-        int n_curves = CurvesFile_GetNbOfCurves(curvesfile) ;
-        Curves_t* crvs = Curves_Create(n_curves) ;
-        /* We read the existing curves in the now created file */
-        int n_crvs = Curves_ReadCurves(crvs,cmdline) ;
+        Curves_t* curves = CurvesFile_GetCurves(curvesfile) ;
         /* Curve to be integrated */
-        int i = coly - 2 ;
-        Curve_t* crvi = Curves_GetCurve(crvs) + i ;
+        Curve_t* crvi = Curves_FindCurve(curves,yname) ;
         /* We create the integral */
         Curve_t* crvj = Curve_CreateIntegral(crvi) ;
         
@@ -513,7 +509,6 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
         
         /* Free memory */
         Curve_Delete(&crvj) ;
-        Curves_Delete(&crvs) ;
       }
       
     } else if(!strcmp(YMODEL,"Evaluate")){
@@ -935,7 +930,7 @@ double (Expressions)(double x,va_list args)
       int i = *(c + 1) - '0' ;
       
       if(i > NbOfCurves || i > 10) {
-        Message_RuntimeError("Evaluate: not valid curve index") ;
+        Message_RuntimeError("Expressions: not valid curve index") ;
       }
       
       {
@@ -981,7 +976,7 @@ double (Expressions)(double x,va_list args)
     int i = *(c + 1) - '0' ;
       
     if(Curves_CannotAppendCurves(curves,i) || i > 10) {
-      Message_RuntimeError("Evaluate") ;
+      Message_RuntimeError("Expressions") ;
     }
       
     *(c + 0) = '%' ;

@@ -8,6 +8,7 @@ struct NodeSol_s      ; typedef struct NodeSol_s      NodeSol_t ;
 
 
 
+extern NodeSol_t* (NodeSol_Create)(const int) ;
 extern NodeSol_t* (NodeSol_GetDeepNodeSol)(NodeSol_t*,unsigned int) ;
 
 

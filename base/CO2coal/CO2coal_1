@@ -1,0 +1,97 @@
+Geometry
+1 sphe
+
+
+
+Mesh
+4 0 0 1 1
+1
+1 1 1 
+1 1 1 
+
+
+
+Material
+Model = CO2coal
+gravity = 0          # gravity
+rho_s = 0            # mass density of the dry material
+K_m = 1.41e9         # Compression modulus of the non fractured material(K_m > young/(3-6*poisson))
+phi0_M = 0.032       # Macroporosity
+p0_co2 = 1e-4        # initial pressure of CO2
+k_int = 262*1e-15    # intrinsic permeability
+mu_co2 = 1.7857e-05  # dynamic viscosity of CO2
+sig0_11 = -8e6       # initial stress 11
+sig0_22 = -8e6       # initial stress 22
+sig0_33 = -8e6       # initial stress 33
+young =  1.12e+09    # Young's modulus of coal
+poisson = 0.26       # Poisson's ratio of coal
+Curves = Sulcis_0.45
+#Curves = Sulcis_CO2   p = Range{x1 = 0 , x2 = 17.e6, n = 171}  n_co2 = Expressions(1){n_max = 3411 ; bp = 1.25e-6 ; n_co2 = n_max*bp*p/(1+bp*p)} rho_co2 = MolarDensityOfCO2(1){ T = 318 }
+#Curves = Sulcis_C   p = Range{x1 = 0 , x2 = 17.e6, n = 171}  c = Expressions(1){c = 3}
+#Curves = Sulcis_tangent_Biot   p = Range{x1 = 1 , x2 = 17.e6, n = 171}  tangent_biot = Expressions(1){tangent_biot = $3*$1/$2}
+#Curves = Sulcis_stress_ads   p = Range{x1 = 0 , x2 = 17.e6, n = 171}  stress_ads = Integral(1){name = t_biot }
+
+
+
+Fields
+4
+Value = 1e+06   Gradient = 0 0 0  Point = 0 0 0
+Value = 1.5e+07 Gradient = 0 0 0  Point = 0 0 0
+Value = -8e+06  Gradient = 0 0 0  Point = 0 0 0
+Value = 1e-4    Gradient = 0 0 0  Point = 0 0 0 
+
+
+
+Initialization
+1
+Region = 1 Unknown = p_co2 Field = 4
+
+
+
+Functions
+1
+N = 2 F(0) = 0 F(86400) = 17
+
+
+
+Boundary Conditions
+2
+Region = 2 Unknown = p_co2 Field = 1 Function = 1 
+Region = 1 Unknown = u_1 Field = 0 Function = 0
+
+
+
+Loads
+1
+Region = 3 Equation = meca_1 Type = force Field = 3 Function = 0
+
+
+
+Points
+2
+0.5 1 
+
+
+
+Dates
+3
+0 3600 86400
+
+
+
+Objective Variations
+p_co2 = 1000
+u_1 = 0.0001
+
+
+
+Iterative Process
+Iter = 10 
+Tol = 0.0001 
+Rep = 0 
+
+
+
+Time Steps
+Dtini = 1 
+Dtmax = 1e3

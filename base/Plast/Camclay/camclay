@@ -1,0 +1,77 @@
+Geometry
+2 plan
+
+
+Mesh
+Q4.msh
+
+
+Material #1            # matrix
+Model = Plast
+gravity = 0       # gravity
+rho_s = 0         # mass density of the dry material
+sig0_11 = -0.05e6       # initial stress 11
+sig0_22 = -0.05e6       # initial stress 22
+sig0_33 = -0.05e6       # initial stress 33
+young = 2713e6    # Young's modulus
+poisson = 0.339   # Poisson's ratio
+initial_pre-consolidation_pressure = 0.1e6
+slope_of_swelling_line = 0.02
+slope_of_virgin_consolidation_line = 0.2
+slope_of_critical_state_line = 0.9
+initial_void_ratio = 0.9
+
+
+
+
+
+Fields
+1
+Type = affine  Value = 1   Gradient = 0 0 0   Point = 0 0 0
+
+
+Initialization
+0
+
+
+Functions
+2
+N = 1  F(0) = 0.05e6
+N = 2  F(0) = 0   F(10) = -1.e-4
+
+
+Boundary Conditions
+3
+Region = 13 Unknown = u_1 Field = 0 Function = 0
+Region = 10 Unknown = u_2 Field = 0 Function = 0
+Region = 12 Unknown = u_2 Field = 1 Function = 2
+
+
+Loads
+1
+Region = 11  Type = pressure  Equation = meca_1   Field = 1  Function = 1
+
+
+Points
+0
+
+
+Dates
+2
+0 10
+
+
+Objective Variations
+u_1 = 1.e-4
+u_2 = 1.e-4
+
+
+Iterative Process
+Iterations = 10
+Tolerance = 1.e-4
+Repetition = 0
+
+
+Time Steps
+Dtini = 1.e-1
+Dtmax = 1

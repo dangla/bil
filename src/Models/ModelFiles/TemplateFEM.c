@@ -4,6 +4,9 @@
 #include <math.h>
 #include "CommonModel.h"
 
+/* Plasticity interface */
+#include "Plasticity.h"
+
 /* Choose the finite element method */
 #include "FEM.h"
 
@@ -17,90 +20,148 @@
  */
 
 /* Nb of equations of the model */
-#define NEQ   (dim+1)     /* Here let's consider an example with dim+1 scalar equations */
+#define NEQ   (dim+2) /* Let's consider a mechanical eq. and 2 scalar eqs. */
 
 /* Nb of terms per point */
-#define NVI   (14)    /*  14 implicit terms per point */
-#define NVE   (2)     /*  2 explicit terms per point */
+#define NVI   (18)    /*  14 implicit terms per point */
+#define NVE   (2)     /*  2  explicit terms per point */
 #define NV0   (10)    /*  10 constant terms per point */
 
 
 /* Indices of equations */
-#define E_Eq1    (0)
-#define E_Eq2    (dim)
-/* Indices of unknowns */
-#define U_Unk1    (0)
-#define U_Unk2    (dim)
+#define E_Mech     (0)
+#define E_Name1    (dim)
+#define E_Name2    (1+dim)
+
+/* Indices of unknowns (generic indices) */
+#define U_Mech     E_Mech
+#define U_Name1    E_Name1
+#define U_Name2    E_Name2
 
 
-/* Value of the nodal unknown (u and el must be used as pointers below) */
-#define UNKNOWN(n,i)     Element_GetValueOfNodalUnknown(el,u,n,i)
+/* Method chosen at compiling time.
+ * Each equation is associated to a specific unknown.
+ * Each unknown can deal with specific modelings.
+ * Uncomment/comment to let only one unknown per equation */
+
+/* Mechanics */
+#define U_dis     U_Mech
+/* Unknown for equation E_Name1 */
+#define U_unk1    U_Name1
+/* Unknown for equation E_Name2 */
+#define U_unk2    U_Name2
 
 
-/* We define some names for nodal unknowns */
-#define Unk1(n)          (UNKNOWN(n,U_Unk1))
-#define Unk2(n)          (UNKNOWN(n,U_Unk2))
+
+/* We define some names for implicit terms
+ * (vi and vi_n must be used as pointer in the remaining file) */
+#define N_1           (vi      )[0] /* Mass or mole content for E_Name1 */
+#define N_1n          (vi_n    )[0] /* Idem but at the previous time step */
+#define W_1           (vi   + 1)    /* The fluw (3D vector) */
+
+#define N_2           (vi   + 4)[0] /* Idem for E_Name2 */
+#define N_2n          (vi_n + 4)[0]
+#define W_2           (vi   + 5)
+
+#define SIG           (vi   + 8)    /* Stress tensor (3D tensor) */
+#define SIGn          (vi_n + 8)    /* Idem at the previous time step */
+
+#define PHI           (vi   + 17)[0] /* Porosity */
 
 
-/* We define some names for implicit terms (vi must be used as pointer below) */
-#define N_1           (vi)[0]
-#define W_1           (vi + 1) /* this is a 3D vector */
-
-#define SIG           (vi + 4) /* this a 3D tensor */
-
-#define PHI           (vi + 13)[0]
-
-
-/* We define some names for explicit terms (ve must be used as pointer below) */
-#define K_1           (ve[0])
-#define K_2           (ve[1])
+/* We define some names for explicit terms 
+ * (ve must be used as pointer in the remaining file) */
+#define K_1           (ve[0])  /* Transport coef for E_Name1 */
+#define K_2           (ve[1])  /* Idem for E_Name2 */
 
 
 /* We define some names for constant terms (v0 must be used as pointer below) */
-#define SIG0          (v0 + 0)
+#define SIG0          (v0 + 0)  /* Initial stress tensor (3D tensor) */
 
 #define PR_2          (v0 + 9)[0]
 
 
+
+/* Shorthands of some units */
+#include "InternationalSystemOfUnits.h"
+
+#define m        (InternationalSystemOfUnits_OneMeter)
+#define m3       (m*m*m)
+#define dm       (0.1*m)
+#define cm       (0.01*m)
+#define dm3      (dm*dm*dm)
+#define cm3      (cm*cm*cm)
+#define Pa       (InternationalSystemOfUnits_OnePascal)
+#define MPa      (1.e6*Pa)
+#define GPa      (1.e9*Pa)
+#define Joule    (Pa*m3)
+#define kg       (InternationalSystemOfUnits_OneKilogram)
+#define mol      (InternationalSystemOfUnits_OneMole)
+#define Kelvin   (InternationalSystemOfUnits_OneKelvin)
+#define Watt     (InternationalSystemOfUnits_OneWatt)
+
+
+
 /* Material Properties 
  * ------------------- */
-#define PCURVE1      (Element_GetCurve(el) + 0)
+#define PCURVE1      (curve1)
 #define CURVE1(x)    (Curve_ComputeValue(PCURVE1,x))
-#define PCURVE2      (Element_GetCurve(el) + 1)
+#define PCURVE2      (curve2)
 #define CURVE2(x)    (Curve_ComputeValue(PCURVE2,x))
 
 
-/* To retrieve the material properties */
-#define GetProperty(a)   (Element_GetProperty(el)[pm(a)]) 
 
-
-/* Intern Functions */
-static int    pm(const char* s) ;
-static void   GetProperties(Element_t*) ;
-
-static int    ComputeTangentCoefficients(FEM_t*,double,double,double*) ;
-static int    ComputeTransferCoefficients(FEM_t*,double,double*) ;
+/* Intern Functions used below */
+static int     ComputeTangentCoefficients(FEM_t*,double,double,double*) ;
+static int     ComputeTransferCoefficients(FEM_t*,double,double*) ;
 
 static double* ComputeVariables(Element_t*,void*,void*,void*,const double,const double,const int) ;
 static void    ComputeSecondaryVariables(Element_t*,const double,const double,double*,double*) ;
 static double* ComputeVariableDerivatives(Element_t*,const double,const double,double*,const double,const int) ;
 
-
-/* Intern parameters */
-static double coef1 ;
-static double coef2 ;
-static double coef3 ;
-static double* sig0 ;
+#define ComputeTangentStiffnessTensor(...) \
+        Plasticity_ComputeTangentStiffnessTensor(plasty,__VA_ARGS__)
+#define ReturnMapping(...) \
+        Plasticity_ReturnMapping(plasty,__VA_ARGS__)
+#define CopyElasticTensor(...) \
+        Plasticity_CopyElasticTensor(plasty,__VA_ARGS__)
+#define CopyTangentStiffnessTensor(...) \
+        Plasticity_CopyTangentStiffnessTensor(plasty,__VA_ARGS__)
 
 
 /* We define some indices for the local variables */
 static enum {
 I_U     =  0,
-I_P,
+
+I_Unk1,
+
+I_Unk2,
+
 I_EPS,
-I_SIG   =  I_EPS + 9,
+I_EPS8  = I_EPS + 8,
+
+I_GRD_Unk1,
+I_GRD_Unk12 = I_GRD_Unk1 + 2,
+
+I_GRD_Unk2,
+I_GRD_Unk22 = I_GRD_Unk2 + 2,
+
+I_SIG,
+I_SIG8  = I_SIG + 8,
+
+I_N_1,
+
+I_W_1,
+I_W_12 = I_W_1 + 2,
+
+I_N_2,
+
+I_W_2,
+I_W_22 = I_W_2 + 2,
+
 I_Last
 } ;
+
 
 
 /* Locally defined intern variables  */
@@ -111,6 +172,18 @@ static double Variables_n[NP][NbOfVariables] ;
 static double dVariables[NbOfVariables] ;
 
 
+
+/* The parameters below are read in the input data file */
+static double coef1 ;
+static double coef2 ;
+static double coef3 ;
+static double* sig0 ;
+static Curve_t* curve1 ;
+
+
+
+/* They are stored in the order specified in pm */
+static int  pm(const char* s) ;
 int pm(const char* s)
 {
   if(strcmp(s,"prop1") == 0)        return (0) ;
@@ -126,13 +199,22 @@ int pm(const char* s)
 }
 
 
+
+/* They are retrieved automatically by calling the following function */
+static void   GetProperties(Element_t*) ;
 void GetProperties(Element_t* el)
 {
+#define GetProperty(a)   (Element_GetProperty(el)[pm(a)]) 
   coef1  = GetProperty("prop1") ;
   coef2  = GetProperty("prop2") ;
   coef3  = GetProperty("prop3") ;
   sig0   = &GetProperty("sig0") ;
+  
+  curve1   = Element_FindCurve(el,"y1-axis") ;
+  curve2   = Element_FindCurve(el,"y2-axis") ;
+#undef GetProperty
 }
+
 
 
 int SetModelProp(Model_t* model)
@@ -142,19 +224,41 @@ int SetModelProp(Model_t* model)
  *  to modify the units because this will also affect other models.
  */
 {
+  int dim = Model_GetDimension(model) ;
+  char name_eqn[3][7] = {"mech_1","mech_2","mech_3"} ;
+  char name_unk[3][4] = {"u_1","u_2","u_3"} ;
+  int i ;
+  
   /** Number of equations to be solved */
   Model_GetNbOfEquations(model) = NEQ ;
   
-  /** Names of these equations */
-  Model_CopyNameOfEquation(model,E_Eq1,"first_eqn") ;
-  Model_CopyNameOfEquation(model,E_Eq2,"second_eqn") ;
+  /** Names of these equations */ 
+  for(i = 0 ; i < dim ; i++) {
+    Model_CopyNameOfEquation(model,E_Mech + i,name_eqn[i]) ;
+  }
+  Model_CopyNameOfEquation(model,E_Name1,"name1") ;
+  Model_CopyNameOfEquation(model,E_Name2,"name2") ;
   
   /** Names of the main (nodal) unknowns */
-  Model_CopyNameOfUnknown(model,U_Unk1,"first_unk") ;
-  Model_CopyNameOfUnknown(model,U_Unk2,"second_unk") ;
+  for(i = 0 ; i < dim ; i++) {
+    Model_CopyNameOfUnknown(model,U_dis + i,name_unk[i]) ;
+  }
+
+#if defined (U_unk1)
+  Model_CopyNameOfUnknown(model,U_unk1,"unk1") ;
+#else
+  #error "Ambiguous or undefined unknown"
+#endif
+
+#if defined (U_unk2)
+  Model_CopyNameOfUnknown(model,U_unk2,"unk2") ;
+#else
+  #error "Ambiguous or undefined unknown"
+#endif
   
   return(0) ;
 }
+
 
 
 int ReadMatProp(Material_t* mat,DataFile_t* datafile)
@@ -169,6 +273,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 }
 
 
+
 int PrintModelProp(Model_t* model,FILE* ficd)
 /** Print the model properties 
  *  Return the nb of equations */
@@ -180,13 +285,15 @@ int PrintModelProp(Model_t* model,FILE* ficd)
   
   printf("\n") ;
   printf("The set of equations is:\n") ;
-  printf("\t- First equation      (first_eqn)\n") ;
-  printf("\t- Second equation     (second_eqn)\n") ;
+  printf("\t- Mechanical Equilibrium           (mech)\n") ;
+  printf("\t- First conservation equation      (name1)\n") ;
+  printf("\t- Second conservation equation     (name2)\n") ;
   
   printf("\n") ;
   printf("The primary unknowns are:\n") ;
-  printf("\t- First unknown       (first_unk)\n") ;
-  printf("\t- Second unknown      (second_unk)\n") ;
+  printf("\t- Displacements                    (u_1,u_2,u_3) \n") ;
+  printf("\t- First unknown                    (unk1)\n") ;
+  printf("\t- Second unknown                   (unk2)\n") ;
   
   printf("\n") ;
   printf("Example of input data\n") ;
@@ -194,9 +301,11 @@ int PrintModelProp(Model_t* model,FILE* ficd)
   fprintf(ficd,"prop1 = 0.01   # Property 1\n") ;
   fprintf(ficd,"prop2 = 1.e-3  # Property 2\n") ;
   fprintf(ficd,"prop3 = 1.e6   # Property 3\n") ;
+  fprintf(ficd,"Curves = my_file  # File name: x-axis y1-axis y2-axis\n") ;  
 
   return(NEQ) ;
 }
+
 
 
 int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
@@ -204,7 +313,7 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
  *  Return 0 */
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
-  int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
+  int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) + 1 ;
 
   /** Define the length of tables */
   Element_GetNbOfImplicitTerms(el) = NVI*NbOfIntPoints ;
@@ -216,6 +325,7 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
    * some examples of possible operations */
   
   /* Compute some new interpolation functions */
+  #if 0
   {
     int dim = Element_GetDimension(el) ;
     int nn  = Element_GetNbOfNodes(el) ;
@@ -238,6 +348,7 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
     Element_GetNbOfExplicitTerms(el) = NVE*NbOfIntPoints ;
     Element_GetNbOfConstantTerms(el) = NV0*NbOfIntPoints ;
   }
+  #endif
   
   
   #if 0 // This part is to be tested!
@@ -260,12 +371,14 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
   /* Dealing with zero-thickness interface element.
    * (e.g. continuous pressure accross the interface element)
    */
+  #if 0
   {
     if(Element_HasZeroThickness(el)) {
       Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,"second_unk") ;
       Element_MakeEquationContinuousAcrossZeroThicknessElement(el,"second_eqn") ;
     }
   }
+  #endif
   
   return(0) ;
 }
@@ -278,16 +391,30 @@ int  ComputeLoads(Element_t* el,double t,double dt,Load_t* cg,double* r)
 {
   IntFct_t* fi = Element_GetIntFct(el) ;
   int nn = Element_GetNbOfNodes(el) ;
+  int ndof = nn*NEQ ;
   FEM_t* fem = FEM_GetInstance(el) ;
   int    i ;
 
   {
     double* r1 = FEM_ComputeSurfaceLoadResidu(fem,fi,cg,t,dt) ;
-    for(i = 0 ; i < NEQ*nn ; i++) r[i] = -r1[i] ;
+    
+    /* First conservation equation */
+    if(Element_FindEquationPositionIndex(el,Load_GetNameOfEquation(cg)) == E_Name1) {
+      for(i = 0 ; i < ndof ; i++) r[i] = -r1[i] ;
+    
+    /* Second conservation equation */
+    } else if(Element_FindEquationPositionIndex(el,Load_GetNameOfEquation(cg)) == E_Name2) {
+      for(i = 0 ; i < ndof ; i++) r[i] = -r1[i] ;
+    
+    /* Other if any */
+    } else {
+      for(i = 0 ; i < ndof ; i++) r[i] = r1[i] ;
+    }
   }
   
   return(0) ;
 }
+
 
 
 int ComputeInitialState(Element_t* el,double t)
@@ -337,6 +464,14 @@ int ComputeInitialState(Element_t* el,double t)
 
         /* ... */
       }
+    
+    
+      /* storage in ve */
+      {
+        double* ve  = ve0 + p*NVE ;
+
+        /* ... */
+      }
     }
   }
 
@@ -374,6 +509,7 @@ int ComputeInitialState(Element_t* el,double t)
   
   return(0) ;
 }
+
 
 
 int  ComputeExplicitTerms(Element_t* el,double t)
@@ -422,6 +558,7 @@ int  ComputeExplicitTerms(Element_t* el,double t)
 }
 
 
+
 int  ComputeImplicitTerms(Element_t* el,double t,double dt)
 /** Compute the (current) implicit terms 
  *  Return 0 if succeeded and -1 if failed */
@@ -462,6 +599,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
 }
 
 
+
 int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 /** Compute the matrix (k) 
  *  Return 0 if succeeded and -1 if failed */
@@ -498,14 +636,18 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   ** Poromechanics matrix
   */
   {
-    double c[IntFct_MaxNbOfIntPoints*100] ;
+    int m = 2 ; /* Two coupling terms */
+    int n = 81 + m*9 + m*(9 + m) ;
+    double c[IntFct_MaxNbOfIntPoints*n] ;
     int dec = ComputeTangentCoefficients(fem,t,dt,c) ;
-    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,1,0) ;
-    /* The matrix kp is stored as (u for displacement, p for pressure)
-     * | Kuu  Kup  |
-     * | Kpu  Kpp  |
+    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,m,E_Mech) ;
+    /* The entry c should be stored as 
+     * (u for displacement, p for unk1, h for unk2)
+     * | Kuu  Kup  Kuh  |
+     * | Kpu  Kpp  Kph  |
+     * | Khu  Khp  Khh  |
      * i.e. the displacements u are in the positions 0 to dim-1 and
-     * the pressure p is in the position dim.
+     * p is in the position dim, h in dim+1
      */
     {
       int i ;
@@ -521,16 +663,64 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   ** Conduction Matrix
   */
   {
-    double c[IntFct_MaxNbOfIntPoints*100] ;
+    int m = 2 ;
+    int n = m*m*9 ;
+    double c[IntFct_MaxNbOfIntPoints*n] ;
     int dec = ComputeTransferCoefficients(fem,dt,c) ;
-    double* kc = FEM_ComputeConductionMatrix(fem,intfct,c,dec) ;
-    int    i ;
   
-    for(i = 0 ; i < nn ; i++) {
-      int    j ;
+    /* Conduction Matrix (dW_1/dUnk1) */
+    {
+      double* kc = FEM_ComputeConductionMatrix(fem,intfct,c,dec) ;
+      int    i ;
       
-      for(j = 0 ; j < nn ; j++) {
-        K(E_Eq2 + i*NEQ,U_Unk2 + j*NEQ) += dt*kc[i*nn + j] ;
+      for(i = 0 ; i < nn ; i++) {
+        int    j ;
+      
+        for(j = 0 ; j < nn ; j++) {
+          K(E_Name1 + i*NEQ,U_unk1 + j*NEQ) += dt*kc[i*nn + j] ;
+        }
+      }
+    }
+  
+    /* Conduction Matrix (dW_1/dUnk2) */
+    {
+      double* kc = FEM_ComputeConductionMatrix(fem,intfct,c+9,dec) ;
+      int    i ;
+      
+      for(i = 0 ; i < nn ; i++) {
+        int    j ;
+      
+        for(j = 0 ; j < nn ; j++) {
+          K(E_Name1 + i*NEQ,U_unk2 + j*NEQ) += dt*kc[i*nn + j] ;
+        }
+      }
+    }
+  
+    /* Conduction Matrix (dW_2/dUnk1) */
+    {
+      double* kc = FEM_ComputeConductionMatrix(fem,intfct,c+2*9,dec) ;
+      int    i ;
+      
+      for(i = 0 ; i < nn ; i++) {
+        int    j ;
+      
+        for(j = 0 ; j < nn ; j++) {
+          K(E_Name2 + i*NEQ,U_unk1 + j*NEQ) += dt*kc[i*nn + j] ;
+        }
+      }
+    }
+  
+    /* Conduction Matrix (dW_2/dUnk2) */
+    {
+      double* kc = FEM_ComputeConductionMatrix(fem,intfct,c+3*9,dec) ;
+      int    i ;
+      
+      for(i = 0 ; i < nn ; i++) {
+        int    j ;
+      
+        for(j = 0 ; j < nn ; j++) {
+          K(E_Name2 + i*NEQ,U_unk2 + j*NEQ) += dt*kc[i*nn + j] ;
+        }
       }
     }
   }
@@ -540,13 +730,13 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 }
 
 
+
 int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 /** Compute the residu (r) 
  *  Return 0 if succeeded and -1 if failed */
 {
 #define R(n,i)    (r[(n)*NEQ + (i)])
-  double* vi_1 = Element_GetCurrentImplicitTerm(el) ;
-  double* vi_n = Element_GetPreviousImplicitTerm(el) ;
+  double* vi0 = Element_GetCurrentImplicitTerm(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
@@ -573,57 +763,86 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   
   /* 1.1 Stresses */
   {
-    double* vi = vi_1 ;
+    double* vi = vi0 ;
     double* rw = FEM_ComputeStrainWorkResidu(fem,intfct,SIG,NVI) ;
     int i ;
     
     for(i = 0 ; i < nn ; i++) {
       int j ;
       
-      for(j = 0 ; j < dim ; j++) R(i,E_mec + j) -= rw[i*dim + j] ;
+      for(j = 0 ; j < dim ; j++) R(i,E_Mech + j) -= rw[i*dim + j] ;
     }
     
   }
   
   /* 1.2 Body forces */
   {
-    double* vi = vi_1 ;
+    double* vi = vi0 ;
     double* rbf = FEM_ComputeBodyForceResidu(fem,intfct,F_MASS + dim - 1,NVI) ;
     int i ;
     
     for(i = 0 ; i < nn ; i++) {
-      R(i,E_mec + dim - 1) -= -rbf[i] ;
+      R(i,E_Mech + dim - 1) -= -rbf[i] ;
     }
     
   }
   
   
   
-  /* 2. Hydraulics */
+  /* 2. First conservation equation */
   
   /* 2.1 Accumulation Terms */
   {
-    double* vi = vi_1 ;
+    double* vi = vi0 ;
     double* vi_n = Element_GetPreviousImplicitTerm(el) ;
     double g1[IntFct_MaxNbOfIntPoints] ;
     int i ;
     
-    for(i = 0 ; i < np ; i++ , vi += NVI , vi_n += NVI) g1[i] = M_L - M_L_n ;
+    for(i = 0 ; i < np ; i++ , vi += NVI , vi_n += NVI) g1[i] = N_1 - N_1n ;
     
     {
       double* ra = FEM_ComputeBodyForceResidu(fem,intfct,g1,1) ;
     
-      for(i = 0 ; i < nn ; i++) R(i,E_liq) -= ra[i] ;
+      for(i = 0 ; i < nn ; i++) R(i,E_Name1) -= ra[i] ;
     }
   }
   
   /* 2.2 Transport Terms */
   {
-    double* vi = vi_1 ;
-    double* rf = FEM_ComputeFluxResidu(fem,intfct,W_L,NVI) ;
+    double* vi = vi0 ;
+    double* rf = FEM_ComputeFluxResidu(fem,intfct,W_1,NVI) ;
     int i ;
     
-    for(i = 0 ; i < nn ; i++) R(i,E_liq) -= -dt*rf[i] ;
+    for(i = 0 ; i < nn ; i++) R(i,E_Name1) -= -dt*rf[i] ;
+  }
+  
+  
+  
+  /* 3. Second conservation equation */
+  
+  /* 3.1 Accumulation Terms */
+  {
+    double* vi = vi0 ;
+    double* vi_n = Element_GetPreviousImplicitTerm(el) ;
+    double g1[IntFct_MaxNbOfIntPoints] ;
+    int i ;
+    
+    for(i = 0 ; i < np ; i++ , vi += NVI , vi_n += NVI) g1[i] = N_2 - N_2n ;
+    
+    {
+      double* ra = FEM_ComputeBodyForceResidu(fem,intfct,g1,1) ;
+    
+      for(i = 0 ; i < nn ; i++) R(i,E_Name2) -= ra[i] ;
+    }
+  }
+  
+  /* 3.2 Transport Terms */
+  {
+    double* vi = vi0 ;
+    double* rf = FEM_ComputeFluxResidu(fem,intfct,W_2,NVI) ;
+    int i ;
+    
+    for(i = 0 ; i < nn ; i++) R(i,E_Name2) -= -dt*rf[i] ;
   }
   
   return(0) ;
@@ -631,17 +850,59 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 }
 
 
+
 int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 /** Compute the outputs (r) 
  *  Return the nb of views (scalar, vector or tensor) */
 {
-  int NbOfOutputs  = 3 ;
-  double scalar    = 1 ;
-  double vector[3] = {1,2,3} ;
-  double tensor[9] = {11,12,13,21,22,23,31,32,33} ;
+  int NbOfOutputs  = 5 ;
+  double** u  = Element_ComputePointerToNodalUnknowns(el) ;
+  double *vi0 = Element_GetImplicitTerm(el) ;
+  double *ve0 = Element_GetExplicitTerm(el) ;
+  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  int np = IntFct_GetNbOfPoints(intfct) ;
+  
+  /* initialization */
+  {
+    int    i ;
+    
+    for(i = 0 ; i < NbOfOutputs ; i++) {
+      Result_SetValuesToZero(r + i) ;
+    }
+  }
   
   {
+    /* Interpolation functions at s */
+    double* a = Element_ComputeCoordinateInReferenceFrame(el,s) ;
+    int m = IntFct_ComputeFunctionIndexAtPointOfReferenceFrame(intfct,a) ;
+    
+    /* Nodal unknowns */
+    double unk1 = FEM_ComputeUnknown(fem,u,intfct,m,U_Name1) ;
+    double unk2 = FEM_ComputeUnknown(fem,u,intfct,m,U_Name2) ;
+    
+    /* Other quantities */
+    double scalar    = 1 ;
+    double vector[3] = {1,2,3} ;
+    double tensor[9] = {11,12,13,21,22,23,31,32,33} ;
+    
+    int    i ;
+    
+    /* We can average some quantities over the element */
+    for(i = 0 ; i < np ; i++) {
+      double * vi = vi0 + i*NVI ;
+      double * ve = ve0 + i*NVE ;
+      int j ;
+      
+      scalar += SCALAR/np ;
+      
+      for(j = 0 ; j < 3 ; j++) vector[j]  += VECTOR[j]/np ;
+      for(j = 0 ; j < 9 ; j++) tensor[j]  += TENSOR[j]/np ;
+    }
+    
     i = 0  ;
+    Result_Store(r + i++,&unk1,"Unknown 1",1) ;
+    Result_Store(r + i++,&unk2,"Unknown 2",1) ;
+    
     Result_Store(r + i++,&scalar,"NameOfView_x",1) ; /* scalar */
     Result_Store(r + i++,vector ,"NameOfView_v",3) ; /* vector */
     Result_Store(r + i++,tensor ,"NameOfView_t",9) ; /* tensor */
@@ -666,14 +927,15 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
 #define C1(i,j,k,l)    T4(c1,i,j,k,l)
 #define B1(i,j)        T2(c1,i,j)
   Element_t* el  = FEM_GetElement(fem) ;
-  double*  vim0   = Element_GetCurrentImplicitTerm(el) ;
-  double*  vim0_n = Element_GetPreviousImplicitTerm(el) ;
-//  double*  vex0  = Element_GetExplicitTerm(el) ;
+  double*  vi0   = Element_GetCurrentImplicitTerm(el) ;
+  double*  vi0_n = Element_GetPreviousImplicitTerm(el) ;
+//  double*  ve0  = Element_GetExplicitTerm(el) ;
   double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
   double dui[NEQ] ;
-  int    dec = 100 ;
+  int m = 2 ;
+  int dec = 81 + m*9 + m*(9 + m) ;
   
   
   if(Element_IsSubmanifold(el)) return(0) ;
@@ -695,10 +957,10 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
     int    p ;
     
     for(p = 0 ; p < np ; p++) {
-      double* vim   = vim0   + p*NVI ;
-      double* vim_n = vim0_n + p*NVI ;
+      double* vi   = vi0   + p*NVI ;
+      double* vi_n = vi0_n + p*NVI ;
       /* Variables */
-      double* x = ComputeVariables(el,u,u_n,vim_n,t,dt,p) ;
+      double* x = ComputeVariables(el,u,u_n,vi0_n,t,dt,p) ;
       double* c0 = c + p*dec ;
 
 
@@ -717,6 +979,8 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
 
       /* Derivatives with respect to strains */
       {
+        double deps = 1.e-6 ;
+        double* dx = ComputeVariableDerivatives(el,t,dt,x,deps,I_EPS) ;
     
         /* Mechanics (tangent stiffness matrix) */
         {
@@ -725,70 +989,124 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
           {
             double young   = 1.e9 ;
             double poisson = 0.25 ;
+            double* cel = Elasticity_GetStiffnessTensor(elasty) ;
           
             Elasticity_SetParameters(elasty,young,poisson) ;
+            Elasticity_ComputeStiffnessTensor(elasty,cel) ;
           }
-
-          Elasticity_ComputeStiffnessTensor(elasty,c1) ;
       
           {
             double crit = CRIT ;
             
             /* Criterion */
             if(crit >= 0.) {
-              double p_l2 = x[I_P_L2] ;
-              double s2 = p_g - p_l2 ;
-              double p_co    = x[HARDV] ;
-              double p_s     = k_s * s2 ;
-              double hardv[2] = {p_co,p_s} ;
-              double* sig = x + I_SIG ;
-              double crit1 = ComputeFunctionGradients(sig,hardv) ;
-              double fcg   = UpdateElastoplasticTensor(c1) ;
-          
-              if(fcg < 0) return(-1) ;
+              double* hardv = x + HARDV ;
+              double* sig   = x + I_SIG ;
+              
+              ComputeTangentStiffnessTensor(sig,hardv) ;
+              
+              CopyTangentStiffnessTensor(c1) ;
+            } else {
+      
+              CopyElasticTensor(c1) ;
             }
           }
         }
         
     
-        /* Conservation of mass: coupling matrix */
+        /* Coupling matrices */
         {
+          double* c00 = c0 + 81 + m*9 ;
     
+          /* assuming to be the same for the derivatives wrt I_EPS+4 and I_EPS+8
+           * and zero for the derivatives w.r.t others */
           /* Coupling matrix */
+          
+          /* First conservation equation */
           {
-            double deps = 1.e-6 ;
-            double* dxdeps = ComputeVariableDerivatives(el,t,dt,x,deps,I_EPS) ;
-            double* c1 = c0 + 81 + 9 ;
+            double* c1 = c00 ;
             int i ;
 
-            for(i = 0 ; i < 3 ; i++) B1(i,i) = dxdeps[I_EPS] ;
+            for(i = 0 ; i < 3 ; i++) B1(i,i) = dx[I_N_1] ;
+          }
+          
+          /* Second conservation equation */
+          {
+            double* c1 = c00 + 9 + m ;
+            int i ;
+
+            for(i = 0 ; i < 3 ; i++) B1(i,i) = dx[I_N_2] ;
           }
         }
       }
       
       
-      /* Derivatives with respect to pressure */
+      /* Derivatives with respect to unk1 */
       {
-        double  dp_l = dui[U_p_l] ;
-        double* dxdp_l = ComputeVariableDerivatives(el,t,dt,x,dp_l,I_P_L) ;
+        double  dunk1 = dui[U_Name1] ;
+        double* dx = ComputeVariableDerivatives(el,t,dt,x,dunk1,I_Unk1) ;
         
-        /* Mechanics: tangent Biot's coefficient */
+        /* Mechanics: tangent Biot's type coefficient */
         {
-          double* dsigdp_l = dxdp_l + I_SIG ;
-          double  dtrsigdp_l = dsigdp_l[0] + dsigdp_l[4] + dsigdp_l[8] ;
-          double  biot = - dtrsigdp_l / 3 ;
+          double* dsig = dx + I_SIG ;
           double* c1 = c0 + 81 ;
           int i ;
 
-          for(i = 0 ; i < 3 ; i++) B1(i,i) = biot ;
-
+          for(i = 0 ; i < 9 ; i++) c1[i] = dsig[i] ;
         }
     
-        /* Conservation of mass: storage matrix */
+        /* General storage matrix */
         {
-            double* c1 = c0 + 81 + 9 + 9 ;
+          double* c00 = c0 + 81 + m*9 + 9 ;
+          
+          /* First conservation equation */
+          {
+            double* c1 = c00 ;
         
-            c1[0] = dxdp_l[I_M_L] ;
+            c1[0] = dx[I_N_1] ;
+          }
+          
+          /* Second conservation equation */
+          {
+            double* c1 = c00 + 9 + m ;
+        
+            c1[0] = dx[I_N_2] ;
+          }
+        }
+      }
+      
+      
+      /* Derivatives with respect to unk2 */
+      {
+        double  dunk2 = dui[U_Name2] ;
+        double* dx = ComputeVariableDerivatives(el,t,dt,x,dunk2,I_Unk2) ;
+        
+        /* Mechanics: tangent Biot's type coefficient */
+        {
+          double* dsig = dx + I_SIG ;
+          double* c1 = c0 + 81 + 9 ;
+          int i ;
+
+          for(i = 0 ; i < 9 ; i++) c1[i] = dsig[i] ;
+        }
+    
+        /* General storage matrix */
+        {
+          double* c00 = c0 + 81 + m*9 + 9 + 1 ;
+          
+          /* First conservation equation */
+          {
+            double* c1 = c00 ;
+        
+            c1[0] = dx[I_N_1] ;
+          }
+          
+          /* Second conservation equation */
+          {
+            double* c1 = c00 + 9 + m ;
+        
+            c1[0] = dx[I_N_2] ;
+          }
         }
       }
     }
@@ -829,12 +1147,12 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
    * The variables are stored in the array x by using some indexes.
    * Two sets of indexes are used:
    * 1. The first set is used for the primary nodal unknowns. The
-   *    notation used for these indexes begins with "U_", e.g. "U_u", 
-   *    "U_p", etc.... E.g if displacements, pressure and temperature 
+   *    notation used for these indexes begins with "U_", e.g. "U_Mech", 
+   *    "U_Name1", etc.... E.g if displacements, pressure and temperature 
    *    are the nodal unknowns used in this order at each interpolation
-   *    point then "U_u = 0, U_p = 3, U_T = 4". They are used to extract
-   *    the value of the primary unknowns which will be used to
-   *    compute the secondary variables.
+   *    point then "U_Mech = 0, U_Name1 = 3, U_Name2 = 4". 
+   *    They are used to extract the value of the primary unknowns 
+   *    which will be used to compute the secondary variables.
    * 2. The second set is used for the secondary variables. The 
    *    notation used for these indexes begins with "I_". These
    *    secondary variables are stored in the x at these locations.
@@ -847,7 +1165,7 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
     
     /* Displacements */
     for(i = 0 ; i < dim ; i++) {
-      x[I_U + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_u + i) ;
+      x[I_U + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_Mech + i) ;
     }
     
     for(i = dim ; i < 3 ; i++) {
@@ -856,7 +1174,7 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
     
     /* Strains */
     {
-      double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_u) ;
+      double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_Mech) ;
     
       for(i = 0 ; i < 9 ; i++) {
         x[I_EPS + i] = eps[i] ;
@@ -865,15 +1183,29 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
       FEM_FreeBufferFrom(fem,eps) ;
     }
     
-    /* Pressure */
-    x[I_P_L] = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l) ;
+    /* Unknown 1 */
+    x[I_Unk1] = FEM_ComputeUnknown(fem,u,intfct,p,U_Name1) ;
     
-    /* Pressure gradient */
+    /* Unknown gradient */
     {
-      double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_p_l) ;
+      double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_Name1) ;
     
       for(i = 0 ; i < 3 ; i++) {
-        x[I_GRD_P_L + i] = grd[i] ;
+        x[I_GRD_Unk1 + i] = grd[i] ;
+      }
+      
+      FEM_FreeBufferFrom(fem,grd) ;
+    }
+    
+    /* Unknown 2 */
+    x[I_Unk2] = FEM_ComputeUnknown(fem,u,intfct,p,U_Name2) ;
+    
+    /* Unknown gradient */
+    {
+      double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_Name2) ;
+    
+      for(i = 0 ; i < 3 ; i++) {
+        x[I_GRD_Unk2 + i] = grd[i] ;
       }
       
       FEM_FreeBufferFrom(fem,grd) ;
@@ -903,8 +1235,8 @@ void  ComputeSecondaryVariables(Element_t* el,const double t,const double dt,dou
   /* Stresses */
   double* sig_n =  x_n + I_SIG ;
   /* Pressures */
-  double  p_l   = x[I_P_L] ;
-  double  p_ln  = x_n[I_P_L] ;
+  double  unk1   = x[I_Unk1] ;
+  double  unk1_n = x_n[I_Unk1] ;
   
   
   /* Compute the secondary variables in terms of the primary ones

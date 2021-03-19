@@ -7,6 +7,7 @@
 
 #include "Message.h"
 #include "Mry.h"
+#include "Tools/Math.h"
 #include "Elasticity.h"
 
 
@@ -189,21 +190,7 @@ void Elasticity_PrintStiffnessTensor(Elasticity_t* elasty)
   printf("\n") ;
   printf("4th rank elastic tensor:\n") ;
   
-  {
-    int i ;
-    
-    for(i = 0 ; i < 9 ; i++) {
-      int j = i - (i/3)*3 ;
-        
-      printf("C%d%d--:",i/3 + 1,j + 1) ;
-        
-      for (j = 0 ; j < 9 ; j++) {
-        printf(" % e",c[i*9 + j]) ;
-      }
-        
-      printf("\n") ;
-    }
-  }
+  Math_PrintStiffnessTensor(c) ;
 }
 
 

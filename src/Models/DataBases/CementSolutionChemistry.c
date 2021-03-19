@@ -676,8 +676,6 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(CementSolut
   
   /* Supplement with SO3 */
   CementSolutionChemistry_SupplementSystemWith_SO3(csc) ;
-  
-  arret("CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O") ;
 }
 
 
@@ -1252,13 +1250,13 @@ int CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t* cs
       double loga_h  = LogActivity(H) ;
       double a_h     = pow(10,loga_h) ;
       double a_oh    = pow(10,loga_oh) ;
-      double y[6] = {a3,a2,a1,a0+b0,b1,b2} ;
-      double tol = 1.e-4 ;
   
       x = poly4(a2,a1,a0+b0,b1,b2,a_h,a_oh) ;
       
       {
-        int k = Math_PolishPolynomialEquationRoot(y,5,&x,tol*x,20) ;
+        double y[6] = {a3,a2,a1,a0+b0,b1,b2} ;
+        double tol = 1.e-4*fabs(x) ;
+        int k = Math_PolishPolynomialEquationRoot(y,5,&x,tol,20) ;
         
         if(k < 0) return(-1) ;
       }
@@ -1826,17 +1824,10 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
  * The new values of a_h and a_oh are: x*a_h and a_oh/x.
  * Return the solution which is the closest to 1. */
 {
-  double tol = 1e-4 ;
-  double y[5] ;
   double x ;
   
-  y[0] = a ;
-  y[1] = b ;
-  y[2] = c ;
-  y[3] = d ;
-  y[4] = e ;
-  
   {
+    double y[5] = {a,b,c,d,e} ;
     int n = Math_ComputePolynomialEquationRoots(y,4) ;
     int i ;
     
@@ -1863,14 +1854,10 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
     */
   }
   
-  y[0] = a ;
-  y[1] = b ;
-  y[2] = c ;
-  y[3] = d ;
-  y[4] = e ;
-  
   {
-    int k = Math_PolishPolynomialEquationRoot(y,4,&x,tol*x,20) ;
+    double y[5] = {a,b,c,d,e} ;
+    double tol = 1e-4*fabs(x) ;
+    int k = Math_PolishPolynomialEquationRoot(y,4,&x,tol,20) ;
     
     if(k < 0) return(-1) ;
   }
@@ -1887,17 +1874,10 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
  * for x in the range defined by x*a_h < 1 and a_oh/x < 1 (a_oh < x < 1/a_h)
  * because a_h and a_oh should be < 1 (ie 0 < pH < -logKw) */
 {
-  double tol = 1e-4 ;
-  double y[5] ;
   double x ;
   
-  y[0] = a ;
-  y[1] = b ;
-  y[2] = c ;
-  y[3] = d ;
-  y[4] = e ;
-  
   {
+    double y[5] = {a,b,c,d,e} ;
     int n = Math_ComputePolynomialEquationRoots(y,4) ;
     int i ;
     
@@ -1920,14 +1900,10 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
     }
   }
   
-  y[0] = a ;
-  y[1] = b ;
-  y[2] = c ;
-  y[3] = d ;
-  y[4] = e ;
-  
   {
-    int k = Math_PolishPolynomialEquationRoot(y,4,&x,tol*x,20) ;
+    double y[5] = {a,b,c,d,e} ;
+    double tol = 1e-4*fabs(x) ;
+    int k = Math_PolishPolynomialEquationRoot(y,4,&x,tol,20) ;
     
     if(k < 0) return(-1) ;
   }

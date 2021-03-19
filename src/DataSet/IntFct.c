@@ -52,6 +52,24 @@ IntFct_t* (IntFct_Create)(int nn,int dim,const char* type)
 
 
 
+void IntFct_Delete(void* self)
+{
+  IntFct_t** pintfct = (IntFct_t**) self ;
+  IntFct_t*   intfct = *pintfct ;
+  
+  {
+    char* p = IntFct_GetType(intfct) ;
+    double* weight = IntFct_GetWeight(intfct) ;
+    
+    free(p) ;
+    free(weight) ;
+  }
+  
+  //free(intfct) ;
+}
+
+
+
 
 void (IntFct_AllocateMemory)(IntFct_t* intfct)
 {

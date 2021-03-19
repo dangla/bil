@@ -77,6 +77,24 @@ Elements_t*  Elements_New(const int n,const int nc)
 
 
 
+void Elements_Delete(void* self)
+{
+  Elements_t** pelements = (Elements_t**) self ;
+  Elements_t*   elements = *pelements ;
+  
+  {
+    Element_t* el = Elements_GetElement(elements) ;
+    Node_t** pnode = Element_GetPointerToNode(el) ;
+    
+    free(pnode) ;
+    free(el) ;
+  }
+  
+  free(elements) ;
+}
+
+
+
 void Elements_LinkUp(Elements_t* elements,Materials_t* materials)
 {
   int n_el = Elements_GetNbOfElements(elements) ;
@@ -232,6 +250,28 @@ void Elements_CreateMore(Elements_t* elements)
   /* The max and min sizes of elements */
   Elements_GetMaximumSizeOfElements(elements) = Elements_ComputeMaximumSizeOfElements(elements) ;
   Elements_GetMinimumSizeOfElements(elements) = Elements_ComputeMinimumSizeOfElements(elements) ;
+  
+}
+
+
+
+void Elements_DeleteMore(void* self)
+{
+  Elements_t** pelements = (Elements_t**) self ;
+  Elements_t*   elements = *pelements ;
+  
+  {
+    Element_t* el = Elements_GetElement(elements) ;
+    short int* upos = Element_GetUnknownPosition(el) ;
+    Buffer_t* buf = Element_GetBuffer(el) ;
+    ShapeFcts_t* shapefcts = Elements_GetShapeFcts(elements) ;
+    IntFcts_t* intfcts = Elements_GetIntFcts(elements) ;
+    
+    free(upos) ;
+    Buffer_Delete(&buf) ;
+    ShapeFcts_Delete(&shapefcts) ;
+    IntFcts_Delete(&intfcts) ;
+  }
   
 }
 
