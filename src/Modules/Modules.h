@@ -18,6 +18,13 @@ extern void       Modules_Print(char*) ;
 extern Module_t*  Modules_FindModule(Modules_t*,const char*) ;
 
 
+#include "ListOfModules.h"
+
+#define Modules_NbOfModules               (ListOfModules_NbOfModules)
+#define Modules_ListOfNames               ListOfModules_ModuleNames
+#define Modules_ListOfSetModuleProp       ListOfModules_Methods(_SetModuleProp)
+
+
 #define Modules_GetNbOfModules(MODS)    ((MODS)->n_modules)
 #define Modules_GetModule(MODS)         ((MODS)->module)
 

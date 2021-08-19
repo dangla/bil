@@ -128,7 +128,6 @@ static double rho_h2o_i0 ;
 /* Viscosity (Pa.s) */
 #include "WaterViscosity.h"
 /* Logarithm of water activity in brine */
-//#include "Log10ActivityOfWaterInBrine.h"
 #define LogActivityOfWater(c_s,T)      activity(c_s,T)
 //#define LogActivityOfWater(c_s,T)      activity_w_ideal(c_s,T)
 //#define LogActivityOfWater(c_s,T)      0
@@ -213,7 +212,7 @@ static double alpha_i ;
 /* Molecular diffusion coefficient of the salt */
 #define D_CA     ((Z_C - Z_A)*D_C*D_A/(Z_C*D_C - Z_A*D_A))
 static double D_salt ;
-/* Relative specific partial volume of the salt (m3/kg) */
+/* Relative partial specific volume of the salt (m3/kg) */
 static double vr_salt ;
 
 
@@ -356,7 +355,7 @@ void ComputePhysicoChemicalProperties(void)
 /* Salt properties
  * --------------- */
   D_salt = D_CA ;
-/* Relative specific partial volume of the salt (m3/kg) */
+/* Relative partial specific volume of the salt (m3/kg) */
   vr_salt = ((NU_A*V_A + NU_C*V_C)/M_Salt - V_H2O/M_H2O) ;
 }
 
@@ -444,6 +443,13 @@ int SetModelProp(Model_t* model)
   }
   
   Model_GetComputePropertyIndex(model) = pm ;
+  
+  Model_GetSequentialIndexOfUnknown(model)[E_The] = 0 ;
+  Model_GetSequentialIndexOfUnknown(model)[E_Mass] = 1 ;
+  Model_GetSequentialIndexOfUnknown(model)[E_Salt] = 1 ;
+  for(i = 0 ; i < dim ; i++) {
+    Model_GetSequentialIndexOfUnknown(model)[E_Mech+i] = 1 ;
+  }
 
   
   return(0) ;
@@ -1623,10 +1629,12 @@ void  ComputeSecondaryVariables(Element_t* el,const double t,const double dt,dou
 #endif
   
   double p_c = p_i - p_l ;
+  
 
   /* Saturations */
   double sd_l = SaturationDegree(p_c) ;
   double sd_i = 1 - sd_l ;
+  
 
   /* Mass densities */
   double alpha_l   = ALPHA_l(tem - T_m) ;
@@ -1644,10 +1652,32 @@ void  ComputeSecondaryVariables(Element_t* el,const double t,const double dt,dou
   double s_i   = C_i*log(tem/T_m) - S_m/M_H2O - alpha_i/rho_h2o_i0*(p_i - p_m) ;
   double s_sol = C_s*log(tem/T_m) ;
   double s_tot = s_sol + m_l*s_l + m_i*s_i ;
+    
+  
+  /* Backup */
+  
+  x[I_S_TOT   ] = s_tot ;
+  x[I_S_L     ] = s_l ;
+    
+  x[I_M_TOT   ] = m_l + m_i ;
+  x[I_M_SALT  ] = m_salt ;
+    
+  x[I_RHO_L   ] = rho_l ;
+  x[I_RHO_I   ] = rho_i ;
+    
+  x[I_SD_L    ] = sd_l ;
+
+  x[I_P_L     ] = p_l ;
+  x[I_P_I     ] = p_i ;
   
   /* Chemical potentials */
-  double mu_l = V_H2O*(p_l - p_m) + R_g*tem*lna ;
-  double mu_i = V_Ice*(p_i - p_m) + S_m*(tem - T_m) ;
+  {
+    double mu_l = V_H2O*(p_l - p_m) + R_g*tem*lna ;
+    double mu_i = V_Ice*(p_i - p_m) + S_m*(tem - T_m) ;
+    
+    x[I_MU_L    ] = mu_l ;
+    x[I_MU_I    ] = mu_i ;
+  }
   
   /* Stresses */
   {
@@ -1721,7 +1751,7 @@ void  ComputeSecondaryVariables(Element_t* el,const double t,const double dt,dou
     for(i = 0 ; i < 3 ; i++) {
       double w_l     = - kd_liq * grd_p_l[i] ;
       double j_salt  = - kf_salt * grd_c_s[i] ;
-      double kc_salt = M_Salt*c_s/rho_l ;
+      double kc_salt =   M_Salt * c_s / rho_l ;
       double q       = - kth * grd_tem[i] ;
   
       w_tot[i]   = w_l ;
@@ -1730,19 +1760,6 @@ void  ComputeSecondaryVariables(Element_t* el,const double t,const double dt,dou
     }
   }
   
-  
-  /* Backup */
-  x[I_M_TOT   ] = m_l + m_i ;
-  x[I_M_SALT  ] = m_salt ;
-  x[I_S_TOT   ] = s_tot ;
-  x[I_S_L     ] = s_l ;
-  x[I_SD_L    ] = sd_l ;
-  x[I_P_L     ] = p_l ;
-  x[I_P_I     ] = p_i ;
-  x[I_RHO_L   ] = rho_l ;
-  x[I_RHO_I   ] = rho_i ;
-  x[I_MU_L    ] = mu_l ;
-  x[I_MU_I    ] = mu_i ;
 }
 
 

@@ -11,25 +11,36 @@
 
 
 
-static LocalVariableVector_t*     LocalVariableVector_Create(int,int) ;
-static void                       LocalVariableVector_Delete(void*) ;
-
-
-LocalVariableVectors_t* LocalVariableVectors_Create(int NbOfVariables)
+LocalVariableVectors_t* LocalVariableVectors_Create(int nvar)
 {
   LocalVariableVectors_t* lvvs = (LocalVariableVectors_t*) Mry_New(LocalVariableVectors_t) ;
   
-  //LocalVariableVectors_GetNbOfVariableVectors(lvvs) = 0 ;
-  
-  LocalVariableVectors_GetNbOfVariables(lvvs) = NbOfVariables ;
   
   {
     int nvec = LocalVariableVectors_MaxNbOfVariableVectors ;
-    int nvar = NbOfVariables ;
+    LocalVariableVector_t* lvv = (LocalVariableVector_t*) Mry_New(LocalVariableVector_t[nvec]) ;
+    int i ;
+    
+    for(i = 0 ; i < nvec ; i++) {
+      LocalVariableVector_t* lvvi = LocalVariableVector_Create(nvar) ;
+      
+      lvv[i] = lvvi[0] ;
+    }
+    
+    LocalVariableVectors_GetLocalVariableVector(lvvs) = lvv ;
+    LocalVariableVectors_GetNbOfVariableVectors(lvvs) = nvec ;
+    LocalVariableVectors_GetNbOfVariables(lvvs)       = nvar ;
+  }
+  
+  
+  #if 0
+  {
+    int nvec = LocalVariableVectors_MaxNbOfVariableVectors ;
     LocalVariableVector_t* lvv = LocalVariableVector_Create(nvec,nvar) ;
     
     LocalVariableVectors_GetLocalVariableVector(lvvs) = lvv ;
   }
+  #endif
   
   return(lvvs) ;
 }
@@ -42,9 +53,10 @@ void LocalVariableVectors_Delete(void* self)
   LocalVariableVectors_t*   lvvs =  *plvvs ;
   
   {
+    int nvec = LocalVariableVectors_GetNbOfVariableVectors(lvvs) ;
     LocalVariableVector_t* lvv = LocalVariableVectors_GetLocalVariableVector(lvvs) ;
     
-    LocalVariableVector_Delete(&lvv) ;
+    LocalVariableVector_Delete(&lvv,nvec) ;
   }
   
   free(lvvs) ;
@@ -55,7 +67,7 @@ void LocalVariableVectors_Delete(void* self)
 
 
 
-
+#if 0
 LocalVariableVector_t* LocalVariableVector_Create(int NbOfVectors,int NbOfVariables)
 {
   LocalVariableVector_t* lvv = (LocalVariableVector_t*) Mry_New(LocalVariableVector_t,NbOfVectors) ;
@@ -98,3 +110,4 @@ void LocalVariableVector_Delete(void* self)
   free(lvv) ;
   *plvv = NULL ;
 }
+#endif

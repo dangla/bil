@@ -7,62 +7,103 @@
 #include "Mesh.h"
 #include "Message.h"
 #include "BilLib.h"
+#include "Mry.h"
 #include "CoordinateFormat.h"
 
 
 
-CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t* mesh,Options_t* options)
+CoordinateFormat_t* (CoordinateFormat_CreateSelectedMatrix)(Mesh_t* mesh,Options_t* options,const int imatrix)
 /** Create a matrix in CoordinateFormat format with duplicate entries */
 {
-  CoordinateFormat_t* ac = (CoordinateFormat_t*) malloc(sizeof(CoordinateFormat_t)) ;
-
-  assert(ac) ;
+  CoordinateFormat_t* cfmt = (CoordinateFormat_t*) Mry_New(CoordinateFormat_t) ;
   
   {
     /* Nb of entries */
     {
       int nnz = Mesh_ComputeNbOfMatrixEntries(mesh) ;
       
-      CoordinateFormat_GetNbOfNonZeroValues(ac) = nnz ;
+      CoordinateFormat_GetNbOfNonZeroValues(cfmt) = nnz ;
     }
     
     /* Allocate memory space for the values */
     {
-      int nnz = CoordinateFormat_GetNbOfNonZeroValues(ac) ;
+      int nnz = CoordinateFormat_GetNbOfNonZeroValues(cfmt) ;
       /* The length required by ma38 must not be lower than 2*nnz */
       int ff = Options_GetFillFactor(options) ;
       int lv  = ff*(2*nnz) ;
-      size_t sz = lv * sizeof(double) ;
-      double* v = (double*) malloc(sz) ;
+      double* v = (double*) Mry_New(double[lv]) ;
       
-      assert(v) ;
-      
-      CoordinateFormat_GetLengthOfArrayValue(ac) = lv ;
-      CoordinateFormat_GetNonZeroValue(ac) = v ;
+      CoordinateFormat_GetLengthOfArrayValue(cfmt) = lv ;
+      CoordinateFormat_GetNonZeroValue(cfmt) = v ;
     }
     
     /* Allocate memory space for the indices, namely:
      * the row and column indices;
      * some other informations provided by ma38 */
     {
-      int nnz = CoordinateFormat_GetNbOfNonZeroValues(ac) ;
-      int n = Mesh_GetNbOfMatrixColumns(mesh) ;
+      int nnz = CoordinateFormat_GetNbOfNonZeroValues(cfmt) ;
+      int n = Mesh_GetNbOfMatrixColumns(mesh)[imatrix] ;
       /* The length required by ma38 must not be lower than 3*nnz+2*n+1 */
       int ff = Options_GetFillFactor(options) ;
       int lindex = ff*(3*nnz + 2*n + 1) ;
-      size_t sz = lindex * sizeof(int) ;
-      int* index = (int*) malloc(sz) ;
+      int* index = (int*) Mry_New(int[lindex]) ;
       
-      assert(index) ;
-      
-      CoordinateFormat_GetLengthOfArrayIndex(ac) = lindex ;
-      CoordinateFormat_GetIndex(ac)              = index ;
+      CoordinateFormat_GetLengthOfArrayIndex(cfmt) = lindex ;
+      CoordinateFormat_GetIndex(cfmt)              = index ;
     }
   }
   
-  CoordinateFormat_GetOptions(ac) = options ;
+  CoordinateFormat_GetOptions(cfmt) = options ;
   
-  return(ac) ;
+  return(cfmt) ;
+}
+
+
+
+CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t* mesh,Options_t* options)
+/** Create a matrix in CoordinateFormat format with duplicate entries */
+{
+  CoordinateFormat_t* cfmt = (CoordinateFormat_t*) Mry_New(CoordinateFormat_t) ;
+  
+  {
+    /* Nb of entries */
+    {
+      int nnz = Mesh_ComputeNbOfMatrixEntries(mesh) ;
+      
+      CoordinateFormat_GetNbOfNonZeroValues(cfmt) = nnz ;
+    }
+    
+    /* Allocate memory space for the values */
+    {
+      int nnz = CoordinateFormat_GetNbOfNonZeroValues(cfmt) ;
+      /* The length required by ma38 must not be lower than 2*nnz */
+      int ff = Options_GetFillFactor(options) ;
+      int lv  = ff*(2*nnz) ;
+      double* v = (double*) Mry_New(double[lv]) ;
+      
+      CoordinateFormat_GetLengthOfArrayValue(cfmt) = lv ;
+      CoordinateFormat_GetNonZeroValue(cfmt) = v ;
+    }
+    
+    /* Allocate memory space for the indices, namely:
+     * the row and column indices;
+     * some other informations provided by ma38 */
+    {
+      int nnz = CoordinateFormat_GetNbOfNonZeroValues(cfmt) ;
+      int n = Mesh_GetNbOfMatrixColumns(mesh)[0] ;
+      /* The length required by ma38 must not be lower than 3*nnz+2*n+1 */
+      int ff = Options_GetFillFactor(options) ;
+      int lindex = ff*(3*nnz + 2*n + 1) ;
+      int* index = (int*) Mry_New(int[lindex]) ;
+      
+      CoordinateFormat_GetLengthOfArrayIndex(cfmt) = lindex ;
+      CoordinateFormat_GetIndex(cfmt)              = index ;
+    }
+  }
+  
+  CoordinateFormat_GetOptions(cfmt) = options ;
+  
+  return(cfmt) ;
 }
 
 
@@ -81,20 +122,14 @@ void (CoordinateFormat_Delete)(void* self)
 
 
 
-
-
-
-int CoordinateFormat_AssembleElementMatrix(CoordinateFormat_t* a,Element_t* el,double* ke, int nnz)
+int CoordinateFormat_AssembleElementMatrix(CoordinateFormat_t* a,double* ke,int* col,int* row,int ndof,int nnz)
 /** Assemble the local matrix ke into the global matrix a 
  *  Return the updated nb of entries */
 {
 #define KE(i,j) (ke[(i)*ndof+(j)])
-  int   ndof   = Element_GetNbOfDOF(el) ;
   double*  val = CoordinateFormat_GetNonZeroValue(a) ;
   int*  colind = CoordinateFormat_GetColumnIndexOfValue(a) ;
   int*  rowind = CoordinateFormat_GetRowIndexOfValue(a) ;
-  int*  row    = Element_ComputeMatrixRowAndColumnIndices(el) ;
-  int*  col    = row + ndof ;
   
   
   {

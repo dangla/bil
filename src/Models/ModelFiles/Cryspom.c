@@ -293,7 +293,6 @@ static Elasticity_t* elasty ;
 #include "WaterViscosity.h"
 #include "AirViscosity.h"
 #include "PhysicalConstant.h"
-#include "Log10ActivityOfWaterInBrine.h"
 
 void ComputePhysicoChemicalProperties(double TK)
 {
@@ -312,10 +311,6 @@ void ComputePhysicoChemicalProperties(double TK)
   
   /* Physical constants */
   RT      = PhysicalConstant(PerfectGasConstant)*TK ;
-  
-  {
-    //double aw = Log10ActivityOfWaterInBrine("NaCl",0.001) ;
-  }
 }
 
 

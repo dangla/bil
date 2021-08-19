@@ -54,14 +54,17 @@ MODELNAMES  = ${subst ${SPACE},${COMMA},${SELECTEDMODELNAMES}}
 clean:
 	rm -f *.o *~ 
 
+
 clean-models:
 	rm -f ../ListOfModels.inc
+
 
 replace:
 	for file in ${SELECTEDFILES}; do (\
 	sed 's/^void ex/int ex/g' $$file > $$file.bak && \
 	mv $$file.bak $$file \
 	); done
+
 
 work_1:
 	for file in ${SELECTEDFILES}; do (\
@@ -71,11 +74,13 @@ work_1:
 	mv $$file.bak $$file \
 	); done
 
+
 work_2:
 	for file in ${SELECTEDFILES}; do (\
 	sed 's/^  printf(TITLE"\\n")/  printf(TITLE)/g' $$file > $$file.bak && \
 	mv $$file.bak $$file \
 	); done
+
 
 work_3:
 	for file in ${ALLFILES}; do (\
@@ -83,11 +88,13 @@ work_3:
 	mv $$file.bak $$file \
 	); done
 
+
 work_4:
 	for file in ${ALLFILES}; do (\
 	sed '/chsurf/ {s/chsurf(x,r,dim,geom,dt,t,cg,el)/chsurf(x,r,dim,geom,dt,t,cg,el,el.fi)/}' $$file > $$file.bak && \
 	mv $$file.bak $$file \
 	); done
+
 
 work_5:
 	for file in ${ALLFILES}; do (\
@@ -95,11 +102,13 @@ work_5:
 	mv $$file.bak $$file \
 	); done
 
+
 work_6:
 	for file in ${ALLFILES}; do (\
 	sed 's/define MODELINDEX/define MODELNAME/' $$file > $$file.bak && \
 	mv $$file.bak $$file \
 	); done
+
 
 work_7:
 	for file in ${ALLFILES}; do (\
@@ -107,11 +116,13 @@ work_7:
 	mv $$file.bak $$file \
 	); done
 
+
 work_8:
 	for file in ${ALLFILES}; do (\
 	sed '/^#include "..\/lib.h"/d' $$file > $$file.bak && \
 	mv $$file.bak $$file \
 	); done
+
 
 work_9:
 	for file in ${ALLFILES}; do (\
@@ -119,13 +130,15 @@ work_9:
 	mv $$file.bak $$file \
 	); done
 
+
 work_10:
 	for file in ${ALLFILES}; do (\
 	sed 's/^#include "Common.h/#include "CommonModel.h/g' $$file > $$file.bak && \
 	mv $$file.bak $$file \
 	); done
 
-test:
+
+printfilenames:
 	@echo '----------------------------------------------'
 	@echo 'All files C and C++ included here:'
 	@echo 'ALLFILES = '${ALLFILES}
@@ -152,6 +165,7 @@ test:
 	@echo 'Other files:'
 	@echo 'OTHERFILES = '${OTHERFILES}
 	@echo '----------------------------------------------'
-	
+
+
 showtitles:
-	grep --include="*.c" --include="*.cpp" -r -T --color -e "#define TITLE" . 
+	grep --include="*.c" --include="*.cpp" -T --color -e "#define TITLE" *.c*

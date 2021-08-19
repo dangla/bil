@@ -1,0 +1,30 @@
+#include <stdio.h>
+
+int main(int argc, char** argv)
+{
+    // this comment will be removed
+    if (argc > 1) {
+        printf("Too many arguments.\n");   // this too will be removed
+        return 1;
+    }
+    printf("Please vist http://this.will.not.be.removed.com\n");
+    printf("/* This will stay */\n");
+    printf("\"/* This will stay too */\"\n");
+    printf("//and so will this\\");
+    // but not this
+    printf("just \"ano//ther\" test.");
+    return 0;
+}
+/*
+    this shall disappear
+*/
+#include <string>
+int main(int argc, char** argv)
+{
+    string foo = ""/*remove that!**/;
+    // Remove /* this
+    int butNotThis = 42;
+    // But do */ remove this
+    int bar = 4 /*remove this*/* 3; // but don't remove that 3. */
+    return 0;//just a comment
+}/*end of the file has been reached.*/

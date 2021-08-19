@@ -899,7 +899,7 @@ void (OutputFiles_BackupSolutionAtTime_)(OutputFiles_t* outputfiles,DataSet_t* d
 
 
 
-void (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t* outputfiles,DataSet_t* dataset,double t,double t_0)
+void (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t* outputfiles,DataSet_t* dataset,double t,const char* mode)
 /* Backup solutions at given points in the approriate output files */
 {
   Mesh_t* mesh = DataSet_GetMesh(dataset) ;
@@ -916,7 +916,8 @@ void (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t* outputfiles,DataSet_t* 
   
   
   /* Open point files for writing */
-  if(t == t_0) {
+  //if(t == t_0) {
+  if(String_Is(mode,"o")) {
     for(p = 0 ; p < npt ; p++) {
       TextFile_t* textfile = OutputFile_GetTextFile(outputfile + p) ;
       
@@ -933,7 +934,8 @@ void (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t* outputfiles,DataSet_t* 
     FILE *ficp = TextFile_GetFileStream(textfile) ;
     
     /* First lines: version and point coordinates */
-    if(t == t_0) {
+    //if(t == t_0) {
+    if(String_Is(mode,"o")) {
       int    j ;
       time_t date ;
       time(&date) ;
@@ -963,7 +965,8 @@ void (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t* outputfiles,DataSet_t* 
         }
   
         /* Headings: Model and views */
-        if(t == t_0) {
+        //if(t == t_0) {
+        if(String_Is(mode,"o")) {
           int    j ;
           
           fprintf(ficp,"# Model = %s\n",codename) ;

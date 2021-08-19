@@ -30,7 +30,7 @@
 
 
 /* Nb of equations */
-#define NEQ    	  (8)
+#define NEQ       (8)
 
 
 /* Nb of nodes (el must be used below) */
@@ -38,7 +38,7 @@
 
 
 /* Nb of terms */
-#define NVE    	  ((9 + CementSolutionDiffusion_NbOfConcentrations)*NN)
+#define NVE       ((9 + CementSolutionDiffusion_NbOfConcentrations)*NN)
 #define NVI       (8*NN*NN + 2*NN)
 #define NV0       (2)
 
@@ -82,15 +82,15 @@
 
 /* Names of nodal unknowns */
 #if (U_CO2 == LOG_U)
-#define LogC_CO2(n)	  (UNKNOWN(n,U_C_CO2))
-#define LogC_CO2n(n)	(UNKNOWNn(n,U_C_CO2))
-#define C_CO2(n)	    (pow(10,UNKNOWN(n,U_C_CO2)))
-#define C_CO2n(n)	    (pow(10,UNKNOWNn(n,U_C_CO2)))
+#define LogC_CO2(n)   (UNKNOWN(n,U_C_CO2))
+#define LogC_CO2n(n)  (UNKNOWNn(n,U_C_CO2))
+#define C_CO2(n)      (pow(10,UNKNOWN(n,U_C_CO2)))
+#define C_CO2n(n)     (pow(10,UNKNOWNn(n,U_C_CO2)))
 #else
-#define C_CO2(n)	    (UNKNOWN(n,U_C_CO2))
-#define C_CO2n(n)	    (UNKNOWNn(n,U_C_CO2))
-#define LogC_CO2(n)	  (log10(UNKNOWN(n,U_C_CO2)))
-#define LogC_CO2n(n)	(log10(UNKNOWNn(n,U_C_CO2)))
+#define C_CO2(n)      (UNKNOWN(n,U_C_CO2))
+#define C_CO2n(n)     (UNKNOWNn(n,U_C_CO2))
+#define LogC_CO2(n)   (log10(UNKNOWN(n,U_C_CO2)))
+#define LogC_CO2n(n)  (log10(UNKNOWNn(n,U_C_CO2)))
 #endif
 
 #define ZN_Si_S(n)    (UNKNOWN(n,U_ZN_Si_S))
@@ -257,7 +257,7 @@
  * ----------------------------------------------- */
 #define M_CaOH2        MolarMassOfMolecule(CaO2H2)
 /* Molar volume of CH solid (dm3/mole) */
-#define V_CH	    	  (33 * cm3)
+#define V_CH          (33 * cm3)
 
 
 
@@ -265,7 +265,7 @@
  * ------------------------------------------- */
 #define M_CaCO3        MolarMassOfMolecule(CaCO3)
 /* Molar volume of CC (dm3/mole) */
-#define V_CC	      	(37 * cm3)
+#define V_CC          (37 * cm3)
 
 
 /* Chloride adsorption curve 
@@ -295,7 +295,8 @@ static int     pm(const char* s) ;
 static void    GetProperties(Element_t*) ;
 
 static double* ComputeVariables(Element_t*,double**,double*,double,int) ;
-static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
+//static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
+static int     ComputeSecondaryVariables(Element_t*,double,double,double*) ;
 static double* ComputeVariableDerivatives(Element_t*,double,double*,double,int) ;
 
 static double  dn1_caoh2sdt(double,double) ;
@@ -400,7 +401,7 @@ int pm(const char* s)
   else if(strcmp(s,"A_2") == 0)     return (8) ;
   else if(strcmp(s,"C_2") == 0)     return (9) ;
   else if(strcmp(s,"Radius_CH") == 0) return (10) ;
-  else if(strcmp(s,"D") == 0) 	    return (11) ;
+  else if(strcmp(s,"D") == 0)       return (11) ;
   else if(strcmp(s,"Tau") == 0)     return (12) ;
   else if(strcmp(s,"frac") == 0)    return (13) ;
   else if(strcmp(s,"phi_r") == 0)   return (14) ;
@@ -644,8 +645,8 @@ int ComputeInitialState(Element_t* el)
   
   /* Pre-initialization */
   {
-    double c_na_tot 	= c_na0 ;
-    double c_k_tot  	= c_k0 ;
+    double c_na_tot   = c_na0 ;
+    double c_k_tot    = c_k0 ;
     int i ;
 
     for(i = 0 ; i < nn ; i++) {
@@ -823,9 +824,9 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
         if(c_co2 < 0 || c_oh <= 0 || c_h2o <= 0 || c_na < 0 || c_k < 0 || c_ca < 0 || n_si_s < 0. || n_ch < 0.) {
           double x0 = Element_GetNodeCoordinate(el,i)[0] ;
           double n_cc       = x[I_N_CC] ;
-          double c_naoh    	= HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaOH) ;
-          double c_nahco3  	= HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaHCO3) ;
-          double c_naco3 	  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaCO3) ;
+          double c_naoh     = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaOH) ;
+          double c_nahco3   = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaHCO3) ;
+          double c_naco3    = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaCO3) ;
           printf("\n") ;
           printf("en x     = %e\n",x0) ;
           printf("c_co2    = %e\n",c_co2) ;
@@ -1100,7 +1101,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     /* contenus solides */
     double n_si_s     = x[I_N_Si_S] ;
     double n_ca_s     = x[I_N_Ca_S] ;
-    double n_cc 	    = x[I_N_CC] ;
+    double n_cc       = x[I_N_CC] ;
     double n_ch       = x[I_N_CH] ;
     double s_ch       = HardenedCementChemistry_GetSaturationIndexOf(hcc,CH) ;
     
@@ -1133,7 +1134,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double grd_psi   = (PSI(1) - PSI(0))/dx ;
     
     double coeff_permeability = PermeabilityCoefficient(el,phi) ;
-	  double k_l  = (k_int/mu_l)*RelativePermeabilityToLiquid(p_c)*coeff_permeability ;
+    double k_l  = (k_int/mu_l)*RelativePermeabilityToLiquid(p_c)*coeff_permeability ;
 
 
     /* quantites exploitees */
@@ -1262,7 +1263,7 @@ void ComputeTransferCoefficients(Element_t* el,double** u,double* f)
 
     /* Porosity */
     double phi        = x[I_Phi] ;
-	
+  
     /* Permeability */
     double coeff_permeability = PermeabilityCoefficient(el,phi) ; /* Change here */
     double k_l  = (k_int/mu_l)*RelativePermeabilityToLiquid(p_c)*coeff_permeability ;
@@ -1280,15 +1281,15 @@ void ComputeTransferCoefficients(Element_t* el,double** u,double* f)
     double phi_c   = 0.17 ; /*Percolation capilar porosity*/
     
     /*Diffusivity according to Oh and Jang, CCR203*/
-		double n = 2.7 ; 		/* OPC n = 2.7  --------------  Fly ash n = 4.5 */
-    double ds_norm = 5e-5 ;	/* OPC ds_norm = 1e-4 --------  Fly ash ds_norm = 5e-5 */
-		double m_phi = 0.5*( pow(ds_norm,1/n) + phi_cap/(1-phi_c)*(1 - pow(ds_norm,1/n)) - phi_c/(1-phi_c)) ;
+    double n = 2.7 ;    /* OPC n = 2.7  --------------  Fly ash n = 4.5 */
+    double ds_norm = 5e-5 ; /* OPC ds_norm = 1e-4 --------  Fly ash ds_norm = 5e-5 */
+    double m_phi = 0.5*( pow(ds_norm,1/n) + phi_cap/(1-phi_c)*(1 - pow(ds_norm,1/n)) - phi_c/(1-phi_c)) ;
     double iff =  pow( m_phi + sqrt( m_phi*m_phi +  pow(ds_norm,1/n)*phi_c/(1-phi_c)),n)*pow(s_l,4.5) ;
     
     /*Diffusivity : ITZ for mortars and concrete */
 
     /*Diffusivity according to Bazant et Najjar */
-		/*double iff    = 0.00029*exp(9.95*phi)/(1+625*pow((1-s_l),4)) ;*/
+    /*double iff    = 0.00029*exp(9.95*phi)/(1+625*pow((1-s_l),4)) ;*/
 
     /* Humidité relative */
     /* double hr = exp(-p_c*M_H2O/(RT*rho_l)) ; */
@@ -1297,7 +1298,7 @@ void ComputeTransferCoefficients(Element_t* el,double** u,double* f)
     /* Diffusion */
     {
       KF_CO2[i]      = phi_g*tau*d_co2 ;
-      /* KF_CO2[i]    	= (1.6e-3)*pow(phi,1.8)*pow(1-hr,2.2) ; */
+      /* KF_CO2[i]      = (1.6e-3)*pow(phi,1.8)*pow(1-hr,2.2) ; */
     }
     
     /* Liquid tortuosity */
@@ -1928,11 +1929,11 @@ double PermeabilityCoefficient(Element_t* el,double phi)
     /* frac  = fractionnal length of pore bodies (0.8) */
     /* phi_r = fraction of initial porosity (phi/phi0) at which permeability is 0 */
 
-	  double S_s =  (phi0 - phi)/phi0    ; /* saturation en solide */
-	  double w = 1 + (1/frac)/(1/phi_r - 1) ;
+    double S_s =  (phi0 - phi)/phi0    ; /* saturation en solide */
+    double w = 1 + (1/frac)/(1/phi_r - 1) ;
     double t = (1 - S_s - phi_r)/(1 - phi_r) ;
-	  double verma_pruess = (t > 0) ? t*t*(1 - frac + (frac/(w*w)))/(1 - frac + frac*(pow(t/(t + w - 1),2.))) : 0 ;
-	
+    double verma_pruess = (t > 0) ? t*t*(1 - frac + (frac/(w*w)))/(1 - frac + frac*(pow(t/(t + w - 1),2.))) : 0 ;
+  
     /* permeability coefficient */
     coeff_permeability = verma_pruess ;
   }

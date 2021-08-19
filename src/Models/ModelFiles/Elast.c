@@ -42,7 +42,8 @@ static void    GetProperties(Element_t*,double) ;
 static double* MicrostructureElasticTensor(DataSet_t*,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double*,double,double,int) ;
-static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
+static void    ComputeSecondaryVariables(Element_t*,double,double,double*) ;
+//static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
 
 static void    ComputeMicrostructure(DataSet_t*,double*,double*) ;
 static void    CheckMicrostructureDataSet(DataSet_t*) ;
@@ -65,11 +66,26 @@ static Elasticity_t* elasty ;
 #define ItIsPeriodic  (Geometry_IsPeriodic(Element_GetGeometry(el)))
 
 
-#define NbOfVariables  (24)
+/* We define some indices for the local variables */
+enum {
+I_U,
+I_U2     = I_U + 2,
 
-#define I_EPS          (3)
-#define I_SIG          (12)
-#define I_Fmass        (21)
+I_EPS,
+I_EPS8   = I_EPS + 8,
+
+I_SIG,
+I_SIG8   = I_SIG + 8,
+
+I_Fmass,
+I_Fmass2 = I_Fmass + 2,
+
+I_Last
+} ;
+
+
+#define NbOfVariables    (I_Last)
+
 
 
 int pm(const char* s)
@@ -197,7 +213,7 @@ int SetModelProp(Model_t* model)
   Model_GetComputePropertyIndex(model) = pm ;
   
   Model_GetNbOfVariables(model) = NbOfVariables ;
-  Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
+  //Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
   
   return(0) ;
 }
@@ -789,8 +805,7 @@ void ComputeMicrostructure(DataSet_t* jdd,double* macrograd,double* sig)
     
   /* Compute the microstructure */
   {
-    Modules_t* modules = DataSet_GetModules(jdd) ;
-    Module_t* module_i = Modules_FindModule(modules,"Module1") ;
+    Module_t* module_i = DataSet_GetModule(jdd) ;
     
     Module_ComputeProblem(module_i,jdd) ;
   }

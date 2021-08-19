@@ -9,8 +9,9 @@ struct DataSet_s      ; typedef struct DataSet_s      DataSet_t ;
 
 #include "Options.h"
 
-extern DataSet_t*  (DataSet_Create)(char*,Options_t*) ;
-extern DataSet_t*  (DataSet_Create1)(char*,Options_t*) ;
+extern DataSet_t*  (DataSet_Create)    (char*,Options_t*) ;
+extern DataSet_t*  (DataSet_Create1)   (char*,Options_t*) ;
+extern void        (DataSet_PrintData) (DataSet_t*,char*) ;
 
 
 #include "Mry.h"
@@ -38,7 +39,21 @@ extern DataSet_t*  (DataSet_Create1)(char*,Options_t*) ;
 #define DataSet_GetTimeStep(DS)       ((DS)->timestep)
 #define DataSet_GetIterProcess(DS)    ((DS)->iterprocess)
 #define DataSet_GetOptions(DS)        ((DS)->options)
-#define DataSet_GetModules(DS)        ((DS)->modules)
+//#define DataSet_GetModules(DS)        ((DS)->modules)
+#define DataSet_GetModule(DS)         ((DS)->module)
+
+
+
+
+#define DataSet_GetSequentialIndex(DS) \
+        Module_GetSequentialIndex(DataSet_GetModule(DS))
+        
+        
+#define DataSet_GetNbOfSequences(DS) \
+        Module_GetNbOfSequences(DataSet_GetModule(DS))
+
+
+
 
 
 
@@ -54,10 +69,13 @@ extern DataSet_t*  (DataSet_Create1)(char*,Options_t*) ;
 #include "Functions.h"
 #include "Fields.h"
 #include "ObVals.h"
-#include "Models.h"
 #include "TimeStep.h"
 #include "IterProcess.h"
 #include "Modules.h"
+
+
+
+
 
 struct DataSet_s {               /* set of data for the problem to work out */
   DataFile_t*    datafile ;      /* data file */
@@ -77,7 +95,8 @@ struct DataSet_s {               /* set of data for the problem to work out */
   TimeStep_t*    timestep ;      /* time step managing */
   IterProcess_t* iterprocess ;   /* iterative process */
   Options_t*     options ;       /* options */
-  Modules_t*     modules ;       /* modules */
+  //Modules_t*     modules ;       /* modules */
+  Module_t*      module ;        /* module */
 } ;
 
 

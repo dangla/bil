@@ -24,7 +24,7 @@ WFLAGS := -Wall -Wcast-align -Wcast-qual -Wnested-externs -Wpointer-arith -Wmiss
 # Directory flags (-I replaced by -iquote)
 #----------------
 # DFLAGS = -I${BIL_PATH}
-DFLAGS = -iquote${BIL_PATH}
+DFLAGS = -iquote${BIL_PATH} -D '__BASEFILE__=${basename ${notdir $@}}'
 
 
 # Preprocessor flags

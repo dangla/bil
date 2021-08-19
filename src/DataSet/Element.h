@@ -25,12 +25,13 @@ extern double*  (Element_ComputeNormalVector)                   (Element_t*,doub
 extern double*  (Element_ComputeCoordinateInReferenceFrame)     (Element_t*,double*) ;
 extern int      (Element_ComputeNbOfSolutions)                  (Element_t*) ;
 extern int*     (Element_ComputeMatrixRowAndColumnIndices)      (Element_t*) ;
+extern int*     (Element_ComputeSelectedMatrixRowAndColumnIndices)(Element_t*,const int) ;
 extern double   (Element_ComputeSize)                           (Element_t*) ;
 extern double*  (Element_ComputeSizes)                          (Element_t*) ;
 extern int      (Element_ComputeNbOfMatrixEntries)              (Element_t*) ;
 extern double*  (Element_ComputeJacobianMatrix)                 (Element_t*,double*,int,const int) ;
-//extern double   (Element_ComputeJacobianDeterminant)            (Element_t*,double*,int,const int) ;
-//extern double*  (Element_ComputeInverseJacobianMatrix)          (Element_t*,double*,int,const int) ;
+extern double   (Element_ComputeJacobianDeterminant)            (Element_t*,double*,int,const int) ;
+extern double*  (Element_ComputeInverseJacobianMatrix)          (Element_t*,double*,int,const int) ;
 extern int      (Element_OverlappingNode)                       (Element_t*,const int) ;
 extern int      (Element_HasZeroThickness)                      (Element_t*) ;
 extern int      (Element_NbOfOverlappingNodes)                  (Element_t*) ;
@@ -89,9 +90,12 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
 
 
 
-/* Access to previous elementsol */
+/* Access to elementsol */
 #define Element_GetPreviousElementSol(ELT) \
         ElementSol_GetPreviousElementSol(Element_GetElementSol(ELT))
+        
+#define Element_GetNextElementSol(ELT) \
+        ElementSol_GetNextElementSol(Element_GetElementSol(ELT))
 
 
 
@@ -313,7 +317,13 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
 #define Element_GetDataFile(ELT) \
         Model_GetDataFile(Element_GetModel(ELT))
         
-        
+
+/* Method */
+#include "String.h"
+
+#define Element_MethodIs(ELT,MTH) \
+        String_Is(Material_GetMethod(Element_GetMaterial(ELT)),MTH)
+
 
 
 

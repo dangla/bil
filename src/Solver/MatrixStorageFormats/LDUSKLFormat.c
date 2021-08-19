@@ -6,6 +6,7 @@
 #include "Options.h"
 #include "Mesh.h"
 #include "Message.h"
+#include "Mry.h"
 #include "LDUSKLFormat.h"
 
 
@@ -13,21 +14,160 @@
 /* Extern functions */
 
 
-LDUSKLFormat_t* LDUSKLFormat_Create(Mesh_t* mesh)
+LDUSKLFormat_t* LDUSKLFormat_CreateSelectedMatrix(Mesh_t* mesh,const int imatrix)
 /** Create a matrix in LDU Skyline format */
 {
-  LDUSKLFormat_t* a = (LDUSKLFormat_t*) malloc(sizeof(LDUSKLFormat_t)) ;
+  LDUSKLFormat_t* a = (LDUSKLFormat_t*) Mry_New(LDUSKLFormat_t) ;
   
-  assert(a) ;
+  if(imatrix >= Mesh_GetNbOfMatrices(mesh)) {
+    arret("LDUSKLFormat_CreateSelectedMatrix") ;
+  }
 
 
   /* Allocation of space */
   {
-    int n_col = Mesh_GetNbOfMatrixColumns(mesh) ;
+    int n_col = Mesh_GetNbOfMatrixColumns(mesh)[imatrix] ;
     /*  les hauteurs de colonne (hc) */
-    int*  hc = (int*) malloc(n_col*sizeof(int)) ;
+    int*  hc = (int*) Mry_New(int[n_col]) ;
+
+
+    {
+      int i ;
+      
+      for(i = 0 ; i < n_col ; i++) hc[i] = 0 ;
+    }
     
-    assert(hc) ;
+
+    {
+      int n_ddl ;
+      
+      {
+        int n_no = Mesh_GetNbOfNodes(mesh) ;
+        Node_t* no = Mesh_GetNode(mesh) ;
+        int i ;
+      
+        n_ddl = 0 ;
+        for(i = 0 ; i < n_no ; i++) n_ddl += Node_GetNbOfEquations(no + i) ;
+      }
+      
+      /* The upper column heights: hc[i] = height of the upper column i */
+      {
+        int n_el = Mesh_GetNbOfElements(mesh) ;
+        Element_t* el = Mesh_GetElement(mesh) ;
+        int ie ;
+        
+        for(ie = 0 ; ie < n_el ; ie++) {
+          if(Element_GetMaterial(el + ie)) {
+            int   nn  = Element_GetNbOfNodes(el + ie) ;
+            int   neq = Element_GetNbOfEquations(el + ie) ;
+            int   k0 = n_ddl ;
+            int i ;
+    
+            for(i = 0 ; i < nn ; i++) {
+              Node_t* node_i = Element_GetNode(el + ie,i) ;
+              int j ;
+      
+              for(j = 0 ; j < neq ; j++) {
+                int ij = i*neq + j ;
+                int ii = Element_GetUnknownPosition(el + ie)[ij] ;
+        
+                if(ii >= 0) {
+                  //int k  = Node_GetMatrixColumnIndex(node_i)[ii] ;
+                  int k  = Node_GetSelectedMatrixColumnIndexOf(node_i,ii,imatrix) ;
+                  if(k >= 0 && k < k0) k0 = k ;
+                }
+              }
+            }
+    
+            for(i = 0 ; i < nn ; i++) {
+              Node_t* node_i = Element_GetNode(el + ie,i) ;
+              int j ;
+      
+              for(j = 0 ; j < neq ; j++) {
+                int ij = i*neq + j ;
+                int ii = Element_GetUnknownPosition(el + ie)[ij] ;
+        
+                if(ii >= 0) {
+                  //int k  = Node_GetMatrixColumnIndex(node_i)[ii] ;
+                  int k  = Node_GetSelectedMatrixColumnIndexOf(node_i,ii,imatrix) ;
+                  if(k >= 0 && k - k0 > hc[k]) hc[k] = k - k0 ;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  
+  
+    {
+      int   nnz_l ;
+      
+      /* Number of non zero values in the upper triangular matrix */
+      {
+        int i ;
+      
+        nnz_l = 0 ;
+        for(i = 0 ; i < n_col ; i++) nnz_l += hc[i] ;
+      }
+
+
+      /* Allocation of space for the non zeros */
+      {
+        int nnz = 2*nnz_l + n_col ;
+        double* z = (double*) Mry_New(double[nnz]) ;
+    
+        LDUSKLFormat_GetNbOfNonZeroValues(a) = nnz ;
+        LDUSKLFormat_GetNonZeroValue(a)  = z ;
+      }
+  
+  
+      /* les tableaux de pointeurs de ligne et colonne */
+      {
+        double* z = LDUSKLFormat_GetNonZeroValue(a) ;
+        double** p = (double**) Mry_New(double*[2*n_col]) ;
+        int i ;
+    
+        LDUSKLFormat_GetPointerToLowerRow(a) = p ;
+        LDUSKLFormat_GetPointerToUpperColumn(a) = p + n_col ;
+    
+        LDUSKLFormat_GetDiagonal(a) = z ;
+    
+        z += n_col ;
+        
+        if(n_col > 0) {
+          LDUSKLFormat_GetPointerToLowerRow(a)[0] = z ;
+          LDUSKLFormat_GetPointerToUpperColumn(a)[0] = z + nnz_l ;
+      
+          for(i = 1 ; i < n_col ; i++) {
+            z = LDUSKLFormat_GetPointerToLowerRow(a)[i - 1] ;
+            LDUSKLFormat_GetPointerToLowerRow(a)[i] = z + hc[i] ;
+            LDUSKLFormat_GetPointerToUpperColumn(a)[i] = z + nnz_l + hc[i] ;
+          }
+        }
+  
+      }
+    }
+
+    free(hc) ;
+  }
+
+  return(a) ;
+}
+
+
+
+LDUSKLFormat_t* LDUSKLFormat_Create(Mesh_t* mesh)
+/** Create a matrix in LDU Skyline format */
+{
+  LDUSKLFormat_t* a = (LDUSKLFormat_t*) Mry_New(LDUSKLFormat_t) ;
+
+
+  /* Allocation of space */
+  {
+    int n_col = Mesh_GetNbOfMatrixColumns(mesh)[0] ;
+    /*  les hauteurs de colonne (hc) */
+    int*  hc = (int*) Mry_New(int[n_col]) ;
 
 
     {
@@ -112,9 +252,7 @@ LDUSKLFormat_t* LDUSKLFormat_Create(Mesh_t* mesh)
       /* Allocation of space for the non zeros */
       {
         int nnz = 2*nnz_l + n_col ;
-        double* z = (double*) malloc(nnz*sizeof(double)) ;
-      
-        assert(z) ;
+        double* z = (double*) Mry_New(double[nnz]) ;
     
         LDUSKLFormat_GetNbOfNonZeroValues(a) = nnz ;
         LDUSKLFormat_GetNonZeroValue(a)  = z ;
@@ -124,10 +262,8 @@ LDUSKLFormat_t* LDUSKLFormat_Create(Mesh_t* mesh)
       /* les tableaux de pointeurs de ligne et colonne */
       {
         double* z = LDUSKLFormat_GetNonZeroValue(a) ;
-        double** p = (double**) malloc(2*n_col*sizeof(double*)) ;
+        double** p = (double**) Mry_New(double*[2*n_col]) ;
         int i ;
-      
-        assert(p) ;
     
         LDUSKLFormat_GetPointerToLowerRow(a) = p ;
         LDUSKLFormat_GetPointerToUpperColumn(a) = p + n_col ;
@@ -135,13 +271,16 @@ LDUSKLFormat_t* LDUSKLFormat_Create(Mesh_t* mesh)
         LDUSKLFormat_GetDiagonal(a) = z ;
     
         z += n_col ;
-        LDUSKLFormat_GetPointerToLowerRow(a)[0] = z ;
-        LDUSKLFormat_GetPointerToUpperColumn(a)[0] = z + nnz_l ;
+        
+        if(n_col > 0) {
+          LDUSKLFormat_GetPointerToLowerRow(a)[0] = z ;
+          LDUSKLFormat_GetPointerToUpperColumn(a)[0] = z + nnz_l ;
       
-        for(i = 1 ; i < n_col ; i++) {
-          z = LDUSKLFormat_GetPointerToLowerRow(a)[i - 1] ;
-          LDUSKLFormat_GetPointerToLowerRow(a)[i] = z + hc[i] ;
-          LDUSKLFormat_GetPointerToUpperColumn(a)[i] = z + nnz_l + hc[i] ;
+          for(i = 1 ; i < n_col ; i++) {
+            z = LDUSKLFormat_GetPointerToLowerRow(a)[i - 1] ;
+            LDUSKLFormat_GetPointerToLowerRow(a)[i] = z + hc[i] ;
+            LDUSKLFormat_GetPointerToUpperColumn(a)[i] = z + nnz_l + hc[i] ;
+          }
         }
   
       }
@@ -158,12 +297,13 @@ LDUSKLFormat_t* LDUSKLFormat_Create(Mesh_t* mesh)
 
 void LDUSKLFormat_Delete(void* self)
 {
-  LDUSKLFormat_t** a = (LDUSKLFormat_t**) self ;
+  LDUSKLFormat_t** pa = (LDUSKLFormat_t**) self ;
+  LDUSKLFormat_t*   a = *pa ;
   
-  free(LDUSKLFormat_GetNonZeroValue(*a)) ;
-  free(LDUSKLFormat_GetPointerToLowerRow(*a)) ;
-  free(*a) ;
-  *a = NULL ;
+  free(LDUSKLFormat_GetNonZeroValue(a)) ;
+  free(LDUSKLFormat_GetPointerToLowerRow(a)) ;
+  free(a) ;
+  *pa = NULL ;
 }
 
 

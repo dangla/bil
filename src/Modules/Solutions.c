@@ -88,6 +88,7 @@ void   (Solutions_Initialize)(Solutions_t* sols)
         
         for(j = 0 ; j < n_no ; j++) {
           NodeSol_GetPreviousNodeSol(nodesol_1 + j) = nodesol_n + j ;
+          NodeSol_GetNextNodeSol(nodesol_n + j)     = nodesol_1 + j ;
         }
       }
 
@@ -98,6 +99,7 @@ void   (Solutions_Initialize)(Solutions_t* sols)
         
         for(j = 0 ; j < n_el ; j++) {
           ElementSol_GetPreviousElementSol(elementsol_1 + j) = elementsol_n + j ;
+          ElementSol_GetNextElementSol(elementsol_n + j)     = elementsol_1 + j ;
         }
       }
     }

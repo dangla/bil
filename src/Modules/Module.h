@@ -10,7 +10,8 @@ struct Module_s        ; typedef struct Module_s        Module_t ;
 
 /* Declaration of Macros, Methods and Structures */
 
-extern Module_t*  Module_Create(int) ;
+extern Module_t*  (Module_Create)(int) ;
+extern Module_t*  (Module_Initialize)(Module_t*,const char*) ;
 
 #include "Mesh.h"
 #include "Solution.h"
@@ -36,6 +37,8 @@ extern void   Module_UpdateCurrentUnknowns(Mesh_t*,Solver_t*) ;
 #define Module_GetSetModuleProp(MOD)    ((MOD)->setmoduleprop)
 #define Module_GetComputeProblem(MOD)   ((MOD)->computeproblem)
 #define Module_GetSolveProblem(MOD)     ((MOD)->solveproblem)
+#define Module_GetSequentialIndex(MOD)  ((MOD)->sequentialindex)
+#define Module_GetNbOfSequences(MOD)    ((MOD)->nbofsequences)
 
 
 /* Copy operations */
@@ -74,6 +77,8 @@ struct Module_s {            /* module */
   Module_SetModuleProp_t*  setmoduleprop ;
   Module_ComputeProblem_t* computeproblem ;
   Module_SolveProblem_t*   solveproblem ;
+  unsigned int nbofsequences ;
+  int sequentialindex ;
   
   char*  codename ;          /* Code name of the module */
   char*  authors ;           /* Authors of this module */

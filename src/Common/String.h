@@ -26,7 +26,8 @@ extern int         (String_NbOfTokens)           (char**) ;
 extern char*       (String_CopyLine)             (const char*) ;
 extern const char* (String_SkipRemainingComments)(const char*) ;
 extern int         (String_NbOfUncommentedLines) (const char*,const char*) ;
-extern int         (String_FindPositionIndex)    (const char*,const char**,const int) ;
+extern int         (String_FindPositionIndex)    (const char*,const char* const*,const int) ;
+extern char*       (String_RemoveComments)       (char*,char*) ;
 
 
 
@@ -54,9 +55,9 @@ extern int         (String_FindPositionIndex)    (const char*,const char**,const
 /* Scan string
  * ----------- */
 /** Scan a string with a given format and return the nb of characters read. */
-#define String_Scan(...) \
-        Logic_IF(Logic_GE(Arg_NARG(__VA_ARGS__),3))\
-        (String_ScanN,String_Scan2)(__VA_ARGS__)
+#define String_Scan(STR,...) \
+        Logic_IF(Logic_GE(Arg_NARG(__VA_ARGS__),2))\
+        (String_ScanN,String_Scan2)(STR,__VA_ARGS__)
 
 
 #define String_ScanStringUntil(STR,KEY,END) \
@@ -201,19 +202,28 @@ extern int         (String_FindPositionIndex)    (const char*,const char**,const
 #define String_BeginsWithAnyChar(STR,Cs) \
         ((STR) ? strspn(STR,Cs) : 0)
 
+#define String_BeginsWithSingleLineComment(STR) \
+        (String_Is(STR,"#") || String_Is(STR,"//"))
+
+#define String_BeginsWithMultiLineComment(STR) \
+        String_Is(STR,"/*")
+
+#define String_SkipMultiLineComment(STR) \
+        String_FindAndSkipToken(STR,"*/")
+
 
 /* Implementation */
 #define String_Is2(STR,STR2) \
-        (String_Is3(STR,STR2,strlen(STR2)))
+        String_Is3(STR,STR2,strlen(STR2))
         
-#define String_Is3(...) \
-        (!strncmp(__VA_ARGS__))
+#define String_Is3(STR,...) \
+        ((STR) ? (!strncmp(STR,__VA_ARGS__)) : NULL)
         
-#define String_CaseIgnoredIs2(...) \
-        (!strcasecmp(__VA_ARGS__))
+#define String_CaseIgnoredIs2(STR,...) \
+        ((STR) ? (!strcasecmp(STR,__VA_ARGS__)) : NULL)
         
-#define String_CaseIgnoredIs3(...) \
-        (!strncasecmp(__VA_ARGS__))
+#define String_CaseIgnoredIs3(STR,...) \
+        ((STR) ? (!strncasecmp(STR,__VA_ARGS__)) : NULL)
         
 
 

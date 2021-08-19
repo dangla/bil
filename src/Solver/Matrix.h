@@ -12,11 +12,13 @@ struct Matrix_s       ; typedef struct Matrix_s       Matrix_t ;
 #include "Element.h"
  
 extern Matrix_t*   (Matrix_Create)                (Mesh_t*,Options_t*) ;
+extern Matrix_t*   (Matrix_CreateSelectedMatrix)  (Mesh_t*,Options_t*,const int) ;
 extern void        (Matrix_Delete)                (void*) ;
 extern void        (Matrix_AssembleElementMatrix) (Matrix_t*,Element_t*,double*) ;
 extern void        (Matrix_PrintMatrix)           (Matrix_t*,const char* keyword) ;
 
 
+#define Matrix_GetMatrixIndex(MAT)               ((MAT)->index)
 #define Matrix_GetMatrixStorageFormat(MAT)       ((MAT)->fmt)
 #define Matrix_GetNbOfRows(MAT)                  ((MAT)->n)
 #define Matrix_GetNbOfColumns(MAT)               ((MAT)->n)
@@ -29,18 +31,24 @@ extern void        (Matrix_PrintMatrix)           (Matrix_t*,const char* keyword
 
 
 
+/* States of the matrix */
+#define Matrix_InitialState    (0)
+#define Matrix_ModifiedState   (1)
+
 #define Matrix_SetToInitialState(MAT) \
-        do {Matrix_GetState(MAT) = 0 ;} while(0)
+        do {Matrix_GetState(MAT) = Matrix_InitialState ;} while(0)
         
         
 #define Matrix_WasNotModified(MAT) \
-        (Matrix_GetState(MAT) == 0)
+        (Matrix_GetState(MAT) == Matrix_InitialState)
         
         
 #define Matrix_SetToModifiedState(MAT) \
-        do {Matrix_GetState(MAT) = 1 ;} while(0)
+        do {Matrix_GetState(MAT) = Matrix_ModifiedState ;} while(0)
 
 
+
+/* Initialize the matrix */
 #define Matrix_SetValuesToZero(MAT) \
         do { \
           unsigned int k ; \
@@ -62,6 +70,7 @@ extern void        (Matrix_PrintMatrix)           (Matrix_t*,const char* keyword
         
 
 struct Matrix_s {             /* Matrix */
+  unsigned int index ;        /* Matrix index */
   MatrixStorageFormat_t fmt ; /* Storage format */
   unsigned int    n ;         /* Nb of rows/columns */
   unsigned int    nnz ;       /* Nb of non zero values */

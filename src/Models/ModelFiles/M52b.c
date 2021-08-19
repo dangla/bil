@@ -84,7 +84,6 @@
 /* Water properties
  * ---------------- */
  #include "WaterViscosity.h"
- #include "Log10ActivityOfWaterInBrine.h"
  /* Molar mass (kg/m3) */
 #define M_h2o      (18.e-3)
 /* Molar volume of liquid water (m3/mol) */

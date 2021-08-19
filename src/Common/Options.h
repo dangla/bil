@@ -76,7 +76,11 @@ extern void        (Options_Delete)(void*) ;
         
 #define Options_SetResolutionMethodTo(OPT,M) \
         (strncpy(Options_GetResolutionMethod(OPT),M,Options_MaxLengthOfKeyWord))
-        
+
+
+/* Number of sequences for the sequential non iterative approach */
+#define Options_GetNbOfSequences(OPT) \
+        (String_Is(Options_GetModule(OPT),"SNIA") ? atoi(((char**) Context_GetUseModule(Options_GetContext(OPT)))[2]) : 1)
 
 
 struct Options_s {            /* options */

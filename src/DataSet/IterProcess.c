@@ -112,6 +112,7 @@ IterProcess_t*  IterProcess_Create(DataFile_t* datafile,ObVals_t* obvals)
 
 int IterProcess_SetCurrentError(IterProcess_t* iterprocess,Nodes_t* nodes,Solver_t* solver)
 {
+  unsigned int imatrix = Solver_GetMatrixIndex(solver) ;
   double*   x     = Solver_GetSolution(solver) ;
   int       nrows = Solver_GetNbOfRows(solver) ;
   ObVal_t*  obval = IterProcess_GetObVal(iterprocess) ;
@@ -120,42 +121,47 @@ int IterProcess_SetCurrentError(IterProcess_t* iterprocess,Nodes_t* nodes,Solver
   double err = 0. ;
   int    obvalindex = 0 ;
   int    nodeindex  = -1 ;
-  unsigned int i ;
+  
+  
+  if(nrows > 0) {
+    unsigned int i ;
           
-  for(i = 0 ; i < nb_nodes ; i++) {
-    Node_t* nodi = node + i ;
-    int nin = Node_GetNbOfUnknowns(nodi) ;
-    int j ;
+    for(i = 0 ; i < nb_nodes ; i++) {
+      Node_t* nodi = node + i ;
+      int nin = Node_GetNbOfUnknowns(nodi) ;
+      int j ;
             
-    for(j = 0 ; j < nin ; j++) {
-      int   k = Node_GetMatrixColumnIndex(nodi)[j] ;
+      for(j = 0 ; j < nin ; j++) {
+        //int   k = Node_GetMatrixColumnIndex(nodi)[j] ;
+        int   k = Node_GetSelectedMatrixColumnIndexOf(nodi,j,imatrix) ;
               
-      if(k >= 0) {
-        ObVal_t* obval_j = obval + Node_GetObValIndex(nodi)[j] ;
-        double val = ObVal_GetValue(obval_j) ;
-        double re = fabs(x[k])/val ;
+        if(k >= 0) {
+          ObVal_t* obval_j = obval + Node_GetObValIndex(nodi)[j] ;
+          double val = ObVal_GetValue(obval_j) ;
+          double re = fabs(x[k])/val ;
                 
-        if(ObVal_IsRelativeValue(obval_j)) {
-          double* u_n = Node_GetPreviousUnknown(nodi) ;
+          if(ObVal_IsRelativeValue(obval_j)) {
+            double* u_n = Node_GetPreviousUnknown(nodi) ;
                   
-          if(fabs(u_n[j]) > 0.) re /= fabs(u_n[j]) ;
-        }
+            if(fabs(u_n[j]) > 0.) re /= fabs(u_n[j]) ;
+          }
 
-        /* Sometimes re is strictly equal to zero hence the >= */
-        if(re >= err) {
-          err = re ;
-          obvalindex = Node_GetObValIndex(nodi)[j] ;
-          nodeindex = i ;
+          /* Sometimes re is strictly equal to zero hence the >= */
+          if(re >= err) {
+            err = re ;
+            obvalindex = Node_GetObValIndex(nodi)[j] ;
+            nodeindex = i ;
+          }
         }
       }
     }
-  }
   
-  if(nrows > 0 && nodeindex < 0) {
-    /* Raise an interrupt signal instead of exit */
-    Message_Warning("IterProcess_SetCurrentError: can't compute error!") ;
-    return(1) ;
-    //Exception_Interrupt ;
+    if(nrows > 0 && nodeindex < 0) {
+      /* Raise an interrupt signal instead of exit */
+      Message_Warning("IterProcess_SetCurrentError: can't compute error!") ;
+      return(1) ;
+      //Exception_Interrupt ;
+    }
   }
           
   IterProcess_GetCurrentError(iterprocess) = err ;

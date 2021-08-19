@@ -16,6 +16,8 @@ struct Solution_s     ; typedef struct Solution_s     Solution_t ;
  
 extern Solution_t*  (Solution_Create)  (Mesh_t*) ;
 extern void         (Solution_Copy)    (Solution_t*,Solution_t*) ;
+extern Solution_t*  (Solution_GetSolutionInDistantFuture)(Solution_t*,unsigned int) ;
+extern Solution_t*  (Solution_GetSolutionInDistantPast)(Solution_t*,unsigned int) ;
 
 
 #define Solution_GetTime(SOL)                 ((SOL)->t)
@@ -49,6 +51,20 @@ extern void         (Solution_Copy)    (Solution_t*,Solution_t*) ;
 
 #define Solution_GetNbOfElements(SOL) \
         ElementsSol_GetNbOfElements(Solution_GetElementsSol(SOL))
+
+
+
+/* Copy the N solutions, SOL+[0:N-1], in the next position */
+#define Solution_CopyInDistantFuture(SOL,N) \
+        do { \
+          int dist = (N) - 1 ; \
+          while(dist >= 0) { \
+            Solution_t* sol_src  = Solution_GetSolutionInDistantFuture(SOL,dist) ; \
+            Solution_t* sol_dest = Solution_GetNextSolution(sol_src) ; \
+            Solution_Copy(sol_dest,sol_src) ; \
+            dist-- ; \
+          } \
+        } while(0)
 
 
 

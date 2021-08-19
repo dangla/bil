@@ -97,6 +97,9 @@ extern void        (Material_ScanProperties2) (Material_t*,FILE*,Model_ComputePr
 
 #define Material_GetObjectiveValue(MAT) \
         Model_GetObjectiveValue(Material_GetModel(MAT))
+
+#define Material_GetSequentialIndexOfUnknown(MAT) \
+        Model_GetSequentialIndexOfUnknown(Material_GetModel(MAT))
         
         
 #include "TypeId.h"

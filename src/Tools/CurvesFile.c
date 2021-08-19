@@ -10,6 +10,7 @@
 #include "Tools/Math.h"
 #include "Buffer.h"
 #include "Curves.h"
+#include "String.h"
 #include "CurvesFile.h"
 #include "InternationalSystemOfUnits.h"
 
@@ -57,6 +58,8 @@ static GenericFunction_t PermeabilityCoefficient_KozenyCarman ;
 static GenericFunction_t PermeabilityCoefficient_VermaPruess ;
 static GenericFunction_t TortuosityToLiquid_OhJang ;
 static GenericFunction_t TortuosityToLiquid_BazantNajjar ;
+static GenericFunction_t LinLee ;
+static GenericFunction_t IdealWaterActivity ;
 
 
 static double (vangenuchten)(double,double) ;
@@ -311,7 +314,7 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
       
     line = strchr(line,'{') ;
       
-    if(!strcmp(xmodel,"Range")) {
+    if(String_Is(xmodel,"Range")) {
       int    n_points ;
       double x_1,x_2 ;
         
@@ -355,42 +358,42 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
     line = strchr(line,'{') ;
 
     /* Write a new column depending on the model name */
-    if(!strcmp(YMODEL,"Freundlich")) {
+    if(String_Is(YMODEL,"Freundlich")) {
       double alpha,beta ;
       
       sscanf(line,"{ %*s = %lf , %*s = %lf }",&alpha,&beta) ;
 
       PasteColumn(Freundlich,alpha,beta) ;
       
-    } else if(!strcmp(YMODEL,"Affine")) {
+    } else if(String_Is(YMODEL,"Affine")) {
       double a,b ;
       
       sscanf(line,"{ %*s = %lf , %*s = %lf }",&a,&b) ;
 
       PasteColumn(Affine,a,b) ;
       
-    } else if(!strcmp(YMODEL,"Langmuir")) {
+    } else if(String_Is(YMODEL,"Langmuir")) {
       double c0,ca_max ;
       
       sscanf(line,"{ %*s = %lf , %*s = %lf }",&ca_max,&c0) ;
 
       PasteColumn(Langmuir,ca_max,c0) ;
       
-    } else if(!strcmp(YMODEL,"LangmuirN")) {
+    } else if(String_Is(YMODEL,"LangmuirN")) {
       double n,x0,y0 ;
       
       sscanf(line,"{ %*s = %lf , %*s = %lf , %*s = %lf }",&y0,&x0,&n) ;
 
       PasteColumn(LangmuirN,y0,x0,n) ;
       
-    } else if(!strcmp(YMODEL,"Mualem_wet") || !strcmp(YMODEL,"Mualem_liq")){
+    } else if(String_Is(YMODEL,"Mualem_wet") || String_Is(YMODEL,"Mualem_liq")){
       double m ;
       
       sscanf(line,"{ %*s = %lf }",&m) ;
       
       PasteColumn(MualemVanGenuchten,m) ;
       
-    } else if(!strcmp(YMODEL,"Mualem_dry")){
+    } else if(String_Is(YMODEL,"Mualem_dry")){
       double m_w,m_d,a_d,a_w ;
       FILE   *ftmp1 = tmpfile() ;
       double kh_max ;
@@ -410,10 +413,10 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
         do {
           fgets(ltmp,sizeof(ltmp),ftmp) ;
         } while(ltmp[0] == '#') ;
-	
+  
         sscanf(ltmp,FCOLX(acol),&p) ;
         fprintf(ftmp1,"%e %e\n",p,kh) ;
-	
+  
         while(fgets(ltmp,sizeof(ltmp),ftmp)) {
           if(ltmp[0] != '#') {
             double pn = p ;
@@ -426,14 +429,14 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
               double s_w = vangenuchten(pn/a_w,m_w) ;
               double hn = (s_d - s_w)/(1. - s_w) ;
               double h,dh ;
-	      
+        
               s_d = vangenuchten(p/a_d,m_d) ;
               s_w = vangenuchten(p/a_w,m_w) ;
               h   = (s_d - s_w)/(1. - s_w) ;
-	      
+        
               dh  = h - hn ;
               kh += dh/(p - 0.5*dp) ;
-	      
+        
               fprintf(ftmp1,"%e %e\n",p,kh) ;
             }
           }
@@ -451,49 +454,49 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
       
       fclose(ftmp1) ;
       
-    } else if(!strcmp(YMODEL,"Mualem_gas")){
+    } else if(String_Is(YMODEL,"Mualem_gas")){
       double m ;
       
       sscanf(line,"{ %*s = %lf }",&m) ;
       
       PasteColumn(Mualem_gas,m) ;
       
-    } else if(!strcmp(YMODEL,"Van-Genuchten_gas")){
+    } else if(String_Is(YMODEL,"Van-Genuchten_gas")){
       double m,p,q ;
       
       sscanf(line,"{ %*s = %lf , %*s = %lf , %*s = %lf }",&m,&p,&q) ;
       
       PasteColumn(VanGenuchten_gas,m,p,q) ;
       
-    } else if(!strcmp(YMODEL,"Van-Genuchten")){
+    } else if(String_Is(YMODEL,"Van-Genuchten")){
       double a,m ;
       
       sscanf(line,"{ %*s = %lf , %*s = %lf }",&a,&m) ;
       
       PasteColumn(VanGenuchten,a,m) ;
       
-    } else if(!strcmp(YMODEL,"Nav-Genuchten")){
+    } else if(String_Is(YMODEL,"Nav-Genuchten")){
       double a,m ;
       
       sscanf(line,"{ %*s = %lf , %*s = %lf }",&a,&m) ;
       
       PasteColumn(NavGenuchten,a,m) ;
       
-    } else if(!strcmp(YMODEL,"Millington")){
+    } else if(String_Is(YMODEL,"Millington")){
       double b ;
       
       sscanf(line,"{ %*s = %lf }",&b) ;
       
       PasteColumn(Millington,b) ;
       
-    } else if(!strcmp(YMODEL,"Monlouis-Bonnaire")){
+    } else if(String_Is(YMODEL,"Monlouis-Bonnaire")){
       double m ;
       
       sscanf(line,"{ %*s = %lf }",&m) ;
       
       PasteColumn(MonlouisBonnaire,m) ;
       
-    } else if(!strcmp(YMODEL,"Integral")){
+    } else if(String_Is(YMODEL,"Integral")){
       char   yname[Curve_MaxLengthOfCurveName] ;
       
       sscanf(line,"{ %*s = %s }",yname) ;
@@ -511,7 +514,7 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
         Curve_Delete(&crvj) ;
       }
       
-    } else if(!strcmp(YMODEL,"Evaluate")){
+    } else if(String_Is(YMODEL,"Evaluate")){
       char    expr[CurvesFile_MaxLengthOfTextLine] ;
       
       {
@@ -532,7 +535,7 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
         PasteColumn(Evaluate,curves,expr,ALABEL) ;
       }
       
-    } else if(!strcmp(YMODEL,"Expressions")){
+    } else if(String_Is(YMODEL,"Expressions")){
       char    expr[CurvesFile_MaxLengthOfTextLine] ;
       
       {
@@ -552,7 +555,7 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
         PasteColumn(Expressions,curves,expr,YLABEL,ALABEL) ;
       }
       
-    } else if(!strcmp(YMODEL,"CSH3Poles")){
+    } else if(String_Is(YMODEL,"CSH3Poles")){
       double  y_Jen = 0.9 ;
       double  y_Tob = 1.8 ;
       
@@ -579,7 +582,7 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
         PasteColumn(CSH3EndMembers,y_Tob,y_Jen,"S_SH") ;
       }
       
-    } else if(!strcmp(YMODEL,"CSHLangmuirN")){
+    } else if(String_Is(YMODEL,"CSHLangmuirN")){
       double  x1,s1,n1 ;
       double  x2,s2,n2 ;
       
@@ -593,43 +596,43 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
         PasteColumn(CSHLangmuirN,x1,s1,n1,x2,s2,n2,"S_SH") ;
       }
       
-    } else if(!strcmp(YMODEL,"Redlich-Kwong_CO2")) {
+    } else if(String_Is(YMODEL,"Redlich-Kwong_CO2")) {
       double temperature ;
       
       sscanf(line,"{ %*s = %lf }",&temperature) ;
       
       PasteColumn(RedlichKwongCO2,temperature) ;
       
-    } else if(!strcmp(YMODEL,"MolarDensityOfCO2")) {
+    } else if(String_Is(YMODEL,"MolarDensityOfCO2")) {
       double temperature ;
       
       sscanf(line,"{ %*s = %lf }",&temperature) ;
       
       PasteColumn(MolarDensityOfCO2,temperature) ;
       
-    } else if(!strcmp(YMODEL,"MolarDensityOfPerfectGas")) {
+    } else if(String_Is(YMODEL,"MolarDensityOfPerfectGas")) {
       double temperature ;
       
       sscanf(line,"{ %*s = %lf }",&temperature) ;
       
       PasteColumn(MolarDensityOfPerfectGas,temperature) ;
       
-    } else if(!strcmp(YMODEL,"Fenghour_CO2") || \
-              !strcmp(YMODEL,"ViscosityOfCO2")) {
+    } else if(String_Is(YMODEL,"Fenghour_CO2") || \
+              String_Is(YMODEL,"ViscosityOfCO2")) {
       double temperature ;
       
       sscanf(line,"{ %*s = %lf }",&temperature) ;
       
       PasteColumn(FenghourCO2,temperature) ;
       
-    } else if(!strcmp(YMODEL,"KozenyCarman")) {
+    } else if(String_Is(YMODEL,"KozenyCarman")) {
       double phi0 ;
       
       sscanf(line,"{ %*s = %lf }",&phi0) ;
       
       PasteColumn(PermeabilityCoefficient_KozenyCarman,phi0) ;
       
-    } else if(!strcmp(YMODEL,"VermaPruess")) {
+    } else if(String_Is(YMODEL,"VermaPruess")) {
       double phi0 ;
       double frac ;
       double phi_r ;
@@ -638,13 +641,21 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
       
       PasteColumn(PermeabilityCoefficient_VermaPruess,phi0,frac,phi_r) ;
       
-    } else if(!strcmp(YMODEL,"OhJang")) {
+    } else if(String_Is(YMODEL,"OhJang")) {
       
       PasteColumn(TortuosityToLiquid_OhJang,0) ;
       
-    } else if(!strcmp(YMODEL,"BazantNajjar")) {
+    } else if(String_Is(YMODEL,"BazantNajjar")) {
       
       PasteColumn(TortuosityToLiquid_BazantNajjar,0) ;
+      
+    } else if(String_Is(YMODEL,"LinLee")) {
+      double tem ;
+      char salt[30] ;
+      
+      sscanf(line,"{ %*s = %lf , %*s = %s }",&tem,salt) ;
+      
+      PasteColumn(LinLee,tem,salt) ;
       
     } else {
       arret("CurvesFile_WriteCurves : fonction non connue") ;
@@ -1097,7 +1108,7 @@ double (Mualem_dry)(double p,va_list args)
   char   ltmp1[CurvesFile_MaxLengthOfTextLine] ;
   double kh ;
   double p1 ;
-	  
+    
       
   do {
     fgets(ltmp1,sizeof(ltmp1),ftmp1) ;
@@ -1108,13 +1119,13 @@ double (Mualem_dry)(double p,va_list args)
   if(p != p1) arret("Mualem_dry") ;
   
   kh = 1. - kh/kh_max ;
-	  
+    
   {
     double s_w  = vangenuchten(p/a_w,m_w) ;
     double kl   = 1 - pow(1 - pow(s_w,1./m_w),m_w) ;
-	    
+      
     double s_d  = vangenuchten(p/a_d,m_d) ;
-	    
+      
     k_rd = sqrt(s_d)*(kl + (1. - kl)*kh) ;
   }
           
@@ -1286,13 +1297,13 @@ double (CSH3EndMembers)(double s_CH,va_list args)
             
       x_m /= y_m ; z_m /= y_m ; v_m /= y_m ;
       
-      if(!strcmp(outputtype,"S_SH")) {
+      if(String_Is(outputtype,"S_SH")) {
         output = s_SH ;
-      } else if(!strcmp(outputtype,"V_CSH")) {
+      } else if(String_Is(outputtype,"V_CSH")) {
         output = v_m ;
-      } else if(!strcmp(outputtype,"Z_CSH")) {
+      } else if(String_Is(outputtype,"Z_CSH")) {
         output = z_m ;
-      } else if(!strcmp(outputtype,"X_CSH")) {
+      } else if(String_Is(outputtype,"X_CSH")) {
         output = x_m ;
       } else {
         arret("CSH3EndMembers") ;
@@ -1315,11 +1326,11 @@ double (CSHLangmuirN)(double s,va_list args)
   char *outputtype = va_arg(args,char*) ;
   double output ;
   
-  if(!strcmp(outputtype,"S_SH")) {
+  if(String_Is(outputtype,"S_SH")) {
     double s_SH = pow(1 + pow(s/s1,n1),-x1/n1)*pow(1 + pow(s/s2,n2),-x2/n2) ;
     
     output = s_SH ;
-  } else if(!strcmp(outputtype,"X_CSH")) {
+  } else if(String_Is(outputtype,"X_CSH")) {
     double x = langmuir(s,x1,s1,n1) + langmuir(s,x2,s2,n2) ;
     
     output = x ;
@@ -1342,7 +1353,7 @@ double (PermeabilityCoefficient_KozenyCarman)(double phi,va_list args)
   
   {
     double kozeny_carman  = pow(phi/phi0,3.)*pow(((1 - phi0)/(1 - phi)),2.) ;
-	
+  
     coeff_permeability = kozeny_carman ;
   }
   
@@ -1367,11 +1378,11 @@ double (PermeabilityCoefficient_VermaPruess)(double phi,va_list args)
   double coeff_permeability ;
   
   {
-	  double S_s =  (phi0 - phi)/phi0    ;
-	  double w = 1 + (1/frac)/(1/phi_r - 1) ;
+    double S_s =  (phi0 - phi)/phi0    ;
+    double w = 1 + (1/frac)/(1/phi_r - 1) ;
     double t = (1 - S_s - phi_r)/(1 - phi_r) ;
-	  double verma_pruess = (t > 0) ? t*t*(1 - frac + (frac/(w*w)))/(1 - frac + frac*(pow(t/(t + w - 1),2.))) : 0 ;
-	
+    double verma_pruess = (t > 0) ? t*t*(1 - frac + (frac/(w*w)))/(1 - frac + frac*(pow(t/(t + w - 1),2.))) : 0 ;
+  
     coeff_permeability = verma_pruess ;
   }
   
@@ -1392,8 +1403,8 @@ double (TortuosityToLiquid_OhJang)(double phi,va_list args)
 {
   double phi_cap = phi/2  ;
   double phi_c   = 0.17 ;   /* Percolation capilar porosity */
-  double n     = 2.7 ; 		      /* OPC n  = 2.7  --------  Fly ash n  = 4.5 */
-  double ds    = 1.e-4 ;	      /* OPC ds = 1e-4 --------  Fly ash ds = 5e-5 */
+  double n     = 2.7 ;          /* OPC n  = 2.7  --------  Fly ash n  = 4.5 */
+  double ds    = 1.e-4 ;        /* OPC ds = 1e-4 --------  Fly ash ds = 5e-5 */
   double dsn   = pow(ds,1/n) ;
   double m_phi = 0.5 * ((phi_cap - phi_c) + dsn * (1 - phi_c - phi_cap)) / (1 - phi_c) ;
   double tausat =  pow(m_phi + sqrt(m_phi*m_phi + dsn * phi_c/(1 - phi_c)),n) ;
@@ -1524,7 +1535,7 @@ double (MolarDensityOfCO2_RedlichKwong)(double Pa,double T)
 double (ViscosityOfCO2_Fenghour)(double Pa,double T)  
 /** Fenghour viscosity of scCO2: */
 /* Implemented by J. Shen 
- * From	A. Fenghour (1997)
+ * From A. Fenghour (1997)
  * Input units: Pressure in Pa, Temperature in Kelvin
  * Output units: Pa.s 
  * Range of validity:
@@ -1532,30 +1543,30 @@ double (ViscosityOfCO2_Fenghour)(double Pa,double T)
  *      P [0-30]  MPa and T [1000-1500] K 
 */
 {
-  double P		    = MAX(Pa,1.e5) ; /* mu_co2 cst for P < 1e5 Pa */
-  double gc_co2 	= MolarDensityOfCO2_RedlichKwong(P,T) ;    /*mol/L */
-  double rho    	= 44.* gc_co2 ;				/*kg/m3*/
-  double d11  		= 0.4071119e-2 ;
-  double d21		  = 0.7198037e-4 ;
-  double d64 		  = 0.2411697e-16 ;
-  double d81		  = 0.2971072e-22 ;
-  double d82		  = -0.1627888e-22 ;
-  double T_red		= T/251.196 ;
-  double logT_red	= log(T_red) ;
-  double a0			  = 0.235156 ;
-  double a1			  = -0.491266 ;
-  double a2			  = 5.211155e-2 ;
-  double a3			  = 5.347906e-2 ;
-  double a4			  = -1.537102e-2 ;
-  double A_mu		  = a0 + a1*logT_red + a2*pow(logT_red,2.) + a3*pow(logT_red,3.)  + a4*pow(logT_red,4.) ;
-  double g_mu   	= exp(A_mu) ;
-  double mu_zero	= 1.00697*pow(T,0.5)/g_mu ; /*zero-density viscosity, uPa.s*/
+  double P        = MAX(Pa,1.e5) ; /* mu_co2 cst for P < 1e5 Pa */
+  double gc_co2   = MolarDensityOfCO2_RedlichKwong(P,T) ;    /*mol/L */
+  double rho      = 44.* gc_co2 ;       /*kg/m3*/
+  double d11      = 0.4071119e-2 ;
+  double d21      = 0.7198037e-4 ;
+  double d64      = 0.2411697e-16 ;
+  double d81      = 0.2971072e-22 ;
+  double d82      = -0.1627888e-22 ;
+  double T_red    = T/251.196 ;
+  double logT_red = log(T_red) ;
+  double a0       = 0.235156 ;
+  double a1       = -0.491266 ;
+  double a2       = 5.211155e-2 ;
+  double a3       = 5.347906e-2 ;
+  double a4       = -1.537102e-2 ;
+  double A_mu     = a0 + a1*logT_red + a2*pow(logT_red,2.) + a3*pow(logT_red,3.)  + a4*pow(logT_red,4.) ;
+  double g_mu     = exp(A_mu) ;
+  double mu_zero  = 1.00697*pow(T,0.5)/g_mu ; /*zero-density viscosity, uPa.s*/
   double rho2     = rho*rho ;
   double rho6     = rho2*rho2*rho2 ;
   double rho8     = rho6*rho2 ;
-  double mu_excess 	= d11*rho+ d21*rho2 + d64*rho6/pow(T_red,3.) + d81*rho8 + d82*rho8/T_red;/* in uPa.s*/
-  double mu 		  = mu_zero + mu_excess; /* uPa.s*/
-  double mu_co2		= mu*1.e-6 ;           /* Pa.s*/
+  double mu_excess  = d11*rho+ d21*rho2 + d64*rho6/pow(T_red,3.) + d81*rho8 + d82*rho8/T_red;/* in uPa.s*/
+  double mu       = mu_zero + mu_excess; /* uPa.s*/
+  double mu_co2   = mu*1.e-6 ;           /* Pa.s*/
   return(mu_co2) ;
 }
 
@@ -1569,5 +1580,186 @@ double (langmuir)(double x,double y0,double x0,double n)
   double y   = (x0 > 0.) ? y0*p/(1 + p) : y0 ;
   
   return(y) ; 
+}
+
+
+
+static double lna_i(double,double,double,double,double,double) ;
+
+
+#include "PartialMolarVolumeOfMoleculeInWater.h"
+
+double LinLee(double c_s1,va_list args)
+/** Activity of water in brine from
+ *  H. Lin and L. Lee, 
+ *  Estimations of activity coefficients of constituent ions in aqueous
+ *  electrolyte solutions with the two-ionic-parameter approach, 
+ *  Fluid Phase Equilibria, 237 (2005) 1-8.
+ */
+{
+  double tem1 = va_arg(args,double) ;
+  const char* s = va_arg(args,const char*) ;
+  double c_s = (c_s1 > 0) ? c_s1 : 0 ;
+  double tem = (tem1 > 200) ? tem1 : 200 ;
+  double T_0  = 273.15 ;
+  /* eps_r: electric permittivity of the solution */
+  double eps_r = 0.0007*(tem - T_0)*(tem - T_0) - 0.3918*(tem - T_0) + 87.663 ;
+  /* A_phi: the Debye-Huckel constant */
+  double A_phi   = 1398779.816/pow(eps_r*tem,1.5) ;
+  
+  /* References */
+  #define M_H2O   (18.e-3)
+  double b0   = sqrt(M_H2O) ;
+  double S0   = pow(M_H2O,1.29) ;
+  #undef M_H2O
+
+  double A    = A_phi/b0 ;
+  
+  double b_cat ;
+  double b_ani ;
+  double S_cat ;
+  double S_ani ;
+  double z_cat ;
+  double z_ani ;
+  double nu_cat ;
+  double nu_ani ;
+  double v_cat ;
+  double v_ani ;
+
+  
+  if(String_Is(s,"NaCl")) {
+    b_cat  = 4.352/b0 ;
+    b_ani  = 1.827/b0 ;
+    S_cat  = 26.448/S0 ;
+    S_ani  = 19.245/S0 ;
+    z_cat  = 1 ;
+    z_ani  = -1 ;
+    nu_cat = 1 ;
+    nu_ani = 1 ;
+    v_cat  = PartialMolarVolumeOfMoleculeInWater(Na) ;
+    v_ani  = PartialMolarVolumeOfMoleculeInWater(Cl) ;
+  } else if(String_Is(s,"CaCl2")) {
+    b_cat  = 3.908/b0 ;
+    b_ani  = 2.085/b0 ;
+    S_cat  = 18.321/S0 ;
+    S_ani  = 10.745/S0 ;
+    z_cat  = 2 ;
+    z_ani  = -1 ;
+    nu_cat = 1 ;
+    nu_ani = 2 ;
+    v_cat = PartialMolarVolumeOfMoleculeInWater(Ca) ;
+    v_ani = PartialMolarVolumeOfMoleculeInWater(Cl) ;
+  } else if(String_Is(s,"Na2SO4")) {
+    b_cat  = 1.552/b0 ;
+    b_ani  = 1.662/b0 ;
+    S_cat  = 3.464/S0 ;
+    S_ani  = 0.022/S0 ;
+    z_cat  = 1 ;
+    z_ani  = -2 ;
+    nu_cat = 2 ;
+    nu_ani = 1 ;
+    v_cat = PartialMolarVolumeOfMoleculeInWater(Na) ;
+    v_ani = PartialMolarVolumeOfMoleculeInWater(SO4) ;
+  } else if(String_Is(s,"K2SO4")) {
+    b_cat  = 1.655/b0 ;
+    b_ani  = 1.570/b0 ;
+    S_cat  = 0.017/S0 ;
+    S_ani  = 2.273/S0 ;
+    z_cat  = 1 ;
+    z_ani  = -2 ;
+    nu_cat = 2 ;
+    nu_ani = 1 ;
+    v_cat = PartialMolarVolumeOfMoleculeInWater(K) ;
+    v_ani = PartialMolarVolumeOfMoleculeInWater(SO4) ;
+  } else if(String_Is(s,"KCl")) {
+    b_cat  = 1.243/b0 ;
+    b_ani  = 3.235/b0 ;
+    S_cat  = 13.296/S0 ;
+    S_ani  = 11.158/S0 ;
+    z_cat  = 1 ;
+    z_ani  = -1 ;
+    nu_cat = 1 ;
+    nu_ani = 1 ;
+    v_cat = PartialMolarVolumeOfMoleculeInWater(K) ;
+    v_ani = PartialMolarVolumeOfMoleculeInWater(Cl) ;
+  } else {
+    arret("LinLee: salt not available") ;
+    return(-1) ;
+  }
+  
+  {
+    /* concentration of ions */
+    double c_ani  = nu_ani*c_s ;
+    double c_cat  = nu_cat*c_s ;
+    /* Molar volume of liquid water (m3/mol) */
+    #define V_H2O  (18.e-6)
+    /* concentration of solvent */
+    double c_h2o  = (1 - (c_ani*v_ani + c_cat*v_cat))/V_H2O ;
+    #undef V_H2O
+    
+    /* molalities * M_H2O */
+    double m_ani  = c_ani/c_h2o ;
+    double m_cat  = c_cat/c_h2o ;
+
+    /* ionic strength */
+    double I      =  0.5*(z_ani*z_ani*m_ani + z_cat*z_cat*m_cat);
+  
+    /* activity of water */
+    double II_ani = lna_i(tem,I,z_ani,b_ani,S_ani,A) ;
+    double II_cat = lna_i(tem,I,z_cat,b_cat,S_cat,A) ;
+    
+    /* Expression from Lin and Lee, 2005.
+     * This expression is consistent with the thermodynamic
+     * (Nguyen T.Q., Modélisations physico-chimiques de la pénétration
+     * des ions chlorures dans les matériaux cimentaires, 
+     * phd thesis ENPS ParisTech, 2007.)
+     */
+    {
+      double lna_w  = m_ani*II_ani + m_cat*II_cat ;
+      /* linearized activity of water */
+      //double lna_w = - (m_ani + m_cat) ;
+
+      return(lna_w) ;
+    }
+  }
+}
+
+
+double lna_i(double T,double I,double z,double b,double S,double A)
+/* Contribution de chaque ion au log de l'activite du solvant 
+   lna_w = sum_i ( m_i*lna_i ) (T.Q Nguyen) */ 
+{
+  double alpha = 1.29 ;
+  double a1 = alpha/(1+alpha) ;
+  double II = sqrt(I) ;
+  double lna = A*II/(1 + b*II) - a1*S*pow(I,alpha)/T ;
+  double lna_i = -1 + lna*z*z ;
+  
+  return(lna_i) ;
+}
+
+
+
+
+double IdealWaterActivity(double c_s,va_list args)
+/* Natural log of water activity in ideal mixture 
+ * Inputs:
+ * - c_s: concentration in mol/m3
+ * - nu_cat: cation stoichiometry of salt
+ * - nu_ani: anion stoichiometry of salt
+ */
+{
+  int nu_cat = va_arg(args,int) ;
+  int nu_ani = va_arg(args,int) ;
+  double c_cat = nu_cat*c_s ;
+  double c_ani = nu_ani*c_s ;
+  
+  /* linearized term */
+  /* Molar volume of liquid water (m3/mol) */
+  #define V_H2O  (18.e-6)
+  double lna_w = - (c_cat + c_ani)*V_H2O ;
+  #undef V_H2O
+  
+  return(lna_w) ;
 }
 

@@ -11,15 +11,26 @@ typedef struct LocalVariableVector_s      LocalVariableVector_t ;
 
 /* Declaration of Macros, Methods and Structures */
 
-
-#define LocalVariableVector_GetVariable(lvv)                ((lvv)->variable)
-#define LocalVariableVector_GetVariableDerivative(lvv)      ((lvv)->varderiv)
-
+extern LocalVariableVector_t*     LocalVariableVector_Create(int) ;
+extern void                       LocalVariableVector_Delete(void*,const int) ;
 
 
-struct LocalVariableVector_s {                /* Local Secondary Variables */
-  double*   variable ;                        /* Variable */
-  double*   varderiv ;                        /* Variable derivative */
+#define LocalVariableVector_GetNbOfVariables(LVV)           ((LVV)->nbofvariables)
+#define LocalVariableVector_GetVariable(LVV)                ((LVV)->variable)
+#define LocalVariableVector_GetPreviousVariable(LVV)        ((LVV)->previousvariable)
+#define LocalVariableVector_GetVariableDerivative(LVV)      ((LVV)->varderiv)
+
+
+
+#define LocalVariableVector_GetCurrentVariable(LVV) \
+        LocalVariableVector_GetVariable(LVV)
+
+
+struct LocalVariableVector_s {
+  unsigned int  nbofvariables ;
+  double*   variable ;               /* Variables */
+  double*   previousvariable ;       /* Variables at the previous time */
+  double*   varderiv ;               /* Variable derivatives */
 } ;
 
 #endif

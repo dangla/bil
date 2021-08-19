@@ -114,8 +114,8 @@ static double RT ;
 
 /* Material Properties
  * ------------------- */
-#define KOZENY_CARMAN(phi)     kozeny_carman(phi0_M,phi)
-#define POWER10LAW(sig,p)      power10law(el,sig,p)
+//#define PermeabilityCoefficient(el,phi)   kozeny_carman(phi0_M,phi)
+#define PermeabilityCoefficient(el,sig,p) power10law(el,sig,p)
 
 #define AXIS(I)          (axis_##I)
 #define STRESS(i,j)      (sig[3*(AXIS(i)) + (AXIS(j))])
@@ -273,16 +273,29 @@ void ComputePhysicoChemicalProperties(void)
 /* We define some indices for the local variables */
 enum {
 I_DIS = 0,
-I_U_CO2 =  I_DIS + 3,
+I_DIS2 =  I_DIS + 2,
+
+I_U_CO2,
+
 I_N_CO2,
 I_N_CO2_M,
 I_N_CO2_m,
+
 I_P_CO2,
+
 I_EPS,
-I_SIG        = I_EPS        + 9,
-I_W_CO2      = I_SIG        + 9,
-I_GRD_U_CO2  = I_W_CO2      + 3,
-I_K_CO2      = I_GRD_U_CO2  + 3,
+I_EPS8       = I_EPS        + 8,
+
+I_SIG,
+I_SIG8       = I_SIG        + 8,
+
+I_W_CO2,
+I_W_CO22  = I_W_CO2      + 2,
+
+I_GRD_U_CO2,
+I_GRD_U_CO22      = I_GRD_U_CO2  + 2,
+
+I_K_CO2,
 I_PHI_M,
 I_TRE,
 I_PHI_eul,
@@ -373,7 +386,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
     Curve_t* curve = Material_GetCurve(mat) ;
     Curve_t* cv ;
     
-    if(cv = Curves_FindCurve(curves,"stress_ads")) {
+    if((cv = Curves_FindCurve(curves,"stress_ads"))) {
       if(!Curves_FindCurve(curves,"tangent_biot")) {
         int i = Curves_CreateDerivative(curves,cv) ;
       
@@ -381,7 +394,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
           Curve_SetNameOfYAxis(curve+i,"tangent_biot") ;
         }
       }
-    } else if(cv = Curves_FindCurve(curves,"tangent_biot")) {
+    } else if((cv = Curves_FindCurve(curves,"tangent_biot"))) {
       if(!Curves_FindCurve(curves,"stress_ads")) {
         int i = Curves_CreateIntegral(curves,cv) ;
       
@@ -422,8 +435,10 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
     shear_3   = Material_GetProperty(mat)[pm("shear_3")] ;
     axis_3    = Material_GetProperty(mat)[pm("axis_3")] - 1 ;
     
-    /* Isotropic stiffness tensor */
+    
+    /* Stiffness tensor */
     {
+      /* Isotropic stiffness tensor */
       if(young_3 == 0) {
         Elasticity_SetToIsotropy(elasty) ;
         Elasticity_SetParameters(elasty,young,poisson) ;
@@ -432,7 +447,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         Material_GetProperty(mat)[pm("poisson_3")] = poisson ;
         Material_GetProperty(mat)[pm("shear_3")]   = young/(2 + 2*poisson) ;
         Material_GetProperty(mat)[pm("axis_3")]    = dim ;
-    /* Transversely isotropic stiffness tensor */
+      /* Transversely isotropic stiffness tensor */
       } else {
         Elasticity_SetToTransverselyIsotropy(elasty) ;
         Elasticity_SetParameters(elasty,young,poisson,young_3,poisson_3,shear_3,axis_3) ;
@@ -582,9 +597,7 @@ int ComputeInitialState(Element_t* el)
       double* sig = x + I_SIG ;
       
       /* transport coefficient */
-      /* double coeff_permeability = PermeabilityCoefficient(el,phi) ; */
-      /* double coeff_permeability = KOZENY_CARMAN(dphi_M) ; */
-      double coeff_permeability = POWER10LAW(sig,p_co2) ;
+      double coeff_permeability = PermeabilityCoefficient(el,sig,p_co2) ;
       double k_co2 = rho_co2*k_int/mu_co2*coeff_permeability ;
       
       /* storage in vex */
@@ -632,8 +645,8 @@ int ComputeInitialState(Element_t* el)
 int  ComputeExplicitTerms(Element_t* el,double t)
 /** Compute the explicit terms */
 {
-  double* vim = Element_GetPreviousImplicitTerm(el) ;
-  double* vex = Element_GetExplicitTerm(el) ;
+  double* vim0 = Element_GetPreviousImplicitTerm(el) ;
+  double* vex0 = Element_GetExplicitTerm(el) ;
   double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
 
   
@@ -652,23 +665,29 @@ int  ComputeExplicitTerms(Element_t* el,double t)
     int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
     int    p ;
     
-    for(p = 0 ; p < NbOfIntPoints ; p++ , vex += NVE) {
+    for(p = 0 ; p < NbOfIntPoints ; p++) {
       /* Variables */
-      double* x = ComputeVariables(el,u_n,u_n,vim,t,0,p) ;
+      double* x = ComputeVariables(el,u_n,u_n,vim0,t,0,p) ;
     
       /* pressures */
       double p_co2  = x[I_P_CO2] ;
     
       /* molar density of the bulk */
       double rho_co2 = BULK_DENSITY(p_co2) ;
+      
+      /* stresses */
+      double* sig = x + I_SIG ;
     
       /* transport coefficient */
-      /* double coeff_permeability = KOZENY_CARMAN(dphi_M) ; */
-      double coeff_permeability = POWER10LAW(SIG,p_co2) ;
+      double coeff_permeability = PermeabilityCoefficient(el,sig,p_co2) ;
       double k_co2 = rho_co2*k_int/mu_co2*coeff_permeability ;
     
       /* storage in vex */
-      K_CO2 = k_co2 ;
+      {
+        double* vex = vex0 + p*NVE ;
+        
+        K_CO2 = k_co2 ;
+      }
     }
   }
 
@@ -919,8 +938,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       for(j = 0 ; j < 9 ; j++) sig[j]   += SIG[j]/np ;
       for(j = 0 ; j < 3 ; j++) w_co2[j] += W_CO2[j]/np ;
       
-      /* kk0 += K_CO2/rho_co2/k_int*mu_co2/np ; */
-      kk0 += POWER10LAW(SIG,p_co2)/np ;
+      kk0 += PermeabilityCoefficient(el,SIG,p_co2)/np ;
       n_co2 += N_CO2/np ;
       n_co2_M += N_CO2_M/np ;
       n_co2_m += N_CO2_m/np ;
@@ -1307,10 +1325,11 @@ double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,do
 
 
 
-double kozeny_carman(double phi0,double dphi)
+double kozeny_carman(double phi0,double phi)
 {
+  return(pow(phi/phi0,3)*pow((1-phi0)/(1-phi),2)) ;
   /* linearization of (phi/phi0)^3*((1-phi0)/(1-phi))^2 */
-  return(1 + (3/phi0 + 2/(1 - phi0))*dphi) ;
+  //return(1 + (3/phi0 + 2/(1 - phi0))*dphi) ;
 }
 
 double power10law(Element_t* el,double* sig,double p_co2)

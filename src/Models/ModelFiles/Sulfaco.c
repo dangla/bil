@@ -197,7 +197,7 @@ enum {
 #define NN     Element_GetNbOfNodes(el)
 
 /* Nb of (im/ex)plicit and constant terms */
-#define NVE    	((1 + CementSolutionDiffusion_NbOfConcentrations)*NN)
+#define NVE     ((1 + CementSolutionDiffusion_NbOfConcentrations)*NN)
 #define NVI     (7*NN*NN + 14*NN)
 #define NV0     (2)
 
@@ -2301,8 +2301,8 @@ double TortuosityToLiquid_OhJang(double phi)
 {
   double phi_cap = 0.5 * phi  ;
   double phi_c   = 0.17 ;         /* Percolation capilar porosity */
-  double n       = 2.7 ; 		      /* OPC n  = 2.7  --------  Fly ash n  = 4.5 */
-  double ds      = 1.e-4 ;	      /* OPC ds = 1e-4 --------  Fly ash ds = 5e-5 */
+  double n       = 2.7 ;          /* OPC n  = 2.7  --------  Fly ash n  = 4.5 */
+  double ds      = 1.e-4 ;        /* OPC ds = 1e-4 --------  Fly ash ds = 5e-5 */
   double dsn     = pow(ds,1/n) ;
   double m_phi   = 0.5 * ((phi_cap - phi_c) + dsn * (1 - phi_c - phi_cap)) / (1 - phi_c) ;
   double tausat  = pow(m_phi + sqrt(m_phi*m_phi + dsn * phi_c/(1 - phi_c)),n) ;

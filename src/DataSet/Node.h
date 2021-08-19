@@ -12,8 +12,8 @@ struct Node_s         ; typedef struct Node_s         Node_t ;
 
 
 extern Node_t*  (Node_Create)(const int) ;
-extern int      (Node_FindUnknownPositionIndex)(Node_t*,const char*) ;
-extern int      (Node_FindEquationPositionIndex)(Node_t*,const char*) ;
+extern int      (Node_FindUnknownPositionIndex)(const Node_t*,const char*) ;
+extern int      (Node_FindEquationPositionIndex)(const Node_t*,const char*) ;
 extern void     (Node_EliminateMatrixColumnIndexForOverlappingNodes)(const Node_t*,const char*) ;
 extern void     (Node_EliminateMatrixRowIndexForOverlappingNodes)(const Node_t*,const char*) ;
 extern void     (Node_UpdateMatrixColumnIndexForOverlappingNodes)(const Node_t*,const char*) ;
@@ -50,6 +50,7 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 #define Node_GetNbOfUnknowns(NOD)         ((NOD)->nin)
 #define Node_GetNameOfEquation(NOD)       ((NOD)->eqn)
 #define Node_GetNameOfUnknown(NOD)        ((NOD)->inc)
+#define Node_GetSequentialIndexOfUnknown(NOD)        ((NOD)->sequentialindex)
 #define Node_GetObValIndex(NOD)           ((NOD)->i_obj)
 #define Node_GetMatrixColumnIndex(NOD)    ((NOD)->colindex)
 #define Node_GetMatrixRowIndex(NOD)       ((NOD)->rowindex)
@@ -76,9 +77,15 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
         
 #define Node_GetPreviousNodeSol(NOD) \
         NodeSol_GetPreviousNodeSol(Node_GetNodeSol(NOD))
+        
+#define Node_GetNextNodeSol(NOD) \
+        NodeSol_GetNextNodeSol(Node_GetNodeSol(NOD))
 
-#define Node_GetDeepNodeSol(NOD,i) \
-        NodeSol_GetDeepNodeSol(Node_GetNodeSol(NOD),i)
+#define Node_GetNodeSolInDistantPast(NOD,i) \
+        NodeSol_GetNodeSolInDistantPast(Node_GetNodeSol(NOD),i)
+
+#define Node_GetNodeSolInDistantFuture(NOD,i) \
+        NodeSol_GetNodeSolInDistantFuture(Node_GetNodeSol(NOD),i)
 
 
 
@@ -90,8 +97,14 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 #define Node_GetPreviousUnknown(NOD) \
         NodeSol_GetUnknown(Node_GetPreviousNodeSol(NOD))
 
-#define Node_GetDeepUnknown(NOD,i) \
-        NodeSol_GetUnknown(Node_GetDeepNodeSol(NOD,i))
+#define Node_GetNextUnknown(NOD) \
+        NodeSol_GetUnknown(Node_GetNextNodeSol(NOD))
+
+#define Node_GetUnknownInDistantPast(NOD,i) \
+        NodeSol_GetUnknown(Node_GetNodeSolInDistantPast(NOD,i))
+
+#define Node_GetUnknownInDistantFuture(NOD,i) \
+        NodeSol_GetUnknown(Node_GetNodeSolInDistantFuture(NOD,i))
 
 
 
@@ -182,6 +195,16 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 /* 3. overlapping nodes of zero-thickness elements */
 
 
+/* Matrix row/column indexes of selected matrix */
+
+#define Node_IndexForUnselectedMatrix   (-10)
+
+#define Node_GetSelectedMatrixColumnIndexOf(NOD,i,ind) \
+        ((i >= 0) && (Node_GetSequentialIndexOfUnknown(NOD)[i] == ind)) ? Node_GetMatrixColumnIndex(NOD)[i] : Node_IndexForUnselectedMatrix
+
+#define Node_GetSelectedMatrixRowIndexOf(NOD,i,ind) \
+        ((i >= 0) && (Node_GetSequentialIndexOfUnknown(NOD)[i] == ind)) ? Node_GetMatrixRowIndex(NOD)[i] : Node_IndexForUnselectedMatrix
+        
 
 
 
@@ -199,6 +222,7 @@ struct Node_s {               /* noeud */
   unsigned short int nin ;    /* nombre d'inconnues au noeud */
   char**   inc ;              /* nom des inconnues */
   char**   eqn ;              /* nom des equations */
+  int*     sequentialindex ;  /* Sequential indexes of unknowns/equations */
   unsigned short int* i_obj ; /* indices des inconnues dans obj */
   int*    colindex ;          /* column index (unknowns) */
   int*    rowindex ;          /* row index (equations) */

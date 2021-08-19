@@ -4,6 +4,7 @@
 #include <string.h>
 #include <strings.h>
 #include <assert.h>
+#include "Math.h"
 #include "Symmetry.h"
 #include "Elements.h"
 #include "Nodes.h"
@@ -65,7 +66,7 @@ static int    gmsh_DimElement(int) ;
 /* Extern functions */
 
 
-
+#if 0
 Mesh_t*  Mesh_New(void)
 {
   Mesh_t* mesh = (Mesh_t*) Mry_New(Mesh_t) ;
@@ -76,6 +77,7 @@ Mesh_t*  Mesh_New(void)
   
   return(mesh) ;
 }
+#endif
 
 
 
@@ -137,11 +139,6 @@ Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geo
    *   - the indexes of objective values
    * -----------------------------------------------*/
   Nodes_CreateMore(Mesh_GetNodes(mesh)) ;
-
-  /* 4. Allocation memory for
-   *   - the names of equations and unknowns
-   * ----------------------------------------*/
-  //Mesh_CreateEquationContinuity(mesh,materials) ;
 
   /* 4. Set the continuity of equations at nodes (no allocation)
    * -----------------------------------------------------------*/
@@ -399,31 +396,31 @@ Graph_t* Mesh_CreateGraph(Mesh_t* mesh)
           int  degrjn = Graph_GetDegreeOfVertex(graph,jn) ;
           int  degrin = Graph_GetDegreeOfVertex(graph,in) ;
         
-	        if(in == jn) continue ;
+          if(in == jn) continue ;
         
           /* Has jn been already met? */
           {
             int met = 0 ;
             int k ;
             
-	          for(k = 0 ; k < degrin ; k++) {
-	            if(jn == listin[k]) {met = 1 ; break ;}
-	          }
+            for(k = 0 ; k < degrin ; k++) {
+              if(jn == listin[k]) {met = 1 ; break ;}
+            }
         
-	          if(met) continue ;
+            if(met) continue ;
           }
         
           /* Not already met. So we increment with jn and in */
           if(listin[degrin] < 0) {
             Graph_GetDegreeOfVertex(graph,in) += 1 ;
-	          listin[degrin] = jn ;
+            listin[degrin] = jn ;
           } else {
             arret("Mesh_CreateGraph(3): not enough space") ;
           }
           
           if(listjn[degrjn] < 0) {
             Graph_GetDegreeOfVertex(graph,jn) += 1 ;
-	          listjn[degrjn] = in ;
+            listjn[degrjn] = in ;
           } else {
             arret("Mesh_CreateGraph(4): not enough space") ;
           }
@@ -453,7 +450,7 @@ Graph_t* Mesh_CreateGraph(Mesh_t* mesh)
 
 
 
-int  Mesh_SetMatrixRowColumnIndexes(Mesh_t* mesh,BConds_t* bconds)
+void  Mesh_SetMatrixRowColumnIndexes(Mesh_t* mesh,BConds_t* bconds)
 /** Set matrix row (column) index which node equation (unknown) points to
  *  by using the inverse permutation vector.
  **/
@@ -467,13 +464,13 @@ int  Mesh_SetMatrixRowColumnIndexes(Mesh_t* mesh,BConds_t* bconds)
   
   /* Set up the system */
   Mesh_UpdateMatrixRowColumnIndexes(mesh) ;
-  
-  return(Mesh_GetNbOfMatrixColumns(mesh)) ;
+
+  return ;
 }
 
 
 
-int  Mesh_UpdateMatrixRowColumnIndexes(Mesh_t* mesh)
+void  Mesh_UpdateMatrixRowColumnIndexes(Mesh_t* mesh)
 /** Set matrix row (column) index which node equation (unknown) points to
  *  by using the inverse permutation vector.
  **/
@@ -508,16 +505,16 @@ int  Mesh_UpdateMatrixRowColumnIndexes(Mesh_t* mesh)
     Elements_UpdateMatrixRowColumnIndexesOfOverlappingNodes(elements) ;
   }
   
-  return(Mesh_GetNbOfMatrixColumns(mesh)) ;
+  return ;
 }
 
 
 
-int  Mesh_InitializeMatrixRowColumnIndexes(Mesh_t* mesh)
+void  Mesh_InitializeMatrixRowColumnIndexes(Mesh_t* mesh)
 /** Initialize the Matrix Row/Column Indexes to >= 0 */
 {
 
-  /* Initialization to arbitrarily negative value (-1) 
+  /* Initialization to (arbitrarily) negative value 
    * so as to eliminate dof of isolated nodes or
    * dof of negative position (see below).
    */
@@ -542,7 +539,7 @@ int  Mesh_InitializeMatrixRowColumnIndexes(Mesh_t* mesh)
     Nodes_SetMatrixRowColumnIndexes(nodes,NULL) ;
   }
   
-  return(Mesh_GetNbOfMatrixColumns(mesh)) ;
+  return ;
 }
 
 
@@ -585,7 +582,7 @@ void Mesh_WriteGraph(Mesh_t* mesh,const char* nom,const char* format)
 
 
   /* Format HSL_MC40 */
-  if(!strcmp(format,"hsl") || !strcmp(format,"hsl_mc40")) {
+  if(String_Is(format,"hsl") || String_Is(format,"hsl_mc40")) {
     int    n_no = Mesh_GetNbOfNodes(mesh) ;
     int in ;
     
@@ -602,7 +599,7 @@ void Mesh_WriteGraph(Mesh_t* mesh,const char* nom,const char* format)
     }
     
   /* Format METIS */
-  } else if(!strcmp(format,"metis")) {
+  } else if(String_Is(format,"metis")) {
     int    n_no = Mesh_GetNbOfNodes(mesh) ;
     int in ;
     
@@ -649,7 +646,7 @@ void   Mesh_WriteInversePermutation(Mesh_t* mesh,const char* nom,const char* for
       arret("Mesh_WriteInversePermutation(7): can't open the file\n") ;
     }
       
-    if(!strcmp(format,"hsl") || !strcmp(format,"hsl_mc40")) {
+    if(String_Is(format,"hsl") || String_Is(format,"hsl_mc40")) {
       int    n_no = Mesh_GetNbOfNodes(mesh) ;
       int*   iperm = Mesh_ComputeInversePermutationOfNodes(mesh,format) ;
       int i ;
@@ -659,7 +656,7 @@ void   Mesh_WriteInversePermutation(Mesh_t* mesh,const char* nom,const char* for
       }
         
       free(iperm) ;
-    } else if(!strcmp(format,"hsl_mc43")) {
+    } else if(String_Is(format,"hsl_mc43")) {
       int    nelt = Mesh_GetNbOfNodes(mesh) ;
       int*   norder = Mesh_ComputeInversePermutationOfElements(mesh,format) ;
       int i ;
@@ -686,7 +683,7 @@ int*   Mesh_ComputeInversePermutationOfNodes(Mesh_t* mesh,const char* format)
   }
   
   
-  if(!strcmp(format,"hsl") || !strcmp(format,"hsl_mc40")) {
+  if(String_Is(format,"hsl") || String_Is(format,"hsl_mc40")) {
     Graph_t*  graph = Mesh_CreateGraph(mesh) ;
     int    nnz  = Graph_GetNbOfEdges(graph) ;
     int*   irn = (int*) malloc(2*nnz*sizeof(int)) ;
@@ -711,8 +708,8 @@ int*   Mesh_ComputeInversePermutationOfNodes(Mesh_t* mesh,const char* format)
       
           if(jn < in) {
             irn[k] = in + 1 ;
-	          jcn[k] = jn + 1 ;
-	          k++;
+            jcn[k] = jn + 1 ;
+            k++;
           }
         }
       }
@@ -773,7 +770,7 @@ int*   Mesh_ComputeInversePermutationOfElements(Mesh_t* mesh,const char* format)
   }
   
   
-  if(!strcmp(format,"hsl_mc43")) {
+  if(String_Is(format,"hsl_mc43")) {
     
     /* From the package HSL_MC43 */
     {
@@ -890,55 +887,13 @@ int*   Mesh_ComputeInversePermutationOfElements(Mesh_t* mesh,const char* format)
 
 
 
-
-#if 0
-void Mesh_CreateEquationContinuity(Mesh_t* mesh,Materials_t* materials)
-/** Compute some informations needed to describe the continuity of 
- *  equations and unknowns at nodes, i.e.:
- *  - the number and names of equations at nodes
- *  - the position of equations and unknowns of elements at nodes
- */
-{
-  /* Allocate memory space for names of equations and unknwons */
-  {
-    int maxnbofequationspernode = 0 ;
-    
-    {
-      Model_t* usedmodel = Materials_GetUsedModel(materials) ;
-      int n_usedmodels = Materials_GetNbOfUsedModels(materials) ;
-      int i ;
-      
-      for(i = 0 ; i < n_usedmodels ; i++) {
-        maxnbofequationspernode += Model_GetNbOfEquations(usedmodel + i) ;
-      }
-    }
-  
-    {
-      Node_t* no = Mesh_GetNode(mesh) ;
-      int n_no = Mesh_GetNbOfNodes(mesh) ;
-      int    n_names = n_no*maxnbofequationspernode ;
-      char** uname = (char**) Mry_New(char*[2*n_names]) ;
-      char** ename = uname + n_names ;
-      int in ;
-  
-      for(in = 0 ; in < n_no ; in++) {
-        Node_GetNameOfUnknown(no + in)  = uname + in*maxnbofequationspernode ;
-        Node_GetNameOfEquation(no + in) = ename + in*maxnbofequationspernode ;
-      }
-    }
-  }
-  
-  Mesh_SetEquationContinuity(mesh) ;
-}
-#endif
-
-
-
-
 void Mesh_SetEquationContinuity(Mesh_t* mesh)
 /** Set the continuity of unknowns/equations at nodes, i.e.:
- *  - the number and names of unknowns/equations at nodes
- *  - the position of unknowns/equations of elements at nodes
+ *  - the number of unknowns/equations at nodes
+ *  - the names of unknowns/equations at nodes
+ *  - the position of unknowns/equations at the nodes of elements
+ *  - the sequential index of unknowns at nodes
+ *    (limited in the range between 0 and NbOfMatrices-1)
  */
 {
    
@@ -957,10 +912,14 @@ void Mesh_SetEquationContinuity(Mesh_t* mesh)
   /* Compute
    *  - the number of equations per node: Node_GetNbOfEquations(no)
    *  - the number of unknowns  per node: Node_GetNbOfUnknowns(no)
+   *  - the name of equations per node: Node_GetNameOfEquation(no)
+   *  - the name of unknowns  per node: Node_GetNameOfUnknown(no)
    *  - the position of equations at nodes of each element: Element_GetEquationPosition(el)
    *  - the position of unknowns  at nodes of each element: Element_GetUnknownPosition(el)
+   *  - the sequential index of unknowns per nodes: Node_GetSequentialIndexOfUnknown(no)
    */
   {
+    int NbOfMatrices = Mesh_GetNbOfMatrices(mesh) ;
     Element_t* el = Mesh_GetElement(mesh) ;
     int n_el = Mesh_GetNbOfElements(mesh) ;
     int ie ;
@@ -974,6 +933,7 @@ void Mesh_SetEquationContinuity(Mesh_t* mesh)
         int neq = Element_GetNbOfEquations(el_i) ;
         char** mat_name_unk = Material_GetNameOfUnknown(mat) ;
         char** mat_name_eqn = Material_GetNameOfEquation(mat) ;
+        int*   mat_seq_ind = Material_GetSequentialIndexOfUnknown(mat) ;
         short int*  unk_pos = Element_GetUnknownPosition(el_i) ;
         short int*  eqn_pos = Element_GetEquationPosition(el_i) ;
         int in ;
@@ -982,6 +942,7 @@ void Mesh_SetEquationContinuity(Mesh_t* mesh)
           Node_t* node_i = Element_GetNode(el_i,in) ;
           char** node_name_unk = Node_GetNameOfUnknown(node_i) ;
           char** node_name_eqn = Node_GetNameOfEquation(node_i) ;
+          int*   node_seq_ind = Node_GetSequentialIndexOfUnknown(node_i) ;
           int ieq ;
         
           for(ieq = 0 ; ieq < neq ; ieq++) {
@@ -996,7 +957,7 @@ void Mesh_SetEquationContinuity(Mesh_t* mesh)
               int jun ;
 
               for(jun = 0 ; jun < Node_GetNbOfUnknowns(node_i) ; jun++) {
-                if(!strcmp(node_name_unk[jun],mat_name_unk[ieq])) break ;
+                if(String_Is(node_name_unk[jun],mat_name_unk[ieq])) break ;
               }
           
               {
@@ -1008,6 +969,9 @@ void Mesh_SetEquationContinuity(Mesh_t* mesh)
                   Node_GetNbOfUnknowns(node_i) += 1 ;
                   /* Set the name of the unknown ij */
                   node_name_unk[jun] = mat_name_unk[ieq] ;
+                  /* Set the sequentialindex of unknown ij */
+                  //node_seq_ind[jun] = mat_seq_ind[ieq] ;
+                  node_seq_ind[jun] = Math_Min(mat_seq_ind[ieq],NbOfMatrices-1) ;
                 }
               }
             }
@@ -1021,7 +985,7 @@ void Mesh_SetEquationContinuity(Mesh_t* mesh)
               int jeq ;
             
               for(jeq = 0 ; jeq < Node_GetNbOfEquations(node_i) ; jeq++) {
-                if(!strcmp(node_name_eqn[jeq],mat_name_eqn[ieq])) break ;
+                if(String_Is(node_name_eqn[jeq],mat_name_eqn[ieq])) break ;
               }
           
               {
@@ -1041,87 +1005,6 @@ void Mesh_SetEquationContinuity(Mesh_t* mesh)
       }
     }
   }
-
-/* No need to compress (2020/01/08) */
-#if 0
-  /* Checking */
-  {
-    int in ;
-    
-    for(in = 0 ; in < n_no ; in++) {
-      if(Node_GetNbOfUnknowns(no + in) != Node_GetNbOfEquations(no + in)) {
-        arret("Mesh_SetEquationContinuity(2)") ;
-      }
-    }
-  }
-
-
-  /* Compression of the memory space */
-  {
-    int    n_u = 0 ;
-    
-    {
-      char** p = Node_GetNameOfUnknown(no) ;
-      int in ;
-    
-      /* Compress the memory space for Node_GetNameOfUnknown(no + in) */
-      for(in = 0 ; in < n_no ; in++) {
-        char** node_name_unk = Node_GetNameOfUnknown(no + in) ;
-        int j ;
-    
-        for(j = 0 ; j < Node_GetNbOfUnknowns(no + in) ; j++) {
-          p[j] = node_name_unk[j] ;
-        }
-    
-        Node_GetNameOfUnknown(no + in) = p ;
-        p   += Node_GetNbOfUnknowns(no + in) ;
-        n_u += Node_GetNbOfUnknowns(no + in) ;
-      }
-  
-      /* Compress the memory space for Node_GetNameOfEquation(no + in) */
-      for(in = 0 ; in < n_no ; in++) {
-        char** node_name_eqn = Node_GetNameOfEquation(no + in) ;
-        int j ;
-    
-        for(j = 0 ; j < Node_GetNbOfEquations(no + in) ; j++) {
-          p[j] = node_name_eqn[j] ;
-        }
-    
-        Node_GetNameOfEquation(no + in) = p ;
-        p   += Node_GetNbOfEquations(no + in) ;
-        n_u += Node_GetNbOfEquations(no + in) ;
-      }
-    }
-  
-  
-    /* To avoid that realloc crashes when performing tests ! */
-    if(n_u == 0) n_u = 1 ; 
-  
-  
-    /* We shrink the allocated memory */
-    {
-      char** p = (char**) Mry_Realloc(Node_GetNameOfUnknown(no),n_u*sizeof(char*)) ;
-      int in ;
-
-      if(Node_GetNameOfUnknown(no) != p) {
-        /* arret("Mesh_SetEquationContinuity(4): memory allocation impossible") ; */
-        Message_Warning("Mesh_SetEquationContinuity(4): new memory allocation") ;
-        
-        /* Compress the memory space for Node_GetNameOfUnknown(no + in) */
-        for(in = 0 ; in < n_no ; in++) {
-          Node_GetNameOfUnknown(no + in) = p ;
-          p   += Node_GetNbOfUnknowns(no + in) ;
-        }
-  
-        /* Compress the memory space for Node_GetNameOfEquation(no + in) */
-        for(in = 0 ; in < n_no ; in++) {
-          Node_GetNameOfEquation(no + in) = p ;
-          p   += Node_GetNbOfEquations(no + in) ;
-        }
-      }
-    }
-  }
-#endif
 }
 
 
@@ -1152,7 +1035,7 @@ void (Mesh_InitializeSolutionPointers)(Mesh_t* mesh,Solutions_t* sols)
 int (Mesh_LoadCurrentSolution)(Mesh_t* mesh,DataFile_t* datafile,double* t)
 /** Load the solution from a continuous file (suffix "cont" or "conti"). 
  ** Return either i > 0 if a continuous file was found and a solution
- ** was loaded from it or 0 if no continuous file was found. */
+ ** was loaded from it, or 0 if no continuous file was found. */
 {
   int ires = 0 ;
   FILE* fic_cont ;
@@ -1284,6 +1167,7 @@ int (Mesh_StoreCurrentSolution)(Mesh_t* mesh,DataFile_t* datafile,double t)
     fic_sto = fopen(nom_sto,"rb") ;
     if(fic_sto) {
       Message_Direct("%s has been replaced\n",nom_sto) ;
+      fclose(fic_sto) ;
     }
     
     fic_sto = fopen(nom_sto,"wb") ;
@@ -1400,6 +1284,47 @@ void (Mesh_SetCurrentUnknownsWithBoundaryConditions)(Mesh_t* mesh,BConds_t* bcon
 
 
 
+void (Mesh_InterpolateCurrentUnknowns)(Mesh_t* mesh,Solutions_t* sols,const int sequentialindex)
+/** Interpolate the current nodal values of unknowns 
+ *  the sequential index of which is lower than sequentialindex. */
+{
+  Solution_t* sol = Solutions_GetSolution(sols) ;
+  double dt_1 = Solution_GetTimeStep(sol) ;
+  unsigned int nb_nodes = Mesh_GetNbOfNodes(mesh) ;
+  Node_t* node = Mesh_GetNode(mesh) ;
+  
+  if(sequentialindex <= 0) return ;
+  
+  {
+    int   i ;
+  
+    for(i = 0 ; i < nb_nodes ; i++) {
+      Node_t* nodi = node + i ;
+      int*    node_seq_ind = Node_GetSequentialIndexOfUnknown(nodi) ;
+      int  nb_unk = Node_GetNbOfUnknowns(nodi) ;
+      double* u_n = Node_GetPreviousUnknown(nodi) ;
+      double* u_1 = Node_GetCurrentUnknown(nodi) ;
+      int k ;
+        
+      for(k = sequentialindex ; k > 0 ; k--) {
+        int dist = sequentialindex - k + 1 ;
+        double* u_2 = Node_GetUnknownInDistantFuture(nodi,dist) ;
+        Solution_t* sol2 = Solution_GetSolutionInDistantFuture(sol,dist) ;
+        double dt_2 = Solution_GetTimeStep(sol2) ;
+        int j ;
+      
+        for(j = 0 ; j < nb_unk ; j++) {
+          if(node_seq_ind[j] < sequentialindex) {
+            u_1[j] = u_n[j] + (u_2[j] - u_n[j]) * dt_1 / dt_2 ;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
 void (Mesh_UpdateCurrentUnknowns)(Mesh_t* mesh,Solver_t* solver)
 {
   double* x = Solver_GetSolution(solver) ;
@@ -1408,6 +1333,7 @@ void (Mesh_UpdateCurrentUnknowns)(Mesh_t* mesh,Solver_t* solver)
   ObVals_t* obvals = Nodes_GetObjectiveValues(nodes) ;
   ObVal_t* obval = ObVals_GetObVal(obvals) ;
   unsigned int nb_nodes = Mesh_GetNbOfNodes(mesh) ;
+  unsigned int imatrix = Solver_GetMatrixIndex(solver) ;
   unsigned int i ;
           
   for(i = 0 ; i < nb_nodes ; i++) {
@@ -1416,7 +1342,8 @@ void (Mesh_UpdateCurrentUnknowns)(Mesh_t* mesh,Solver_t* solver)
     int j ;
             
     for(j = 0 ; j < nin ; j++) {
-      int   k = Node_GetMatrixColumnIndex(node + i)[j] ;
+      //int   k = Node_GetMatrixColumnIndex(node + i)[j] ;
+      int   k = Node_GetSelectedMatrixColumnIndexOf(node + i,j,imatrix) ;
       int  iobval = Node_GetObValIndex(node + i)[j] ;
       double rfac = ObVal_GetRelaxationFactor(obval + iobval) ;
               
@@ -1619,10 +1546,10 @@ void Mesh_ReadFormatGmsh(Mesh_t* mesh,const char* nom_msh)
   /* fermeture du fichier */
   fclose(fic_msh) ;
 
-  if(!strncmp(&line[1],"NOD",3)) { /* Version 1.0 */
+  if(String_Is(&line[1],"NOD",3)) { /* Version 1.0 */
     Mesh_ReadFormatGmsh_1(mesh,nom_msh) ;
     return ;
-  } else if(!strncmp(&line[1],"MeshFormat",10)) { /* Version 2.0 */
+  } else if(String_Is(&line[1],"MeshFormat",10)) { /* Version 2.0 */
     Mesh_ReadFormatGmsh_2(mesh,nom_msh) ;
     return ;
   }
@@ -2363,7 +2290,7 @@ void Mesh_ReadFormatCesar(Mesh_t* mesh,const char* nom)
       Element_GetRegionIndex(el + i) = 0 ;
       
       for(j = 0 ; j < n_type ; j++) {
-        if(!strncmp(mot,nom_el[j],4)) {
+        if(String_Is(mot,nom_el[j],4)) {
           Element_GetRegionIndex(el + i) = j + 1 ;
         }
       }
@@ -2768,7 +2695,7 @@ void Mesh_PrintData(Mesh_t* mesh,char* mot)
 {
   static int i_debug=0 ;
   
-  if(!strcmp(mot,"\0")) return ;
+  if(String_Is(mot,"\0")) return ;
 
   PRINT("\n") ;
   PRINT("debug(%d)\n",i_debug++) ;
@@ -2777,7 +2704,7 @@ void Mesh_PrintData(Mesh_t* mesh,char* mot)
 
   /* Geometry
    * -------- */
-  if(Mesh_GetGeometry(mesh) && (!strncmp(mot,"geometry",4) || !strncmp(mot,"all",3))) {
+  if(Mesh_GetGeometry(mesh) && (String_Is(mot,"geometry",4) || String_Is(mot,"all",3))) {
     int dim = Mesh_GetDimension(mesh) ;
     Symmetry_t sym = Mesh_GetSymmetry(mesh) ;
     
@@ -2805,7 +2732,7 @@ void Mesh_PrintData(Mesh_t* mesh,char* mot)
 
   /* Mesh
    * ---- */
-  if(mesh && (!strncmp(mot,"mesh",4) || !strncmp(mot,"all",3))) {
+  if(mesh && (String_Is(mot,"mesh",4) || String_Is(mot,"all",3))) {
     int dim = Mesh_GetDimension(mesh) ;
     int n_no = Mesh_GetNbOfNodes(mesh) ;
     Node_t* no = Mesh_GetNode(mesh) ;
@@ -2887,7 +2814,7 @@ void Mesh_PrintData(Mesh_t* mesh,char* mot)
 
   /* Continuity
    * ---------- */
-  if(mesh && (!strncmp(mot,"continuity",3))) {
+  if(mesh && (String_Is(mot,"continuity",3))) {
     int n_no = Mesh_GetNbOfNodes(mesh) ;
     Node_t* no = Mesh_GetNode(mesh) ;
     int n_el = Mesh_GetNbOfElements(mesh) ;
@@ -2970,7 +2897,7 @@ void Mesh_PrintData(Mesh_t* mesh,char* mot)
 
   /* Matrix numbering
    * ---------------- */
-  if(mesh && !strncmp(mot,"numbering",3)) {
+  if(mesh && String_Is(mot,"numbering",3)) {
     int n_no = Mesh_GetNbOfNodes(mesh) ;
     Node_t* no = Mesh_GetNode(mesh) ;
     int i ;
@@ -3013,7 +2940,7 @@ void Mesh_PrintData(Mesh_t* mesh,char* mot)
 
   /* Interpolation functions
    * ----------------------- */
-  if(mesh && (!strncmp(mot,"interpolation",4))) {
+  if(mesh && (String_Is(mot,"interpolation",4))) {
     Elements_t* elts = Mesh_GetElements(mesh) ;
     IntFcts_t* intfcts = Elements_GetIntFcts(elts) ;
     int n_fi = IntFcts_GetNbOfIntFcts(intfcts) ;

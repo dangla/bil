@@ -11,8 +11,6 @@
 #include "Help.h"
 #include "Modules.h"
 #include "OutputFiles.h"
-#include "CementSolutionChemistry.h"
-#include "HardenedCementChemistry.h"
 #include "Models.h"
 #include "Bil.h"
 #include "Exception.h"
@@ -89,6 +87,10 @@ int Bil_Main(Bil_t* bil)
 /* 
  * Intern functions 
  */
+ 
+#include "CementSolutionChemistry.h"
+#include "HardenedCementChemistry.h"
+#include "LogActivityOfWaterInBrine.h"
 
 void Bil_CLI(Bil_t* bil)
 /** Command-line interface */
@@ -250,10 +252,22 @@ void Bil_CLI(Bil_t* bil)
   }
   
   if(Context_IsTest(ctx)) {
-    char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
-    Options_t* options = Context_GetOptions(ctx) ;
+    #if 1
+    {
+      LogActivityOfWaterInBrine_t* law = LogActivityOfWaterInBrine_Create() ;
+      return ;
+    }
+    #endif
+    #if 0
+    {
+      char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
+      Options_t* options = Context_GetOptions(ctx) ;
     
-    DataSet_Create1(filename,options) ;
+      DataSet_Create1(filename,options) ;
+      return ;
+    }
+    #endif
+    
     return ;
   }
   
@@ -261,13 +275,13 @@ void Bil_CLI(Bil_t* bil)
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* jdd =  DataSet_Create(filename,options) ;
-    char* codename = Options_GetModule(options) ;
-    Modules_t* modules = DataSet_GetModules(jdd) ;
-    Module_t* module_i = Modules_FindModule(modules,codename) ;
+    Module_t* module_i = DataSet_GetModule(jdd) ;
   
-    Message_Direct("Calculation\n") ;
-    
+    Message_Direct("Calculation of %s\n",filename) ;
+    Message_Direct("Enter in %s\n",Module_GetCodeNameOfModule(module_i)) ;
     Module_ComputeProblem(module_i,jdd) ;
+    Message_Direct("End of calculation\n") ;
+    
     Message_Info("CPU time %g seconds\n",Message_CPUTime()) ;
     return ;
   }

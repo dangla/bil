@@ -19,6 +19,7 @@ NodeSol_t* (NodeSol_Create)(const int n)
     NodeSol_GetUnknown(nodesol) = u ;
   
     NodeSol_GetPreviousNodeSol(nodesol) = NULL ;
+    NodeSol_GetNextNodeSol(nodesol)     = NULL ;
   }
   
   return(nodesol) ;
@@ -26,8 +27,16 @@ NodeSol_t* (NodeSol_Create)(const int n)
 
 
 
-NodeSol_t* (NodeSol_GetDeepNodeSol)(NodeSol_t* nodesol,unsigned int depth)
+NodeSol_t* (NodeSol_GetNodeSolInDistantPast)(NodeSol_t* nodesol,unsigned int dist)
 {
-  while(depth--) nodesol = NodeSol_GetPreviousNodeSol(nodesol) ;
+  while(dist--) nodesol = NodeSol_GetPreviousNodeSol(nodesol) ;
+  return(nodesol) ;
+}
+
+
+
+NodeSol_t* (NodeSol_GetNodeSolInDistantFuture)(NodeSol_t* nodesol,unsigned int dist)
+{
+  while(dist--) nodesol = NodeSol_GetNextNodeSol(nodesol) ;
   return(nodesol) ;
 }

@@ -32,7 +32,7 @@ List of folders
 	./examples  examples of input data files
 	./src       sources
 	./lib       libraries
-        ./utils     some utility scripts
+        ./scripts   some utility scripts
 
 
 Building and Installation

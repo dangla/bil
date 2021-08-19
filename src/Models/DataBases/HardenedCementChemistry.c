@@ -1260,6 +1260,53 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_0(Har
 
 
 
+void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_Cl_H2O(HardenedCementChemistry_t* hcc)
+{
+  /* Solve first without Cl */
+  HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O(hcc) ;
+  
+  /* Solve chemistry in solution including Cl */
+  {
+    CementSolutionChemistry_t* csc = HardenedCementChemistry_GetCementSolutionChemistry(hcc) ;
+    double loga_cl    = Input(LogA_Cl) ;
+  
+    CementSolutionChemistry_SetInput(csc,LogA_Cl,loga_cl) ;
+  
+    CementSolutionChemistry_SupplementSystemWith(csc,Cl) ;
+
+    CementSolutionChemistry_UpdateSolution(csc) ;
+  }
+  
+  /* Backup */
+  
+  /* Saturation indexes of solid phases */
+  {
+    CementSolutionChemistry_t* csc = HardenedCementChemistry_GetCementSolutionChemistry(hcc) ;
+    double loga_ca     = CementSolutionChemistry_GetLogActivityOf(csc,Ca) ;
+    double loga_alo4h4 = CementSolutionChemistry_GetLogActivityOf(csc,AlO4H4) ;
+    double loga_cl     = CementSolutionChemistry_GetLogActivityOf(csc,Cl) ;
+    double loga_oh     = CementSolutionChemistry_GetLogActivityOf(csc,OH) ;
+    double loga_so4    = CementSolutionChemistry_GetLogActivityOf(csc,SO4) ;
+    double loga_h2o    = CementSolutionChemistry_GetLogActivityOf(csc,H2O) ;
+    double logk_friedelsalt  = LogKsp(FriedelSalt) ;
+    double logk_kuzelsalt    = LogKsp(KuzelSalt) ;
+    double logs_friedelsalt  = 4*loga_ca + 2*loga_alo4h4 + 2*loga_cl + 4*loga_oh + 4*loga_h2o - logk_friedelsalt ;
+    double logs_kuzelsalt    = 4*loga_ca + 2*loga_alo4h4 + loga_cl + 0.5*loga_so4 + 4*loga_oh + 6*loga_h2o - logk_kuzelsalt ;
+    double s_friedelsalt     = pow(10,logs_friedelsalt) ;
+    double s_kuzelsalt       = pow(10,logs_kuzelsalt) ;
+    
+    HardenedCementChemistry_GetSaturationIndexOf(hcc,FriedelSalt)      = s_friedelsalt ;
+    HardenedCementChemistry_GetLog10SaturationIndexOf(hcc,FriedelSalt) = logs_friedelsalt ;
+    HardenedCementChemistry_GetSaturationIndexOf(hcc,KuzelSalt)        = s_kuzelsalt ;
+    HardenedCementChemistry_GetLog10SaturationIndexOf(hcc,KuzelSalt)   = logs_kuzelsalt ;
+    
+    /* ADD CARBO-CHLORO-ALUMINATES */
+  }
+}
+
+
+
+
 
 
 

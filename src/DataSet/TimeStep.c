@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "Message.h"
+#include "Mry.h"
 #include "TimeStep.h"
 #include "DataFile.h"
 #include "ObVals.h"
@@ -15,11 +16,7 @@ static TimeStep_t*  TimeStep_New(void) ;
 
 TimeStep_t*  TimeStep_New(void)
 {
-  TimeStep_t* timestep = (TimeStep_t*) malloc(sizeof(TimeStep_t)) ;
-  
-  if(!timestep) {
-    arret("TimeStep_New") ;
-  }
+  TimeStep_t* timestep = (TimeStep_t*) Mry_New(TimeStep_t) ;
 
   /* default values */
   TimeStep_GetInitialTimeStep(timestep)    = 0 ;
@@ -30,6 +27,7 @@ TimeStep_t*  TimeStep_New(void)
   TimeStep_GetObVals(timestep)             = NULL ;
   TimeStep_GetLocation(timestep)           = 0 ;
   TimeStep_SetLocationAtBegin(timestep) ;
+  TimeStep_GetSequentialIndex(timestep)    = 0 ;
 
   return(timestep) ;
 }
@@ -142,6 +140,7 @@ double TimeStep_ComputeTimeStep(TimeStep_t* timestep,Nodes_t* nodes,double tn,do
     unsigned int n_no = Nodes_GetNbOfNodes(nodes) ;
     Node_t* no = Nodes_GetNode(nodes) ;
     ObVal_t* obval = TimeStep_GetObVal(timestep) ;
+    int sequentialindex = TimeStep_GetSequentialIndex(timestep) ;
     int    obvalindex = 0 ;
     int    nodeindex = 0 ;
     double varmax = zero ;
@@ -154,23 +153,28 @@ double TimeStep_ComputeTimeStep(TimeStep_t* timestep,Nodes_t* nodes,double tn,do
     for(i = 0 ; i < n_no ; i++) {
       Node_t* nodi = no + i ;
       int neq = Node_GetNbOfEquations(nodi) ;
-      double* u_1 = Node_GetCurrentUnknown(nodi) ;
-      double* u_n = Node_GetPreviousUnknown(nodi) ;
+      //double* u_1 = Node_GetCurrentUnknown(nodi) ;
+      //double* u_n = Node_GetPreviousUnknown(nodi) ;
+      double* u_n = Node_GetUnknownInDistantPast(nodi,2) ;
+      double* u_1 = Node_GetPreviousUnknown(nodi) ;
+      int*    node_seq_ind = Node_GetSequentialIndexOfUnknown(nodi) ;
       int j ;
       
       for(j = 0 ; j < neq ; j++) {
-        ObVal_t* obval_j = obval + Node_GetObValIndex(nodi)[j] ;
-        double val = ObVal_GetValue(obval_j) ;
-        double varrel = fabs(u_1[j] - u_n[j])/val ;
+        if(node_seq_ind[j] == sequentialindex) {
+          ObVal_t* obval_j = obval + Node_GetObValIndex(nodi)[j] ;
+          double val = ObVal_GetValue(obval_j) ;
+          double varrel = fabs(u_1[j] - u_n[j])/val ;
         
-        if(ObVal_IsRelativeValue(obval_j)) {
-          if(fabs(u_n[j]) > 0.) varrel /= fabs(u_n[j]) ;
-        }
+          if(ObVal_IsRelativeValue(obval_j)) {
+            if(fabs(u_n[j]) > 0.) varrel /= fabs(u_n[j]) ;
+          }
         
-        if(varrel > varmax) {
-          varmax = varrel ;
-          obvalindex = Node_GetObValIndex(nodi)[j] ;
-          nodeindex = i ;
+          if(varrel > varmax) {
+            varmax = varrel ;
+            obvalindex = Node_GetObValIndex(nodi)[j] ;
+            nodeindex = i ;
+          }
         }
       }
     }

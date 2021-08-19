@@ -123,9 +123,11 @@
  * ---------------- */
 #define WaterDensity(p) \
         (rho_w_i * exp(compressibility_w*((p) - p_i)))
+
+#define V_m_w  (1.e-3) /* Specific volume of water */
         
 #define LiquidDensity(p,w_s) \
-        (WaterDensity(p) * ((rho_l_dep == 0 ) ? 1 : (exp(-rho_w_i*(1e-3-v_m_s)*(w_s)))))
+        (WaterDensity(p) * ((rho_l_dep == 0 ) ? 1 : (exp(-rho_w_i*(V_m_w-v_m_s)*(w_s)))))
 
 
 /* Material properties 
@@ -193,7 +195,6 @@ static int     ComputeTangentCoefficients(Element_t*,double,double*) ;
 static int     ComputeTransferCoefficients(Element_t*,double,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double**,double*,double,int) ;
-//static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
 static void    ComputeSecondaryVariables(Element_t*,double,double*,double*) ;
 static double* ComputeVariableDerivatives(Element_t*,double,double*,double,int) ;
 
@@ -568,11 +569,9 @@ int ComputeInitialState(Element_t* el)
   double** u   = Element_ComputePointerToNodalUnknowns(el) ;
   IntFct_t  *intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-  int    m ;
-  // à garder ???////////////////////
-  //int nn = IntFct_GetNbOfNodes(intfct) ;
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
   FEM_t *fem = FEM_GetInstance(el) ;
+  int    m ;
  
   /* We skip if the element is a submanifold */
   if(Element_IsSubmanifold(el)) return(0) ;
@@ -599,13 +598,17 @@ int ComputeInitialState(Element_t* el)
       
       Phi_c = phi_c_i ;
       
-      SIG_M = (SIG[0]+SIG[4]+SIG[8])/3 ;
+      {
+        double sigm = (SIG[0]+SIG[4]+SIG[8])/3 ;
       
-      for(i = 0 ; i < 9 ; i++) SIG_D[i] = SIG[i] ;
+        for(i = 0 ; i < 9 ; i++) SIG_D[i] = SIG[i] ;
+        
+        SIG_D[0] -= sigm ;
+        SIG_D[4] -= sigm ;
+        SIG_D[8] -= sigm ; 
       
-      SIG_D[0] -= SIG_M ;
-      SIG_D[4] -= SIG_M ;
-      SIG_D[8] -= SIG_M ; 
+        SIG_M = sigm - b*(p - p_i) ;
+      }
     }
   
     /* storage in vex */
@@ -650,8 +653,7 @@ int ComputeInitialState(Element_t* el)
       for(i = 0 ; i < 3 ; i++) W_salt[i]  = x[I_W_SALT + i] ;
     
       Rho_l = x[I_RHO_L] ;    
-      Rho_w = x[I_RHO_W] ;    
-      // manque Dm_s ... utile ??
+      Rho_w = x[I_RHO_W] ;
     
       for(i = 0 ; i < 9 ; i++) SIG[i] = x[I_SIG + i] ;
       for(i = 0 ; i < 9 ; i++) SIG_D[i] = x[I_SIG_D + i] ;
@@ -689,7 +691,6 @@ int  ComputeExplicitTerms(Element_t *el,double t)
   GetProperties(el) ;
   
   /* Loop on integration points */
-  //for(m = 0 ; m < NbOfIntPoints ; m++ , vex += NVE, vim_n  += NVI) {
   for(m = 0 ; m < NbOfIntPoints ; m++) {
     double * vex = vex0 + m*NVE ;
     double * vim_n = vim0_n + m*NVI ;
@@ -795,12 +796,10 @@ int  ComputeMatrix(Element_t *el,double t,double dt,double *k)
 /* Compute the matrix (k) */
 {
 #define K(i,j)    (k[(i)*ndof + (j)])
-// //  double *vim_n = Element_GetPreviousImplicitTerm(el) ;
   IntFct_t  *intfct = Element_GetIntFct(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
-  int ndof = nn*NEQ ;                          // number of degree of freedom = nn (number of nodes) * NEQ (number of equation)
-// //  char *method = Material_GetMethod(Element_GetMaterial(el)) ;
+  int ndof = nn*NEQ ;
   FEM_t *fem = FEM_GetInstance(el) ;
   int    i,j ;
   double zero = 0. ;
@@ -820,12 +819,11 @@ int  ComputeMatrix(Element_t *el,double t,double dt,double *k)
   {
     int n = 81 + 2*9 + 2*(9 + 2) ;
     double c[IntFct_MaxNbOfIntPoints*n] ;
-    //int dec = kp2(fem,c,dt) ;      // Calculation of Cijkl,  121 terms store in a vector c
     int dec = ComputeTangentCoefficients(el,dt,c) ;
     double *kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,2,E_Mech) ;
     
     for(i = 0 ; i < ndof*ndof ; i++) {        
-      k[i] = kp[i] ;    // 36 terms
+      k[i] = kp[i] ;
     }
   }
   
@@ -873,6 +871,17 @@ int  ComputeMatrix(Element_t *el,double t,double dt,double *k)
       }
     }
   }
+  
+
+  /** Elements P2P1 */
+  {
+    char* method = Material_GetMethod(Element_GetMaterial(el)) ;
+    
+    if(strstr(method,"P2P1")) {
+      FEM_TransformMatrixFromDegree2IntoDegree1(fem,U_Mass,E_Mass,k) ;
+      FEM_TransformMatrixFromDegree2IntoDegree1(fem,U_Salt,E_Salt,k) ;
+    }
+  }
     
   return(0) ;
 #undef K
@@ -892,7 +901,6 @@ int  ComputeResidu(Element_t *el,double t,double dt,double *r)
   IntFct_t  *intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
   int ndof = nn*NEQ ;
-  char *method = Material_GetMethod(Element_GetMaterial(el)) ;
   FEM_t *fem = FEM_GetInstance(el) ;
   int    i ;
   double zero = 0. ;
@@ -915,7 +923,6 @@ int  ComputeResidu(Element_t *el,double t,double dt,double *r)
       
       for(j = 0 ; j < dim ; j++) R(i,E_Mech + j) -= rw[i*dim + j] ;
     }
-    //for(i = 0 ; i < nn ; i++) R(i,E_Mech) -= rw[i] ;    // = residu = -Eq(u)
   }
 
   /***** 2. Total mass conservation *****/
@@ -939,10 +946,6 @@ int  ComputeResidu(Element_t *el,double t,double dt,double *r)
     double *rf = FEM_ComputeFluxResidu(fem,intfct,W_total,NVI) ;
     
     for(i = 0 ; i < nn ; i++) R(i,E_Mass) -= -dt*rf[i] ; 
-  }
-  /** 2.3 Elements P2P1 */
-  if(strstr(method,"P2P1")) {
-    FEM_TransformResiduFromDegree2IntoDegree1(fem,E_Mass,r) ;
   }
   
   /***** 3. Salt mass conservation *****/
@@ -968,6 +971,16 @@ int  ComputeResidu(Element_t *el,double t,double dt,double *r)
     for(i = 0 ; i < nn ; i++) R(i,E_Salt) -= -dt*rf[i] ; 
   }
   
+  /** 4. Elements P2P1 */
+  {
+    char* method = Material_GetMethod(Element_GetMaterial(el)) ;
+    
+    if(strstr(method,"P2P1")) {
+      FEM_TransformResiduFromDegree2IntoDegree1(fem,U_Mass,E_Mass,r) ;
+      FEM_TransformResiduFromDegree2IntoDegree1(fem,U_Salt,E_Salt,r) ;
+    }
+  }
+  
   return(0) ;
 #undef R  
 }
@@ -983,7 +996,6 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   double *vex0 = Element_GetExplicitTerm(el) ;
   IntFct_t  *intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
-  //int nn = IntFct_GetNbOfNodes(intfct) ;
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
   FEM_t *fem = FEM_GetInstance(el) ;
   double zero = 0. ;
@@ -1027,7 +1039,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     ////////////////////////////////////////////////////////////////////
     double msalt_element = 0 ;
     double mwater_element = 0 ;
-    double indicateur =0 ;
+    //double indicateur =0 ;
     
     /* VE = k,d and tau */
     double k = 0 ;
@@ -1069,8 +1081,6 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
         tre   += (eps[0] + eps[4] + eps[8])/np ;
       }
       
-      //~ phil_Eulerian += (phil / (1+tre))/np ;
-      
       k += K_l/np ;
       d += D/np ;
       tau += Tau/np ;
@@ -1087,11 +1097,11 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       
     i = 0 ;
     Result_Store(r + i++,dis,"Displacement vector",3) ;
-    Result_Store(r + i++,&p,"Liquide pressure",1) ;
+    Result_Store(r + i++,&p,"Liquid pressure",1) ;
     Result_Store(r + i++,&w_s,"Solute mass fraction",1) ;
     
-    Result_Store(r + i++,w_l,"Liquide fluxe",3) ;
-    Result_Store(r + i++,w_salt,"Solute fluxe",3) ;
+    Result_Store(r + i++,w_l,"Liquid flux vector",3) ;
+    Result_Store(r + i++,w_salt,"Solute flux vector",3) ;
     Result_Store(r + i++,sig,"Stress",9) ;
     Result_Store(r + i++,&phil,"Lagrangian porosity",1) ;
     Result_Store(r + i++,&phic,"Crystal volumetric fraction",1) ;
@@ -1509,6 +1519,7 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
   double* eps_n =  x_n + I_EPS ;
   /* Pressure */
   double  p   = x[I_P] ;
+  double  p_n = x_n[I_P] ;
   /* Solute mass fraction */
   double w_s   = x[I_W_S] ;
   double w_s_n = x_n[I_W_S] ;
@@ -1527,17 +1538,20 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
   /* Porosities */
   {
     /** Strain */
-    double tre   = eps[0] + eps[4] + eps[8] ;  // Matrix volumetric strain
-    double dphi_l_epsi = b*tre ;        // Porosity volumetric strain
+    double tre   = eps[0] + eps[4] + eps[8] ;
+    double dphi_l_epsi = b*tre ;
     /** crystal salt dissolution */
     double phi_c_n = x_n[I_PHI_C] ;
     double phi_c = CrystalVolumeFraction(phi_c_n,w_s,dt) ;
-    //double phi_c = phi_c_n   +   (dt * phi_c_n * sigma_c * beta * ((w_s/w_s_sat)-1)) / rho_c ;
     double dphi_l_salt = phi_c_i - phi_c ;
     /** Porosity evolution */
-    double phi_l = (phi_l_i + dphi_l_epsi + dphi_l_salt);
-    //~ if (phi_l < 1e-6) phi_l = 1e-6;      // A priori pas utile
+    double phi_l = phi_l_i + dphi_l_epsi + dphi_l_salt ;
     double n   = phi_l / (1 + tre) ;
+    
+    if (phi_l < 0) {
+      Message_Direct("\nNegative porosity: %e\n",phi_l) ;
+      Exception_Interrupt ;
+    }
     
     x[I_PHI_C] = phi_c ;
     x[I_PHI_L] = phi_l ;
@@ -1630,23 +1644,23 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
         }
       }
   
-      /* Volumetric effective stress */
+      /* Mean effective stress */
       {
         double sig_m_n = x_n[I_SIG_M] ;
-        double sig_m = (sig_m_n + K*trde)/(1 + (K*dt)/eta_v_mt) ;
+        double sig_m   = (sig_m_n + K*trde)/(1 + (K*dt)/eta_v_mt) ;
       
         x[I_SIG_M] = sig_m ;
       }
   
       /* Total stresses */
       {
-        double sig_m = x[I_SIG_M] ;
+        double sig_m = x[I_SIG_M] - b*(p - p_i) ;
         
         for(i = 0 ; i < 9 ; i++) sig[i] = sig_d[i] ;
-      
-        sig[0] += sig_m + sig0_11 - b*(p - p_i) ;
-        sig[4] += sig_m + sig0_22 - b*(p - p_i) ;
-        sig[8] += sig_m + sig0_33 - b*(p - p_i) ;
+
+        sig[0] += sig_m ;
+        sig[4] += sig_m ;
+        sig[8] += sig_m ;
       }
     }
   }

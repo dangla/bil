@@ -47,6 +47,7 @@ extern char*           (TextFile_StoreFileContent)(TextFile_t*) ;
 #define TextFile_DoesNotExist(TF) \
         (!TextFile_Exists(TF))
 
+
 #include "String.h"
 
 #define TextFile_Scan(TF, ...) \
@@ -63,8 +64,11 @@ extern char*           (TextFile_StoreFileContent)(TextFile_t*) ;
           char* TextFile_c = TextFile_GetCurrentPositionInFileContent(TF) ; \
           String_ReadArray(TextFile_c,N,FMT,V) ; \
         } while(0)
-        
 
+
+/* Remove comments */
+#define TextFile_RemoveComments(TF) \
+        String_RemoveComments(TextFile_GetFileContent(TF),TextFile_GetFileContent(TF))
 
 
 

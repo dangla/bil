@@ -144,7 +144,7 @@ double* (Element_ComputeDeepNodalUnknowns)(Element_t* element,unsigned int depth
   
   for(i = 0 ; i < nn ; i++) {
     Node_t* node = Element_GetNode(element,i) ;
-    double* v = Node_GetDeepUnknown(node,depth) ;
+    double* v = Node_GetUnknownInDistantPast(node,depth) ;
     int    j ;
     
     for(j = 0 ; j < neq ; j++) {
@@ -270,11 +270,11 @@ int    (Element_FindUnknownPositionIndex)(Element_t* element,const char* s)
 /** Find the unknown position index whose name is pointed to by s */
 {
   int n = Element_GetNbOfEquations(element) ;
-  char** ss = Element_GetNameOfUnknown(element) ;
+  const char* const* ss = (const char* const*) Element_GetNameOfUnknown(element) ;
   int    i = String_FindPositionIndex(s,ss,n) ;
   
   return(i) ;
-
+#if 0
   if(isdigit(s[0])) { /* donne sous forme numerique */
     i  = atoi(s) - 1 ;
   } else {            /* donne sous forme alphabetique */
@@ -286,6 +286,7 @@ int    (Element_FindUnknownPositionIndex)(Element_t* element,const char* s)
 
   //if(i < 0) arret("Element_FindUnknownPositionIndex: unknown position of %s",s) ;
   return(i) ;
+#endif
 }
 
 
@@ -294,11 +295,11 @@ int    (Element_FindEquationPositionIndex)(Element_t* element,const char* s)
 /** Find the equation position index whose name is pointed to by s */
 {
   int n = Element_GetNbOfEquations(element) ;
-  char** ss = Element_GetNameOfEquation(element) ;
+  const char* const* ss = (const char* const*) Element_GetNameOfEquation(element) ;
   int    i = String_FindPositionIndex(s,ss,n) ;
   
   return(i) ;
-
+#if 0
   if(isdigit(s[0])) { /* donne sous forme numerique */
     i  = atoi(s) - 1 ;
   } else {            /* donne sous forme alphabetique */
@@ -310,6 +311,7 @@ int    (Element_FindEquationPositionIndex)(Element_t* element,const char* s)
 
   //if(i < 0) arret("Element_FindEquationPositionIndex: unknown position of %s",s) ;
   return(i) ;
+#endif
 }
 
 
@@ -629,7 +631,7 @@ double* Element_ComputeJacobianMatrix(Element_t* el,double* dh,int nn,const int 
 
 
 
-#if 0
+#if 1
 double Element_ComputeJacobianDeterminant(Element_t* el,double* dh,int nn,const int dim_h)
 /** Compute the determinant of the jacobian matrix */
 {
@@ -638,12 +640,16 @@ double Element_ComputeJacobianDeterminant(Element_t* el,double* dh,int nn,const 
   
   Element_FreeBufferFrom(el,jac) ;
   
+  if(det < 0) {
+    arret("Element_ComputeJacobianDeterminant: negative determinant (det = %f)",det) ;
+  }
+  
   return(det) ;
 }
 #endif
 
 
-#if 0
+#if 1
 double* Element_ComputeInverseJacobianMatrix(Element_t* el,double* dh,int nn,const int dim_h)
 /** Compute the inverse jacobian matrix */
 {
@@ -994,6 +1000,35 @@ int* (Element_ComputeMatrixRowAndColumnIndices)(Element_t* el)
       
       colind[ij] = (ii_col >= 0) ? Node_GetMatrixColumnIndex(node_i)[ii_col] : -1 ;
       rowind[ij] = (ii_row >= 0) ? Node_GetMatrixRowIndex(node_i)[ii_row] : -1 ;
+    }
+  }
+  
+  return(rowind) ;
+}
+
+
+
+int* (Element_ComputeSelectedMatrixRowAndColumnIndices)(Element_t* el,const int imatrix)
+{
+  int  nn  = Element_GetNbOfNodes(el) ;
+  int  neq = Element_GetNbOfEquations(el) ;
+  
+  size_t SizeNeeded = 2*nn*neq*sizeof(int) ;
+  int* rowind = (int*) Element_AllocateInBuffer(el,SizeNeeded) ;
+  int* colind = rowind + nn*neq ;
+  int  i ;
+    
+  for(i = 0 ; i < nn ; i++) {
+    Node_t* node_i = Element_GetNode(el,i) ;
+    int    j ;
+    
+    for(j = 0 ; j < neq ; j++) {
+      int ij = i*neq + j ;
+      int ii_col = Element_GetUnknownPosition(el)[ij] ;
+      int ii_row = Element_GetEquationPosition(el)[ij] ;
+      
+      colind[ij] = Node_GetSelectedMatrixColumnIndexOf(node_i,ii_col,imatrix) ;
+      rowind[ij] = Node_GetSelectedMatrixRowIndexOf(node_i,ii_row,imatrix) ;
     }
   }
   
@@ -1377,3 +1412,207 @@ int Element_FindNodeIndex(Element_t* element,const Node_t* node)
           
   return(-1) ;
 }
+
+
+
+/* The two following functions have not been tested yet */
+#if 0
+double* Element_ComputeDiscreteGradientOperator(Element_t* element,IntFct_t* intfct)
+/** Compute the discrete gradient operator.
+ *  On ouput:
+ *  a pointer to double with allocated space of DIM*NN*NN
+ *  DIM = dimension of space
+ *  NN  = nb of nodes of the element
+ *  The array dg contains the contribution of the element
+ *  to the discrete gradient operator.
+ *  Usage of dg: 
+ *  the gradient of u at node i is calculated as follows
+ *  gi(k) = 1/m_i sum_elts sum_j DG(i*dim+k,j) u_j  k=1,dim j=1,NN
+ *  where DG(i,j) is defined as (dg[(i)*nn + (j)]) and
+ *  m_i is lumped-mass at node i.
+ *  This should be done on the set of elements containing the node i.
+ *  Ref.
+ *  D. Kuzmin, A guide to numerical methods for transport equations, 2010) */
+{
+  int dim = Element_GetDimensionOfSpace(element) ;
+  int nn  = Element_GetNbOfNodes(element) ;
+  int nf = IntFct_GetNbOfFunctions(intfct) ;
+  size_t SizeNeeded = dim*nn*nn*sizeof(double) ;
+  double* dg = (double*) Element_AllocateInBuffer(element,SizeNeeded) ;
+  double* x[Element_MaxNbOfNodes] ;
+  
+  
+  /* Initialization */
+  {
+    int i ;
+    
+    for(i = 0 ; i < dim*nn*nn ; i++) dg[i] = 0 ;
+  }
+  
+  if(Element_IsSubmanifold(element)) {
+    arret("Element_ComputeDiscreteGradientOperator") ;
+  }
+  
+  {
+    int i ;
+    
+    for(i = 0 ; i < nn ; i++) {
+      x[i] = Element_GetNodeCoordinate(element,i) ;
+    }
+  }
+  
+  
+  if(nn > nf) {
+    arret("Element_ComputeDiscreteGradientOperator") ;
+  }
+  
+
+  {
+    Symmetry_t sym = Element_GetSymmetry(element) ;
+    int dim_h  = IntFct_GetDimension(intfct) ;
+    int np = IntFct_GetNbOfPoints(intfct) ;
+    double* weight = IntFct_GetWeight(intfct) ;
+    double m[Element_MaxNbOfNodes] ;
+    int p ;
+    
+    {
+      int i ;
+    
+      for(i = 0 ; i < nf ; i++) m[i] = 0 ;
+    }
+    
+    for(p = 0 ; p < np ; p++) {
+      double* h  = IntFct_GetFunctionAtPoint(intfct,p) ;
+      double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
+      double d   = Element_ComputeJacobianDeterminant(element,dh,nf,dim_h) ;
+      double a   = weight[p]*d ;
+      double* caj = Element_ComputeInverseJacobianMatrix(element,dh,nf,dim_h) ;
+    
+      /* axisymetrical or spherical cases */
+      if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
+        double radius = 0 ;
+        int i ;
+        
+        for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+        a *= 2*M_PI*radius ;
+        if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
+      }
+    
+  
+      #define DG(i,j)  (dg[(i)*nn + (j)])
+      #define CAJ(i,j) (caj[(i)*3 + (j)])
+      #define DH(n,i)  (dh[(n)*3 + (i)])
+      /* DG(i*dim+k,j) = int_V H(i)*DH(j,l)*CAJ(l,k)*J*dV */
+      {
+        int i ;
+        
+        for(i = 0 ; i < nf ; i++) {
+          int k ;
+          
+          /* m is the surface/volume of the vertex-centered cell */
+          m[i] += a*h[i] ;
+        
+          /* the discrete gradient operator: dg */
+          for(k = 0 ; k < dim ; k++) {
+            int j ;
+          
+            for(j = 0 ; j < nf ; j++) {
+              int l ;
+            
+              for(l = 0 ; l < dim_h ; l++) {
+                DG(i*dim+k,j) += a*h[i]*DH(j,l)*CAJ(l,k) ;
+              }
+            }
+          }
+        }
+      }
+      #undef CAJ
+      #undef DH
+      #undef DG
+    }
+  }
+  
+  return(dg) ;
+}
+
+
+
+
+double* Element_ComputeLumpedMass(Element_t* element,IntFct_t* intfct)
+/** Compute the lumped mass.
+ *  On ouput:
+ *  a pointer to double with allocated space of NN
+ *  NN  = nb of nodes of the element
+ *  Ref.
+ *  D. Kuzmin, A guide to numerical methods for transport equations, 2010) */
+{
+  int nn  = Element_GetNbOfNodes(element) ;
+  int nf = IntFct_GetNbOfFunctions(intfct) ;
+  size_t SizeNeeded = nn*sizeof(double) ;
+  double* lum = (double*) Element_AllocateInBuffer(element,SizeNeeded) ;
+  double* x[Element_MaxNbOfNodes] ;
+  
+  
+  /* Initialization */
+  {
+    int i ;
+    
+    for(i = 0 ; i < nn ; i++) lum[i] = 0 ;
+  }
+  
+  if(Element_IsSubmanifold(element)) {
+    arret("Element_ComputeLumpedMass") ;
+  }
+  
+  {
+    int i ;
+    
+    for(i = 0 ; i < nn ; i++) {
+      x[i] = Element_GetNodeCoordinate(element,i) ;
+    }
+  }
+  
+  
+  if(nn > nf) {
+    arret("Element_ComputeLumpedMass") ;
+  }
+  
+
+  {
+    Symmetry_t sym = Element_GetSymmetry(element) ;
+    int dim_h  = IntFct_GetDimension(intfct) ;
+    int np = IntFct_GetNbOfPoints(intfct) ;
+    double* weight = IntFct_GetWeight(intfct) ;
+    int p ;
+    
+    for(p = 0 ; p < np ; p++) {
+      double* h  = IntFct_GetFunctionAtPoint(intfct,p) ;
+      double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
+      double d   = Element_ComputeJacobianDeterminant(element,dh,nf,dim_h) ;
+      double a   = weight[p]*d ;
+    
+      /* axisymetrical or spherical cases */
+      if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
+        double radius = 0 ;
+        int i ;
+        
+        for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+        a *= 2*M_PI*radius ;
+        if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
+      }
+    
+  
+      /* lum[i] = int_V H(i)*J*dV */
+      {
+        int i ;
+        
+        for(i = 0 ; i < nf ; i++) {
+          lum[i] += a*h[i] ;
+        }
+      }
+    }
+  }
+  
+  return(lum) ;
+}
+#endif

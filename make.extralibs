@@ -3,7 +3,7 @@ SHELL = /bin/sh
 
 # Do you use these libraries: BLAS, LAPACK, SuperLU or others (YES/NO) ?
 BLAS_USE   := NO
-LAPACK_USE := YES
+LAPACK_USE := NO
 SLU_USE    := NO
 
 # if YES, where are these libraries ?

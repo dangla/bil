@@ -57,7 +57,8 @@ static int    ComputeTangentCoefficients(FEM_t*,double,double*) ;
 static int    ComputeTransferCoefficients(FEM_t*,double,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double**,double*,double,double,int) ;
-static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
+//static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
+static int     ComputeSecondaryVariables(Element_t*,double,double,double*) ;
 //static double* ComputeVariablesDerivatives(Element_t*,double,double,double*,double,int) ;
 
 
@@ -1152,7 +1153,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
 
 
 
-void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
+int  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
 {
   int dim = Element_GetDimensionOfSpace(el) ;
   /* Strains */
@@ -1556,48 +1557,48 @@ double ReturnMapping_DruckerPrager(double* sig,double* eps_p,double* gam_p)
         double c1 ;
         double cc ;
         
-	      /* Plastic strain increments */
-	      for(i = 0 ; i < 9 ; i++) {
-	        deps_p[i] = dl*(1.5*sdev_t[i]/q_t + id[i]*dd/3.) ;
-	      }
+        /* Plastic strain increments */
+        for(i = 0 ; i < 9 ; i++) {
+          deps_p[i] = dl*(1.5*sdev_t[i]/q_t + id[i]*dd/3.) ;
+        }
         
-	      /* Cumulative plastic shear strain */
-	      gam_p1 = gam_pn + sqrt(2*j2(deps_p)) ;
+        /* Cumulative plastic shear strain */
+        gam_p1 = gam_pn + sqrt(2*j2(deps_p)) ;
         
-	      /* p, q, cc */
-	      c1 = (gam_p1 < gam_R) ? 1 - (1 - alpha)*gam_p1/gam_R : alpha ;
-	      cc = cc0*c1*c1 ;
-	      q  = q_t - dl*3*mu ;
-	      p  = p_t - dl*k*dd ;
+        /* p, q, cc */
+        c1 = (gam_p1 < gam_R) ? 1 - (1 - alpha)*gam_p1/gam_R : alpha ;
+        cc = cc0*c1*c1 ;
+        q  = q_t - dl*3*mu ;
+        p  = p_t - dl*k*dd ;
         
-	      /* dqsdl, dpsdl, dccsdl */
-	      dqsdl = -3*mu ;
-	      dpsdl = -k*dd ;
-	      dccsdl = 0. ;
-	      if(gam_p1 < gam_R) {
-	        dccsdl = -2*(1 - alpha)/gam_R*c1*cc0 ;
-	        dccsdl *= 1.5*sqrt(2*j2(sdev_t))/q_t ;
-	      }
+        /* dqsdl, dpsdl, dccsdl */
+        dqsdl = -3*mu ;
+        dpsdl = -k*dd ;
+        dccsdl = 0. ;
+        if(gam_p1 < gam_R) {
+          dccsdl = -2*(1 - alpha)/gam_R*c1*cc0 ;
+          dccsdl *= 1.5*sqrt(2*j2(sdev_t))/q_t ;
+        }
         
         /* Criterion */
         fcrit = q + ff*p - cc ;
         
-	      /* dl */
+        /* dl */
         {
           double df = dqsdl + ff*dpsdl - dccsdl ;
           
-	        dl   -= fcrit/df ;
+          dl   -= fcrit/df ;
         }
         
-	      if(nf++ > 20) {
-	        printf("No convergence (ReturnMapping_DruckerPrager)") ;
-	        exit(0) ;
-	      }
+        if(nf++ > 20) {
+          printf("No convergence (ReturnMapping_DruckerPrager)") ;
+          exit(0) ;
+        }
       }
       
       /* Stresses */
       for(i = 0 ; i < 9 ; i++) {
-	      sig[i] = sdev_t[i]*q/q_t + p*id[i] ;
+        sig[i] = sdev_t[i]*q/q_t + p*id[i] ;
       }
     }
     
@@ -1624,8 +1625,8 @@ double ReturnMapping_DruckerPrager(double* sig,double* eps_p,double* gam_p)
       
       /* Plastic strain increments and stresses */
       for(i = 0 ; i < 9 ; i++) {
-	      deps_p[i] = sdev_t[i]/dmu + dl*id[i]*dd/3. ;
-	      sig[i]    = p*id[i] ;
+        deps_p[i] = sdev_t[i]/dmu + dl*id[i]*dd/3. ;
+        sig[i]    = p*id[i] ;
       }
     }
     
@@ -1741,8 +1742,8 @@ double ReturnMapping_CamClay(double *sig,double *sig_n,double *p_co,double *eps_
       fcrit  = q*q/m2 + p*(p + pc) ;
       
       if(nf++ > 20) {
-	      printf("pas de convergence (ReturnMapping_CamClay)") ;
-	      exit(0) ;
+        printf("pas de convergence (ReturnMapping_CamClay)") ;
+        exit(0) ;
       }
     }
   }

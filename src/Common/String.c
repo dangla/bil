@@ -259,7 +259,7 @@ int String_NbOfTokens(char** tok)
 
 char* String_CopyLine(const char* str)
 {
-  int   len = strlen(str) ;
+  int   len = (str) ? strlen(str) : 0 ;
   char* eol = String_FindEndOfLine(str) ;
   int   n   = (eol) ? eol - str : len ;
   
@@ -295,7 +295,7 @@ int String_NbOfUncommentedLines(const char* str,const char* cmt)
   int n = 0 ;
   
   {
-    char* c = str ;
+    const char* c = str ;
     
     while(c && (*c != EOF)) {
       while(String_BeginsWithAnyChar(c,cmt)) c = String_SkipLine(c) ;
@@ -309,7 +309,7 @@ int String_NbOfUncommentedLines(const char* str,const char* cmt)
 
 
 
-int    (String_FindPositionIndex)(const char* str,const char** ss,const int n)
+int    (String_FindPositionIndex)(const char* str,const char* const* ss,const int n)
 /** Return the position index in ss whose name is pointed to by str 
  *  or -1 if it fails. */
 {
@@ -332,14 +332,56 @@ int    (String_FindPositionIndex)(const char* str,const char** ss,const int n)
 }
 
 
+char*   (String_RemoveComments)(char* src,char* dest)
+/**  Remove the comments from src and copy it to dest.
+ *   The pointer dest should point to an allocated space 
+ *   large enough to accomodate the uncommented src. 
+ *   We can give the same pointer, i.e. dest = src,
+ *   in that case the string src will be modified.
+ *   Return the pointer dest. */
+{
+  char* cin = src ;
+  char* cou = dest ;
+  
+  if(src) {
+    while(cin[0]) {
+    
+      if(String_BeginsWithSingleLineComment(cin)) {
+      
+        cin = String_FindEndOfLine(cin) ;
+      
+      } else if(String_BeginsWithMultiLineComment(cin)) {
+        char* c = String_SkipMultiLineComment(cin) ;
+      
+        if(c) {
+          cin = c ;
+        } else {
+          arret("String_RemoveComments: comment doesn't end") ;
+        }
+      }
+    
+      *cou++ = *cin++ ;
+    }
+  
+    cou[0] = 0 ;
+  }
+  
+  return dest ;
+}
+
+
 
 #if 0
+#include "TextFile.h"
+
 static int String_Test(int, char**) ;
 
 int String_Test(int argc, char** argv)
 {
   char* filename = argv[1] ;
-  char* str = String_Create(filename) ;
+  TextFile_t* textfile = TextFile_Create(filename) ;
+  //char* str = String_Create(filename) ;
+  char* str = TextFile_StoreFileContent(textfile) ;
   
   if(argc > 2) {
     char* tok = argv[2] ;
@@ -369,6 +411,20 @@ int String_Test(int argc, char** argv)
     
         printf("token %d = %s\n%s\n",j,tok,c) ;
       }
+    }
+  }
+    
+  
+  if(argc > 1) {
+    /* Test String_RemoveComments */
+    {
+      printf("File content before removing the comments\n") ;
+      printf("%s",str) ;
+      
+      String_RemoveComments(str,str) ;
+      
+      printf("File content after removing the comments\n") ;
+      printf("%s",str) ;
     }
   }
 

@@ -153,7 +153,6 @@ static double rho_h2o_i0 ;
 /* Viscosity (Pa.s) */
 #include "WaterViscosity.h"
 /* Logarithm of water activity in brine */
-//#include "Log10ActivityOfWaterInBrine.h"
 #define LogActivityOfWater(c_s,T)      activity(c_s,T_m)
 //#define LogActivityOfWater(c_s,T)      activite_w_ideal(c_s,T)
 /* Entropy of fusion of ice (J/mol/K) */
