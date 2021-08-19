@@ -48,7 +48,7 @@ DataFile_t*  (DataFile_Create)(char* filename)
     TextFile_t* textfile = DataFile_GetTextFile(datafile) ;
     
     TextFile_StoreFileContent(textfile) ;
-    DataFile_GetFileContent(datafile) = TextFile_GetFileContent(textfile) ;
+    //DataFile_GetFileContent(datafile) = TextFile_GetFileContent(textfile) ;
   }
   
   return(datafile) ;

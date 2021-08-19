@@ -9,6 +9,7 @@
 #include "Models.h"
 #include "Modules.h"
 #include "Message.h"
+#include "String.h"
 #include "Context.h"
 #include "Mry.h"
 
@@ -66,10 +67,11 @@ Context_t* (Context_Create)(int argc,char** argv)
 void Context_Delete(void* self)
 {
   Context_t** pctx = (Context_t**) self ;
+  Context_t*   ctx = *pctx ;
   
-  CommandLine_Delete(&(Context_GetCommandLine(*pctx))) ;
-  Options_Delete(&(Context_GetOptions(*pctx))) ;
-  free(*pctx) ;
+  CommandLine_Delete(&(Context_GetCommandLine(ctx))) ;
+  Options_Delete(&(Context_GetOptions(ctx))) ;
+  free(ctx) ;
   *pctx = NULL ;
 }
 
@@ -95,13 +97,13 @@ void (Context_Initialize)(Context_t* ctx)
     if(argv[i][0] != '-') { /* File name */
       Context_GetInputFileName(ctx) = (char**) argv + i ;
       
-    } else if(strncmp(argv[i],"-info",5) == 0) {
+    } else if(String_Is(argv[i],"-info",5)) {
       Context_GetPrintInfo(ctx) = (char**) argv + i ;
   
-    } else if(strncmp(argv[i],"-help",5) == 0) {
+    } else if(String_Is(argv[i],"-help",5)) {
       Context_GetHelpOnline(ctx) = (char**) argv + i ;
       
-    } else if(!strncmp(argv[i],"-solver",strlen(argv[i]))) {
+    } else if(String_Is(argv[i],"-solver",strlen(argv[i]))) {
       Context_GetSolver(ctx) = (char**) argv + i ;
       if(i + 1 < argc) {
         i++ ;
@@ -112,16 +114,16 @@ void (Context_Initialize)(Context_t* ctx)
       /* Skip two more entries if the following entry is "-ff" 
        * i.e. an input for a Fill Factor for multi-frontal methods */
       {
-        if(!strncmp(argv[i + 1],"-ff",strlen(argv[i + 1]))) {
+        if(String_Is(argv[i + 1],"-ff")) {
           if(i + 2 < argc) {
             i += 2 ;
           } else {
-            Message_FatalError("Missing solver") ;
+            Message_FatalError("Missing fill factor") ;
           }
         }
       }
     
-    } else if(strncmp(argv[i],"-debug",strlen(argv[i])) == 0) {
+    } else if(String_Is(argv[i],"-debug",strlen(argv[i]))) {
       Context_GetDebug(ctx) = (char**) argv + i ;
       if(i + 1 < argc) {
         i++ ;
@@ -129,7 +131,7 @@ void (Context_Initialize)(Context_t* ctx)
         Message_FatalError("Missing name of data to be printed") ;
       }
 
-    } else if(strncmp(argv[i],"-level",strlen(argv[i])) == 0) {
+    } else if(String_Is(argv[i],"-level",strlen(argv[i]))) {
       Context_GetPrintLevel(ctx) = (char**) argv + i ;
       if(i + 1 < argc) {
         i++ ;
@@ -137,27 +139,36 @@ void (Context_Initialize)(Context_t* ctx)
         Message_FatalError("Missing level") ;
       }
 
-    } else if(strncmp(argv[i],"-with",strlen(argv[i])) == 0) {
+    } else if(String_Is(argv[i],"-with",strlen(argv[i]))) {
       Context_GetUseModule(ctx) = (char**) argv + i ;
       if(i + 1 < argc) {
         i++ ;
       } else {
         Message_FatalError("Missing module") ;
       }
-
-    } else if(strncmp(argv[i],"-models",strlen(argv[i])) == 0) {
-      Context_GetPrintModel(ctx) = (char**) argv + i ;
-
-    } else if(strncmp(argv[i],"-modules",strlen(argv[i])) == 0) {
-      Context_GetPrintModule(ctx) = (char**) argv + i ;
-
-    } else if(strncmp(argv[i],"-readonly",strlen(argv[i])) == 0) {
-      Context_GetReadOnly(ctx) = (char**) argv + i ;
-      if(i + 1 >= argc) {
-        Message_FatalError("Missing file name") ;
+      
+      /* If the module is "SNIA" we skip the next entry
+       * which should be the nb of sequences requested. */
+      {
+        if(String_Is(argv[i],"SNIA")) {
+          if(i + 1 < argc) {
+            i += 1 ;
+          } else {
+            Message_FatalError("Missing nb of sequences") ;
+          }
+        }
       }
 
-    } else if(strncmp(argv[i],"-graph",strlen(argv[i])) == 0) {
+    } else if(String_Is(argv[i],"-models",strlen(argv[i]))) {
+      Context_GetPrintModel(ctx) = (char**) argv + i ;
+
+    } else if(String_Is(argv[i],"-modules",strlen(argv[i]))) {
+      Context_GetPrintModule(ctx) = (char**) argv + i ;
+
+    } else if(String_Is(argv[i],"-readonly",strlen(argv[i]))) {
+      Context_GetReadOnly(ctx) = (char**) argv + i ;
+
+    } else if(String_Is(argv[i],"-graph",strlen(argv[i]))) {
       Context_GetGraph(ctx) = (char**) argv + i ;
       if(i + 1 < argc) {
         i++ ;
@@ -165,10 +176,10 @@ void (Context_Initialize)(Context_t* ctx)
         Message_FatalError("Missing graph method") ;
       }
 
-    } else if(strncmp(argv[i],"-iperm",strlen(argv[i])) == 0) {
+    } else if(String_Is(argv[i],"-iperm",strlen(argv[i]))) {
       Context_GetInversePermutation(ctx) = (char**) argv + i ;
 
-    } else if(strncmp(argv[i],"-eordering",strlen(argv[i])) == 0) {
+    } else if(String_Is(argv[i],"-eordering",strlen(argv[i]))) {
       Context_GetElementOrdering(ctx) = (char**) argv + i ;
       if(i + 1 < argc) {
         i++ ;
@@ -176,7 +187,7 @@ void (Context_Initialize)(Context_t* ctx)
         Message_FatalError("Missing element ordering method") ;
       }
 
-    } else if(strncmp(argv[i],"-nordering",strlen(argv[i])) == 0) {
+    } else if(String_Is(argv[i],"-nordering",strlen(argv[i]))) {
       Context_GetNodalOrdering(ctx) = (char**) argv + i ;
       if(i + 1 < argc) {
         i++ ;
@@ -184,7 +195,7 @@ void (Context_Initialize)(Context_t* ctx)
         Message_FatalError("Missing nodal ordering method") ;
       }
 
-    } else if(strncmp(argv[i],"-postprocessing",strlen(argv[i])) == 0) {
+    } else if(String_Is(argv[i],"-postprocessing",strlen(argv[i]))) {
       Context_GetPostProcessing(ctx) = (char**) argv + i ;
       if(i + 1 < argc) {
         i++ ;
@@ -192,10 +203,10 @@ void (Context_Initialize)(Context_t* ctx)
         Message_FatalError("Missing post-processing method") ;
       }
 
-    } else if(strncmp(argv[i],"-miscellaneous",strlen(argv[i])) == 0) {
+    } else if(String_Is(argv[i],"-miscellaneous",strlen(argv[i]))) {
       Context_GetMiscellaneous(ctx) = (char**) argv + i ;
 
-    } else if(strncmp(argv[i],"-test",strlen(argv[i])) == 0) {
+    } else if(String_Is(argv[i],"-test",strlen(argv[i]))) {
       Context_GetTest(ctx) = (char**) argv + i ;
       
     } else {

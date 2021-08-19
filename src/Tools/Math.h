@@ -26,7 +26,7 @@ extern double*  (Math_ComputePrincipalStresses)(const double*) ;
 extern double*  (Math_ComputeRealEigenvaluesAndEigenvectorsOf3x3Matrix)(double*,const char) ;
 extern void     (Math_PrintStiffnessTensor)(const double*) ;
 extern void     (Math_PrintStressTensor)(const double*) ;
-extern double*  (Math_DeviatoricStress)(const double*) ;
+extern double*  (Math_ComputeDeviatoricStress)(const double*) ;
 
 
 #include "BilLib.h"
@@ -48,6 +48,9 @@ extern void dgeev_(const char *jobvl, const char *jobvr, int *n, double *a,
 
 #define Math_ComputeSecondDeviatoricStrainInvariant \
         Math_ComputeSecondDeviatoricStressInvariant
+        
+#define Math_ComputeDeviatoricStrain \
+        Math_ComputeDeviatoricStress
         
 #define Math_ComputeMatrixInverse(a,n) \
         Math_SolveByGaussJordanElimination(a,NULL,n,0)

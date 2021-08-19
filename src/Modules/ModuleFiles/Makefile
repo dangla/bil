@@ -43,9 +43,12 @@ XMODULES     = ${subst ${SPACE},${COMMA},${SELECTEDMODULESm}}
 MODULENAMES  = ${subst ${SPACE},${COMMA},${SELECTEDMODULENAMES}}
 
 ../ListOfModules.h : ../ListOfModules.inc
-	echo "#define NB_MODULES  "${NBMODULES} > ../ListOfModules.h
-	echo "#define XMODULES(m) "${XMODULES} >> ../ListOfModules.h
-	echo "#define MODULENAMES "${MODULENAMES} >> ../ListOfModules.h
+	echo "#ifndef LISTOFMODULES_H"  > ../ListOfModules.h
+	echo "#define LISTOFMODULES_H" >> ../ListOfModules.h
+	echo "#define ListOfModules_NbOfModules  "${NBMODULES}   >> ../ListOfModules.h
+	echo "#define ListOfModules_Methods(m)  "${XMODULES}    >> ../ListOfModules.h
+	echo "#define ListOfModules_ModuleNames  "${MODULENAMES} >> ../ListOfModules.h
+	echo "#endif" >> ../ListOfModules.h
 
 
 clean:

@@ -1,4 +1,8 @@
-/* This is a "mother" model from which "daughter" models can be derived.
+/* This is a "mother" model from which "daughter" models can derived.
+ * The following models have been derived accordingly:
+ * - Carbocem
+ * - Chloricem
+ * - Carbochloricem
  * 
  * General features of the model:
  * 
@@ -142,8 +146,8 @@ enum {
 #define U_P_L       U_mass
 
 /* Calcium:
- * - U_ZN_Ca_S: dissolution kinetics of CH and Cc at equilibrium 
- * - U_LogS_CH: dissolution kinetics of CH and precipitation kinetics of Cc */
+ * - U_ZN_Ca_S: dissolution kinetics of CH; Cc at equilibrium 
+ * - U_LogS_CH: dissolution kinetics of CH; precipitation kinetics of Cc */
 #define U_ZN_Ca_S   U_Calcium
 //#define U_LogS_CH     U_Calcium
 
@@ -299,7 +303,7 @@ enum {
 
 
 /* Nb of terms */
-#define NbOfExplicitTerms       ((12 + CementSolutionDiffusion_NbOfConcentrations)*NbOfNodes)
+#define NbOfExplicitTerms       ((13 + CementSolutionDiffusion_NbOfConcentrations)*NbOfNodes)
 #define NbOfImplicitTerms       (10*NbOfNodes*NbOfNodes + 3*NbOfNodes)
 #define NbOfConstantTerms       (2)
 
@@ -368,7 +372,6 @@ enum {
 #define N_CCn(i)      (f_n + 9*NbOfNodes*NbOfNodes + NbOfNodes)[i]
 
 #define N_FriedelSalt(i)  (f   + 10*NbOfNodes*NbOfNodes + NbOfNodes)[i]
-
 #define N_FriedelSaltn(i) (f_n + 10*NbOfNodes*NbOfNodes + NbOfNodes)[i]
 
 #ifndef E_eneutral
@@ -406,7 +409,7 @@ enum {
 #define KD_G            TransferCoefficient(va,12)
 
 #define CONCENTRATION(i) \
-        (TransferCoefficient(va,12) + (i)*CementSolutionDiffusion_NbOfConcentrations)
+        (TransferCoefficient(va,13) + (i)*CementSolutionDiffusion_NbOfConcentrations)
 
 
 
@@ -669,7 +672,7 @@ enum {
 
 
 /* Potassium adsorption curve 
- * ------------------------- */
+ * -------------------------- */
 #define RK(x) \
         (Curve_ComputeValue(Element_GetCurve(el) + 5,x))
 #define AdsorbedPotassiumPerUnitMoleOfCSH(c_k,x) \
@@ -999,10 +1002,12 @@ int SetModelProp(Model_t* model)
 #endif
 
 #ifdef E_Chlorine
-  #ifdef U_LogC_Cl
+  #if defined U_LogC_Cl
     Model_CopyNameOfUnknown(model,E_Chlorine, "logc_cl") ;
-  #else
+  #elif defined U_C_Cl
     Model_CopyNameOfUnknown(model,E_Chlorine, "c_cl") ;
+  #else
+    Model_CopyNameOfUnknown(model,E_Chlorine, "z_cl") ;
   #endif
 #endif
 
@@ -1213,8 +1218,8 @@ int PrintModelChar(Model_t* model,FILE *ficd)
   fprintf(ficd,"phi_r = 0.7       # Porosity for which permeability vanishes\n") ;
   fprintf(ficd,"Curves = my_file  # File name: p_c S_l kl_r\n") ;  
   fprintf(ficd,"Curves = my_file  # File name: si_ch C/S H/S V_csh\n") ;  
-  fprintf(ficd,"Curves = my_file  # File name: s_l kl_r kg_r\n") ; 
-  fprintf(ficd,"Curves = my_file  # File name: x_csh alpha beta\n") ;  
+  fprintf(ficd,"Curves = my_file  # File name: s_l kl_r kg_r\n") ;
+  fprintf(ficd,"Curves = my_file  # File name: x_csh alpha beta\n") ;
 
   return(NEQ) ;
 }
@@ -1344,11 +1349,15 @@ int ComputeInitialState(Element_t* el)
         HardenedCementChemistry_SetInput(hcc,LogC_K,logc_k) ;
         HardenedCementChemistry_SetInput(hcc,LogC_OH,logc_oh) ;
         HardenedCementChemistry_GetElectricPotential(hcc) = psi ;
-        //HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
-        //HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = logc_cl ;
         HardenedCementChemistry_SetInput(hcc,LogC_Cl,logc_cl) ;
   
+        #ifdef E_Chlorine
         HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_CO2_Cl_H2O) ;
+        #else
+        HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
+        HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = logc_cl ;
+        HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_CO2_H2O) ;
+        #endif
 
        {
          int k = HardenedCementChemistry_SolveElectroneutrality(hcc) ;
@@ -1556,9 +1565,9 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
         
         double c_h2o = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,H2O) ;
         double c_oh = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,OH) ;
-        double c_ca= HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Ca) ;
-        double c_na= HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Na) ;
-        double c_k = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,K) ;
+        double c_ca = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Ca) ;
+        double c_na = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Na) ;
+        double c_k  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,K) ;
         
         double n_csh     = x[I_N_CSH] ;
         double n_ch      = x[I_N_CH] ;
@@ -2637,7 +2646,7 @@ int TangentCoefficients(Element_t* el,double dt,double* c)
 
 double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,double t,double dt,int n)
 {
-  double* v0 = Element_GetConstantTerm(el) ;
+  double* v0  = Element_GetConstantTerm(el) ;
   double* x   = Variables[n] ;
   double* x_n = Variables_n(x) ;
   
@@ -2790,10 +2799,13 @@ int  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,doub
     HardenedCementChemistry_GetElectricPotential(hcc) = psi ;
     HardenedCementChemistry_SetInput(hcc,LogC_Cl,logc_cl) ;
     
-    //HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
-    //HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = logc_cl ;
-    
+#ifdef E_Chlorine
     HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_CO2_Cl_H2O) ;
+#else
+    HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
+    HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = logc_cl ;
+    HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_CO2_H2O) ;
+#endif
 
 #ifndef E_eneutral
     {
@@ -3015,8 +3027,6 @@ int concentrations_oh_na_k(double c_co2,double u_calcium,double u_silicon,double
   
     HardenedCementChemistry_SetInput(hcc,LogC_CO2,logc_co2aq) ;
     HardenedCementChemistry_SetInput(hcc,LogC_Cl,logc_cl) ;
-    //HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
-    //HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = logc_cl ;
   }
   
   int i = 0 ;
@@ -3026,12 +3036,19 @@ int concentrations_oh_na_k(double c_co2,double u_calcium,double u_silicon,double
     double dc_oh = - c_oh ;
     double logc_na    = log10(c_na) ;
     double logc_k     = log10(c_k) ;
+    double logc_cl    = log10(c_cl) ;
     
     HardenedCementChemistry_SetInput(hcc,LogC_Na,logc_na) ;
     HardenedCementChemistry_SetInput(hcc,LogC_K,logc_k) ;
     HardenedCementChemistry_SetInput(hcc,LogC_OH,-7) ;
   
+#ifdef E_Chlorine
     HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_CO2_Cl_H2O) ;
+#else
+    HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
+    HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = logc_cl ;
+    HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_CO2_H2O) ;
+#endif
 
     {
       int k = HardenedCementChemistry_SolveElectroneutrality(hcc) ;
@@ -3096,7 +3113,7 @@ double PermeabilityCoefficient_KozenyCarman(Element_t* el,double phi)
   
   {
     double kozeny_carman  = (phi > 0) ? pow(phi/phi0,3.)*pow(((1 - phi0)/(1 - phi)),2.) : 0 ;
-	
+
     coeff_permeability = kozeny_carman ;
   }
   

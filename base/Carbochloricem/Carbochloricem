@@ -22,7 +22,7 @@ phi_r = 0.70
 Curves = CP1  p_c = Range{x1 = 0 , x2 = 500.e6 , n = 1000} s_l  = Expressions(1){a = 61.3e6 ; b = 1.95 ; s_l = (1 + (p_c/a)**(b/(b-1)))**(-1/b) ;}
 Curves = CP1-kr  s_l = Range{x1 = 0 , x2 = 1 , n = 100} kl_r = Expressions(1){b = 1.95 ; kl_r = sqrt(s_l)*(1 - (1 - s_l**b)**(1/b))**2}
 Curves = Adscoef  x = Range{x1 = 0.8 , x2 = 1.5 , n = 100}  alpha = Expressions(1){a0 = 1.7e-4 ; a1 = 6.69e-3 ; x0 = 0.8 ; x1 = 1.5 ; alpha = a0**((x1 - x)/(x1 - x0))*a1**((x - x0)/(x1 - x0)) ;}  beta = Expressions(1){b0 = 1.679e-3 ; b1 = 2.1e-2 ; x0 = 0.8 ; x1 = 1.5 ; beta = b0**((x1 - x)/(x1 - x0))*b1**((x - x0)/(x1 - x0)) ;}
-Curves = V_CSH  x = Range{x1 = 0 , x2 = 0.85 , n=2} v_csh = Expressions(1){x0 = 0 ; v0 = 5.44e-2 ; x1 = 0.85 ; v1 = 8.14e-2 ;  v_csh = (x1 - x)/(x1 - x0)*v0 + (x - x0)/(x1 - x0)*v1}
+Curves = V_CSH  x = Range{x1 = 0 , x2 = 0.85 , n = 2} v_csh = Expressions(1){x0 = 0 ; v0 = 5.44e-2 ; x1 = 0.85 ; v1 = 8.14e-2 ;  v_csh = (x1 - x)/(x1 - x0)*v0 + (x - x0)/(x1 - x0)*v1}
 
 
 Fields

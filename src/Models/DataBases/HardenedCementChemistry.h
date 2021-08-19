@@ -19,6 +19,7 @@ extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_H
 extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_Cl_H2O)(HardenedCementChemistry_t*) ;
 extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O)        (HardenedCementChemistry_t*) ;
 extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O)  (HardenedCementChemistry_t*) ;
+extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_Cl_H2O)(HardenedCementChemistry_t*) ;
 extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemistry_t*) ;
 
 
@@ -175,11 +176,6 @@ extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemi
  * ------------------ */
 #define HardenedCementChemistry_GetInput(HCC,U) \
         HardenedCementChemistry_GetPrimaryVariable(HCC)[HardenedCementChemistry_InputIndex(U)]
-
-//#define HardenedCementChemistry_SetIndex(HCC,U) \
-//        do{ \
-//          HardenedCementChemistry_GetIndex(HCC,U) = HardenedCementChemistry_Index(U) ; \
-//        } while(0)
         
 #define HardenedCementChemistry_SetInput(HCC,U,...) \
         do{ \

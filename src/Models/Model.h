@@ -85,6 +85,7 @@ extern double*   (Model_ComputeVariableDerivatives)(Element_t*,double,double,dou
 #define Model_GetNbOfEquations(MOD)        ((MOD)->nbofequations)
 #define Model_GetNameOfEquation(MOD)       ((MOD)->nameofequations)
 #define Model_GetNameOfUnknown(MOD)        ((MOD)->nameofunknowns)
+#define Model_GetSequentialIndexOfUnknown(MOD)        ((MOD)->sequentialindex)
 #define Model_GetGeometry(MOD)             ((MOD)->geometry)
 #define Model_GetDataFile(MOD)             ((MOD)->datafile)
 #define Model_GetShortTitle(MOD)           ((MOD)->shorttitle)
@@ -203,6 +204,7 @@ struct Model_s {              /* model */
   unsigned short nbofequations ;    /* Number of equations */
   char**   nameofequations ;  /* Names of equations */
   char**   nameofunknowns ;   /* Names of unknowns */
+  int*     sequentialindex ;  /* Sequential indexes of unknowns/equations */
   
   Geometry_t* geometry  ;     /* Geometry of the problem being dealt with */
   DataFile_t* datafile ;      /* Datafile being dealt with */

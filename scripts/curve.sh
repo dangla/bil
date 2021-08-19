@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python ${BIL}/scripts/tools/Curve.py $@
+python ${BIL}/scripts/Curve/Curve.py $@

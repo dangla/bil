@@ -56,6 +56,22 @@ void Solution_Copy(Solution_t* sol_dest,Solution_t* sol_src)
 
 
 
+Solution_t* (Solution_GetSolutionInDistantPast)(Solution_t* sol,unsigned int dist)
+{
+  while(dist--) sol = Solution_GetPreviousSolution(sol) ;
+  return(sol) ;
+}
+
+
+
+Solution_t* (Solution_GetSolutionInDistantFuture)(Solution_t* sol,unsigned int dist)
+{
+  while(dist--) sol = Solution_GetNextSolution(sol) ;
+  return(sol) ;
+}
+
+
+
 /* Not used */
 #if 0
 void Solution_Move(Solution_t* dest,Solution_t* src)

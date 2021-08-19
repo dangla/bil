@@ -148,6 +148,11 @@ clean:
 
 
 
+#=======================================================================
+# Target rules for plotdiffti
+# Usage: make plotdifft1 opt=pause
+#=======================================================================
+
 plotdifft1:
 	for i in ${BASE_DIRS}; do (\
 	echo "Plot $$i.t1 and toto.t1" && \

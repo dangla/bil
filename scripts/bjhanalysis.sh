@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python ${BIL}/scripts/BJHanalysis/BJH.py $@
+python ${BIL}/scripts/BJH/BJH.py $@

@@ -1,0 +1,7 @@
+
+Develop a Two-step sequential non iterative approach: TwoStepSNIA.c
+
+Introduce an object: Strategy.h where we can define some computational 
+parameters related to: 
+- Initialization strategy
+- Sequential strategy

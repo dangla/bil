@@ -34,7 +34,7 @@ extern void            (Exception_Delete)(void*) ;
 
 #define Exception_Interrupt \
         do { \
-          if(!raise(SIGINT)) { \
+          if(raise(SIGINT)) { \
             Message_FatalError("Error raising the signal") ; \
           } \
         } while (0)

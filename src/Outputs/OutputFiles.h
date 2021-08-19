@@ -18,8 +18,11 @@ extern void    (OutputFiles_Delete)(void*) ;
 extern void    (OutputFiles_PostProcessForGmshParsedFileFormat)(OutputFiles_t*,DataSet_t*) ;
 extern void    (OutputFiles_PostProcessForGmshASCIIFileFormat)(OutputFiles_t*,DataSet_t*) ;
 extern void    (OutputFiles_BackupSolutionAtTime_)(OutputFiles_t*,DataSet_t*,double,int) ;
-extern void    (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t*,DataSet_t*,double,double) ;
+extern void    (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t*,DataSet_t*,double,const char*) ;
 
+
+
+#include "Utils.h"
 
 /* Function-like macros */
 #define OutputFiles_ReadLineFromCurrentFilePosition(OFS,textfile) \
@@ -28,10 +31,18 @@ extern void    (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t*,DataSet_t*,do
 
 #define OutputFiles_BackupSolutionAtTime(OFS,...) \
         if(OFS) OutputFiles_BackupSolutionAtTime_(OFS,__VA_ARGS__)
+        
+        
+#define OutputFiles_BackupSolutionAtPoint(...) \
+        Utils_CAT_NARG(OutputFiles_BackupSolutionAtPoint,__VA_ARGS__)(__VA_ARGS__)
 
 
-#define OutputFiles_BackupSolutionAtPoint(OFS,...) \
+/* Implementation */
+#define OutputFiles_BackupSolutionAtPoint4(OFS,...) \
         if(OFS) OutputFiles_BackupSolutionAtPoint_(OFS,__VA_ARGS__)
+        
+#define OutputFiles_BackupSolutionAtPoint3(OFS,...) \
+        OutputFiles_BackupSolutionAtPoint4(OFS,__VA_ARGS__,NULL)
 
 
 #include "Views.h"

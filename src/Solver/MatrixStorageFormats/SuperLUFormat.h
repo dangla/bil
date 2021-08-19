@@ -18,6 +18,7 @@
 
 
 extern SuperLUFormat_t* (SuperLUFormat_Create)(Mesh_t*) ;
+extern SuperLUFormat_t* (SuperLUFormat_CreateSelectedMatrix)(Mesh_t*,const int) ;
 extern void             (SuperLUFormat_Delete)(void*) ;
 
 

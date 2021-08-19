@@ -26,15 +26,15 @@ static FEM_t*  FEM_Create(void) ;
 //static double* FEM_ComputeJacobianMatrixOld(Element_t*,double*,int) ;
 //static double* FEM_ComputeInverseJacobianMatrixOld(Element_t*,double*,int) ;
 //static double  FEM_ComputeJacobianDeterminantOld(Element_t*,double*,int) ;
-static double* FEM_ComputeJacobianMatrixNew(Element_t*,double*,int,const int) ;
-static double* FEM_ComputeInverseJacobianMatrixNew(Element_t*,double*,int,const int) ;
-static double  FEM_ComputeJacobianDeterminantNew(Element_t*,double*,int,const int) ;
+//static double* FEM_ComputeJacobianMatrixNew(Element_t*,double*,int,const int) ;
+//static double* FEM_ComputeInverseJacobianMatrixNew(Element_t*,double*,int,const int) ;
+//static double  FEM_ComputeJacobianDeterminantNew(Element_t*,double*,int,const int) ;
 //static double* FEM_ComputeNormalVector(Element_t*,double*,int) ;
 static void    FEM_CheckNumberingOfOverlappingNodes(Element_t*,const int) ;
 
-#define FEM_ComputeJacobianMatrix        FEM_ComputeJacobianMatrixNew
-#define FEM_ComputeJacobianDeterminant   FEM_ComputeJacobianDeterminantNew
-#define FEM_ComputeInverseJacobianMatrix FEM_ComputeInverseJacobianMatrixNew
+#define FEM_ComputeJacobianMatrix        Element_ComputeJacobianMatrix
+#define FEM_ComputeJacobianDeterminant   Element_ComputeJacobianDeterminant
+#define FEM_ComputeInverseJacobianMatrix Element_ComputeInverseJacobianMatrix
 
 /* 
    Extern Functions 
@@ -1016,9 +1016,9 @@ void FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t* fem,const int inc,const in
       int i ;
       icol  = n*neq + inc ;
       for(i = 0 ; i < 2 ; i++) {
-	      int    m    = edge_vertices[n][i] ;
-	      int    jcol = m*neq + inc ;
-	      K(ilin,jcol) += 0.5*K(ilin,icol) ;
+        int    m    = edge_vertices[n][i] ;
+        int    jcol = m*neq + inc ;
+        K(ilin,jcol) += 0.5*K(ilin,icol) ;
       }
       K(ilin,icol) = 0. ;
     }
@@ -1029,9 +1029,9 @@ void FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t* fem,const int inc,const in
       int i ;
       ilin  = n*neq + equ ;
       for(i = 0 ; i < 2 ; i++) {
-	      int    m     = edge_vertices[n][i] ;
-	      int    jlin  = m*neq + equ ;
-	      K(jlin,icol) += 0.5*K(ilin,icol) ;
+        int    m     = edge_vertices[n][i] ;
+        int    jlin  = m*neq + equ ;
+        K(jlin,icol) += 0.5*K(ilin,icol) ;
       }
       K(ilin,icol) = 0. ;
     }
@@ -1694,7 +1694,7 @@ double* FEM_ComputeSurfaceLoadResidu(FEM_t* fem,IntFct_t* intfct,Load_t* load,co
 
 
 
-void FEM_TransformResiduFromDegree2IntoDegree1(FEM_t* fem,const int equ,double* r)
+void FEM_TransformResiduFromDegree2IntoDegree1(FEM_t* fem,const int inc,const int equ,double* r)
 {
   Element_t* el = FEM_GetElement(fem) ;
   int    nn = Element_GetNbOfNodes(el) ;
@@ -1735,12 +1735,29 @@ void FEM_TransformResiduFromDegree2IntoDegree1(FEM_t* fem,const int equ,double* 
   for(n = n_vertices ; n < nn ; n++) {
     int ilin  = n*neq + equ ;
     int i ;
+    
     for(i = 0 ; i < 2 ; i++) {
       int    m     = edge_vertices[n][i] ;
       int    jlin  = m*neq + equ ;
+      
       r[jlin] += 0.5*r[ilin] ;
     }
-    r[ilin] = 0. ;
+    
+    //r[ilin] = 0. ;
+    #if 1
+    {
+      double u_n = Element_GetValueOfCurrentNodalUnknown(el,n,inc) ;
+      
+      r[ilin] = u_n ;
+    
+      for(i = 0 ; i < 2 ; i++) {
+        int    m     = edge_vertices[n][i] ;
+        double u_m = Element_GetValueOfCurrentNodalUnknown(el,m,inc) ;
+      
+        r[ilin] -= 0.5*u_m ;
+      }
+    }
+    #endif
   }
 }
 
@@ -2531,7 +2548,7 @@ double   FEM_IntegrateOverElement(FEM_t* fem,IntFct_t* intfct,double* f,int shif
  */
 
 
-
+#if 0
 double* FEM_ComputeJacobianMatrixNew(Element_t* el,double* dh,int nn,const int dim_h)
 {
   return(Element_ComputeJacobianMatrix(el,dh,nn,dim_h)) ;
@@ -2543,6 +2560,7 @@ double* FEM_ComputeJacobianMatrixNew(Element_t* el,double* dh,int nn,const int d
 double FEM_ComputeJacobianDeterminantNew(Element_t* el,double* dh,int nn,const int dim_h)
 /** Compute the determinant of the jacobian matrix */
 {
+  #if 0
   double* jac  = FEM_ComputeJacobianMatrixNew(el,dh,nn,dim_h) ;
   double det = Math_Compute3x3MatrixDeterminant(jac) ;
   
@@ -2551,8 +2569,9 @@ double FEM_ComputeJacobianDeterminantNew(Element_t* el,double* dh,int nn,const i
   }
   
   Element_FreeBufferFrom(el,jac) ;
+  #endif
   
-  return(det) ;
+  return(Element_ComputeJacobianDeterminant(el,dh,nn,dim_h)) ;
 }
 
 
@@ -2560,6 +2579,7 @@ double FEM_ComputeJacobianDeterminantNew(Element_t* el,double* dh,int nn,const i
 double* FEM_ComputeInverseJacobianMatrixNew(Element_t* el,double* dh,int nn,const int dim_h)
 /** Compute the inverse jacobian matrix */
 {
+  #if 0
   size_t SizeNeeded = 9*sizeof(double) ;
   double* cj = (double*) Element_AllocateInBuffer(el,SizeNeeded) ;
   
@@ -2578,7 +2598,10 @@ double* FEM_ComputeInverseJacobianMatrixNew(Element_t* el,double* dh,int nn,cons
   }
     
   return(cj) ;
+  #endif
+  return(Element_ComputeInverseJacobianMatrix(el,dh,nn,dim_h)) ;
 }
+#endif
 
 
 

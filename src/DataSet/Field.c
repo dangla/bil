@@ -193,152 +193,6 @@ void Field_Scan(Field_t* field,DataFile_t* datafile)
 
 
 
-#if 0
-FieldGrid_t* FieldGrid_Create(char* filename,int dim)
-{
-  FieldGrid_t* grid = (FieldGrid_t*) malloc(sizeof(FieldGrid_t)) ;
-  int    n_x = 1,n_y = 1,n_z = 1 ;
-  
-  if(!grid) {
-    arret("FieldGrid_Create(1): allocation impossible") ;
-  }
-        
-  /* Read the numbers */
-  {
-    DataFile_t* dfile = DataFile_Create(filename) ;
-    char*   line = DataFile_GetTextLine(dfile) ;
-  
-    DataFile_OpenFile(dfile,"r") ;
-  
-    DataFile_ReadLineFromCurrentFilePosition(dfile) ;
-
-    if(dim == 1) {
-      sscanf(line,"%d",&n_x) ;
-    } else if(dim == 2) {
-      sscanf(line,"%d %d",&n_x,&n_y) ;
-    } else if(dim == 3) {
-      sscanf(line,"%d %d %d",&n_x,&n_y,&n_z) ;
-    } else {
-      arret("FieldGrid_Create(2): dimension incompatible") ;
-    }
-  
-    DataFile_CloseFile(dfile) ;
-  
-    DataFile_Delete(&dfile) ;
-  }
-
-  FieldGrid_GetNbOfPointsAlongX(grid) = n_x ;
-  FieldGrid_GetNbOfPointsAlongY(grid) = n_y ;
-  FieldGrid_GetNbOfPointsAlongZ(grid) = n_z ;
-  
-  /* Allocation of memory space for the file name */
-  {
-    size_t sz = Field_MaxLengthOfFileName*sizeof(char) ;
-    char* name = (char*) malloc(sz) ;
-    
-    if(!name) {
-      arret("FieldGrid_Create(2): allocation impossible") ;
-    }
-    
-    FieldGrid_GetFileName(grid) = name ;
-        
-    if(strlen(filename) > Field_MaxLengthOfFileName) {
-      arret("FieldGrid_Create(5): too long file name") ;
-    }
-    
-    strcpy(name,filename) ;
-  }
-  
-  /* Allocation of memory space for the coordinate */
-  {
-    size_t sz = (n_x + n_y + n_z)*sizeof(double) ;
-    double* x = (double*) malloc(sz) ;
-    double* y = x + n_x ;
-    double* z = y + n_y ;
-    
-    if(!x) {
-      arret("FieldGrid_Create(3): allocation impossible") ;
-    }
-
-    FieldGrid_GetCoordinateAlongX(grid) = x ;
-    FieldGrid_GetCoordinateAlongY(grid) = y ;
-    FieldGrid_GetCoordinateAlongZ(grid) = z ;
-
-    /* Initialization of the coordinate */
-    if(n_x > 0) FieldGrid_GetCoordinateAlongX(grid)[0] = 0. ;
-    if(n_y > 0) FieldGrid_GetCoordinateAlongY(grid)[0] = 0. ;
-    if(n_z > 0) FieldGrid_GetCoordinateAlongZ(grid)[0] = 0. ;
-  }
-
-
-  /* Allocation of memory space for the values */
-  {
-    size_t sz = n_x*n_y*n_z*sizeof(double) ;
-    double* v = (double*) malloc(sz) ;
-    
-    if(!v) {
-      arret("FieldGrid_Create(4): allocation impossible") ;
-    }
-    
-    FieldGrid_GetValue(grid) = v ;
-  }
-  
-  
-  /* Read the grid */
-  {
-    DataFile_t* dfile = DataFile_Create(filename) ;
-    char*   line = DataFile_GetTextLine(dfile) ;
-  
-    DataFile_OpenFile(dfile,"r") ;
-  
-    DataFile_ReadLineFromCurrentFilePosition(dfile) ;
-
-    if(dim == 1) {
-      sscanf(line,"%d",&n_x) ;
-    } else if(dim == 2) {
-      sscanf(line,"%d %d",&n_x,&n_y) ;
-    } else if(dim == 3) {
-      sscanf(line,"%d %d %d",&n_x,&n_y,&n_z) ;
-    } else {
-      arret("FieldGrid_Create(2): dimension incompatible") ;
-    }
-  
-    if(dim >= 1) {
-      double* x = FieldGrid_GetCoordinateAlongX(grid) ;
-      
-      DataFile_ReadDoublesFromCurrentFilePosition(dfile,x,n_x) ;
-    }
-  
-    if(dim >= 2) {
-      double* y = FieldGrid_GetCoordinateAlongY(grid) ;
-      
-      DataFile_ReadDoublesFromCurrentFilePosition(dfile,y,n_y) ;
-    }
-  
-    if(dim >= 3) {
-      double* z = FieldGrid_GetCoordinateAlongZ(grid) ;
-      
-      DataFile_ReadDoublesFromCurrentFilePosition(dfile,z,n_z) ;
-    }
-
-    /* Read the value of the field */
-    {
-      double* v = FieldGrid_GetValue(grid) ;
-      
-      DataFile_ReadDoublesFromCurrentFilePosition(dfile,v,n_x*n_y*n_z) ;
-    }
-  
-    DataFile_CloseFile(dfile) ;
-  
-    DataFile_Delete(&dfile) ;
-  }
-
-  return(grid) ;
-}
-#endif
-
-
-
 #if 1
 FieldGrid_t* FieldGrid_Create(char* filename)
 {
@@ -616,6 +470,152 @@ double champgrille(double* p,int dim,FieldGrid_t ch)
 
 
 /* Not used */
+
+
+
+#if 0
+FieldGrid_t* FieldGrid_Create(char* filename,int dim)
+{
+  FieldGrid_t* grid = (FieldGrid_t*) malloc(sizeof(FieldGrid_t)) ;
+  int    n_x = 1,n_y = 1,n_z = 1 ;
+  
+  if(!grid) {
+    arret("FieldGrid_Create(1): allocation impossible") ;
+  }
+        
+  /* Read the numbers */
+  {
+    DataFile_t* dfile = DataFile_Create(filename) ;
+    char*   line = DataFile_GetTextLine(dfile) ;
+  
+    DataFile_OpenFile(dfile,"r") ;
+  
+    DataFile_ReadLineFromCurrentFilePosition(dfile) ;
+
+    if(dim == 1) {
+      sscanf(line,"%d",&n_x) ;
+    } else if(dim == 2) {
+      sscanf(line,"%d %d",&n_x,&n_y) ;
+    } else if(dim == 3) {
+      sscanf(line,"%d %d %d",&n_x,&n_y,&n_z) ;
+    } else {
+      arret("FieldGrid_Create(2): dimension incompatible") ;
+    }
+  
+    DataFile_CloseFile(dfile) ;
+  
+    DataFile_Delete(&dfile) ;
+  }
+
+  FieldGrid_GetNbOfPointsAlongX(grid) = n_x ;
+  FieldGrid_GetNbOfPointsAlongY(grid) = n_y ;
+  FieldGrid_GetNbOfPointsAlongZ(grid) = n_z ;
+  
+  /* Allocation of memory space for the file name */
+  {
+    size_t sz = Field_MaxLengthOfFileName*sizeof(char) ;
+    char* name = (char*) malloc(sz) ;
+    
+    if(!name) {
+      arret("FieldGrid_Create(2): allocation impossible") ;
+    }
+    
+    FieldGrid_GetFileName(grid) = name ;
+        
+    if(strlen(filename) > Field_MaxLengthOfFileName) {
+      arret("FieldGrid_Create(5): too long file name") ;
+    }
+    
+    strcpy(name,filename) ;
+  }
+  
+  /* Allocation of memory space for the coordinate */
+  {
+    size_t sz = (n_x + n_y + n_z)*sizeof(double) ;
+    double* x = (double*) malloc(sz) ;
+    double* y = x + n_x ;
+    double* z = y + n_y ;
+    
+    if(!x) {
+      arret("FieldGrid_Create(3): allocation impossible") ;
+    }
+
+    FieldGrid_GetCoordinateAlongX(grid) = x ;
+    FieldGrid_GetCoordinateAlongY(grid) = y ;
+    FieldGrid_GetCoordinateAlongZ(grid) = z ;
+
+    /* Initialization of the coordinate */
+    if(n_x > 0) FieldGrid_GetCoordinateAlongX(grid)[0] = 0. ;
+    if(n_y > 0) FieldGrid_GetCoordinateAlongY(grid)[0] = 0. ;
+    if(n_z > 0) FieldGrid_GetCoordinateAlongZ(grid)[0] = 0. ;
+  }
+
+
+  /* Allocation of memory space for the values */
+  {
+    size_t sz = n_x*n_y*n_z*sizeof(double) ;
+    double* v = (double*) malloc(sz) ;
+    
+    if(!v) {
+      arret("FieldGrid_Create(4): allocation impossible") ;
+    }
+    
+    FieldGrid_GetValue(grid) = v ;
+  }
+  
+  
+  /* Read the grid */
+  {
+    DataFile_t* dfile = DataFile_Create(filename) ;
+    char*   line = DataFile_GetTextLine(dfile) ;
+  
+    DataFile_OpenFile(dfile,"r") ;
+  
+    DataFile_ReadLineFromCurrentFilePosition(dfile) ;
+
+    if(dim == 1) {
+      sscanf(line,"%d",&n_x) ;
+    } else if(dim == 2) {
+      sscanf(line,"%d %d",&n_x,&n_y) ;
+    } else if(dim == 3) {
+      sscanf(line,"%d %d %d",&n_x,&n_y,&n_z) ;
+    } else {
+      arret("FieldGrid_Create(2): dimension incompatible") ;
+    }
+  
+    if(dim >= 1) {
+      double* x = FieldGrid_GetCoordinateAlongX(grid) ;
+      
+      DataFile_ReadDoublesFromCurrentFilePosition(dfile,x,n_x) ;
+    }
+  
+    if(dim >= 2) {
+      double* y = FieldGrid_GetCoordinateAlongY(grid) ;
+      
+      DataFile_ReadDoublesFromCurrentFilePosition(dfile,y,n_y) ;
+    }
+  
+    if(dim >= 3) {
+      double* z = FieldGrid_GetCoordinateAlongZ(grid) ;
+      
+      DataFile_ReadDoublesFromCurrentFilePosition(dfile,z,n_z) ;
+    }
+
+    /* Read the value of the field */
+    {
+      double* v = FieldGrid_GetValue(grid) ;
+      
+      DataFile_ReadDoublesFromCurrentFilePosition(dfile,v,n_x*n_y*n_z) ;
+    }
+  
+    DataFile_CloseFile(dfile) ;
+  
+    DataFile_Delete(&dfile) ;
+  }
+
+  return(grid) ;
+}
+#endif
 
 
 

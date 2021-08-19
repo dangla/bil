@@ -8,7 +8,7 @@
 /* The Finite Element Method */
 #include "FEM.h"
 
-#define TITLE   "Unsaturated Poroelasticity"
+#define TITLE   "Saturated/Unsaturated Poroelasticity"
 #define AUTHORS "Dangla"
 
 #include "PredefinedMethods.h"
@@ -98,6 +98,12 @@ int SetModelProp(Model_t *model)
   Model_CopyNameOfUnknown(model,I_p_l,"p_l") ;
   for(i = 0 ; i < dim ; i++) {
     Model_CopyNameOfUnknown(model,I_u + i,name_unk[i]) ;
+  }
+  
+  
+  Model_GetSequentialIndexOfUnknown(model)[E_liq] = 0 ;
+  for(i = 0 ; i < dim ; i++) {
+    Model_GetSequentialIndexOfUnknown(model)[E_mec+i] = 0 ;
   }
   
   return(0) ;
@@ -566,7 +572,7 @@ int  ComputeResidu(Element_t *el,double t,double dt,double *r)
 
   /* elements P2P1 */
   if(strstr(method,"P2P1")) {
-    FEM_TransformResiduFromDegree2IntoDegree1(fem,E_liq,r) ;
+    FEM_TransformResiduFromDegree2IntoDegree1(fem,I_p_l,E_liq,r) ;
   }
   return(0) ;
 #undef R
@@ -624,7 +630,7 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
       for(j = 0 ; j < dim ; j++) w_l[j] += W_l[j]/np ;
 
       for(j = 0 ; j < 9 ; j++) sig[j] += SIG[j]/np ;
-	
+  
       phi += PHI/np ;
     }
       

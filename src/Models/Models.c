@@ -18,7 +18,6 @@ static void      (Models_Delete)(void*) ;
 
 
 Models_t* Models_New(const int n_models)
-/** Create the models found in "ListOfModels.h"  */
 {
   Models_t* models = (Models_t*) Mry_New(Models_t) ;
   
@@ -180,9 +179,9 @@ Model_t* Models_FindOrAppendModel(Models_t* models,const char* codename,Geometry
     int n = Models_GetNbOfModels(models) ;
     
     if(n < nmax) {
-      model = Model_Initialize(model0 + n,codename,geom,datafile) ;
-      n += 1 ;
-      Models_GetNbOfModels(models) = n ;
+      model = model0 + n ;
+      Model_Initialize(model,codename,geom,datafile) ;
+      Models_GetNbOfModels(models) = n + 1 ;
     } else {
       arret("Models_FindOrAppendModel: cannot append") ;
     }

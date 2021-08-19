@@ -1,8 +1,8 @@
-set term qt
+#set term qt
 #set term x11 
-#set term wxt
+set term wxt
 
-tictac = 1
+tictac = 0@ARG3
 
 NbOfFiles = ARGC
 
@@ -12,11 +12,16 @@ NbOfFiles = ARGC
 file1 = ARG1
 file2 = ARG2
 
-if(ARG3 == "") {
-  tictac = 1 ;
-} else {
-  tictac = ARG3 ;
-}
+
+if(tictac == 0) tictac = 1
+
+#if(ARG3 == '') {
+#  tictac = 1 ;
+#} else {
+#  tictac = (@ARG3 > 0.1) ? ARG3 : 0.1 ;
+#}
+
+
 
 # Styles
 set pointsize 2

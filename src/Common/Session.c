@@ -1,5 +1,6 @@
 #include "Session.h"
 #include "GenericData.h"
+#include "Mry.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -22,9 +23,7 @@ Session_t*  (Session_GetCurrentInstance)(void)
 
 Session_t*   (Session_New)(void)
 {
-  Session_t* session = (Session_t*) calloc(1,sizeof(Session_t)) ;
-  
-  assert(session) ;
+  Session_t* session = (Session_t*) Mry_New(Session_t) ;
   
   return(session) ;
 }

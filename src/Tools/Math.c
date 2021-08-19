@@ -274,7 +274,7 @@ double Math_ComputeSecondStressInvariant(const double* sig)
 
 
 
-double* Math_DeviatoricStress(const double* sig)
+double* Math_ComputeDeviatoricStress(const double* sig)
 /** Return a pointer to the deviator of sig */
 {
   Math_t* math = Math_GetInstance() ;
@@ -317,8 +317,8 @@ double* Math_SolveByGaussElimination(double* a,double* b,int n)
     /* Search for largest pivot */
     for(j = i ; j < n ; j++) {
       if(fabs(A(j,i)) >= big) {
-	      big  = fabs(A(j,i)) ;
-	      irow = j ;
+        big  = fabs(A(j,i)) ;
+        irow = j ;
       }
     }
     
@@ -601,12 +601,12 @@ int Math_PolishPolynomialEquationRoot(double* x,int n,double* proot,double tol,i
       
       derivative = a*root + b ;
     }
-	    
+      
     if(derivative == 0) {
       proot[0] = root ;
       return(0) ;
     }
-	    
+      
     droot = - error / derivative ;
     root += droot ;
       
@@ -637,7 +637,7 @@ int Math_PolishPolynomialEquationRoot(double* x,int n,double* proot,double tol,i
 }
 
 
-
+#if 0
 /*
  * Evaluate an expression in a string
  * From snippets.
@@ -671,6 +671,18 @@ double (Math_EvaluateExpression)(char *line)
   
   return(val) ;
 }
+#endif
+
+double (Math_EvaluateExpression)(char *line)
+{
+  double val ;
+  
+  {
+    Message_RuntimeError("Math_EvaluateExpression: not available\n") ;
+  }
+  
+  return(val) ;
+}
 
 
 
@@ -679,9 +691,29 @@ double (Math_EvaluateExpression)(char *line)
  * C code created by a parser generator from AnaGram
  * http://www.parsifalsoft.com/
  */
+
+#ifndef strdup
+#define strdup strdup
+
+static char* strdup (const char*) ;
+
+char* strdup (const char* s)
+{
+  size_t slen = strlen(s);
+  char* result = malloc(slen + 1);
+  if(result == NULL)
+  {
+    return NULL;
+  }
+
+  memcpy(result, s, slen+1);
+  return result;
+}
+#endif
  
-#include "Libraries/evaluateExpression/evalkern.c"
 #include "Libraries/evaluateExpression/evalwrap.c"
+#include "Libraries/evaluateExpression/evalkern.c"
+
 
 double (Math_EvaluateExpressions)(char* variablename,char* expressionstrings)
 {

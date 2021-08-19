@@ -141,11 +141,7 @@ void (ElementsSol_AllocateMemoryForExplicitTerms)(ElementsSol_t* elementssol)
       int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
       ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
       int    i ;
-      double* ve = (double*) calloc(n_ve,sizeof(double)) ;
-      
-      if(!ve) {
-        arret("ElementsSol_AllocateMemoryForExplicitTerms") ;
-      }
+      double* ve = (double*) Mry_New(double[n_ve]) ;
 
   
       for(i = 0 ; i < NbOfElements ; i++) {
@@ -195,11 +191,7 @@ void (ElementsSol_AllocateMemoryForConstantTerms)(ElementsSol_t* elementssol)
       int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
       ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
       int    i ;
-      double* v0 = (double*) calloc(n_v0,sizeof(double)) ;
-      
-      if(!v0) {
-        arret("ElementsSol_AllocateMemoryForConstantTerms") ;
-      }
+      double* v0 = (double*) Mry_New(double[n_v0]) ;
   
   
       for(i = 0 ; i < NbOfElements ; i++) {

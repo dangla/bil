@@ -1068,7 +1068,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x,Solut
 
         
         Session_Open() ;
-        Message_SetVerbosity(0) ;
+        Message_SetVerbosity(4) ;
         
         Message_Direct("\n") ;
         Message_Direct("Start a calculation of microstructure: %s",DataFile_GetFileName(df)) ;
@@ -1125,8 +1125,7 @@ void ComputeMicrostructure(DataSet_t* jdd,Solver_t* solver,double t,double dt,So
     
   /* Compute the microstructure */
   {
-    Modules_t* modules = DataSet_GetModules(jdd) ;
-    Module_t* module_i = Modules_FindModule(modules,"Module1") ;
+    Module_t* module_i = DataSet_GetModule(jdd) ;
     Dates_t*   dates  = DataSet_GetDates(jdd) ;
     Date_t*    date   = Dates_GetDate(dates) ;
     TimeStep_t*  timestep  = DataSet_GetTimeStep(jdd) ;
@@ -1157,8 +1156,8 @@ void ComputeMicrostructure(DataSet_t* jdd,Solver_t* solver,double t,double dt,So
         i = Module_SolveProblem(module_i,jdd,sols,solver,NULL) ;
         
         if(i < 0) {
-          Message_Warning("ComputeMicrostructure: something went wrong") ;
-          Exception_Interrupt ;
+          Message_FatalError("ComputeMicrostructure: something went wrong") ;
+          //Exception_Interrupt ;
         }
       }
     }

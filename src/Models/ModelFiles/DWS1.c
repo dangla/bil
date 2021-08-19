@@ -10,72 +10,137 @@
 #include "FVM.h"
 
 
-#define TITLE   "Drying-Wetting with Salt (1D case)"
+#define TITLE   "Drying-Wetting with Salt (only dissolved) (1D case)"
 #define AUTHORS "Dangla"
 
 #include "PredefinedMethods.h"
 
 
+
+/* Indices of equations/unknowns */
+enum {
+  E_Mass   ,
+  /* Uncomment/Comment the next two lines to consider/suppress air */
+  E_Air   ,
+  #define E_Air E_Air
+  E_Salt   ,
+  E_Last
+} ;
+
+
 /* Nb of equations */
-#define NEQ 	   (3)
+#define NEQ      (E_Last)
+
+
+
+/* Value of the nodal unknown (u, u_n and el must be used below) */
+#define UNKNOWN(n,i)     Element_GetValueOfNodalUnknown(el,u,n,i)
+#define UNKNOWNn(n,i)    Element_GetValueOfNodalUnknown(el,u_n,n,i)
+
+
+/* Generic names of nodal unknowns */
+#define U_Mass(n)     (UNKNOWN(n,E_Mass))
+#define Un_Mass(n)    (UNKNOWNn(n,E_Mass))
+
+#define U_Air(n)      (UNKNOWN(n,E_Air))
+#define Un_Air(n)     (UNKNOWNn(n,E_Air))
+
+#define U_Salt(n)     (UNKNOWN(n,E_Salt))
+#define Un_Salt(n)    (UNKNOWNn(n,E_Salt))
+
+
+
+/* Method chosen at compiling time. 
+ * Each equation is associated to a specific unknown.
+ * Each unknown can deal with a specific model.
+ * Uncomment/comment to let only one unknown per equation */
+
+/* Mass: the relative humidity */
+#define U_H_r       U_Mass
+
+/* Air: the gas pressure */
+#ifdef E_Air
+#define U_P_G       U_Air
+#endif
+
+/* Salt: the salt concentration */
+//#define U_LogC_s    U_Salt
+#define U_C_s       U_Salt
+
+
+
+/* Names of nodal unknowns */
+#if defined (U_LogC_s) && !defined (U_C_s)
+  #define LogC_s(n)   U_Salt(n)
+  #define LogC_sn(n)  Un_Salt(n)
+  #define C_s(n)      (pow(10,LogC_s(n)))
+  #define C_sn(n)     (pow(10,LogC_sn(n)))
+#elif defined (U_C_s) && !defined (U_LogC_s)
+  #define C_s(n)      U_Salt(n)
+  #define C_sn(n)     Un_Salt(n)
+  #define LogC_s(n)   (log10(C_s(n)))
+  #define LogC_sn(n)  (log10(C_sn(n)))
+#else
+  #error "Ambiguous or undefined unknown"
+#endif
+
+#define H_r(n)      U_Mass(n)
+#define P_G(n)      U_Air(n)
+
+
+
+
+
+/* Nb of nodes (el must be used below) */
+#define NbOfNodes               Element_GetNbOfNodes(el)
+
+
+
 /* Nb of (im/ex)plicit terms and constant terms */
-#define NVI      (9)
-#define NVE      (6)
+#define NbOfExplicitTerms       (6*NbOfNodes)
+#define NbOfImplicitTerms       (3*NbOfNodes*NbOfNodes)
+#define NbOfConstantTerms       (0)
+#define NVI      (NbOfImplicitTerms)
+#define NVE      (NbOfExplicitTerms)
 #define NV0      (0)
 
-/* Equation index */
-#define E_Mass	 (0)
-#define E_Air    (1)
-#define E_Salt	 (2)
 
-/* Unknown index */
-#define U_H_r    (0)
-#define U_P_G    (1)
-#define U_C_s    (2)
+/* Names used for implicit terms */
+#define MassAndFlux(f,i,j)  ((f)[((i)*NbOfNodes + (j))])
 
-
-#define UNKNOWN(n,i)     (u[n][Element_GetNodalUnknownPosition(el,n,i)])
-#define UNKNOWNn(n,i)    (u_n[n][Element_GetNodalUnknownPosition(el,n,i)])
+#define MW_T          (f)
+#define MW_Tn         (f_n)
+#define M_T(i)        MassAndFlux(MW_T,i,i)
+#define M_Tn(i)       MassAndFlux(MW_Tn,i,i)
+#define W_T(i,j)      MassAndFlux(MW_T,i,j)
 
 
-#define NOLOG_U     1
-#define LOG_U       2
-#define Ln10        Math_Ln10
-#define U_s         NOLOG_U
+#define MW_A          (f   + NbOfNodes*NbOfNodes)
+#define MW_An         (f_n + NbOfNodes*NbOfNodes)
+#define M_A(i)        MassAndFlux(MW_A,i,i)
+#define M_An(i)       MassAndFlux(MW_An,i,i)
+#define W_A(i,j)      MassAndFlux(MW_A,i,j)
 
 
-/* We define some names for primary unknowns */
-#if (U_s == LOG_U)
-  #define LogC_s(n)   (UNKNOWN(n,U_C_s))
-  #define C_s(n)      (pow(10,UNKNOWN(n,U_C_s)))
-  #define C_sn(n)     (pow(10,UNKNOWNn(n,U_C_s)))
-#else
-  #define C_s(n)      (UNKNOWN(n,U_C_s))
-  #define C_sn(n)     (UNKNOWNn(n,U_C_s))
-  #define LogC_s(n)   (log10(UNKNOWN(n,U_C_s)))
-#endif
-#define H_r(n)      (UNKNOWN(n,U_H_r))
-#define P_G(n)      (UNKNOWN(n,U_P_G))
+#define NW_S        (f   + 2*NbOfNodes*NbOfNodes)
+#define NW_Sn       (f_n + 2*NbOfNodes*NbOfNodes)
+#define N_S(i)        MassAndFlux(NW_S,i,i)
+#define N_Sn(i)       MassAndFlux(NW_Sn,i,i)
+#define W_S(i,j)      MassAndFlux(NW_S,i,j)
 
-#define M_T(n)      (f[(n+0)])
-#define M_A(n)      (f[(n+2)])
-#define N_S(n)      (f[(n+4)])
-#define W_A         (f[(6)])
-#define W_T         (f[(7)])
-#define W_S         (f[(8)])
 
-#define M_Tn(n)     (f_n[(n+0)])
-#define M_An(n)     (f_n[(n+2)])
-#define N_Sn(n)     (f_n[(n+4)])
+/* Names used for explicit terms */
+#define TransferCoefficient(va,n)  ((va) + (n)*NbOfNodes)
 
-#define KD_L        (va[(0)])
-#define KD_G        (va[(1)])
+#define KD_L          TransferCoefficient(va,0)
+#define KD_G          TransferCoefficient(va,1)
 
-#define KF_V        (va[(2)])
-#define KF_S        (va[(3)])
+#define KF_V          TransferCoefficient(va,2)
+#define KF_S          TransferCoefficient(va,3)
 
-#define KC_V        (va[(4)])
-#define KC_S        (va[(5)])
+#define KC_V          TransferCoefficient(va,4)
+#define KC_S          TransferCoefficient(va,5)
+
 
 
 
@@ -225,6 +290,10 @@
 #define TEMPERATURE         (293.)      /* Temperature (K) */
 
 
+/* Math constants */
+#define Ln10      Math_Ln10
+
+
 /* To retrieve the material properties */
 #define GetProperty(a)   (Element_GetProperty(el)[pm(a)])
 
@@ -233,11 +302,14 @@
 static int     pm(const char *s) ;
 static void    GetProperties(Element_t*) ;
 
-static double* ComputeComponents(Element_t*,double**,double*,double,double,int) ;
-static Model_ComputeSecondaryVariables_t    ComputeSecondaryComponents ;
+static double* ComputeVariables(Element_t*,double**,double*,double,double,int) ;
+//static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
+static int     ComputeSecondaryVariables(Element_t*,double,double,double*) ;
+
+static double* ComputeVariableDerivatives(Element_t*,double,double,double,int,int) ;
 
 static void    ComputeTransferCoefficients(FVM_t*,double**,double*) ;
-//static double* ComputeComponentFluxes(Element_t*,double**) ;
+//static double* ComputeVariableFluxes(Element_t*,double**) ;
 static FVM_ComputeFluxes_t    ComputeFluxes ;
 static int     TangentCoefficients(FVM_t*,double,double*) ;
 
@@ -281,7 +353,6 @@ static double mu_g ;
 #include "WaterViscosity.h"
 #include "AirViscosity.h"
 #include "PhysicalConstant.h"
-#include "Log10ActivityOfWaterInBrine.h"
 
 void ComputePhysicoChemicalProperties(double TK)
 {
@@ -301,69 +372,71 @@ void ComputePhysicoChemicalProperties(double TK)
   
   /* Physical constants */
   RT      = PhysicalConstant(PerfectGasConstant)*TK ;
-  
-  {
-    double aw = Log10ActivityOfWaterInBrine("NaCl",0.001) ;
-  }
 }
 
 
 
+
+enum {
+I_M_T = NEQ    ,
+I_M_A          ,
+I_M_L          ,
+I_M_V          ,
+I_M_G          ,
+I_N_S          ,
+
+
+I_RHO_V        ,
+I_RHO_A        ,
+I_RHO_G        ,
+I_RHO_L        ,
+I_RHO_W        ,
+I_RHO_S        ,
+
+I_S_L          ,
+
+I_H_L          ,
+I_H_G          ,
+I_COOR_X       ,
+
+I_P_L          ,
+I_P_G          ,
+I_P_V          ,
+I_P_A          ,
+
+I_LNA_W        ,
+I_LNA_S        ,
+
+I_C_V          ,
+I_C_W          ,
+I_C_S          ,
+
+I_H_R          ,
+I_Last
+} ;
+
 //#define NN                (2)
-#define NbOfComponents    (29)
-//static double Components[NN][NbOfComponents] ;
-//static double dComponents[NbOfComponents] ;
-
-
-#define I_M_T          (3)
-#define I_M_A          (4)
-#define I_M_L          (5)
-#define I_M_V          (6)
-#define I_M_G          (7)
-#define I_N_S          (8)
-
-
-#define I_RHO_V        (9)
-#define I_RHO_A        (10)
-#define I_RHO_G        (11)
-#define I_RHO_L        (12)
-#define I_RHO_W        (13)
-#define I_RHO_S        (14)
-
-#define I_S_L          (15)
-
-#define I_H_L          (16)
-#define I_H_G          (17)
-#define I_COOR_X       (18)
-
-#define I_P_L          (19)
-#define I_P_G          (20)
-#define I_P_V          (21)
-#define I_P_A          (22)
-
-#define I_LNA_W        (23)
-#define I_LNA_S        (24)
-
-#define I_C_V          (25)
-#define I_C_W          (26)
-#define I_C_S          (27)
-
-#define I_H_R          (28)
+#define NbOfVariables    (I_Last)
+//static double Variables[NN][NbOfVariables] ;
+//static double dVariables[NbOfVariables] ;
   
   
 
-#define NbOfComponentFluxes    (8)
-//static double ComponentFluxes[NbOfComponentFluxes] ;
 
+enum {
+I_W_L           ,
+I_W_V           ,
+I_W_A           ,
+I_W_G           ,
+I_W_T           ,
+I_W_S           ,
+I_W_Ani         ,
+I_W_Cat         ,
+I_W_Last
+} ;
 
-#define I_W_L           (0)
-#define I_W_V           (1)
-#define I_W_A           (2)
-#define I_W_G           (3)
-#define I_W_T           (4)
-#define I_W_S           (5)
-#define I_W_Ani         (6)
-#define I_W_Cat         (7)
+#define NbOfVariableFluxes    (I_W_Last)
+//static double VariableFluxes[NbOfVariableFluxes] ;
 
 
 
@@ -392,20 +465,24 @@ int SetModelProp(Model_t *model)
   Model_GetNbOfEquations(model) = NEQ ;
   
   Model_CopyNameOfEquation(model,E_Mass,"mass") ;
+#if defined (E_Air)
   Model_CopyNameOfEquation(model,E_Air ,"air") ;
+#endif
   Model_CopyNameOfEquation(model,E_Salt,"salt") ;
 
-  Model_CopyNameOfUnknown(model,U_H_r,"h_r") ;
-  Model_CopyNameOfUnknown(model,U_P_G,"p_g") ;
-#if (U_s == LOG_U)
-  Model_CopyNameOfUnknown(model,U_C_s,"logc_s") ;
-#else
-  Model_CopyNameOfUnknown(model,U_C_s,"c_s") ;
+  Model_CopyNameOfUnknown(model,E_Mass,"h_r") ;
+#if defined (E_Air)
+  Model_CopyNameOfUnknown(model,E_Air,"p_g") ;
+#endif
+#if defined (U_LogC_s) && !defined (U_C_s)
+  Model_CopyNameOfUnknown(model,E_Salt,"logc_s") ;
+#elif defined (U_C_s) && !defined (U_LogC_s)
+  Model_CopyNameOfUnknown(model,E_Salt,"c_s") ;
 #endif
 
-  Model_GetNbOfVariables(model) = NbOfComponents ;
-  Model_GetNbOfVariableFluxes(model) = NbOfComponentFluxes ;
-  Model_GetComputeSecondaryVariables(model) = ComputeSecondaryComponents ;
+  //Model_GetNbOfVariables(model) = NbOfVariables ;
+  //Model_GetNbOfVariableFluxes(model) = NbOfVariableFluxes ;
+  //Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
   
   return(0) ;
 }
@@ -558,7 +635,8 @@ int ComputeInitialState(Element_t *el)
 {
   double*  f  = Element_GetImplicitTerm(el) ;
   double** u  = Element_ComputePointerToNodalUnknowns(el) ;
-  FVM_t *fvm = FVM_GetInstance(el) ;
+  int nn = Element_GetNbOfNodes(el) ;
+  FVM_t* fvm = FVM_GetInstance(el) ;
   int    i ;
   
   if(Element_IsSubmanifold(el)) return(0) ;
@@ -571,9 +649,9 @@ int ComputeInitialState(Element_t *el)
   
 
   /* Mass contents */
-  for(i = 0 ; i < 2 ; i++) {
-    /* Components */
-    double *x = ComputeComponents(el,u,f,0,0,i) ;
+  for(i = 0 ; i < nn ; i++) {
+    /* Variables */
+    double *x = ComputeVariables(el,u,f,0,0,i) ;
 
     M_T(i)   = x[I_M_T] ;
     M_A(i)   = x[I_M_A] ;
@@ -585,11 +663,22 @@ int ComputeInitialState(Element_t *el)
 
   /* Fluxes */
   {
-    double* w = FVM_ComputeVariableFluxes(fvm,ComputeFluxes,0,1) ;
+    
+    for(i = 0 ; i < nn ; i++) {
+      int j ;
+      
+      for(j = i + 1 ; j < nn ; j++) {
+        double* w = FVM_ComputeVariableFluxes(fvm,ComputeFluxes,i,j) ;
 
-    W_T     = w[I_W_T] ;
-    W_A     = w[I_W_A] ;
-    W_S     = w[I_W_S] ;
+        W_T(i,j)     = w[I_W_T] ;
+        W_A(i,j)     = w[I_W_A] ;
+        W_S(i,j)     = w[I_W_S] ;
+        
+        W_T(j,i)     = - w[I_W_T] ;
+        W_A(j,i)     = - w[I_W_A] ;
+        W_S(j,i)     = - w[I_W_S] ;
+      }
+    }
   }
   
   return(0) ;
@@ -611,11 +700,12 @@ int  ComputeExplicitTerms(Element_t *el,double t)
   {
     double*  f = Element_GetPreviousImplicitTerm(el) ;
     double** u = Element_ComputePointerToPreviousNodalUnknowns(el) ;
+    int nn = Element_GetNbOfNodes(el) ;
     FVM_t *fvm = FVM_GetInstance(el) ;
     int i ;
     
-    for(i = 0 ; i < 2 ; i++) {
-      ComputeComponents(el,u,f,t,0,i) ;
+    for(i = 0 ; i < nn ; i++) {
+      ComputeVariables(el,u,f,t,0,i) ;
     }
     
     ComputeTransferCoefficients(fvm,u,f) ;
@@ -631,7 +721,8 @@ int  ComputeImplicitTerms(Element_t *el,double t,double dt)
   double* f   = Element_GetCurrentImplicitTerm(el) ;
   double* f_n = Element_GetPreviousImplicitTerm(el) ;
   double** u = Element_ComputePointerToNodalUnknowns(el) ;
-  FVM_t *fvm = FVM_GetInstance(el) ;
+  int nn = Element_GetNbOfNodes(el) ;
+  FVM_t* fvm = FVM_GetInstance(el) ;
   int    i ;
   
   if(Element_IsSubmanifold(el)) return(0) ;
@@ -643,9 +734,9 @@ int  ComputeImplicitTerms(Element_t *el,double t,double dt)
   GetProperties(el) ;
    
   /* Mass contents */
-  for(i = 0 ; i < 2 ; i++) {
-    /* Components */
-    double *x = ComputeComponents(el,u,f_n,t,dt,i) ;
+  for(i = 0 ; i < nn ; i++) {
+    /* Variables */
+    double *x = ComputeVariables(el,u,f_n,t,dt,i) ;
 
     M_T(i)   = x[I_M_T] ;
     M_A(i)   = x[I_M_A] ;
@@ -675,11 +766,22 @@ int  ComputeImplicitTerms(Element_t *el,double t,double dt)
 
   /* Fluxes */
   {
-    double* w = FVM_ComputeVariableFluxes(fvm,ComputeFluxes,0,1) ;
+    
+    for(i = 0 ; i < nn ; i++) {
+      int j ;
+      
+      for(j = i + 1 ; j < nn ; j++) {
+        double* w = FVM_ComputeVariableFluxes(fvm,ComputeFluxes,i,j) ;
 
-    W_T     = w[I_W_T] ;
-    W_A     = w[I_W_A] ;
-    W_S     = w[I_W_S] ;
+        W_T(i,j)     = w[I_W_T] ;
+        W_A(i,j)     = w[I_W_A] ;
+        W_S(i,j)     = w[I_W_S] ;
+        
+        W_T(j,i)     = - w[I_W_T] ;
+        W_A(j,i)     = - w[I_W_A] ;
+        W_S(j,i)     = - w[I_W_S] ;
+      }
+    }
   }
   
   return(0) ;
@@ -715,11 +817,11 @@ int  ComputeMatrix(Element_t *el,double t,double dt,double *k)
   }
   
 
-#if (U_s == LOG_U)
+#if defined (U_LogC_s)
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
     
-    for(i = 0 ; i < 2*NEQ ; i++){
+    for(i = 0 ; i < ndof ; i++){
       K(i,U_C_s)     *= Ln10*C_s(0) ;
       K(i,U_C_s+NEQ) *= Ln10*C_s(1) ;
     }
@@ -740,9 +842,7 @@ int  ComputeResidu(Element_t *el,double t,double dt,double *r)
   double *f_n = Element_GetPreviousImplicitTerm(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int    ndof = nn*NEQ ;
-  FVM_t *fvm = FVM_GetInstance(el) ;
-  double *volume = FVM_ComputeCellVolumes(fvm) ;
-  double surf ;
+  FVM_t* fvm = FVM_GetInstance(el) ;
   int    i ;
   double zero = 0. ;
   /*
@@ -752,29 +852,41 @@ int  ComputeResidu(Element_t *el,double t,double dt,double *r)
 
   if(Element_IsSubmanifold(el)) return(0) ;
   
-  /* Boundary Surface Area */
-  {
-    double *area = FVM_ComputeCellSurfaceAreas(fvm) ;
-    surf = area[1] ;
-  }
 
   /*
     Conservation of total mass
   */
-  R(0,E_Mass) -= volume[0]*(M_T(0) - M_Tn(0)) + dt*surf*W_T ;
-  R(1,E_Mass) -= volume[1]*(M_T(1) - M_Tn(1)) - dt*surf*W_T ;
+  {
+    double* r1 = FVM_ComputeMassBalanceEquationResidu(fvm,MW_T,MW_Tn,dt) ;
+      
+    for(i = 0 ; i < nn ; i++) {
+      R(i,E_Mass) -= r1[i] ;
+    }
+  }
   
   /*
     Conservation of air mass
   */
-  R(0,E_Air)  -= volume[0]*(M_A(0)  - M_An(0))  + dt*surf*W_A ;
-  R(1,E_Air)  -= volume[1]*(M_A(1)  - M_An(1))  - dt*surf*W_A ;
+#if defined (E_Air)
+  {
+    double* r1 = FVM_ComputeMassBalanceEquationResidu(fvm,MW_A,MW_An,dt) ;
+      
+    for(i = 0 ; i < nn ; i++) {
+      R(i,E_Air) -= r1[i] ;
+    }
+  }
+#endif
 
   /*
     Conservation of salt mass
   */
-  R(0,E_Salt) -= volume[0]*(N_S(0) - N_Sn(0)) + dt*surf*W_S ;
-  R(1,E_Salt) -= volume[1]*(N_S(1) - N_Sn(1)) - dt*surf*W_S ;
+  {
+    double* r1 = FVM_ComputeMassBalanceEquationResidu(fvm,NW_S,NW_Sn,dt) ;
+      
+    for(i = 0 ; i < nn ; i++) {
+      R(i,E_Salt) -= r1[i] ;
+    }
+  }
   
   return(0) ;
 
@@ -789,6 +901,7 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
   Model_t* model = Element_GetModel(el) ;
   FVM_t* fvm = FVM_GetInstance(el) ;
   double** u = Element_ComputePointerToNodalUnknowns(el) ;
+  int nn = Element_GetNbOfNodes(el) ;
   int    nso = 15 ;
   int    i ;
 
@@ -807,14 +920,14 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
   }
 
   /* quantites exploitees */
-  for(i = 0 ; i < 2 ; i++) {
-    ComputeComponents(el,u,f,t,0,i) ;
+  for(i = 0 ; i < nn ; i++) {
+    ComputeVariables(el,u,f,t,0,i) ;
   }
   
   {
     int    j = FVM_FindLocalCellIndex(fvm,s) ;
-    /* Components */
-    //double* x    = ComputeComponents(el,u,f,t,0,j) ;
+    /* Variables */
+    //double* x    = ComputeVariables(el,u,f,t,0,j) ;
     double* x    = Model_GetVariable(model,j) ;
     /* Fluxes */
     double* w    = FVM_ComputeVariableFluxes(fvm,ComputeFluxes,0,1) ;
@@ -864,6 +977,7 @@ void ComputeTransferCoefficients(FVM_t* fvm,double **u,double *f)
   Element_t* el = FVM_GetElement(fvm) ;
   Model_t* model = Element_GetModel(el) ;
   double *va = Element_GetExplicitTerm(el) ;
+  int nn = Element_GetNbOfNodes(el) ;
   int i ;
   
   /* initialisation */
@@ -871,9 +985,9 @@ void ComputeTransferCoefficients(FVM_t* fvm,double **u,double *f)
   
   
   /* Transfer coefficients */
-  for(i = 0 ; i < 2 ; i++) {
-    /* Components */
-    //double *x = ComputeComponents(el,u,f,0,0,i) ;
+  for(i = 0 ; i < nn ; i++) {
+    /* Variables */
+    //double *x = ComputeVariables(el,u,f,0,0,i) ;
     double *x = Model_GetVariable(model,i) ;
     
     double p_l    = x[I_P_L] ;
@@ -923,16 +1037,15 @@ void ComputeTransferCoefficients(FVM_t* fvm,double **u,double *f)
     
     
     /* Back up */
-    KD_L   += kd_l ;
-    KD_G   += kd_g ;
+    KD_L[i]   = kd_l ;
+    KD_G[i]   = kd_g ;
     
-    KF_V   += kf_v ;
-    KF_S   += kf_s ;
-    KC_V   += c_v ;
-    KC_S   += c_s/rho_l ;
+    KF_V[i]   = kf_v ;
+    KF_S[i]   = kf_s ;
+    KC_V[i]   = c_v ;
+    KC_S[i]   = c_s/rho_l ;
   }
   
-  for(i = 0 ; i < NVE ; i++) va[i] *= 0.5 ;
 }
 
 
@@ -954,18 +1067,26 @@ void ComputeFluxes(FVM_t* fvm,double* grd,double* w,int i,int j)
   double grd_rho_v  = grd[I_RHO_V] ;
   
   double grd_c_s    = grd[I_C_S] ;
+      
+  /* Transfer terms */
+  double kd_l   = 0.5 * (KD_L[i]   + KD_L[j]) ;
+  double kd_g   = 0.5 * (KD_G[i]   + KD_G[j]) ;
+  double kf_v   = 0.5 * (KF_V[i]   + KF_V[j]) ;
+  double kc_v   = 0.5 * (KC_V[i]   + KC_V[j]) ;
+  double kf_s   = 0.5 * (KF_S[i]   + KF_S[j]) ;
+  double kc_s   = 0.5 * (KC_S[i]   + KC_S[j]) ;
     
     
   /* Fluxes */
-  double w_l   = - KD_L*grd_p_l ;
-  double w_g   = - KD_G*grd_p_g ;
+  double w_l   = - kd_l*grd_p_l ;
+  double w_g   = - kd_g*grd_p_g ;
   double w_t   =   w_l + w_g ;
-  double j_v   = - KF_V*grd_rho_v ;
-  double w_v   =   KC_V*w_g + j_v ;
+  double j_v   = - kf_v*grd_rho_v ;
+  double w_v   =   kc_v*w_g + j_v ;
   double w_a   =   w_g - w_v ;
  
-  double j_s   = - KF_S*grd_c_s ;
-  double w_s   =   KC_S*w_l + j_s ;
+  double j_s   = - kf_s*grd_c_s ;
+  double w_s   =   kc_s*w_l + j_s ;
   double w_ani =   NU_A*w_s ;
   double w_cat =   NU_C*w_s ;
    
@@ -992,8 +1113,8 @@ double tortuosite_l(double phi)
 {
   double phi_cap = phi/2  ;
   double phi_c   = 0.17 ; /*Percolation capilar porosity*/
-  double n = 2.7 ; 		    /* OPC n = 2.7        , Silica fume n = 4.5 */
-  double ds_norm = 5e-5 ;	/* OPC ds_norm = 2e-4 , Silica fume ds_norm = 5e-5 */
+  double n = 2.7 ;        /* OPC n = 2.7        , Silica fume n = 4.5 */
+  double ds_norm = 5e-5 ; /* OPC ds_norm = 2e-4 , Silica fume ds_norm = 5e-5 */
   double dsn_norm = pow(ds_norm,1/n) ;
   double m_phi = 0.5*(dsn_norm + phi_cap/(1-phi_c)*(1 - dsn_norm) - phi_c/(1-phi_c)) ;
   double iff   =  pow(m_phi + sqrt(m_phi*m_phi +  dsn_norm*phi_c/(1-phi_c)),n) ;
@@ -1197,7 +1318,7 @@ int TangentCoefficients(FVM_t* fvm,double dt,double *c)
     double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
     
     for(i = 0 ; i < nn ; i++) {
-      ComputeComponents(el,u,f_n,0,dt,i) ;
+      ComputeVariables(el,u,f_n,0,dt,i) ;
     }
   }
   
@@ -1209,25 +1330,27 @@ int TangentCoefficients(FVM_t* fvm,double dt,double *c)
   
   
   for(i = 0 ; i < nn ; i++) {
-    /* Components */
-    //double *x         = ComputeComponents(el,u,f_n,t,dt,i) ;
+    /* Variables */
+    //double *x         = ComputeVariables(el,u,f_n,t,dt,i) ;
     //double *x = Model_GetVariable(model,i) ;
     int k ;
   
-    #if (U_s == LOG_U)
-    dxi[U_C_s] =  1.e-2*ObVal_GetValue(obval + U_C_s)*C_sn(i) ;
+    #if defined (U_LogC_s)
+    dxi[U_LogC_s] =  1.e-2*ObVal_GetValue(obval + U_LogC_s)*C_sn(i) ;
     #endif
     
     for(k = 0 ; k < NEQ ; k++) {
       double dxk    = dxi[k] ;
-      double *dx    = Model_ComputeVariableDerivatives(el,0,dt,dxk,k,i) ;
+      double *dx    = ComputeVariableDerivatives(el,0,dt,dxk,k,i) ;
       
       /* Content terms at node i */
       {
         double *cii = c + (i*nn + i)*NEQ*NEQ ;
           
         cii[E_Mass*NEQ   + k] = dx[I_M_T] ;
+#if defined (E_Air)
         cii[E_Air*NEQ    + k] = dx[I_M_A] ;
+#endif
         cii[E_Salt*NEQ   + k] = dx[I_N_S] ;
       }
       
@@ -1243,7 +1366,9 @@ int TangentCoefficients(FVM_t* fvm,double dt,double *c)
             ComputeFluxes(fvm,dx,dw,i,j) ;
           
             cij[E_Mass*NEQ   + k] = - dtdij*dw[I_W_T] ;
+#if defined (E_Air)
             cij[E_Air*NEQ    + k] = - dtdij*dw[I_W_A] ;
+#endif
             cij[E_Salt*NEQ   + k] = - dtdij*dw[I_W_S] ;
           }
         }
@@ -1258,29 +1383,73 @@ int TangentCoefficients(FVM_t* fvm,double dt,double *c)
 
 
 
-double* ComputeComponents(Element_t* el,double **u,double *f_n,double t,double dt,int n)
+double* ComputeVariables(Element_t* el,double **u,double *f_n,double t,double dt,int n)
 {
   Model_t* model = Element_GetModel(el) ;
   double *x = Model_GetVariable(model,n) ;
   
   /* Primary Variables */
-  x[U_H_r ] = H_r(n) ;
-  x[U_C_s ] = C_s(n) ;
-  x[U_P_G ] = P_G(n) ;
+  x[E_Mass ] = H_r(n) ;
+  x[E_Salt ] = C_s(n) ;
+#if defined (E_Air)
+  x[E_Air  ] = P_G(n) ;
+#endif
   
   /* Needed variables to compute secondary components */
     
-  ComputeSecondaryComponents(el,t,dt,x) ;
+  ComputeSecondaryVariables(el,t,dt,x) ;
   return(x) ;
 }
 
 
 
-void  ComputeSecondaryComponents(Element_t *el,double t,double dt,double *x)
+
+double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double dxi,int i,int n)
 {
-  double c_s    = x[U_C_s] ; 
-  double h_r    = x[U_H_r] ;
-  double p_g    = x[U_P_G] ;
+  Model_t* model = Element_GetModel(el) ;
+  //int NbOfVariables = Model_GetNbOfVariables(model) ;
+  
+  if(NbOfVariables > Model_MaxNbOfVariables) {
+    arret("ComputeVariableDerivatives") ;
+  }
+  
+  {
+    double* x  = Model_GetVariable(model,n) ;
+    double* dx = Model_GetVariableDerivative(model,n) ;
+    int j ;
+  
+    for(j = 0 ; j < NbOfVariables ; j++) {
+      dx[j] = x[j] ;
+    }
+  
+    dx[i] += dxi ;
+  
+    {
+      //Model_ComputeSecondaryVariables_t* computesecondaryvariables = Model_GetComputeSecondaryVariables(model) ;
+      
+      ComputeSecondaryVariables(el,t,dt,dx) ;
+    }
+  
+    for(j = 0 ; j < NbOfVariables ; j++) {
+      dx[j] -= x[j] ;
+      dx[j] /= dxi ;
+    }
+
+    return(dx) ;
+  }
+}
+
+
+
+int  ComputeSecondaryVariables(Element_t *el,double t,double dt,double *x)
+{
+  double c_s    = x[E_Salt] ; 
+  double h_r    = x[E_Mass] ;
+#if defined (E_Air)
+  double p_g    = x[E_Air] ;
+#else
+  double p_g    = p_g0 ;
+#endif
     
   /* Water concentration */
   double c_w    = (1. - V_AC*c_s)/V_H2O ;
@@ -1343,6 +1512,8 @@ void  ComputeSecondaryComponents(Element_t *el,double t,double dt,double *x)
   x[I_M_L      ] = m_l ;
   x[I_M_G      ] = m_g ;
   x[I_M_V      ] = m_v ;
+  
+  return(0) ;
 }
 
 

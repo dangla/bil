@@ -20,7 +20,7 @@ Material_t* (Material_New)(void)
   Material_t* material   = (Material_t*) Mry_New(Material_t) ;
   
     
-  /* Allocation of memory space for each material */
+  /* Allocation of memory space for the material */
   {
     Material_t* mat = material ;
     
@@ -397,7 +397,7 @@ void (Material_ScanProperties1)(Material_t* mat,FILE *ficd,int (*pm)(const char*
     } else if(!strncasecmp(mot,"Method",6)) {
       char   *p = strchr(line,'=') + 1 ;
       sscanf(p,"%s",Material_GetMethod(mat)) ;
-	
+  
     } else {
       char   *p = strchr(line,'=') + 1 ;
       int    i = (*pm)(mot) ;

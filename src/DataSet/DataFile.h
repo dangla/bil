@@ -51,6 +51,9 @@ extern int*         (DataFile_ReadInversePermutationOfNodes)(DataFile_t*,int) ;
 #define DataFile_ReadDoublesFromCurrentFilePosition(DF, ...) \
         DataFile_ReadArrayFromCurrentFilePosition(DF,"%le",__VA_ARGS__)
 
+#define DataFile_RemoveComments(DF) \
+        TextFile_RemoveComments(DataFile_GetTextFile(DF))
+
 
 
 #include "String.h"
@@ -83,6 +86,7 @@ extern int*         (DataFile_ReadInversePermutationOfNodes)(DataFile_t*,int) ;
 #define DataFile_GetTextLine(DF)              ((DF)->line)
 #define DataFile_GetInitialization(DF)        ((DF)->initialization)
 #define DataFile_GetMaxLengthOfTextLine(DF)   ((DF)->linelength)
+#define DataFile_GetParent(DF)                ((DF)->parent)
 
 
 
@@ -141,7 +145,7 @@ struct DataFile_s {
   char* line ;                /* memory space for a line */
   int   initialization ;
   int   linelength ;          /* Length of the longest line */
-
+  void* parent ;
 } ;
 
 #endif

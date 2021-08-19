@@ -168,7 +168,7 @@ static void SegmentationFaultHandler(int) ;
 void (InterruptHandler)(int val)
 {
   /* NOTE some versions of UNIX will reset signal to default
-		 after each call. So for portability reset signal each time */
+     after each call. So for portability reset signal each time */
   if(signal(SIGINT,InterruptHandler) == SIG_ERR) {
     Message_FatalError("An error occured while setting a signal handler.\n") ;
   }
@@ -183,7 +183,7 @@ void (InterruptHandler)(int val)
 void (FloatingPointErrorHandler)(int val)
 {
   /* NOTE some versions of UNIX will reset signal to default
-		 after each call. So for portability reset signal each time */
+     after each call. So for portability reset signal each time */
   if(signal(SIGFPE,FloatingPointErrorHandler) == SIG_ERR) {
     Message_FatalError("An error occured while setting a signal handler.\n") ;
   }

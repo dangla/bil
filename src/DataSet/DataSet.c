@@ -13,12 +13,11 @@
 #include "TimeStep.h"
 #include "IterProcess.h"
 #include "Options.h"
+#include "Modules.h"
 #include "DataSet.h"
 #include "Units.h"
+#include "String.h"
 #include "Parser.h"
-
-
-static void   (DataSet_PrintData)  (DataSet_t*,char*) ;
 
 
 
@@ -36,6 +35,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   /* DataFile */
   {
     DataFile_t* datafile = DataFile_Create(filename) ;
+    
+    DataFile_RemoveComments(datafile) ;
+    DataFile_GetParent(datafile) = jdd ;
   
     DataSet_GetDataFile(jdd) = datafile ;
   
@@ -45,6 +47,7 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
       exit(EXIT_SUCCESS) ;
     }
   }
+  if(!strcmp(debug,"data")) DataSet_PrintData(jdd,debug) ;
 
   Message_Direct("Reading %s\n",filename) ;
 
@@ -59,27 +62,30 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   
   /* Geometry */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
+    DataFile_t* datafile = DataSet_GetDataFile(jdd) ;
+    Geometry_t* geometry = Geometry_Create(datafile) ;
   
-    DataSet_GetGeometry(jdd) = Geometry_Create(datafile) ;
+    DataSet_GetGeometry(jdd) = geometry ;
   }
   if(!strcmp(debug,"geom")) DataSet_PrintData(jdd,debug) ;
   
   
   /* Fields */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
+    DataFile_t*  datafile = DataSet_GetDataFile(jdd) ;
+    Fields_t*    fields = Fields_Create(datafile) ;
   
-    DataSet_GetFields(jdd) = Fields_Create(datafile) ;
+    DataSet_GetFields(jdd) = fields ;
   }
   if(!strcmp(debug,"field")) DataSet_PrintData(jdd,debug) ;
   
   
   /* Functions */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
+    DataFile_t*  datafile = DataSet_GetDataFile(jdd) ;
+    Functions_t* functions = Functions_Create(datafile) ;
   
-    DataSet_GetFunctions(jdd) = Functions_Create(datafile) ;
+    DataSet_GetFunctions(jdd) = functions ;
   }
   if(!strcmp(debug,"func")) DataSet_PrintData(jdd,debug) ;
   
@@ -90,8 +96,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     Geometry_t*    geometry = DataSet_GetGeometry(jdd) ;
     Fields_t*      fields = DataSet_GetFields(jdd) ;
     Functions_t*   functions = DataSet_GetFunctions(jdd) ;
+    Materials_t*   materials = Materials_Create(datafile,geometry,fields,functions) ;
   
-    DataSet_GetMaterials(jdd) = Materials_Create(datafile,geometry,fields,functions) ;
+    DataSet_GetMaterials(jdd) = materials ;
   }
   if(!strcmp(debug,"mate")) DataSet_PrintData(jdd,debug) ;
   
@@ -101,8 +108,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
     Geometry_t*    geometry = DataSet_GetGeometry(jdd) ;
     Materials_t*   materials = DataSet_GetMaterials(jdd) ;
+    Mesh_t*        mesh = Mesh_Create(datafile,materials,geometry) ;
   
-    DataSet_GetMesh(jdd) = Mesh_Create(datafile,materials,geometry) ;
+    DataSet_GetMesh(jdd) = mesh ;
   }
   if(!strcmp(debug,"mesh")) DataSet_PrintData(jdd,debug) ;
   
@@ -112,8 +120,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
     Fields_t*      fields = DataSet_GetFields(jdd) ;
     Functions_t*   functions = DataSet_GetFunctions(jdd) ;
+    IConds_t*      iconds = IConds_Create(datafile,fields,functions) ;
   
-    DataSet_GetIConds(jdd) = IConds_Create(datafile,fields,functions) ;
+    DataSet_GetIConds(jdd) = iconds ;
   }
   if(!strcmp(debug,"init")) DataSet_PrintData(jdd,debug) ;
   
@@ -123,8 +132,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
     Fields_t*      fields = DataSet_GetFields(jdd) ;
     Functions_t*   functions = DataSet_GetFunctions(jdd) ;
+    Loads_t*       loads = Loads_Create(datafile,fields,functions) ;
   
-    DataSet_GetLoads(jdd) = Loads_Create(datafile,fields,functions) ;
+    DataSet_GetLoads(jdd) = loads ;
   }
   if(!strcmp(debug,"load")) DataSet_PrintData(jdd,debug) ;
   
@@ -134,8 +144,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
     Fields_t*      fields = DataSet_GetFields(jdd) ;
     Functions_t*   functions = DataSet_GetFunctions(jdd) ;
+    BConds_t*      bconds = BConds_Create(datafile,fields,functions) ;
   
-    DataSet_GetBConds(jdd) = BConds_Create(datafile,fields,functions) ;
+    DataSet_GetBConds(jdd) = bconds ;
   }
   if(!strcmp(debug,"bcond")) DataSet_PrintData(jdd,debug) ;
   
@@ -144,8 +155,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   {
     DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
     Mesh_t*        mesh = DataSet_GetMesh(jdd) ;
+    Points_t*      points = Points_Create(datafile,mesh) ;
   
-    DataSet_GetPoints(jdd) = Points_Create(datafile,mesh) ;
+    DataSet_GetPoints(jdd) = points ;
   }
   if(!strcmp(debug,"points")) DataSet_PrintData(jdd,debug) ;
   
@@ -153,8 +165,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   /* Dates */
   {
     DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
+    Dates_t*       dates = Dates_Create(datafile) ;
     
-    DataSet_GetDates(jdd) = Dates_Create(datafile) ;
+    DataSet_GetDates(jdd) = dates ;
   }
   if(!strcmp(debug,"dates")) DataSet_PrintData(jdd,debug) ;
   
@@ -164,8 +177,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
     Materials_t*   materials = DataSet_GetMaterials(jdd) ;
     Mesh_t*        mesh = DataSet_GetMesh(jdd) ;
+    ObVals_t*      obvals = ObVals_Create(datafile,mesh,materials) ;
   
-    DataSet_GetObVals(jdd) = ObVals_Create(datafile,mesh,materials) ;
+    DataSet_GetObVals(jdd) = obvals ;
   }
   if(!strcmp(debug,"obval")) DataSet_PrintData(jdd,debug) ;
   
@@ -174,8 +188,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   {
     DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
     ObVals_t*      obvals = DataSet_GetObVals(jdd) ;
+    TimeStep_t*    timestep = TimeStep_Create(datafile,obvals) ;
     
-    DataSet_GetTimeStep(jdd) = TimeStep_Create(datafile,obvals) ;
+    DataSet_GetTimeStep(jdd) = timestep ;
   }
   if(!strcmp(debug,"time")) DataSet_PrintData(jdd,debug) ;
   
@@ -184,31 +199,45 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   {
     DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
     ObVals_t*      obvals = DataSet_GetObVals(jdd) ;
+    IterProcess_t* iterprocess = IterProcess_Create(datafile,obvals) ;
     
-    DataSet_GetIterProcess(jdd) = IterProcess_Create(datafile,obvals) ;
+    DataSet_GetIterProcess(jdd) = iterprocess ;
   }
   if(!strcmp(debug,"iter")) DataSet_PrintData(jdd,debug) ;
   
   
-  /* Modules */
-  DataSet_GetModules(jdd) = Modules_Create() ;
+  /* Module */
+  {
+    Module_t*  module  = Module_Create(1) ;
+    char* codename = Options_GetModule(opt) ;
+
+    Module_Initialize(module,codename) ;
+    Module_GetNbOfSequences(module) = Options_GetNbOfSequences(opt) ;
+    
+    DataSet_GetModule(jdd) = module ;
+    
+    //DataSet_GetModule(jdd) = Modules_FindModule(modules,Options_GetModule(opt)) ;
+  }
   if(!strcmp(debug,"module")) DataSet_PrintData(jdd,debug) ;
   
   
   
-  /* Set up the system of equations */
+  /* Set up the system of equations before
+   * passing through Elements_DefineProperties */
   {
     BConds_t*      bconds = DataSet_GetBConds(jdd) ;
     Mesh_t*        mesh = DataSet_GetMesh(jdd) ;
     
     /* Set indexes to arbitrary >= 0 value */
-    Mesh_InitializeMatrixRowColumnIndexes(mesh) ;
+    //Mesh_InitializeMatrixRowColumnIndexes(mesh) ;
 
     /* Accounting for BC 
      * (set indexes to arbitray < 0 value) */
-    BConds_EliminateMatrixRowColumnIndexes(bconds,mesh) ;
+    //BConds_EliminateMatrixRowColumnIndexes(bconds,mesh) ;
+    
+    Mesh_GetNbOfMatrices(mesh) = Options_GetNbOfSequences(opt) ;
   
-    //Mesh_SetMatrixRowColumnIndexes(mesh,bconds) ;
+    Mesh_SetMatrixRowColumnIndexes(mesh,bconds) ;
   }
   
   
@@ -916,7 +945,6 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
       double y = (DIM > 1) ? coor[1] : 0. ;
       double z = (DIM > 2) ? coor[2] : 0. ;
       Element_t* elt = Point_GetEnclosingElement(point + i) ;
-      int reg = Point_GetRegionIndex(point + i) ;
       int reg_el = (elt) ? Element_GetRegionIndex(elt) : -1 ;
       
       PRINT("\t Point(%d): ",i) ;

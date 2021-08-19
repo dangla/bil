@@ -7,6 +7,7 @@
 #include "Options.h"
 #include "Mesh.h"
 #include "Message.h"
+#include "Mry.h"
 
 #include "NCFormat.h"
 
@@ -22,19 +23,44 @@
 
 #ifdef SUPERLULIB
 
-SuperLUFormat_t* SuperLUFormat_Create(Mesh_t* mesh)
+SuperLUFormat_t* SuperLUFormat_CreateSelectedMatrix(Mesh_t* mesh,const int imatrix)
 /* Create a matrix in SuperLUFormat format */
 {
-  SuperLUFormat_t* aslu = (SuperLUFormat_t*) malloc(sizeof(SuperLUFormat_t)) ;
-
-  assert(aslu) ;
+  SuperLUFormat_t* aslu = (SuperLUFormat_t*) Mry_New(SuperLUFormat_t) ;
   
   SuperLUFormat_GetStorageType(aslu) = SLU_NC ;
   SuperLUFormat_GetDataType(aslu)    = SLU_D ;
   SuperLUFormat_GetMatrixType(aslu)  = SLU_GE ;
   
   {
-    int n_col = Mesh_GetNbOfMatrixColumns(mesh) ;
+    int n_col = Mesh_GetNbOfMatrixColumns(mesh)[imatrix] ;
+    
+    SuperLUFormat_GetNbOfColumns(aslu) = n_col ;
+    SuperLUFormat_GetNbOfRows(aslu)    = n_col ;
+  }
+  
+  {
+    NCFormat_t* asluNC = NCFormat_CreateSelectedMatrix(mesh,imatrix) ;
+    
+    SuperLUFormat_GetStorage(aslu)     = (void*) asluNC ;
+  }
+  
+  return(aslu) ;
+}
+
+
+
+SuperLUFormat_t* SuperLUFormat_Create(Mesh_t* mesh)
+/* Create a matrix in SuperLUFormat format */
+{
+  SuperLUFormat_t* aslu = (SuperLUFormat_t*) Mry_New(SuperLUFormat_t) ;
+  
+  SuperLUFormat_GetStorageType(aslu) = SLU_NC ;
+  SuperLUFormat_GetDataType(aslu)    = SLU_D ;
+  SuperLUFormat_GetMatrixType(aslu)  = SLU_GE ;
+  
+  {
+    int n_col = Mesh_GetNbOfMatrixColumns(mesh)[0] ;
     
     SuperLUFormat_GetNbOfColumns(aslu) = n_col ;
     SuperLUFormat_GetNbOfRows(aslu)    = n_col ;

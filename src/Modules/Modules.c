@@ -5,53 +5,45 @@
 
 #include "Message.h"
 #include "Context.h"
+#include "Mry.h"
 #include "Modules.h"
 
 
-#include "ListOfModules.h"
 
-extern  Module_SetModuleProp_t XMODULES(_SetModuleProp) ;
-
-
-static void* Modules_Initialize(void*) ;
+static Modules_t* Modules_New(const int) ;
 
 
 
-Modules_t* Modules_Create(void)
-/** Create the modules found in "ListOfModules.h"  */
+Modules_t* Modules_New(const int n_modules)
 {
-  Modules_t* modules = (Modules_t*) malloc(sizeof(Modules_t)) ;
+  Modules_t* modules = (Modules_t*) Mry_New(Modules_t) ;
   
-  assert(modules) ;
-  
-  Modules_Initialize(modules) ;
+  {
+    Modules_GetNbOfModules(modules) = n_modules ;
+    Modules_GetModule(modules) = Module_Create(n_modules) ;
+  }
   
   return(modules) ;
 }
 
 
 
-void* Modules_Initialize(void* self)
-/** Initialize the modules found in "ListOfModules.h"  */
+Modules_t* Modules_Create(void)
+/** Create the modules found in "ListOfModules.h"  */
 {
-  Modules_t* modules = (Modules_t*) self ;
+  Modules_t* modules = Modules_New(Modules_NbOfModules) ;
   
-  Modules_GetNbOfModules(modules) = NB_MODULES ;
-  Modules_GetModule(modules) = Module_Create(NB_MODULES) ;
-  
-  
-  /* MODULENAMES and XMODULES are defined in "ListOfModules.h" */
   {
-    const char* modulenames[NB_MODULES] = {MODULENAMES} ;
-    Module_SetModuleProp_t* xModule_SetModuleProp[NB_MODULES] = {XMODULES(_SetModuleProp)} ;
+    int n = Modules_NbOfModules ;
+    const char* modulenames[] = {Modules_ListOfNames} ;
     int   i ;
+  
+    Modules_GetNbOfModules(modules) = n ;
     
-    for(i = 0 ; i < NB_MODULES ; i++) {
+    for(i = 0 ; i < n ; i++) {
       Module_t* module_i = Modules_GetModule(modules) + i ;
-    
-      Module_CopyCodeNameOfModule(module_i,modulenames[i]) ;
-      Module_GetSetModuleProp(module_i) = xModule_SetModuleProp[i] ;
-      Module_SetModuleProp(module_i) ;
+      
+      Module_Initialize(module_i,modulenames[i]) ;
     }
   }
   
@@ -60,21 +52,23 @@ void* Modules_Initialize(void* self)
 
 
 
+
+
 void  Modules_Delete(void* self)
 {
-  Modules_t** modules = (Modules_t**) self ;
-  int n_modules = Modules_GetNbOfModules(*modules) ;
+  Modules_t** pmodules = (Modules_t**) self ;
+  Modules_t*   modules = *pmodules ;
+  int n_modules = Modules_GetNbOfModules(modules) ;
   int i ;
   
   for(i = 0 ; i < n_modules ; i++) {
-    Module_t* module_i = Modules_GetModule(*modules) + i ;
+    Module_t* module_i = Modules_GetModule(modules) + i ;
     free(Module_GetCodeNameOfModule(module_i)) ;
     free(Module_GetShortTitle(module_i)) ;
   }
   
-  free(Modules_GetModule(*modules)) ;
-  free(*modules) ;
-  *modules = NULL ;
+  free(Modules_GetModule(modules)) ;
+  free(modules) ;
 }
 
 
@@ -130,3 +124,43 @@ Module_t* Modules_FindModule(Modules_t* modules,const char* codename)
 
   return(NULL) ;
 }
+
+
+#if 0
+Modules_t* Modules_Create(void)
+/** Create the modules found in "ListOfModules.h"  */
+{
+  Modules_t* modules = (Modules_t*) Mry_New(Modules_t) ;
+  
+  Modules_Initialize(modules) ;
+  
+  return(modules) ;
+}
+#endif
+#if 0
+static void* Modules_Initialize(void*) ;
+void* Modules_Initialize(void* self)
+/** Initialize the modules found in "ListOfModules.h"  */
+{
+  Modules_t* modules = (Modules_t*) self ;
+  
+  Modules_GetNbOfModules(modules) = Modules_NbOfModules ;
+  Modules_GetModule(modules) = Module_Create(Modules_NbOfModules) ;
+  
+  {
+    const char* modulenames[] = {Modules_ListOfNames} ;
+    Module_SetModuleProp_t* xModule_SetModuleProp[] = {Modules_ListOfSetModuleProp} ;
+    int   i ;
+    
+    for(i = 0 ; i < Modules_NbOfModules ; i++) {
+      Module_t* module_i = Modules_GetModule(modules) + i ;
+    
+      Module_CopyCodeNameOfModule(module_i,modulenames[i]) ;
+      Module_GetSetModuleProp(module_i) = xModule_SetModuleProp[i] ;
+      Module_SetModuleProp(module_i) ;
+    }
+  }
+  
+  return(modules) ;
+}
+#endif

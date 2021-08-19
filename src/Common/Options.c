@@ -3,10 +3,11 @@
 #include <string.h>
 #include <assert.h>
 
+#include "Mry.h"
 #include "Context.h"
 #include "Message.h"
 #include "Options.h"
-#include "ListOfModules.h"
+#include "Modules.h"
 
 
 /* Global functions */
@@ -17,15 +18,11 @@ static void   Options_Initialize(Options_t*) ;
 
 Options_t*  (Options_Create)(Context_t* ctx)
 {
-  Options_t* options = (Options_t*) malloc(sizeof(Options_t)) ;
-  
-  assert(options) ;
+  Options_t* options = (Options_t*) Mry_New(Options_t) ;
 
   {
     int   max_mot_debug = Options_MaxLengthOfKeyWord ;
-    char* c = (char *) malloc(4*max_mot_debug*sizeof(char)) ;
-  
-    assert(c) ;
+    char* c = (char *) Mry_New(char[4*max_mot_debug]) ;
 
     Options_GetPrintedInfos(options)      = c ;
     Options_GetResolutionMethod(options)  = (c += max_mot_debug) ;
@@ -48,12 +45,12 @@ Options_t*  (Options_Create)(Context_t* ctx)
 
 void Options_Delete(void* self)
 {
-  Options_t** options = (Options_t**) self ;
+  Options_t** poptions = (Options_t**) self ;
+  Options_t*  options = *poptions ;
   
-  Context_Delete(&(Options_GetContext(*options))) ;
-  free(Options_GetPrintedInfos(*options)) ;
-  free(*options) ;
-  *options = NULL ;
+  Context_Delete(&(Options_GetContext(options))) ;
+  free(Options_GetPrintedInfos(options)) ;
+  free(options) ;
 }
 
 
@@ -63,7 +60,7 @@ void Options_Delete(void* self)
 void Options_SetDefault(Options_t* options)
 /* Set default options */
 {
-  const char*  modulenames[NB_MODULES] = {MODULENAMES} ;
+  const char*  modulenames[] = {Modules_ListOfNames} ;
   const char*  defaultmodule = modulenames[0] ;
   
   strcpy(Options_GetPrintedInfos(options),"\0") ;

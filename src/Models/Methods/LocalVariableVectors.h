@@ -25,17 +25,23 @@ extern void                        LocalVariableVectors_Delete(void*) ;
 
 
 
-#define LocalVariableVectors_GetNbOfVariableVectors(lvv)           ((lvv)->nbofvariablevectors)
-#define LocalVariableVectors_GetNbOfVariables(lvv)                 ((lvv)->nbofvariables)
-#define LocalVariableVectors_GetLocalVariableVector(lvv)           ((lvv)->localvariablevector)
+#define LocalVariableVectors_GetNbOfVariableVectors(LVV)           ((LVV)->nbofvariablevectors)
+#define LocalVariableVectors_GetNbOfVariables(LVV)                 ((LVV)->nbofvariables)
+#define LocalVariableVectors_GetLocalVariableVector(LVV)           ((LVV)->localvariablevector)
 
 
 
-#define LocalVariableVectors_GetVariable(lvv,i) \
-        LocalVariableVector_GetVariable(LocalVariableVectors_GetLocalVariableVector(lvv) + (i))
+#define LocalVariableVectors_GetVariable(LVV,i) \
+        LocalVariableVector_GetVariable(LocalVariableVectors_GetLocalVariableVector(LVV) + (i))
         
-#define LocalVariableVectors_GetVariableDerivative(lvv,i) \
-        LocalVariableVector_GetVariableDerivative(LocalVariableVectors_GetLocalVariableVector(lvv) + (i))
+#define LocalVariableVectors_GetCurrentVariable(LVV,i) \
+        LocalVariableVectors_GetVariable(LVV,i)
+        
+#define LocalVariableVectors_GetPreviousVariable(LVV,i) \
+        LocalVariableVector_GetPreviousVariable(LocalVariableVectors_GetLocalVariableVector(LVV) + (i))
+        
+#define LocalVariableVectors_GetVariableDerivative(LVV,i) \
+        LocalVariableVector_GetVariableDerivative(LocalVariableVectors_GetLocalVariableVector(LVV) + (i))
 
 
 

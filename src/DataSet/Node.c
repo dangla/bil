@@ -33,11 +33,11 @@ Node_t*  Node_Create(const int dim)
 
 
 
-int    (Node_FindUnknownPositionIndex)(Node_t* node,const char* s)
+int    (Node_FindUnknownPositionIndex)(const Node_t* node,const char* s)
 /** Find the unknown position index whose name is pointed to by s */
 {
   int n = Node_GetNbOfUnknowns(node) ;
-  char** ss = Node_GetNameOfUnknown(node) ;
+  const char* const* ss = (const char* const*) Node_GetNameOfUnknown(node) ;
   int    i = String_FindPositionIndex(s,ss,n) ;
   
   return(i) ;
@@ -56,11 +56,11 @@ int    (Node_FindUnknownPositionIndex)(Node_t* node,const char* s)
 
 
 
-int    (Node_FindEquationPositionIndex)(Node_t* node,const char* s)
+int    (Node_FindEquationPositionIndex)(const Node_t* node,const char* s)
 /** Find the equation position index whose name is pointed to by s */
 {
   int n = Node_GetNbOfEquations(node) ;
-  char** ss = Node_GetNameOfEquation(node) ;
+  const char* const* ss = (const char* const*) Node_GetNameOfEquation(node) ;
   int    i = String_FindPositionIndex(s,ss,n) ;
   
   return(i) ;
@@ -442,7 +442,7 @@ int Node_CommonUnknownPositionIndexAtOverlappingNodes(const Node_t* node,const i
     int j ;
     
     for(j = 0 ; j < n_node ; j++) {
-      Node_t* node_j = node + j ;
+      const Node_t* node_j = node + j ;
       int jj = Node_FindUnknownPositionIndex(node_j,name) ;
       
       if(jj >= 0) {
@@ -473,7 +473,7 @@ int Node_CommonEquationPositionIndexAtOverlappingNodes(const Node_t* node,const 
     int j ;
     
     for(j = 0 ; j < n_node ; j++) {
-      Node_t* node_j = node + j ;
+      const Node_t* node_j = node + j ;
       int jj = Node_FindEquationPositionIndex(node_j,name) ;
       
       if(jj >= 0) {

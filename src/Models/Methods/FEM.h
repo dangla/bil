@@ -42,7 +42,7 @@ extern double*  FEM_ComputeSurfaceLoadResidu(FEM_t*,IntFct_t*,Load_t*,const doub
 extern double*  FEM_ComputeBodyForceResidu(FEM_t*,IntFct_t*,const double*,const int) ;
 extern double*  FEM_ComputeStrainWorkResidu(FEM_t*,IntFct_t*,const double*,const int) ;
 extern double*  FEM_ComputeFluxResidu(FEM_t*,IntFct_t*,const double*,const int) ;
-extern void     FEM_TransformResiduFromDegree2IntoDegree1(FEM_t*,const int,double*) ;
+extern void     FEM_TransformResiduFromDegree2IntoDegree1(FEM_t*,const int,const int,double*) ;
 extern double*  FEM_ComputeMassResidu(FEM_t*,IntFct_t*,const double*,const double*,const int) ;
 extern double*  FEM_ComputeMassBalanceEquationResidu(FEM_t*,IntFct_t*,const double*,const double*,const double*,const double,const int) ;
 

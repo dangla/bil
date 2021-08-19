@@ -8,14 +8,13 @@
 #include <strings.h>
 #include <stdarg.h>
 #include <time.h>
+#include <Mry.h>
 #include <assert.h>
 
 
 static Message_t*  (Message_GetInstance)(void) ;
 static Message_t*  (Message_Create)(void) ;
 
-
-//static Message_t* instancemsg = NULL ;
 
 
 
@@ -38,40 +37,20 @@ Message_t*  (Message_GetInstance)(void)
 }
 
 
-#if 0
-//Message_t*  (Message_GetInstance0)(void)
-{
-  
-  if(!instancemsg) {
-    instancemsg = Message_Create() ;
-  }
-  
-  return(instancemsg) ;
-}
-#endif
-
-
 
 
 Message_t*  (Message_Create)(void)
 {
-  Message_t* msg = (Message_t*) malloc(sizeof(Message_t)) ;
-  
-  assert(msg) ;
+  Message_t* msg = (Message_t*) Mry_New(Message_t) ;
   
   {
-    size_t sz = 26*sizeof(char) ;
-    char* date = (char*) malloc(sz) ;
-    
-    assert(date) ;
+    char* date = (char*) Mry_New(char[26]) ;
     
     Message_GetLaunchDate(msg) = date ;
   }
   
   {
-    time_t* now = (time_t*) malloc(sizeof(time_t)) ;
-    
-    assert(now) ;
+    time_t* now = (time_t*) Mry_New(time_t) ;
     
     Message_GetLaunchTime(msg) = now ;
   }

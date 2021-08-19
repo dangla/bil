@@ -20,18 +20,18 @@ extern void      (Nodes_SetMatrixRowColumnIndexes)   (Nodes_t*,DataFile_t*) ;
 extern void      (Nodes_InitializeMatrixRowColumnIndexes)(Nodes_t*) ;
 
 
+/* Some constants */
+#define Nodes_MaxNbOfMatrices        (2)
+
 
 #define Nodes_GetNbOfNodes(NODS)          ((NODS)->n_no)
 #define Nodes_GetNbOfConnectivities(NODS) ((NODS)->n_con)
 #define Nodes_GetNode(NODS)               ((NODS)->no)
 #define Nodes_GetNbOfMatrixRows(NODS)     ((NODS)->n_rows)
+#define Nodes_GetNbOfMatrixColumns(NODS)  ((NODS)->n_cols)
 #define Nodes_GetNbOfDOF(NODS)            ((NODS)->n_dof)
 #define Nodes_GetObjectiveValues(NODS)    ((NODS)->obvals)
-
-
-/* Synonyms */
-#define Nodes_GetNbOfMatrixColumns \
-        Nodes_GetNbOfMatrixRows
+#define Nodes_GetNbOfMatrices(NODS)       ((NODS)->NbOfMatrices)
 
 
 
@@ -41,7 +41,9 @@ extern void      (Nodes_InitializeMatrixRowColumnIndexes)(Nodes_t*) ;
 
 
 struct Nodes_s {              /* nodes */
-  unsigned int n_rows ;       /* nb of matrix rows */
+  int NbOfMatrices ;          /* nb of matrices */
+  unsigned int* n_rows ;      /* nb of matrix rows */
+  unsigned int* n_cols ;      /* nb of matrix columns */
   unsigned int n_no ;         /* nb of nodes */
   unsigned int n_con ;        /* nb of connectivities */
   unsigned int n_dof ;        /* nb of degrees of freedom */
