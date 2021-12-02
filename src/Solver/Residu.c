@@ -39,15 +39,27 @@ Residu_t*   (Residu_Create)(const int n_col,const int n)
 
 
 
-void Residu_Delete(void* self)
+void (Residu_Delete)(void* self)
 {
-  Residu_t** prs = (Residu_t**) self ;
-  Residu_t* rs   = *prs ;
+  Residu_t* residu = (Residu_t*) self ;
   
-  free(Residu_GetRHS(rs)) ;
-  free(Residu_GetSolution(rs)) ;
+  {
+    double* rhs = Residu_GetRHS(residu) ;
+    
+    if(rhs) {
+      free(rhs) ;
+      Residu_GetRHS(residu) = NULL ;
+    }
+  }
   
-  free(rs) ;
+  {
+    double* sol = Residu_GetSolution(residu) ;
+    
+    if(sol) {
+      free(sol) ;
+      Residu_GetSolution(residu) = NULL ;
+    }
+  }
 }
 
 

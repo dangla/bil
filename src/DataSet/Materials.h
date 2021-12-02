@@ -16,6 +16,7 @@ struct Materials_s    ; typedef struct Materials_s    Materials_t ;
 
 extern Materials_t* (Materials_Create)(DataFile_t*,Geometry_t*,Fields_t*,Functions_t*) ;
 extern Materials_t* (Materials_New)   (const int) ;
+extern void         (Materials_Delete)(void*) ;
 
 
 #define Materials_GetNbOfMaterials(MATS)  ((MATS)->n_mat)

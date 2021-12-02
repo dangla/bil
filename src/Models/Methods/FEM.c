@@ -22,7 +22,7 @@
 
 //static FEM_t* instancefem = NULL ;
 
-static FEM_t*  FEM_Create(void) ;
+static FEM_t*  (FEM_Create)(void) ;
 //static double* FEM_ComputeJacobianMatrixOld(Element_t*,double*,int) ;
 //static double* FEM_ComputeInverseJacobianMatrixOld(Element_t*,double*,int) ;
 //static double  FEM_ComputeJacobianDeterminantOld(Element_t*,double*,int) ;
@@ -30,7 +30,7 @@ static FEM_t*  FEM_Create(void) ;
 //static double* FEM_ComputeInverseJacobianMatrixNew(Element_t*,double*,int,const int) ;
 //static double  FEM_ComputeJacobianDeterminantNew(Element_t*,double*,int,const int) ;
 //static double* FEM_ComputeNormalVector(Element_t*,double*,int) ;
-static void    FEM_CheckNumberingOfOverlappingNodes(Element_t*,const int) ;
+static void    (FEM_CheckNumberingOfOverlappingNodes)(Element_t*,const int) ;
 
 #define FEM_ComputeJacobianMatrix        Element_ComputeJacobianMatrix
 #define FEM_ComputeJacobianDeterminant   Element_ComputeJacobianDeterminant
@@ -39,7 +39,7 @@ static void    FEM_CheckNumberingOfOverlappingNodes(Element_t*,const int) ;
 /* 
    Extern Functions 
 */
-FEM_t* FEM_Create(void)
+FEM_t* (FEM_Create)(void)
 {
   FEM_t*  fem    = (FEM_t*) Mry_New(FEM_t) ;
   
@@ -84,22 +84,21 @@ FEM_t* FEM_Create(void)
 
 
 
-void FEM_Delete(void* self)
+void (FEM_Delete)(void* self)
 {
-  FEM_t** pfem = (FEM_t**) self ;
-  FEM_t*   fem = *pfem ;
+  FEM_t* fem = (FEM_t*) self ;
   
   free(FEM_GetOutput(fem)) ;
   free(FEM_GetInput(fem)) ;
   free(FEM_GetPointerToIntFct(fem)) ;
-  Buffer_Delete(&FEM_GetBuffer(fem))  ;
-  free(fem) ;
-  //*pfem = NULL ;
+  Buffer_Delete(FEM_GetBuffer(fem))  ;
+  free(FEM_GetBuffer(fem)) ;
 }
 
 
+
 #if 0
-FEM_t* FEM_GetInstance0(Element_t* el)
+FEM_t* (FEM_GetInstance0)(Element_t* el)
 {
   if(!instancefem) {
     instancefem = FEM_Create() ;
@@ -142,7 +141,7 @@ FEM_t*  (FEM_GetInstance)(Element_t* el)
 
 
 
-double*  FEM_ComputeStiffnessMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
+double*  (FEM_ComputeStiffnessMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
 /** Return a pointer on a FE stiffness matrix (Ndof*Ndof)
  *  with Ndof = N * dim and N = nb of nodes */
 {
@@ -366,7 +365,7 @@ double*  FEM_ComputeStiffnessMatrix(FEM_t* fem,IntFct_t* fi,const double* c,cons
 
 
 
-double*  FEM_ComputeBiotMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
+double*  (FEM_ComputeBiotMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
 /** Return a pointer on a Biot-like coupling matrix (Ndof*N) 
  *  with Ndof = N * dim and N = nb of nodes */
 {
@@ -532,7 +531,7 @@ double*  FEM_ComputeBiotMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int
 
 
 
-double* FEM_ComputeMassMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
+double* (FEM_ComputeMassMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
 /** Return a pointer on a FE mass matrix (N*N) 
  *  with N = nb of nodes*/
 {
@@ -669,7 +668,7 @@ double* FEM_ComputeMassMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int 
 
 
 
-double*  FEM_ComputeConductionMatrix(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
+double*  (FEM_ComputeConductionMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const int dec)
 /** Return a pointer on a FE conduction matrix (N*N) 
  *  with N = nb of nodes */
 {
@@ -822,7 +821,7 @@ double*  FEM_ComputeConductionMatrix(FEM_t* fem,IntFct_t* fi,const double* c,con
 
 
 
-double*  FEM_ComputePoroelasticMatrix6(FEM_t* fem,IntFct_t* fi,const double* c,const int dec,const int n_dif,const int idis)
+double*  (FEM_ComputePoroelasticMatrix6)(FEM_t* fem,IntFct_t* fi,const double* c,const int dec,const int n_dif,const int idis)
 /** Return a pointer on a FE poroelastic matrix (Ndof x Ndof).
  * 
  *  Ndof = nb of degrees of freedom (= NN*Neq)
@@ -970,7 +969,7 @@ double*  FEM_ComputePoroelasticMatrix6(FEM_t* fem,IntFct_t* fi,const double* c,c
 
 
 
-void FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t* fem,const int inc,const int equ,double* k)
+void (FEM_TransformMatrixFromDegree2IntoDegree1)(FEM_t* fem,const int inc,const int equ,double* k)
 {
 #define K(i,j)     (k[(i)*nn*neq+(j)])
   Element_t* el = FEM_GetElement(fem) ;
@@ -1052,7 +1051,7 @@ void FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t* fem,const int inc,const in
 
 
 
-double*   FEM_ComputeBodyForceResidu(FEM_t* fem,IntFct_t* intfct,const double* f,const int dec)
+double*   (FEM_ComputeBodyForceResidu)(FEM_t* fem,IntFct_t* intfct,const double* f,const int dec)
 /* Compute the residu due to a force */
 {
   Element_t* el = FEM_GetElement(fem) ;
@@ -1178,7 +1177,7 @@ double*   FEM_ComputeBodyForceResidu(FEM_t* fem,IntFct_t* intfct,const double* f
 
 
 
-double*   FEM_ComputeStrainWorkResidu(FEM_t* fem,IntFct_t* intfct,const double* sig,const int dec)
+double*   (FEM_ComputeStrainWorkResidu)(FEM_t* fem,IntFct_t* intfct,const double* sig,const int dec)
 /* Compute the residu due to strain work */
 {
 #define DH(n,i)     (dh[(n)*3 + (i)])
@@ -1324,7 +1323,7 @@ double*   FEM_ComputeStrainWorkResidu(FEM_t* fem,IntFct_t* intfct,const double* 
 
 
 
-double*   FEM_ComputeFluxResidu(FEM_t* fem,IntFct_t* intfct,const double* f,const int dec)
+double*   (FEM_ComputeFluxResidu)(FEM_t* fem,IntFct_t* intfct,const double* f,const int dec)
 /* Compute the residu due to flux */
 {
 #define DH(n,i)     (dh[(n)*3+(i)])
@@ -1444,7 +1443,7 @@ double*   FEM_ComputeFluxResidu(FEM_t* fem,IntFct_t* intfct,const double* f,cons
 
 
 
-double* FEM_ComputeMassResidu(FEM_t* fem,IntFct_t* intfct,const double* f,const double* f_n,const int dec)
+double* (FEM_ComputeMassResidu)(FEM_t* fem,IntFct_t* intfct,const double* f,const double* f_n,const int dec)
 /** Return a residu due to mass increment */
 {
   int np = IntFct_GetNbOfPoints(intfct) ;
@@ -1463,7 +1462,7 @@ double* FEM_ComputeMassResidu(FEM_t* fem,IntFct_t* intfct,const double* f,const 
 
 
 
-double* FEM_ComputeMassBalanceEquationResidu(FEM_t* fem,IntFct_t* intfct,const double* f,const double* f_n,const double* w,const double dt,const int dec)
+double* (FEM_ComputeMassBalanceEquationResidu)(FEM_t* fem,IntFct_t* intfct,const double* f,const double* f_n,const double* w,const double dt,const int dec)
 /** Return a mass balance equation residu */
 {
   Element_t* el = FEM_GetElement(fem) ;
@@ -1484,7 +1483,7 @@ double* FEM_ComputeMassBalanceEquationResidu(FEM_t* fem,IntFct_t* intfct,const d
 
 
 
-double* FEM_ComputeSurfaceLoadResidu(FEM_t* fem,IntFct_t* intfct,Load_t* load,const double t,const double dt)
+double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,const double t,const double dt)
 /* Compute the residu force due to surface loads (r) */
 {
   Element_t* el = FEM_GetElement(fem) ;
@@ -1492,10 +1491,10 @@ double* FEM_ComputeSurfaceLoadResidu(FEM_t* fem,IntFct_t* intfct,Load_t* load,co
   int nn  = Element_GetNbOfNodes(el) ;
   unsigned short int dim = Geometry_GetDimension(geom) ;
   Symmetry_t sym = Geometry_GetSymmetry(geom) ;
-  Node_t* *no = Element_GetPointerToNode(el) ;
+  Node_t** no = Element_GetPointerToNode(el) ;
   Field_t* field = Load_GetField(load) ;
-  char    *load_eqn = Load_GetNameOfEquation(load) ;
-  char    *load_type = Load_GetType(load) ;
+  char*    load_eqn = Load_GetNameOfEquation(load) ;
+  char*    load_type = Load_GetType(load) ;
   Function_t* function = Load_GetFunction(load) ;
   int dim_h  = IntFct_GetDimension(intfct) ;
   int    nf  = IntFct_GetNbOfFunctions(intfct) ;
@@ -1671,7 +1670,7 @@ double* FEM_ComputeSurfaceLoadResidu(FEM_t* fem,IntFct_t* intfct,Load_t* load,co
         double* h = IntFct_GetFunctionAtPoint(intfct,p) ;
         double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
         double* n = Element_ComputeNormalVector(el,dh,nf,dim_h) ;
-        double y[3] = {0.,0.,0.,} ;
+        double y[3] = {0.,0.,0.} ;
         for(i = 0 ; i < dim ; i++) {
           for(j = 0 ; j < nf ; j++) y[i] += h[j]*x[j][i] ;
         }
@@ -1694,7 +1693,7 @@ double* FEM_ComputeSurfaceLoadResidu(FEM_t* fem,IntFct_t* intfct,Load_t* load,co
 
 
 
-void FEM_TransformResiduFromDegree2IntoDegree1(FEM_t* fem,const int inc,const int equ,double* r)
+void (FEM_TransformResiduFromDegree2IntoDegree1)(FEM_t* fem,const int inc,const int equ,double* r)
 {
   Element_t* el = FEM_GetElement(fem) ;
   int    nn = Element_GetNbOfNodes(el) ;
@@ -1763,7 +1762,7 @@ void FEM_TransformResiduFromDegree2IntoDegree1(FEM_t* fem,const int inc,const in
 
 
 
-double*  FEM_ComputeIsoShapeFctInActualSpace(FEM_t* fem,double* x)
+double*  (FEM_ComputeIsoShapeFctInActualSpace)(FEM_t* fem,double* x)
 /* fonction d'interpolation (h) et ses derivees (dh) en x */
 {
   Element_t* el = FEM_GetElement(fem) ;
@@ -1785,7 +1784,7 @@ double*  FEM_ComputeIsoShapeFctInActualSpace(FEM_t* fem,double* x)
 
 
 
-void   FEM_AverageStresses(Mesh_t* mesh,double* stress)
+void   (FEM_AverageStresses)(Mesh_t* mesh,double* stress)
 {
   unsigned int nel = Mesh_GetNbOfElements(mesh) ;
   Element_t* el0 = Mesh_GetElement(mesh) ;
@@ -1840,7 +1839,7 @@ void   FEM_AverageStresses(Mesh_t* mesh,double* stress)
 
 
 
-double   FEM_ComputeVolume(Mesh_t* mesh)
+double   (FEM_ComputeVolume)(Mesh_t* mesh)
 {
   unsigned int nel = Mesh_GetNbOfElements(mesh) ;
   Element_t* el0 = Mesh_GetElement(mesh) ;
@@ -1870,7 +1869,7 @@ double   FEM_ComputeVolume(Mesh_t* mesh)
 /* FEM_Compute functions in the form (FEM_t*,double**,IntFct_t*,int,int) */
 
 
-double FEM_ComputeUnknown(FEM_t* fem,double** u,IntFct_t* intfct,int p,int inc)
+double (FEM_ComputeUnknown)(FEM_t* fem,double** u,IntFct_t* intfct,int p,int inc)
 /** Compute the unknown located at "inc" at the interpolation point "p" */
 {
 #define U(n)   (u[n][Element_GetNodalUnknownPosition(el,n,inc)])
@@ -1890,7 +1889,7 @@ double FEM_ComputeUnknown(FEM_t* fem,double** u,IntFct_t* intfct,int p,int inc)
 
 
 
-double* FEM_ComputeDisplacementVector(FEM_t* fem,double** u,IntFct_t* intfct,int p,int inc)
+double* (FEM_ComputeDisplacementVector)(FEM_t* fem,double** u,IntFct_t* intfct,int p,int inc)
 /** Compute the displacement vector located at 
  *  "inc,inc+1,inc+2" at the interpolation point "p" */
 {
@@ -1940,7 +1939,7 @@ double* FEM_ComputeDisplacementVector(FEM_t* fem,double** u,IntFct_t* intfct,int
 
 
 
-double* FEM_ComputeUnknownGradient(FEM_t* fem,double** u,IntFct_t* intfct,int p,int inc)
+double* (FEM_ComputeUnknownGradient)(FEM_t* fem,double** u,IntFct_t* intfct,int p,int inc)
 /** Compute the unknown gradient located at "inc" at the interpolation point "p" */
 {
 #define U(n)   (u[n][Element_GetNodalUnknownPosition(el,n,inc)])
@@ -2003,7 +2002,7 @@ double* FEM_ComputeUnknownGradient(FEM_t* fem,double** u,IntFct_t* intfct,int p,
 
 
 
-double* FEM_ComputeLinearStrainTensor(FEM_t* fem,double** u,IntFct_t* intfct,int p,int inc)
+double* (FEM_ComputeLinearStrainTensor)(FEM_t* fem,double** u,IntFct_t* intfct,int p,int inc)
 /** Compute the 3D linearized strain tensor for the displacement vector 
  *  located at "inc" and at the interpolation point "p" */
 {
@@ -2145,7 +2144,7 @@ double* FEM_ComputeLinearStrainTensor(FEM_t* fem,double** u,IntFct_t* intfct,int
 
 /* FEM_Compute functions in the form (FEM_t*,double*,int,int) */
 
-double FEM_ComputeCurrentUnknown(FEM_t* fem,double* h,int nn,int inc)
+double (FEM_ComputeCurrentUnknown)(FEM_t* fem,double* h,int nn,int inc)
 /** Compute the unknown at the current time located at "inc" */
 {
 #define U(n)   (Element_GetValueOfCurrentNodalUnknown(el,n,inc))
@@ -2162,7 +2161,7 @@ double FEM_ComputeCurrentUnknown(FEM_t* fem,double* h,int nn,int inc)
 }
 
 
-double FEM_ComputePreviousUnknown(FEM_t* fem,double* h,int nn,int inc)
+double (FEM_ComputePreviousUnknown)(FEM_t* fem,double* h,int nn,int inc)
 /** Compute the unknown at the previous time located at "inc" */
 {
 #define U(n)   (Element_GetValueOfPreviousNodalUnknown(el,n,inc))
@@ -2180,7 +2179,7 @@ double FEM_ComputePreviousUnknown(FEM_t* fem,double* h,int nn,int inc)
 
 
 
-double* FEM_ComputeCurrentUnknownGradient(FEM_t* fem,double* dh,int nn,int inc)
+double* (FEM_ComputeCurrentUnknownGradient)(FEM_t* fem,double* dh,int nn,int inc)
 /** Compute the current unknown gradient for the unknown located at "inc" */
 {
 #define U(n)   (Element_GetValueOfCurrentNodalUnknown(el,n,inc))
@@ -2238,7 +2237,7 @@ double* FEM_ComputeCurrentUnknownGradient(FEM_t* fem,double* dh,int nn,int inc)
 
 
 
-double* FEM_ComputePreviousUnknownGradient(FEM_t* fem,double* dh,int nn,int inc)
+double* (FEM_ComputePreviousUnknownGradient)(FEM_t* fem,double* dh,int nn,int inc)
 /** Compute the previous unknown gradient for the unknown located at "inc" */
 {
 #define U(n)   (Element_GetValueOfPreviousNodalUnknown(el,n,inc))
@@ -2299,7 +2298,7 @@ double* FEM_ComputePreviousUnknownGradient(FEM_t* fem,double* dh,int nn,int inc)
 
 /* FEM_Compute functions in the form (FEM_t*,double*,double*,int,int) */
 
-double* FEM_ComputeCurrentLinearStrainTensor(FEM_t* fem,double* h,double* dh,int nn,int inc)
+double* (FEM_ComputeCurrentLinearStrainTensor)(FEM_t* fem,double* h,double* dh,int nn,int inc)
 /** Compute the 3D linearized strain tensor for a displacement vector located at "inc" */
 {
 #define U(n,i)   (Element_GetValueOfCurrentNodalUnknown(el,n,inc + (i)))
@@ -2358,7 +2357,7 @@ double* FEM_ComputeCurrentLinearStrainTensor(FEM_t* fem,double* h,double* dh,int
 
 
 
-double* FEM_ComputeIncrementalLinearStrainTensor(FEM_t* fem,double* h,double* dh,int nn,int inc)
+double* (FEM_ComputeIncrementalLinearStrainTensor)(FEM_t* fem,double* h,double* dh,int nn,int inc)
 /** Compute the 3D incremental linearized strain tensor for a displacement vector located at "inc" */
 {
 #define U(n,i)   (Element_GetValueOfCurrentNodalUnknown(el,n,inc + (i)))
@@ -2421,7 +2420,7 @@ double* FEM_ComputeIncrementalLinearStrainTensor(FEM_t* fem,double* h,double* dh
 
 
 
-double* FEM_ComputePreviousLinearStrainTensor(FEM_t* fem,double* h,double* dh,int nn,int inc)
+double* (FEM_ComputePreviousLinearStrainTensor)(FEM_t* fem,double* h,double* dh,int nn,int inc)
 /** Compute the 3D linearized strain tensor for a displacement vector located at "inc" */
 {
 #define U(n,i)   (Element_GetValueOfPreviousNodalUnknown(el,n,inc + (i)))
@@ -2480,7 +2479,7 @@ double* FEM_ComputePreviousLinearStrainTensor(FEM_t* fem,double* h,double* dh,in
 
 
 
-double   FEM_IntegrateOverElement(FEM_t* fem,IntFct_t* intfct,double* f,int shift)
+double   (FEM_IntegrateOverElement)(FEM_t* fem,IntFct_t* intfct,double* f,int shift)
 /** Integrate f over the element through the integration points. 
  *  Return the integration result. */
 {
@@ -2549,7 +2548,7 @@ double   FEM_IntegrateOverElement(FEM_t* fem,IntFct_t* intfct,double* f,int shif
 
 
 #if 0
-double* FEM_ComputeJacobianMatrixNew(Element_t* el,double* dh,int nn,const int dim_h)
+double* (FEM_ComputeJacobianMatrixNew)(Element_t* el,double* dh,int nn,const int dim_h)
 {
   return(Element_ComputeJacobianMatrix(el,dh,nn,dim_h)) ;
 }
@@ -2557,7 +2556,7 @@ double* FEM_ComputeJacobianMatrixNew(Element_t* el,double* dh,int nn,const int d
 
 
 
-double FEM_ComputeJacobianDeterminantNew(Element_t* el,double* dh,int nn,const int dim_h)
+double (FEM_ComputeJacobianDeterminantNew)(Element_t* el,double* dh,int nn,const int dim_h)
 /** Compute the determinant of the jacobian matrix */
 {
   #if 0
@@ -2576,7 +2575,7 @@ double FEM_ComputeJacobianDeterminantNew(Element_t* el,double* dh,int nn,const i
 
 
 
-double* FEM_ComputeInverseJacobianMatrixNew(Element_t* el,double* dh,int nn,const int dim_h)
+double* (FEM_ComputeInverseJacobianMatrixNew)(Element_t* el,double* dh,int nn,const int dim_h)
 /** Compute the inverse jacobian matrix */
 {
   #if 0
@@ -2605,7 +2604,7 @@ double* FEM_ComputeInverseJacobianMatrixNew(Element_t* el,double* dh,int nn,cons
 
 
 
-void FEM_CheckNumberingOfOverlappingNodes(Element_t* el,const int nf)
+void (FEM_CheckNumberingOfOverlappingNodes)(Element_t* el,const int nf)
 {
   int j ;
 
@@ -2624,7 +2623,7 @@ void FEM_CheckNumberingOfOverlappingNodes(Element_t* el,const int nf)
 
 /* Not used from here */
 #if 0
-double* FEM_ComputeInverseJacobianMatrixOld(Element_t* el,double* dh,int nn)
+double* (FEM_ComputeInverseJacobianMatrixOld)(Element_t* el,double* dh,int nn)
 /** Compute the inverse jacobian matrix */
 {
 #define DH(n,i)  (dh[(n)*3 + (i)])
@@ -2774,7 +2773,7 @@ double* FEM_ComputeInverseJacobianMatrixOld(Element_t* el,double* dh,int nn)
 
 
 #if 0
-double* FEM_ComputeJacobianMatrixOld(Element_t* el,double* dh,int nn)
+double* (FEM_ComputeJacobianMatrixOld)(Element_t* el,double* dh,int nn)
 /** Compute the jacobian matrix */
 {
 #define DH(n,i)  (dh[(n)*3 + (i)])
@@ -2824,7 +2823,7 @@ double* FEM_ComputeJacobianMatrixOld(Element_t* el,double* dh,int nn)
 
 
 #if 0
-double FEM_ComputeJacobianDeterminantOld(Element_t* el,double* dh,int nn)
+double (FEM_ComputeJacobianDeterminantOld)(Element_t* el,double* dh,int nn)
 /** Compute the determinant of the jacobian matrix */
 {
 #define DH(n,i)  (dh[(n)*3 + (i)])
@@ -2911,7 +2910,7 @@ double FEM_ComputeJacobianDeterminantOld(Element_t* el,double* dh,int nn)
 
 /* NOT USED */
 #if 0
-double*  FEM_ComputeNormalVector(Element_t* el,double* dh,int nn)
+double*  (FEM_ComputeNormalVector)(Element_t* el,double* dh,int nn)
 /* Normale unitaire a un sous-espace de dimension dim-1 */
 {
 #define DH(n,i) (dh[(n)*3+(i)])
@@ -2972,7 +2971,7 @@ double*  FEM_ComputeNormalVector(Element_t* el,double* dh,int nn)
 
 
 #if 0
-double* FEM_ComputeUnknowns(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
+double* (FEM_ComputeUnknowns)(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
 /** Compute the unknowns at the interpolation points located at "inc" */
 {
 #define U(n)   (u[n][Element_GetNodalUnknownPosition(el,n,inc)])
@@ -3010,7 +3009,7 @@ double* FEM_ComputeUnknowns(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
 
 
 
-double* FEM_ComputeUnknownGradients(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
+double* (FEM_ComputeUnknownGradients)(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
 /** Compute the unknown gradients at the interpolation points located at "inc" 
  *  WRONG IMPLEMENTATION: check inverse jacobian matrix (dim/dim_h pb)*/
 {
@@ -3068,7 +3067,7 @@ double* FEM_ComputeUnknownGradients(FEM_t* fem,IntFct_t* intfct,double** u,int i
 
 
 
-double* FEM_ComputeLinearStrainTensors(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
+double* (FEM_ComputeLinearStrainTensors)(FEM_t* fem,IntFct_t* intfct,double** u,int inc)
 /** Compute the 3D linearized strain tensors for the displacement vectors 
  *  located at "inc" and at the interpolation points.
  *  WRONG IMPLEMENTATION: check inverse jacobian matrix (dim/dim_h pb)*/

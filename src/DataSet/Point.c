@@ -13,7 +13,7 @@
 
 
 
-Point_t*  Point_New(void)
+Point_t*  (Point_New)(void)
 {
   Point_t* point = (Point_t*) Mry_New(Point_t) ;
   
@@ -32,20 +32,16 @@ Point_t*  Point_New(void)
 
 
 
-void Point_Delete(void* self)
+void (Point_Delete)(void* self)
 {
-  Point_t** ppoint = (Point_t**) self ;
-  Point_t*   point = *ppoint ;
+  Point_t* point = (Point_t*) self ;
   
   free(Point_GetCoordinate(point)) ;
-  free(point) ;
-  
-  *ppoint = NULL ;
 }
 
 
 
-void Point_Scan(Point_t* point,char* line)
+void (Point_Scan)(Point_t* point,char* line)
 {
 
   /* Coordinates */
@@ -77,7 +73,7 @@ void Point_Scan(Point_t* point,char* line)
 
 
 
-void Point_SetEnclosingElement(Point_t* point,Mesh_t* mesh)
+void (Point_SetEnclosingElement)(Point_t* point,Mesh_t* mesh)
 /** Set a pointer to the element which encloses the point */
 {
   unsigned short int dim = Mesh_GetDimension(mesh) ;

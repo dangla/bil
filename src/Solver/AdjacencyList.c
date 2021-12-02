@@ -55,11 +55,15 @@ AdjacencyList_t* (AdjacencyList_Create)(int nvert,int* vert_nedges)
 
 void (AdjacencyList_Delete)(void* self)
 {
-  AdjacencyList_t** padj = (AdjacencyList_t**) self ;
-  AdjacencyList_t*  adj  = *padj ;
+  AdjacencyList_t* adj = (AdjacencyList_t*) self ;
   
-  free(AdjacencyList_GetNeighbor(adj)) ;
-  free(adj) ;
-  //*padj = NULL ;
+  {
+    int* list = AdjacencyList_GetNeighbor(adj) ;
+    
+    if(list) {
+      free(list) ;
+      AdjacencyList_GetNeighbor(adj) = NULL ;
+    }
+  }
 }
 

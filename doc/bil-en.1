@@ -40,7 +40,7 @@ geomechanical engineering, material sciences, etc..
 
 .PP
 
-Without \fIoption\fR \fIBil\fR compute the solution of a problem 
+If \fIfile\fR is given, \fIBil\fR compute the solution of a problem 
 described in \fIfile\fR.
 
 .PP
@@ -63,10 +63,10 @@ post-processing options create output files which can be used by
 .B \-graph \fIfmt\fR
 print the graph in \fIfile\fR\fB.graph\fR in the format \fIfmt\fR. Available formats are:
 .RS
-\fBmetis\fR: for METIS (if installed)
+\fBmetis\fR: for METIS (if installed).
 .RE
 .RS
-\fBhsl_mc40\fR: for HSL_MC40
+\fBhsl_mc40\fR: format given by MC40 from HSL.
 .RE
 
 .TP 4
@@ -78,7 +78,7 @@ print the inverse permutation of nodes in \fIfile\fR\fB.graph.iperm\fR by HSL_MC
 print the inverse permutation of elements in file \fIfile\fR\fB.graph.iperm\fR 
 by the method \fImeth\fR. Available methods are:
 .RS
-\fBhsl_mc43\fR
+\fBhsl_mc43\fR: MC43 from HSL.
 .RE
 
 .TP 4
@@ -86,20 +86,30 @@ by the method \fImeth\fR. Available methods are:
 print the inverse permutation of nodes in file \fIfile\fR\fB.graph.iperm\fR 
 by the method \fImeth\fR. Available methods are:
 .RS
-\fBhsl_mc40\fR (same as -iperm)
+\fBhsl_mc40\fR: MC40 from HSL (same as -iperm)
 .RE
 
 .TP 4
 .B \-solver \fImethod\fR
-use a solver defined by \fImethod\fR. Available methods are:
+use the solver defined by \fImethod\fR. Available methods are:
 .RS
 \fBcrout\fR: CROUT method (default).
 .RE
 .RS
-\fBslu\fR  : SuperLU (if installed).
+\fBslu\fR: SuperLU (if installed).
 .RE
 .RS
-\fBma38\fR : MA38 from HSL (if BLAS library installed).
+\fBma38\fR: MA38 from HSL (if BLAS library installed).
+.RE
+
+.TP 4
+.B \-with \fIinputs\fR
+use the module defined in \fIinputs\fR. Available inputs are:
+.RS
+\fBMonolithic\fR: Monolithic approach (default).
+.RE
+.RS
+\fBSNIA\fR \fIN\fR: Sequential non iterative approach, \fIN\fR = nb of sequences.
 .RE
 
 

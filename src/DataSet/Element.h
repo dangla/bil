@@ -326,12 +326,37 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
 
 
 
+/* Sequential index */
+#define Element_GetSequentialIndexOfUnknown(ELT) \
+        Model_GetSequentialIndexOfUnknown(Element_GetModel(ELT))
+
+#define Element_GetCurrentSequentialIndex(ELT) \
+        DataFile_GetSequentialIndex(Element_GetDataFile(ELT))
+        
+#define Element_GetNbOfSequences(ELT) \
+        DataFile_GetNbOfSequences(Element_GetDataFile(ELT))
+
+#define Element_EquationIsActive(ELT,I) \
+        (( \
+        (Element_GetCurrentSequentialIndex(ELT) == Element_GetNbOfSequences(ELT) - 1) \
+        && \
+        (Element_GetCurrentSequentialIndex(ELT) <= Element_GetSequentialIndexOfUnknown(ELT)[I]) \
+        ) || ( \
+        (Element_GetCurrentSequentialIndex(ELT) <= Element_GetNbOfSequences(ELT) - 1) \
+        && \
+        (Element_GetCurrentSequentialIndex(ELT) == Element_GetSequentialIndexOfUnknown(ELT)[I]) \
+        ))
+
+#define Element_CurrentSequentialIndexIs \
+        Element_EquationIsActive
+
+
 
 
 #include "IntFct.h"
 
 /* Loop on integration points */
-#define Element_LoopOnIntegrationPoints(ELT,p) \\
+#define Element_LoopOnIntegrationPoints(ELT,p) \
         for(p = 0 ; p < IntFct_GetNbOfPoints(Element_GetIntFct(ELT)) ; p++)
         
 

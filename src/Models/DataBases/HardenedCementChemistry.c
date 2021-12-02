@@ -8,6 +8,7 @@
 #include "Curves.h"
 #include "BilPath.h"
 #include "Temperature.h"
+#include "Mry.h"
 #include "HardenedCementChemistry.h"
 #include "CementSolutionChemistry.h"
 
@@ -37,11 +38,9 @@ static void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H
 
 
 
-HardenedCementChemistry_t* HardenedCementChemistry_Create(void)
+HardenedCementChemistry_t* (HardenedCementChemistry_Create)(void)
 {
-  HardenedCementChemistry_t* hcc = (HardenedCementChemistry_t*) malloc(sizeof(HardenedCementChemistry_t)) ;
-  
-  if(!hcc) arret("HardenedCementChemistry_Create") ;
+  HardenedCementChemistry_t* hcc = (HardenedCementChemistry_t*) Mry_New(HardenedCementChemistry_t) ;
   
   
   HardenedCementChemistry_AllocateMemory(hcc) ;
@@ -93,15 +92,73 @@ HardenedCementChemistry_t* HardenedCementChemistry_Create(void)
 
 
 
+void (HardenedCementChemistry_Delete)(void* self)
+{
+  HardenedCementChemistry_t* hcc = (HardenedCementChemistry_t*) self ;
 
-void HardenedCementChemistry_AllocateMemory(HardenedCementChemistry_t* hcc)
+  {
+    int* ind = HardenedCementChemistry_GetPrimaryVariableIndex(hcc) ;
+    
+    free(ind) ;
+  }
+
+  {
+    double* var = HardenedCementChemistry_GetPrimaryVariable(hcc) ;
+    
+    free(var) ;
+  }
+
+  {
+    double* var = HardenedCementChemistry_GetVariable(hcc) ;
+    
+    free(var) ;
+  }
+
+  {
+    double* sat = HardenedCementChemistry_GetSaturationIndex(hcc) ;
+    
+    free(sat) ;
+  }
+
+  {
+    double* sat = HardenedCementChemistry_GetLog10SaturationIndex(hcc) ;
+    
+    free(sat) ;
+  }
+
+  {
+    double* cst = HardenedCementChemistry_GetConstant(hcc) ;
+    
+    free(cst) ;
+  }
+  
+  {
+    double* ksp = HardenedCementChemistry_GetLog10Ksp(hcc) ;
+    
+    free(ksp) ;
+  }
+  
+  {
+    CementSolutionChemistry_t* csc = HardenedCementChemistry_GetCementSolutionChemistry(hcc) ;
+    
+    CementSolutionChemistry_Delete(csc) ;
+  }
+  
+  {
+    Curves_t* curves = HardenedCementChemistry_GetCSHCurves(hcc) ;
+    
+    Curves_Delete(curves) ;
+  }
+}
+
+
+
+
+void (HardenedCementChemistry_AllocateMemory)(HardenedCementChemistry_t* hcc)
 {
   /* Allocation of space for the primary variable indexes */
   {
-    size_t sz = HardenedCementChemistry_NbOfPrimaryVariables*sizeof(int) ;
-    int* ind = (int*) malloc(sz) ;
-    
-    assert(ind) ;
+    int* ind = (int*) Mry_New(int[HardenedCementChemistry_NbOfPrimaryVariables]) ;
     
     HardenedCementChemistry_GetPrimaryVariableIndex(hcc) = ind ;
   }
@@ -109,10 +166,7 @@ void HardenedCementChemistry_AllocateMemory(HardenedCementChemistry_t* hcc)
   
   /* Allocation of space for the primary variables */
   {
-    size_t sz = HardenedCementChemistry_NbOfPrimaryVariables*sizeof(double) ;
-    double* var = (double*) malloc(sz) ;
-    
-    if(!var) arret("HardenedCementChemistry_Create(1)") ;
+    double* var = (double*) Mry_New(double[HardenedCementChemistry_NbOfPrimaryVariables]) ;
     
     HardenedCementChemistry_GetPrimaryVariable(hcc) = var ;
   }
@@ -120,10 +174,7 @@ void HardenedCementChemistry_AllocateMemory(HardenedCementChemistry_t* hcc)
   
   /* Allocation of space for the variables */
   {
-    size_t sz = HardenedCementChemistry_NbOfVariables*sizeof(double) ;
-    double* var = (double*) malloc(sz) ;
-    
-    if(!var) arret("HardenedCementChemistry_Create(2)") ;
+    double* var = (double*) Mry_New(double[HardenedCementChemistry_NbOfVariables]) ;
     
     HardenedCementChemistry_GetVariable(hcc) = var ;
   }
@@ -131,10 +182,7 @@ void HardenedCementChemistry_AllocateMemory(HardenedCementChemistry_t* hcc)
   
   /* Allocation of space for saturation indexes */
   {
-    size_t sz = HardenedCementChemistry_NbOfSaturationIndexes*sizeof(double) ;
-    double* sat = (double*) malloc(sz) ;
-    
-    if(!sat) arret("HardenedCementChemistry_Create(3)") ;
+    double* sat = (double*) Mry_New(double[HardenedCementChemistry_NbOfSaturationIndexes]) ;
     
     HardenedCementChemistry_GetSaturationIndex(hcc) = sat ;
   }
@@ -142,10 +190,7 @@ void HardenedCementChemistry_AllocateMemory(HardenedCementChemistry_t* hcc)
   
   /* Allocation of space for Log10 saturation indexes */
   {
-    size_t sz = HardenedCementChemistry_NbOfSaturationIndexes*sizeof(double) ;
-    double* sat = (double*) malloc(sz) ;
-    
-    if(!sat) arret("HardenedCementChemistry_Create(4)") ;
+    double* sat = (double*) Mry_New(double[HardenedCementChemistry_NbOfSaturationIndexes]) ;
     
     HardenedCementChemistry_GetLog10SaturationIndex(hcc) = sat ;
   }
@@ -153,10 +198,7 @@ void HardenedCementChemistry_AllocateMemory(HardenedCementChemistry_t* hcc)
   
   /* Allocation of space for the constants */
   {
-    size_t sz = HardenedCementChemistry_NbOfConstants*sizeof(double) ;
-    double* cst = (double*) malloc(sz) ;
-    
-    if(!cst) arret("HardenedCementChemistry_Create(5)") ;
+    double* cst = (double*) Mry_New(double[HardenedCementChemistry_NbOfConstants]) ;
     
     HardenedCementChemistry_GetConstant(hcc) = cst ;
   }
@@ -164,10 +206,7 @@ void HardenedCementChemistry_AllocateMemory(HardenedCementChemistry_t* hcc)
   
   /* Allocation of space for solubility product constants */
   {
-    size_t sz = HardenedCementChemistry_NbOfSolubilityProductConstants*sizeof(double) ;
-    double* ksp = (double*) malloc(sz) ;
-    
-    if(!ksp) arret("HardenedCementChemistry_Create(6)") ;
+    double* ksp = (double*) Mry_New(double[HardenedCementChemistry_NbOfSolubilityProductConstants]) ;
     
     HardenedCementChemistry_GetLog10Ksp(hcc) = ksp ;
   }
@@ -175,7 +214,7 @@ void HardenedCementChemistry_AllocateMemory(HardenedCementChemistry_t* hcc)
   
   /* Allocate space for CementSolutionChemistry */
   {
-    CementSolutionChemistry_t* csc = CementSolutionChemistry_Create(1) ;
+    CementSolutionChemistry_t* csc = CementSolutionChemistry_Create() ;
     
     HardenedCementChemistry_GetCementSolutionChemistry(hcc) = csc ;
   }
@@ -201,7 +240,7 @@ void HardenedCementChemistry_AllocateMemory(HardenedCementChemistry_t* hcc)
 
 
 
-void HardenedCementChemistry_UpdateChemicalConstants(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_UpdateChemicalConstants)(HardenedCementChemistry_t* hcc)
 {
   double T = HardenedCementChemistry_GetRoomTemperature(hcc) ;
   
@@ -264,7 +303,7 @@ void HardenedCementChemistry_UpdateChemicalConstants(HardenedCementChemistry_t* 
 
 
 
-void HardenedCementChemistry_PrintChemicalConstants(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemistry_t* hcc)
 {
   double T = HardenedCementChemistry_GetRoomTemperature(hcc) ;
   
@@ -371,7 +410,7 @@ void HardenedCementChemistry_PrintChemicalConstants(HardenedCementChemistry_t* h
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O)(HardenedCementChemistry_t* hcc)
 {
   /* Inputs */
   /* SI_CH is the saturation index of CH ie log(S_CH) */ 
@@ -439,7 +478,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(HardenedCementC
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O)(HardenedCementChemistry_t* hcc)
 {
   /* Inputs */
   /* SI_CH is the saturation index of CH ie log(S_CH) */ 
@@ -548,7 +587,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(HardenedC
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_Cl_H2O(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_Cl_H2O)(HardenedCementChemistry_t* hcc)
 {
   /* Solve first without Cl */
   HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(hcc) ;
@@ -587,7 +626,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_Cl_H2O(Harden
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Cl_H2O(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Cl_H2O)(HardenedCementChemistry_t* hcc)
 {
   /* Solve first without Cl and Al */
   HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(hcc) ;
@@ -636,7 +675,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Cl_H2O(HardenedCeme
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O)(HardenedCementChemistry_t* hcc)
 {
   if(HardenedCementChemistry_InputCaOIs(hcc,SI_CH_CC)) {
     double si_ca    = Input(SI_CH_CC) ;
@@ -659,7 +698,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O(HardenedCem
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O_0(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O_0)(HardenedCementChemistry_t* hcc)
 {
   /* Inputs */
   /* SI_CH is the saturation index of CH ie log(S_CH) */ 
@@ -740,7 +779,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O_0(HardenedC
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_Cl_H2O(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_Cl_H2O)(HardenedCementChemistry_t* hcc)
 {
   /* Solve first without Cl and Al */
   HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O(hcc) ;
@@ -790,7 +829,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_Cl_H2O(Hardened
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_H2O(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_H2O)(HardenedCementChemistry_t* hcc)
 {
   /* Inputs */
   /* SI_CH is the saturation index of CH ie log(S_CH) */ 
@@ -911,7 +950,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_H2O(Harde
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_Cl_H2O(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_Cl_H2O)(HardenedCementChemistry_t* hcc)
 {
   /* Solve first without Cl */
   HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_H2O(hcc) ;
@@ -952,7 +991,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_Cl_H2O(Ha
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O)(HardenedCementChemistry_t* hcc)
 {
   if(HardenedCementChemistry_InputCaOIs(hcc,SI_CH_CSH2)) {
     double si_ca      = Input(SI_CH_CSH2) ;
@@ -981,7 +1020,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(HardenedCem
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_0(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_0)(HardenedCementChemistry_t* hcc)
 {
   /* Inputs */
   /* SI_CH is the saturation index of calcium hydroxide ie log(S_CH) */ 
@@ -1077,7 +1116,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_0(HardenedC
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O)(HardenedCementChemistry_t* hcc)
 {
   if(HardenedCementChemistry_InputCaOIs(hcc,SI_CH_CSH2)) {
     double si_ca      = Input(SI_CH_CSH2) ;
@@ -1111,7 +1150,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O(Harde
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_0(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_0)(HardenedCementChemistry_t* hcc)
 {
   /* Inputs */
   /* SI_CH is the saturation index of CH ie log(S_CH) */ 
@@ -1260,7 +1299,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_0(Har
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_Cl_H2O(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_Cl_H2O)(HardenedCementChemistry_t* hcc)
 {
   /* Solve first without Cl */
   HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O(hcc) ;
@@ -1313,7 +1352,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_Cl_H2O(Ha
 /* Not used */
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O_1(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O_1)(HardenedCementChemistry_t* hcc)
 {
   /* Inputs */
   /* SI_CH_CC is the saturation index of CH-CC ie log(S_CH/S_CHeq) */ 
@@ -1393,7 +1432,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O_1(HardenedC
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1)(HardenedCementChemistry_t* hcc)
 {
   /* Inputs */
   /* SI_CH_CSH2 is the saturation index of CH-CSH2 ie log(S_CH/S_CHeq) */ 
@@ -1474,7 +1513,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O_1(HardenedC
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_1(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_1)(HardenedCementChemistry_t* hcc)
 {
   /* Inputs */
   /* SI_CH_CSH2 is the saturation index of CH-CSH2 ie log(S_CH/S_CHeq) */ 
@@ -1603,7 +1642,7 @@ void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_1(Har
 
 
 
-void HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_2(HardenedCementChemistry_t* hcc)
+void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O_2)(HardenedCementChemistry_t* hcc)
 {
   /* Inputs */
   /* SI_CH is the saturation index of CH ie log(S_CH) */ 

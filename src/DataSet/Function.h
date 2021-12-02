@@ -9,9 +9,10 @@ struct Function_s     ; typedef struct Function_s     Function_t ;
 
 #include "DataFile.h"
 
-extern Function_t*  (Function_New)(const int) ;
-extern int          (Function_Scan)(Function_t*,DataFile_t*) ;
-extern double       (Function_ComputeValue)(Function_t*,double) ;
+extern Function_t*  (Function_New)          (const int) ;
+extern void         (Function_Delete)       (void*) ;
+extern int          (Function_Scan)         (Function_t*,DataFile_t*) ;
+extern double       (Function_ComputeValue) (Function_t*,double) ;
 
 
 #define Function_MaxLengthOfFileName       (200)

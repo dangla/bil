@@ -64,15 +64,30 @@ Context_t* (Context_Create)(int argc,char** argv)
 }
 
 
-void Context_Delete(void* self)
+
+void (Context_Delete)(void* self)
 {
-  Context_t** pctx = (Context_t**) self ;
-  Context_t*   ctx = *pctx ;
+  Context_t* ctx = (Context_t*) self ;
   
-  CommandLine_Delete(&(Context_GetCommandLine(ctx))) ;
-  Options_Delete(&(Context_GetOptions(ctx))) ;
-  free(ctx) ;
-  *pctx = NULL ;
+  {
+    CommandLine_t* cmd = Context_GetCommandLine(ctx) ;
+    
+    if(cmd) {
+      CommandLine_Delete(cmd) ;
+      free(cmd) ;
+      Context_GetCommandLine(ctx) = NULL ;
+    }
+  }
+  
+  {
+    Options_t* opt = Context_GetOptions(ctx) ;
+    
+    if(opt) {
+      Options_Delete(opt) ;
+      free(opt) ;
+      Context_GetOptions(ctx) = NULL ;
+    }
+  }
 }
 
 

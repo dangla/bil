@@ -25,11 +25,11 @@
 
 DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
 {
-  DataSet_t* jdd = DataSet_New() ;
+  DataSet_t* dataset = DataSet_New() ;
   char*   debug  = Options_GetPrintedInfos(opt) ;
   
   
-  DataSet_GetOptions(jdd) = opt ;
+  DataSet_GetOptions(dataset) = opt ;
   
   
   /* DataFile */
@@ -37,9 +37,9 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     DataFile_t* datafile = DataFile_Create(filename) ;
     
     DataFile_RemoveComments(datafile) ;
-    DataFile_GetParent(datafile) = jdd ;
+    DataFile_GetParent(datafile) = dataset ;
   
-    DataSet_GetDataFile(jdd) = datafile ;
+    DataSet_GetDataFile(dataset) = datafile ;
   
     if(DataFile_DoesNotExist(datafile)) {
       Help_WriteData(filename) ;
@@ -47,186 +47,187 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
       exit(EXIT_SUCCESS) ;
     }
   }
-  if(!strcmp(debug,"data")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"data")) DataSet_PrintData(dataset,debug) ;
 
   Message_Direct("Reading %s\n",filename) ;
 
 
   /* Units */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
+    DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
+    Units_t* units = Units_Create(datafile) ;
     
-    Units_Create(datafile) ;
+    DataSet_GetUnits(dataset) = units ;
   }
   
   
   /* Geometry */
   {
-    DataFile_t* datafile = DataSet_GetDataFile(jdd) ;
+    DataFile_t* datafile = DataSet_GetDataFile(dataset) ;
     Geometry_t* geometry = Geometry_Create(datafile) ;
   
-    DataSet_GetGeometry(jdd) = geometry ;
+    DataSet_GetGeometry(dataset) = geometry ;
   }
-  if(!strcmp(debug,"geom")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"geom")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Fields */
   {
-    DataFile_t*  datafile = DataSet_GetDataFile(jdd) ;
+    DataFile_t*  datafile = DataSet_GetDataFile(dataset) ;
     Fields_t*    fields = Fields_Create(datafile) ;
   
-    DataSet_GetFields(jdd) = fields ;
+    DataSet_GetFields(dataset) = fields ;
   }
-  if(!strcmp(debug,"field")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"field")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Functions */
   {
-    DataFile_t*  datafile = DataSet_GetDataFile(jdd) ;
+    DataFile_t*  datafile = DataSet_GetDataFile(dataset) ;
     Functions_t* functions = Functions_Create(datafile) ;
   
-    DataSet_GetFunctions(jdd) = functions ;
+    DataSet_GetFunctions(dataset) = functions ;
   }
-  if(!strcmp(debug,"func")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"func")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Materials */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    Geometry_t*    geometry = DataSet_GetGeometry(jdd) ;
-    Fields_t*      fields = DataSet_GetFields(jdd) ;
-    Functions_t*   functions = DataSet_GetFunctions(jdd) ;
+    DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
+    Geometry_t*    geometry = DataSet_GetGeometry(dataset) ;
+    Fields_t*      fields = DataSet_GetFields(dataset) ;
+    Functions_t*   functions = DataSet_GetFunctions(dataset) ;
     Materials_t*   materials = Materials_Create(datafile,geometry,fields,functions) ;
   
-    DataSet_GetMaterials(jdd) = materials ;
+    DataSet_GetMaterials(dataset) = materials ;
   }
-  if(!strcmp(debug,"mate")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"mate")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Mesh */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    Geometry_t*    geometry = DataSet_GetGeometry(jdd) ;
-    Materials_t*   materials = DataSet_GetMaterials(jdd) ;
+    DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
+    Geometry_t*    geometry = DataSet_GetGeometry(dataset) ;
+    Materials_t*   materials = DataSet_GetMaterials(dataset) ;
     Mesh_t*        mesh = Mesh_Create(datafile,materials,geometry) ;
   
-    DataSet_GetMesh(jdd) = mesh ;
+    DataSet_GetMesh(dataset) = mesh ;
   }
-  if(!strcmp(debug,"mesh")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"mesh")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Initial conditions */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    Fields_t*      fields = DataSet_GetFields(jdd) ;
-    Functions_t*   functions = DataSet_GetFunctions(jdd) ;
+    DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
+    Fields_t*      fields = DataSet_GetFields(dataset) ;
+    Functions_t*   functions = DataSet_GetFunctions(dataset) ;
     IConds_t*      iconds = IConds_Create(datafile,fields,functions) ;
   
-    DataSet_GetIConds(jdd) = iconds ;
+    DataSet_GetIConds(dataset) = iconds ;
   }
-  if(!strcmp(debug,"init")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"init")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Loads */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    Fields_t*      fields = DataSet_GetFields(jdd) ;
-    Functions_t*   functions = DataSet_GetFunctions(jdd) ;
+    DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
+    Fields_t*      fields = DataSet_GetFields(dataset) ;
+    Functions_t*   functions = DataSet_GetFunctions(dataset) ;
     Loads_t*       loads = Loads_Create(datafile,fields,functions) ;
   
-    DataSet_GetLoads(jdd) = loads ;
+    DataSet_GetLoads(dataset) = loads ;
   }
-  if(!strcmp(debug,"load")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"load")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Boundary conditions */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    Fields_t*      fields = DataSet_GetFields(jdd) ;
-    Functions_t*   functions = DataSet_GetFunctions(jdd) ;
+    DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
+    Fields_t*      fields = DataSet_GetFields(dataset) ;
+    Functions_t*   functions = DataSet_GetFunctions(dataset) ;
     BConds_t*      bconds = BConds_Create(datafile,fields,functions) ;
   
-    DataSet_GetBConds(jdd) = bconds ;
+    DataSet_GetBConds(dataset) = bconds ;
   }
-  if(!strcmp(debug,"bcond")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"bcond")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Points */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    Mesh_t*        mesh = DataSet_GetMesh(jdd) ;
+    DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
+    Mesh_t*        mesh = DataSet_GetMesh(dataset) ;
     Points_t*      points = Points_Create(datafile,mesh) ;
   
-    DataSet_GetPoints(jdd) = points ;
+    DataSet_GetPoints(dataset) = points ;
   }
-  if(!strcmp(debug,"points")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"points")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Dates */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
+    DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
     Dates_t*       dates = Dates_Create(datafile) ;
     
-    DataSet_GetDates(jdd) = dates ;
+    DataSet_GetDates(dataset) = dates ;
   }
-  if(!strcmp(debug,"dates")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"dates")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Objective variations */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    Materials_t*   materials = DataSet_GetMaterials(jdd) ;
-    Mesh_t*        mesh = DataSet_GetMesh(jdd) ;
+    DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
+    Materials_t*   materials = DataSet_GetMaterials(dataset) ;
+    Mesh_t*        mesh = DataSet_GetMesh(dataset) ;
     ObVals_t*      obvals = ObVals_Create(datafile,mesh,materials) ;
   
-    DataSet_GetObVals(jdd) = obvals ;
+    DataSet_GetObVals(dataset) = obvals ;
   }
-  if(!strcmp(debug,"obval")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"obval")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Time steps */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    ObVals_t*      obvals = DataSet_GetObVals(jdd) ;
+    DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
+    ObVals_t*      obvals = DataSet_GetObVals(dataset) ;
     TimeStep_t*    timestep = TimeStep_Create(datafile,obvals) ;
     
-    DataSet_GetTimeStep(jdd) = timestep ;
+    DataSet_GetTimeStep(dataset) = timestep ;
   }
-  if(!strcmp(debug,"time")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"time")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Iterative process */
   {
-    DataFile_t*    datafile = DataSet_GetDataFile(jdd) ;
-    ObVals_t*      obvals = DataSet_GetObVals(jdd) ;
+    DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
+    ObVals_t*      obvals = DataSet_GetObVals(dataset) ;
     IterProcess_t* iterprocess = IterProcess_Create(datafile,obvals) ;
     
-    DataSet_GetIterProcess(jdd) = iterprocess ;
+    DataSet_GetIterProcess(dataset) = iterprocess ;
   }
-  if(!strcmp(debug,"iter")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"iter")) DataSet_PrintData(dataset,debug) ;
   
   
   /* Module */
   {
-    Module_t*  module  = Module_Create(1) ;
+    Module_t*  module  = Module_New() ;
     char* codename = Options_GetModule(opt) ;
 
     Module_Initialize(module,codename) ;
     Module_GetNbOfSequences(module) = Options_GetNbOfSequences(opt) ;
     
-    DataSet_GetModule(jdd) = module ;
+    DataSet_GetModule(dataset) = module ;
     
-    //DataSet_GetModule(jdd) = Modules_FindModule(modules,Options_GetModule(opt)) ;
+    //DataSet_GetModule(dataset) = Modules_FindModule(modules,Options_GetModule(opt)) ;
   }
-  if(!strcmp(debug,"module")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"module")) DataSet_PrintData(dataset,debug) ;
   
   
   
   /* Set up the system of equations before
    * passing through Elements_DefineProperties */
   {
-    BConds_t*      bconds = DataSet_GetBConds(jdd) ;
-    Mesh_t*        mesh = DataSet_GetMesh(jdd) ;
+    BConds_t*      bconds = DataSet_GetBConds(dataset) ;
+    Mesh_t*        mesh = DataSet_GetMesh(dataset) ;
     
     /* Set indexes to arbitrary >= 0 value */
     //Mesh_InitializeMatrixRowColumnIndexes(mesh) ;
@@ -242,30 +243,224 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   
   
   /* Other printings in debug mode */
-  if(!strcmp(debug,"continuity")) DataSet_PrintData(jdd,debug) ;
-  //if(!strcmp(debug,"numbering")) DataSet_PrintData(jdd,debug) ;
-  //if(!strcmp(debug,"inter")) DataSet_PrintData(jdd,debug) ;
-  if(!strcmp(debug,"all")) DataSet_PrintData(jdd,debug) ;
+  if(!strcmp(debug,"continuity")) DataSet_PrintData(dataset,debug) ;
+  //if(!strcmp(debug,"numbering")) DataSet_PrintData(dataset,debug) ;
+  //if(!strcmp(debug,"inter")) DataSet_PrintData(dataset,debug) ;
+  if(!strcmp(debug,"all")) DataSet_PrintData(dataset,debug) ;
 
 
   Message_Direct("End of reading %s\n",filename) ;
   Message_Direct("\n") ;
   
-  return(jdd) ;
+  return(dataset) ;
+}
+
+
+
+void (DataSet_Delete)(void* self)
+{
+  DataSet_t* dataset = (DataSet_t*) self ;
+  
+  
+  {
+    Units_t* units = DataSet_GetUnits(dataset) ;
+    
+    if(units) {
+      Units_Delete(units) ;
+      free(units) ;
+    }
+    
+    DataSet_GetUnits(dataset) = NULL ;
+  }
+  
+  {
+    DataFile_t* datafile = DataSet_GetDataFile(dataset) ;
+    
+    if(datafile) {
+      DataFile_Delete(datafile) ;
+      free(datafile) ;
+    }
+    
+    DataSet_GetDataFile(dataset) = NULL ;
+  }
+  
+  {
+    Geometry_t* geometry = DataSet_GetGeometry(dataset) ;
+    
+    if(geometry) {
+      Geometry_Delete(geometry) ;
+      free(geometry) ;
+    }
+    
+    DataSet_GetGeometry(dataset) = NULL ;
+  }
+  
+  {
+    Mesh_t* mesh = DataSet_GetMesh(dataset) ;
+    
+    if(mesh) {
+      Mesh_Delete(mesh) ;
+      free(mesh) ;
+    }
+    
+    DataSet_GetMesh(dataset) = NULL ;
+  }
+  
+  {
+    Materials_t* materials = DataSet_GetMaterials(dataset) ;
+    
+    if(materials) {
+      Materials_Delete(materials) ;
+      free(materials) ;
+    }
+    
+    DataSet_GetMaterials(dataset) = NULL ;
+  }
+  
+  {
+    Dates_t* dates = DataSet_GetDates(dataset) ;
+    
+    if(dates) {
+      Dates_Delete(dates) ;
+      free(dates) ;
+    }
+    
+    DataSet_GetDates(dataset) = NULL ;
+  }
+  
+  {
+    Points_t* points = DataSet_GetPoints(dataset) ;
+    
+    if(points) {
+      Points_Delete(points) ;
+      free(points) ;
+    }
+    
+    DataSet_GetPoints(dataset) = NULL ;
+  }
+  
+  {
+    IConds_t* iconds = DataSet_GetIConds(dataset) ;
+    
+    if(iconds) {
+      IConds_Delete(iconds) ;
+      free(iconds) ;
+    }
+    
+    DataSet_GetIConds(dataset) = NULL ;
+  }
+  
+  {
+    BConds_t* bconds = DataSet_GetBConds(dataset) ;
+    
+    if(bconds) {
+      BConds_Delete(bconds) ;
+      free(bconds) ;
+    }
+    
+    DataSet_GetBConds(dataset) = NULL ;
+  }
+  
+  {
+    Loads_t* loads = DataSet_GetLoads(dataset) ;
+    
+    if(loads) {
+      Loads_Delete(loads) ;
+      free(loads) ;
+    }
+    
+    DataSet_GetLoads(dataset) = NULL ;
+  }
+  
+  {
+    Functions_t* functions = DataSet_GetFunctions(dataset) ;
+    
+    if(functions) {
+      Functions_Delete(functions) ;
+      free(functions) ;
+    }
+    
+    DataSet_GetFunctions(dataset) = NULL ;
+  }
+  
+  {
+    Fields_t* fields = DataSet_GetFields(dataset) ;
+    
+    if(fields) {
+      Fields_Delete(fields) ;
+      free(fields) ;
+    }
+    
+    DataSet_GetFields(dataset) = NULL ;
+  }
+  
+  //IntFcts_t*     intfcts ; */
+  
+  {
+    ObVals_t* obvals = DataSet_GetObVals(dataset) ;
+    
+    if(obvals) {
+      ObVals_Delete(obvals) ;
+      free(obvals) ;
+    }
+    
+    DataSet_GetObVals(dataset) = NULL ;
+  }
+  
+  //Models_t*      models ;
+  
+  {
+    TimeStep_t* timestep = DataSet_GetTimeStep(dataset) ;
+    
+    if(timestep) {
+      TimeStep_Delete(timestep) ;
+      free(timestep) ;
+    }
+    
+    DataSet_GetTimeStep(dataset) = NULL ;
+  }
+  
+  {
+    IterProcess_t* iterprocess = DataSet_GetIterProcess(dataset) ;
+    
+    if(iterprocess) {
+      IterProcess_Delete(iterprocess) ;
+      free(iterprocess) ;
+    }
+    
+    DataSet_GetIterProcess(dataset) = NULL ;
+  }
+  
+  {
+    DataSet_GetOptions(dataset) = NULL ;
+  }
+  
+  //Modules_t*     modules ;
+  
+  {
+    Module_t* module = DataSet_GetModule(dataset) ;
+    
+    if(module) {
+      Module_Delete(module) ;
+      free(module) ;
+    }
+    
+    DataSet_GetModule(dataset) = NULL ;
+  }
 }
 
 
 
 DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
 {
-  DataSet_t* jdd = DataSet_New() ;
+  DataSet_t* dataset = DataSet_New() ;
   
-  DataSet_GetOptions(jdd) = opt ;
+  DataSet_GetOptions(dataset) = opt ;
   
   {
     DataFile_t* datafile = DataFile_Create(filename) ;
   
-    DataSet_GetDataFile(jdd) = datafile ;
+    DataSet_GetDataFile(dataset) = datafile ;
   
     if(DataFile_DoesNotExist(datafile)) {
       Help_WriteData(filename) ;
@@ -274,15 +469,15 @@ DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
     }
   }
   
-  Parser_ParseFile(jdd) ;
+  Parser_ParseFile(dataset) ;
   
   {
     char*   debug  = Options_GetPrintedInfos(opt) ;
     
-    DataSet_PrintData(jdd,debug) ;
+    DataSet_PrintData(dataset,debug) ;
   }
   
-  return(jdd) ;
+  return(dataset) ;
 }
 
 
@@ -290,7 +485,7 @@ DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
 /* Local functions */
 
 
-#define DATASET       (jdd)
+#define DATASET       (dataset)
 #define DATAFILE      DataSet_GetDataFile(DATASET)
 #define GEOMETRY      DataSet_GetGeometry(DATASET)
 #define MESH          DataSet_GetMesh(DATASET)
@@ -359,7 +554,7 @@ DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
         //Message_Direct(__VA_ARGS__)
 
 
-void DataSet_PrintData(DataSet_t* jdd,char* mot)
+void DataSet_PrintData(DataSet_t* dataset,char* mot)
 {
   static int i_debug=0 ;
   
@@ -371,17 +566,17 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
   
   /* File content
    * ------------ */
-  if(DataFile_GetFileContent(DataSet_GetDataFile(jdd)) && (!strncmp(mot,"data file content",4) || !strncmp(mot,"all",3))) {
+  if(DataFile_GetFileContent(DataSet_GetDataFile(dataset)) && (!strncmp(mot,"data file content",4) || !strncmp(mot,"all",3))) {
     PRINT("\n") ;
     PRINT("Data file content:\n") ;
     
-    PRINT("%s",DataFile_GetFileContent(DataSet_GetDataFile(jdd))) ;
+    PRINT("%s",DataFile_GetFileContent(DataSet_GetDataFile(dataset))) ;
     PRINT("\n") ;
   }
 
   /* Geometry
    * -------- */
-  if(DataSet_GetGeometry(jdd) && (!strncmp(mot,"geometry",4) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetGeometry(dataset) && (!strncmp(mot,"geometry",4) || !strncmp(mot,"all",3))) {
     PRINT("\n") ;
     PRINT("Geometry:\n") ;
     
@@ -406,7 +601,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Mesh
    * ---- */
-  if(DataSet_GetMesh(jdd) && (!strncmp(mot,"mesh",4) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetMesh(dataset) && (!strncmp(mot,"mesh",4) || !strncmp(mot,"all",3))) {
     int i ;
     int c1 = 14 ;
     int c2 = 30 ;
@@ -481,7 +676,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Materials
    * --------- */
-  if(DataSet_GetMaterials(jdd) && (!strncmp(mot,"material",3) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetMaterials(dataset) && (!strncmp(mot,"material",3) || !strncmp(mot,"all",3))) {
     int i ;
     int c2 = 40 ;
     
@@ -552,7 +747,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Continuity
    * ---------- */
-  if(DataSet_GetMesh(jdd) && (!strncmp(mot,"continuity",3))) {
+  if(DataSet_GetMesh(dataset) && (!strncmp(mot,"continuity",3))) {
     int i ;
     
     PRINT("\n") ;
@@ -631,7 +826,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Matrix numbering
    * ---------------- */
-  if(DataSet_GetMesh(jdd) && !strncmp(mot,"numbering",3)) {
+  if(DataSet_GetMesh(dataset) && !strncmp(mot,"numbering",3)) {
     int i ;
     
     PRINT("\n") ;
@@ -671,7 +866,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Functions
    * --------- */
-  if(DataSet_GetFunctions(jdd) && (!strncmp(mot,"function",4) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetFunctions(dataset) && (!strncmp(mot,"function",4) || !strncmp(mot,"all",3))) {
     int i ;
     
     PRINT("\n") ;
@@ -693,7 +888,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Fields
    * ------ */
-  if(DataSet_GetFields(jdd) && (!strncmp(mot,"field",4) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetFields(dataset) && (!strncmp(mot,"field",4) || !strncmp(mot,"all",3))) {
     int i ;
     
     PRINT("\n") ;
@@ -769,7 +964,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Initial conditions
    * ------------------ */
-  if(DataSet_GetIConds(jdd) && (!strncmp(mot,"initialization",3) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetIConds(dataset) && (!strncmp(mot,"initialization",3) || !strncmp(mot,"all",3))) {
     int i ;
     int c1 = 14 ;
     
@@ -847,7 +1042,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Boundary conditions
    * ------------------- */
-  if(DataSet_GetBConds(jdd) && (!strncmp(mot,"bcondition",4) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetBConds(dataset) && (!strncmp(mot,"bcondition",4) || !strncmp(mot,"all",3))) {
     int i ;
     
     PRINT("\n") ;
@@ -887,7 +1082,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Loads
    * ----- */
-  if(DataSet_GetLoads(jdd) && (!strncmp(mot,"load",4) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetLoads(dataset) && (!strncmp(mot,"load",4) || !strncmp(mot,"all",3))) {
     int i ;
     
     PRINT("\n") ;
@@ -929,7 +1124,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Points
    * ------ */
-  if(DataSet_GetPoints(jdd) && (!strncmp(mot,"points",4) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetPoints(dataset) && (!strncmp(mot,"points",4) || !strncmp(mot,"all",3))) {
     int n_points = N_POINTS ;
     Point_t* point = Points_GetPoint(POINTS) ;
     int i ;
@@ -961,7 +1156,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Dates
    * ----- */
-  if(DataSet_GetDates(jdd) && (!strncmp(mot,"dates",4) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetDates(dataset) && (!strncmp(mot,"dates",4) || !strncmp(mot,"all",3))) {
     int n_dates = N_DATES ;
     Date_t* date = Dates_GetDate(DATES) ;
     int i ;
@@ -982,7 +1177,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Time steps
    * ---------- */
-  if(DataSet_GetTimeStep(jdd) && (!strncmp(mot,"time",4) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetTimeStep(dataset) && (!strncmp(mot,"time",4) || !strncmp(mot,"all",3))) {
     PRINT("\n") ;
     PRINT("Time Step:\n") ;
     PRINT("\t Dtini = %e\n",TimeStep_GetInitialTimeStep(TIMESTEP)) ;
@@ -996,7 +1191,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Iterative process
    * ----------------- */
-  if(DataSet_GetIterProcess(jdd) && (!strncmp(mot,"iterations",4) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetIterProcess(dataset) && (!strncmp(mot,"iterations",4) || !strncmp(mot,"all",3))) {
     PRINT("\n") ;
     PRINT("Iterative Process:\n") ;
     PRINT("\t Nb of iterations = %d\n",IterProcess_GetNbOfIterations(ITERPROCESS)) ;
@@ -1006,7 +1201,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Objective variations
    * -------------------- */
-  if(DataSet_GetObVals(jdd) && (!strncmp(mot,"obvariations",4) || !strncmp(mot,"all",3))) {
+  if(DataSet_GetObVals(dataset) && (!strncmp(mot,"obvariations",4) || !strncmp(mot,"all",3))) {
     int i ;
     
     PRINT("\n") ;
@@ -1024,7 +1219,7 @@ void DataSet_PrintData(DataSet_t* jdd,char* mot)
 
   /* Interpolation functions
    * ----------------------- */
-  if(DataSet_GetMesh(jdd) && (!strncmp(mot,"interpolation",4))) {
+  if(DataSet_GetMesh(dataset) && (!strncmp(mot,"interpolation",4))) {
     int i ;
     
     PRINT("\n") ;

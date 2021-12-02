@@ -10,8 +10,9 @@ struct Load_s         ; typedef struct Load_s         Load_t ;
 
 #include "DataFile.h"
 
-extern Load_t* (Load_New)(void) ;
-extern void    (Load_Scan)(Load_t*,DataFile_t*) ;
+extern Load_t* (Load_New)    (void) ;
+extern void    (Load_Delete) (void*) ;
+extern void    (Load_Scan)   (Load_t*,DataFile_t*) ;
 
 
 

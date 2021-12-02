@@ -66,13 +66,16 @@ Math_t*  (Math_Create)(void)
 
 
 
-void Math_Delete(void* self)
+void (Math_Delete)(void* self)
 {
-  Math_t** pmath = (Math_t**) self ;
-  Math_t*   math = *pmath ;
+  Math_t* math = (Math_t*) self ;
   
-  Buffer_Delete(&Math_GetBuffer(math))  ;
-  free(math) ;
+  {
+    Buffer_Delete(Math_GetBuffer(math))  ;
+    free(Math_GetBuffer(math))  ;
+  }
+  
+  Math_GetDelete(math) = NULL ;
 }
 
 
@@ -306,7 +309,7 @@ double* Math_SolveByGaussElimination(double* a,double* b,int n)
  *  On output the rhs b is replaced by the solution x. */
 {
 #define  A(i,j)  (a[(i)*n+(j)])
-#define  SWAP(a,b) {double tmp=(a);(a)=(b);(b)=tmp;}
+#define  SWAP(a,b) Math_SwapDouble(a,b)
   int    i ;
   int    irow = 0 ;
 
@@ -420,7 +423,7 @@ double* Math_SolveByGaussJordanElimination(double* a,double* b,int n,int m)
 {
 #define  A(i,j)  (a[(i)*n+(j)])
 #define  B(i,j)  (b[(i)*m+(j)])
-#define  SWAP(a,b) {double tmp=(a);(a)=(b);(b)=tmp;}
+#define  SWAP(a,b) Math_SwapDouble(a,b)
 #define  MaxNbOfRows (10)
   int    indxc[MaxNbOfRows],indxr[MaxNbOfRows],ipiv[MaxNbOfRows] ;
   /* These integer arrays are used for bookkeeping on the pivoting. */
@@ -721,7 +724,7 @@ double (Math_EvaluateExpressions)(char* variablename,char* expressionstrings)
   int errorFlag = evaluateExpression(expressionstrings) ;
   
   if(errorFlag) {
-    Message_RuntimeError("Math_EvaluateExpression1: syntax error\n\
+    Message_RuntimeError("Math_EvaluateExpressions: syntax error\n\
                           %s at line %d, column %d\n",\
                         errorRecord.message,\
                         errorRecord.line,\

@@ -24,6 +24,7 @@ Units_t* (Units_New)(void)
       Unit_t* u = Unit_New() ;
       
       unit[i] = u[0] ;
+      free(u) ;
     }
     
     Units_GetUnit(units) = unit ;
@@ -32,6 +33,21 @@ Units_t* (Units_New)(void)
   return(units) ;
 }
 
+
+
+void (Units_Delete)(void* self)
+{
+  Units_t* units = (Units_t*) self ;
+
+  {
+    int n = Units_MaxNbOfUnits ;
+    Unit_t* unit = Units_GetUnit(units) ;
+    
+    Mry_Delete(unit,n,Unit_Delete) ;
+    free(unit) ;
+    Units_GetUnit(units) = NULL ;
+  }
+}
 
 
 

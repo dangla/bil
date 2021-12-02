@@ -7,7 +7,7 @@
 struct Periodicity_s         ; typedef struct Periodicity_s        Periodicity_t ;
 
 
-extern Periodicity_t* (Periodicity_New)(const int) ;
+extern Periodicity_t* (Periodicity_New)(void) ;
 extern void           (Periodicity_Delete)(void*) ;
 
 

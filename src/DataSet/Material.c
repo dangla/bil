@@ -69,22 +69,52 @@ Material_t* (Material_New)(void)
 
 
 
-void Material_Delete(void* self)
+void (Material_Delete)(void* self)
 {
-  Material_t** pmaterial = (Material_t**) self ;
-  Material_t*   material = *pmaterial ;
+  Material_t* material = (Material_t*) self ;
   
-  free(Material_GetCodeNameOfModel(material)) ;
-  GenericData_Delete(&Material_GetGenericData(material)) ;
-  Curves_Delete(&Material_GetCurves(material)) ;
-  free(Material_GetMethod(material)) ;
-  free(material) ;
-  *pmaterial = NULL ;
+  {
+    char* name = Material_GetCodeNameOfModel(material) ;
+    
+    if(name) {
+      free(name) ;
+      Material_GetCodeNameOfModel(material) = NULL ;
+    }
+  }
+  
+  {
+    GenericData_t* gdat = Material_GetGenericData(material) ;
+    
+    if(gdat) {
+      GenericData_Delete(gdat) ;
+      free(gdat) ;
+      Material_GetGenericData(material) = NULL ;
+    }
+  }
+  
+  {
+    Curves_t* curves = Material_GetCurves(material) ;
+    
+    if(curves) {
+      Curves_Delete(curves) ;
+      free(curves) ;
+      Material_GetCurves(material) = NULL ;
+    }
+  }
+  
+  {
+    char* meth = Material_GetMethod(material) ;
+
+    if(meth) {
+      free(meth) ;
+      Material_GetMethod(material) = NULL ;
+    }
+  }
 }
 
 
 
-void Material_Scan(Material_t* mat,DataFile_t* datafile,Geometry_t* geom)
+void (Material_Scan)(Material_t* mat,DataFile_t* datafile,Geometry_t* geom)
 {
   
     {

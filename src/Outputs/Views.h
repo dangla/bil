@@ -7,8 +7,8 @@
 struct Views_s      ; typedef struct Views_s      Views_t ;
 
 
-extern Views_t*   Views_Create(int) ;
-extern void       Views_Delete(void*) ;
+extern Views_t*   (Views_Create)(int) ;
+extern void       (Views_Delete)(void*) ;
 
 
 #define Views_GetNbOfViews(views)      ((views)->nbofviews)

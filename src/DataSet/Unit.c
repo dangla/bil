@@ -28,14 +28,18 @@ Unit_t* (Unit_New)(void)
 
 
 
-void Unit_Delete(void* self)
+void (Unit_Delete)(void* self)
 {
-  Unit_t** punit = (Unit_t**) self ;
-  Unit_t*   unit = *punit ;
+  Unit_t* unit = (Unit_t*) self ;
   
-  free(Unit_GetName(unit)) ;
-  free(unit) ;
-  *punit = NULL ;
+  {
+    char* name = Unit_GetName(unit) ;
+    
+    if(name) {
+      free(name) ;
+      Unit_GetName(unit) = NULL ;
+    }
+  }
 }
 
 

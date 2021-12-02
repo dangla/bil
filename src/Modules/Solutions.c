@@ -17,6 +17,7 @@ Solutions_t*   (Solutions_Create)(Mesh_t* mesh,const int n_sol)
   Solutions_t* sols = (Solutions_t*) Mry_New(Solutions_t) ;
   
   Solutions_GetNbOfSolutions(sols) = n_sol ;
+  Solutions_GetMergeIndex(sols) = 0 ;
   
   {
     Solution_t* sol = (Solution_t*) Mry_New(Solution_t[n_sol]) ;
@@ -26,9 +27,11 @@ Solutions_t*   (Solutions_Create)(Mesh_t* mesh,const int n_sol)
       Solution_t* soli = Solution_Create(mesh) ;
       
       sol[i] = soli[0] ;
+      free(soli) ;
     }
       
     Solutions_GetSolution(sols) = sol ;
+    Solutions_GetSolutionHead(sols) = sol ;
   }
   
   Solutions_Initialize(sols) ;
@@ -60,6 +63,39 @@ Solutions_t*   (Solutions_Create)(Mesh_t* mesh,const int n_sol)
   Solutions_AllocateMemory(sols) ;
   
   return(sols) ;
+}
+
+
+
+void (Solutions_Delete)(void* self)
+{
+  Solutions_t* sols = (Solutions_t*) self ;
+  
+  {
+    int n_sol = Solutions_GetNbOfSolutions(sols) ;
+    Solution_t* sol = Solutions_GetSolutionHead(sols) ;
+    
+    if(sol) {
+      int i ;
+    
+      for(i = 0 ; i < n_sol ; i++) {
+        Solution_t* soli = sol + i ;
+        
+        /* Since the constant terms are shared we delete them only once.
+         * So for i > 0 we set the pointers to null */
+        if(i > 0) {
+          Solution_DiscardConstantGenericData(soli) ;
+          if(Solutions_ExplicitTermsAreMerged(sols)) {
+            Solution_DiscardExplicitGenericData(soli) ;
+          }
+        }
+      
+        Solution_Delete(soli) ;
+      }
+      
+      free(sol) ;
+    }
+  }
 }
 
 
@@ -115,67 +151,65 @@ void   (Solutions_AllocateMemory)(Solutions_t* sols)
   *   Elements_DefineProperties.
   */
 {
+  int n_sol = Solutions_GetNbOfSolutions(sols) ;
+  Solution_t* sol = Solutions_GetSolution(sols) ;
+  
   /* Default allocation memory of internal data
    * i.e. for (im/ex)plicit and constant terms */
   {
-    int n_sol = Solutions_GetNbOfSolutions(sols) ;
-    Solution_t* sol = Solutions_GetSolution(sols) ;
     int i ;
 
     /* Allocation for (im/ex)plicit terms */
-    {
-      for(i = 0 ; i < n_sol ; i++) {
-        ElementsSol_t* elementssol = Solution_GetElementsSol(sol + i) ;
-      
-        ElementsSol_AllocateMemoryForImplicitTerms(elementssol) ;
-        ElementsSol_AllocateMemoryForExplicitTerms(elementssol) ;
-      }
+    for(i = 0 ; i < n_sol ; i++) {
+      Solution_AllocateMemoryForImplicitTerms(sol + i) ;
+      Solution_AllocateMemoryForExplicitTerms(sol + i) ;
     }
+  }
 
     /* Allocation for constant terms */
-    {
-      ElementsSol_t* elementssol0 = Solution_GetElementsSol(sol) ;
+  {
+    Solution_AllocateMemoryForConstantTerms(sol) ;
+    Solutions_MergeConstantTerms(sols) ;
+  }
+}
 
-      ElementsSol_AllocateMemoryForConstantTerms(elementssol0) ;
 
-      /* All the other elementssol share the same constant terms */
-      for(i = 1 ; i < n_sol ; i++) {
-        ElementsSol_t* elementssol = Solution_GetElementsSol(sol + i) ;
 
-        ElementsSol_ShareConstantTermsFrom(elementssol0,elementssol) ;
-      }
-    }
+void  (Solutions_MergeConstantTerms)(Solutions_t* sols)
+/** Share the constant terms between all the solutions.
+ */
+{
+  int n_sol = Solutions_GetNbOfSolutions(sols) ;
+  Solution_t* sol = Solutions_GetSolution(sols) ;
+  int   i ;
+  
+  for(i = 1 ; i < n_sol ; i++) {
+    Solution_DeleteConstantTerms(sol + i) ;
+    Solution_ShareConstantTerms(sol + i,sol) ;
   }
 }
 
 
 
 void  (Solutions_MergeExplicitTerms)(Solutions_t* sols)
+/** Share the explicit terms between all the solutions.
+ */
 {
   int n_sol = Solutions_GetNbOfSolutions(sols) ;
   Solution_t* sol = Solutions_GetSolution(sols) ;
-  int   NbOfElements = Solution_GetNbOfElements(sol) ;
-  ElementSol_t* elemtsol_0 = Solution_GetElementSol(sol) ;
   int   i ;
   
+  Solutions_SetIndexForMergedExplicitTerms(sols) ;
+  
   for(i = 1 ; i < n_sol ; i++) {
-    ElementSol_t* elemtsol_i = Solution_GetElementSol(sol + i) ;
-    int j ;
-    
-    free(ElementSol_GetExplicitTerm(elemtsol_i)) ;
-  
-    for(j = 0 ; j < NbOfElements ; j++) {
-      void* ve0 = ElementSol_GetExplicitTerm(elemtsol_0 + j) ;
-      
-      ElementSol_GetExplicitTerm(elemtsol_i + j) = ve0 ;
-    }
+    Solution_DeleteExplicitTerms(sol + i) ;
+    Solution_ShareExplicitTerms(sol + i,sol) ;
   }
-  
 }
 
 
 
-void Solutions_StepForward(Solutions_t* sols)
+void (Solutions_StepForward)(Solutions_t* sols)
 /** Step forward in the loop */
 {
   Solution_t* sol = Solutions_GetSolution(sols) ;
@@ -186,7 +220,7 @@ void Solutions_StepForward(Solutions_t* sols)
 
 
 
-void Solutions_StepBackward(Solutions_t* sols)
+void (Solutions_StepBackward)(Solutions_t* sols)
 /** Step backward in the loop */
 {
   Solution_t* sol = Solutions_GetSolution(sols) ;

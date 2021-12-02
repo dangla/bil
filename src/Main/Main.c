@@ -8,5 +8,7 @@ int main(int argc,char** argv)
   
   Bil_Main(bil) ;
   
+  Bil_Delete(bil) ;
+  
   exit(EXIT_SUCCESS) ;
 }

@@ -8,8 +8,12 @@ struct ElementSol_s   ; typedef struct ElementSol_s   ElementSol_t ;
 
 
 
- 
+extern ElementSol_t* (ElementSol_New)(void) ;
+extern void          (ElementSol_Delete)(void*) ;
 extern ElementSol_t* (ElementSol_GetDeepElementSol)(ElementSol_t*,unsigned int) ;
+extern void          (ElementSol_AllocateMemoryForImplicitTerms)(ElementSol_t*) ;
+extern void          (ElementSol_AllocateMemoryForExplicitTerms)(ElementSol_t*) ;
+extern void          (ElementSol_AllocateMemoryForConstantTerms)(ElementSol_t*) ;
 
 
 #define ElementSol_GetPreviousElementSol(ES)    ((ES)->prev)
@@ -47,13 +51,19 @@ extern ElementSol_t* (ElementSol_GetDeepElementSol)(ElementSol_t*,unsigned int) 
 
 /* Add (im/ex)plicit and constant generic data */
 #define ElementSol_AddImplicitGenericData(ES,GD) \
-        GenericData_Append(ElementSol_GetImplicitGenericData(ES),GD)
+        do { \
+          ElementSol_GetImplicitGenericData(ES) = GenericData_Append(ElementSol_GetImplicitGenericData(ES),GD) ; \
+        } while(0)
         
 #define ElementSol_AddExplicitGenericData(ES,GD) \
-        GenericData_Append(ElementSol_GetExplicitGenericData(ES),GD)
+        do { \
+          ElementSol_GetExplicitGenericData(ES) = GenericData_Append(ElementSol_GetExplicitGenericData(ES),GD) ; \
+        } while(0)
         
 #define ElementSol_AddConstantGenericData(ES,GD) \
-        GenericData_Append(ElementSol_GetConstantGenericData(ES),GD)
+        do { \
+          ElementSol_GetConstantGenericData(ES) = GenericData_Append(ElementSol_GetConstantGenericData(ES),GD) ; \
+        } while(0)
 
 
 
@@ -80,7 +90,27 @@ extern ElementSol_t* (ElementSol_GetDeepElementSol)(ElementSol_t*,unsigned int) 
         GenericData_FindData(ElementSol_GetConstantGenericData(ES),__VA_ARGS__)
 
 
+
+
 #include "GenericData.h"
+
+
+#define ElementSol_DeleteExplicitGenericData(ES) \
+        do { \
+          GenericData_t* gdat = ElementSol_GetExplicitGenericData(ES) ; \
+          GenericData_Delete(gdat) ; \
+          free(gdat) ; \
+          ElementSol_GetExplicitGenericData(ES) = NULL ; \
+        } while(0)
+        
+        
+#define ElementSol_DeleteConstantGenericData(ES) \
+        do { \
+          GenericData_t* gdat = ElementSol_GetConstantGenericData(ES) ; \
+          GenericData_Delete(gdat) ; \
+          free(gdat) ; \
+          ElementSol_GetConstantGenericData(ES) = NULL ; \
+        } while(0)
 
 
 struct ElementSol_s {              /* Element Solutions */

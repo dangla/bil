@@ -14,8 +14,9 @@ struct IConds_s       ; typedef struct IConds_s       IConds_t ;
 
 
 //extern IConds_t* IConds_Create(DataFile_t*,Mesh_t*,Fields_t*) ;
-extern IConds_t* IConds_Create(DataFile_t*,Fields_t*,Functions_t*) ;
-extern void      IConds_AssignInitialConditions(IConds_t*,Mesh_t*,double) ;
+extern IConds_t* (IConds_Create)(DataFile_t*,Fields_t*,Functions_t*) ;
+extern void      (IConds_Delete)(void*) ;
+extern void      (IConds_AssignInitialConditions)(IConds_t*,Mesh_t*,double) ;
 
 
 #define IConds_MaxLengthOfKeyWord        (30)

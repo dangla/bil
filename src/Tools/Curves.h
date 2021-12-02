@@ -20,35 +20,69 @@ extern int       (Curves_Append)(Curves_t*,Curve_t*) ;
 extern int       (Curves_FindCurveIndex)(Curves_t*,const char*) ;
 extern Curve_t*  (Curves_FindCurve)(Curves_t*,const char*) ;
 //#define Curves_WriteCurves Curves_WriteCurves2
+extern int       (Curves_CreateDerivative)(Curves_t*,Curve_t*) ;
+extern int       (Curves_CreateIntegral)(Curves_t*,Curve_t*) ;
+extern int       (Curves_CreateInverse)(Curves_t*,Curve_t*,const char) ;
 
 
 #define Curves_MaxLengthOfTextLine      (500)
 #define Curves_SizeOfBuffer             (Curves_MaxLengthOfTextLine*sizeof(char))
 
 
-#define Curves_GetNbOfAllocatedCurves(curves)    ((curves)->n_allocatedcurves)
-#define Curves_GetNbOfCurves(curves)             ((curves)->n_cb)
-#define Curves_GetCurve(curves)                  ((curves)->cb)
-#define Curves_GetBuffer(curves)                 ((curves)->buffer)
+#define Curves_GetNbOfAllocatedCurves(CVS)    ((CVS)->n_allocatedcurves)
+#define Curves_GetNbOfCurves(CVS)             ((CVS)->n_cb)
+#define Curves_GetCurve(CVS)                  ((CVS)->cb)
+#define Curves_GetBuffer(CVS)                 ((CVS)->buffer)
 
 
-#define Curves_AllocateInBuffer(curves,sz) \
-        (Buffer_Allocate(Curves_GetBuffer(curves),(sz)))
+#define Curves_AllocateInBuffer(CVS,SZ) \
+        (Buffer_Allocate(Curves_GetBuffer(CVS),(SZ)))
         
-#define Curves_FreeBuffer(curves) \
-        (Buffer_Free(Curves_GetBuffer(curves)))
-        
-#define Curves_CreateDerivative(curves,cv) \
-        (Curves_Append(curves,Curve_CreateDerivative(cv)))
-        
-#define Curves_CreateIntegral(curves,cv) \
-        (Curves_Append(curves,Curve_CreateIntegral(cv)))
-        
-#define Curves_CreateInverse(curves,cv,sc) \
-        (Curves_Append(curves,Curve_CreateInverse(cv,sc)))
+#define Curves_FreeBuffer(CVS) \
+        (Buffer_Free(Curves_GetBuffer(CVS)))
 
-#define Curves_CannotAppendCurves(curves,i) \
-        (Curves_GetNbOfCurves(curves) + i > Curves_GetNbOfAllocatedCurves(curves))
+
+
+/* Below also works */
+#if 0
+#define Curves_CreateDerivative(CVS,CV) \
+        ({ \
+          int Curves_i ; \
+          do { \
+            Curve_t* dcv = Curve_CreateDerivative(CV) ; \
+            Curves_i = Curves_Append(CVS,dcv) ; \
+            free(dcv) ; \
+          } while(0) ; \
+          Curves_i ; \
+        })
+        
+#define Curves_CreateIntegral(CVS,CV) \
+        ({ \
+          int Curves_i ; \
+          do { \
+            Curve_t* icv = Curve_CreateIntegral(CV) ; \
+            Curves_i = Curves_Append(CVS,icv) ; \
+            free(icv) ; \
+          } while(0) ; \
+          Curves_i ; \
+        })
+        
+#define Curves_CreateInverse(CVS,CV,SCALE) \
+        ({ \
+          int Curves_i ; \
+          do { \
+            Curve_t* icv = Curve_CreateInverse(CV,SCALE) ; \
+            Curves_i = Curves_Append(CVS,icv) ; \
+            free(icv) ; \
+          } while(0) ; \
+          Curves_i ; \
+        })
+#endif
+
+
+
+#define Curves_CannotAppendCurves(CVS,i) \
+        (Curves_GetNbOfCurves(CVS) + i > Curves_GetNbOfAllocatedCurves(CVS))
 
 
 

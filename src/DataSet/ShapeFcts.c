@@ -32,26 +32,26 @@ ShapeFcts_t*  ShapeFcts_Create(void)
 
 
 
-void  ShapeFcts_Delete(void* self)
+void  (ShapeFcts_Delete)(void* self)
 {
-  ShapeFcts_t** pshapefcts = (ShapeFcts_t**) self ;
-  ShapeFcts_t*   shapefcts = *pshapefcts ;
+  ShapeFcts_t* shapefcts = (ShapeFcts_t*) self ;
   
   {
     int n = ShapeFcts_GetNbOfShapeFcts(shapefcts) ;
     ShapeFct_t* shapefct = ShapeFcts_GetShapeFct(shapefcts) ;
-    int i ;
     
-    for(i = 0 ; i < n ; i++) {
-      ShapeFct_t* shapefct_i = shapefct + i ;
+    if(shapefct) {
+      int i ;
       
-      ShapeFct_Delete(&shapefct_i) ;
-    }
+      for(i = 0 ; i < n ; i++) {
+        ShapeFct_t* shapefct_i = shapefct + i ;
+      
+        ShapeFct_Delete(shapefct_i) ;
+      }
     
-    free(shapefct) ;
+      free(shapefct) ;
+    }
   }
-  
-  free(shapefcts) ;
 }
 
 
@@ -105,6 +105,7 @@ int ShapeFcts_AddShapeFct(ShapeFcts_t* shapefcts,int nn,int dim)
     ShapeFct_t* shapefcti = ShapeFct_Create(nn,dim) ;
     
     shapefct[i] = shapefcti[0] ;
+    free(shapefcti) ;
   }
   
   return(i) ;

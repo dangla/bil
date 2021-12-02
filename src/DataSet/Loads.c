@@ -16,7 +16,7 @@
 
 
 
-Loads_t* Loads_New(const int n_loads)
+Loads_t* (Loads_New)(const int n_loads)
 {
   Loads_t* loads = (Loads_t*) Mry_New(Loads_t) ;
   
@@ -32,6 +32,7 @@ Loads_t* Loads_New(const int n_loads)
       Load_t* ld  = Load_New() ;
       
       load[i] = ld[0] ;
+      free(ld) ;
     }
 
     Loads_GetLoad(loads) = load ;
@@ -44,7 +45,7 @@ Loads_t* Loads_New(const int n_loads)
 
 
 
-Loads_t* Loads_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* functions)
+Loads_t* (Loads_Create)(DataFile_t* datafile,Fields_t* fields,Functions_t* functions)
 {
   char* filecontent = DataFile_GetFileContent(datafile) ;
   char* c  = String_FindToken(filecontent,"CHAR,LOAD,Loads",",") ;
@@ -85,4 +86,19 @@ Loads_t* Loads_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* functio
   }
   
   return(loads) ;
+}
+
+
+
+void (Loads_Delete)(void* self)
+{
+  Loads_t* loads = (Loads_t*) self ;
+  
+  {
+    int n_loads = Loads_GetNbOfLoads(loads) ;
+    Load_t* load = Loads_GetLoad(loads) ;
+    
+    Mry_Delete(load,n_loads,Load_Delete) ;
+    free(load) ;
+  }
 }

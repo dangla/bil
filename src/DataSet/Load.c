@@ -37,6 +37,17 @@ Load_t* Load_New(void)
 }
 
 
+
+void (Load_Delete)(void* self)
+{
+  Load_t* load = (Load_t*) self ;
+  
+  free(Load_GetType(load)) ;
+  free(Load_GetNameOfEquation(load)) ;
+}
+
+
+
 void Load_Scan(Load_t* load,DataFile_t* datafile)
 {
   char* line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;

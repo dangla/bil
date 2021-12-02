@@ -10,8 +10,9 @@ struct ObVal_s        ; typedef struct ObVal_s        ObVal_t ;
 
 #include "DataFile.h"
 
-extern ObVal_t*  (ObVal_New)(void) ;
-extern void      (ObVal_Scan)(ObVal_t*,DataFile_t*) ;
+extern ObVal_t*  (ObVal_New)    (void) ;
+extern void      (ObVal_Delete) (void*) ;
+extern void      (ObVal_Scan)   (ObVal_t*,DataFile_t*) ;
 
 
 

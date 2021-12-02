@@ -31,6 +31,79 @@ Node_t*  Node_Create(const int dim)
 
 
 
+void (Node_Delete)(void* self)
+{
+  Node_t* node = (Node_t*) self ;
+
+  {
+    double* x = Node_GetCoordinate(node) ;
+      
+    if(x) {
+      free(x) ;
+    }
+  }
+  
+  {
+    Element_t** pel = Node_GetPointerToElement(node) ;
+    
+    if(pel) {
+      free(pel) ;
+    }
+  }
+    
+  {
+    char** uname = Node_GetNameOfUnknown(node) ;
+      
+    if(uname) {
+      free(uname) ;
+    }
+  }
+    
+  {
+    int* seq = Node_GetSequentialIndexOfUnknown(node) ;
+      
+    if(seq) {
+      free(seq) ;
+    }
+  }
+    
+  {
+    int* colind = Node_GetMatrixColumnIndex(node) ;
+      
+    if(colind) {
+      free(colind) ;
+    }
+  }
+    
+  {
+    int* rowind = Node_GetMatrixRowIndex(node) ;
+      
+    if(rowind) {
+      free(rowind) ;
+    }
+  }
+    
+  {
+    unsigned short int* index = Node_GetObValIndex(node) ;
+      
+    if(index) {
+      free(index) ;
+    }
+  }
+    
+  {
+    Buffer_t* buf = Node_GetBuffer(node) ;
+      
+    if(buf) {
+      Buffer_Delete(buf) ;
+      free(buf) ;
+      Node_GetBuffer(node) = NULL ;
+    }
+  }
+}
+
+
+
 
 
 int    (Node_FindUnknownPositionIndex)(const Node_t* node,const char* s)

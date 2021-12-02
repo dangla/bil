@@ -36,7 +36,7 @@ DataFile_t*  (DataFile_Create)(char* filename)
     DataFile_GetMaxLengthOfTextLine(datafile) = n ;
     
     {
-      char* line = (char*) Mry_New(char[n]) ;
+      char* line = (char*) Mry_New(char[n+1]) ;
     
       DataFile_GetTextLine(datafile) = line ;
     }
@@ -58,12 +58,26 @@ DataFile_t*  (DataFile_Create)(char* filename)
 
 void (DataFile_Delete)(void* self)
 {
-  DataFile_t** pdatafile = (DataFile_t**) self ;
-  DataFile_t*   datafile = *pdatafile ;
+  DataFile_t* datafile = (DataFile_t*) self ;
   
-  TextFile_Delete(&DataFile_GetTextFile(datafile)) ;
-  free(DataFile_GetTextLine(datafile)) ;
-  free(datafile) ;
+  {
+    TextFile_t* textfile = DataFile_GetTextFile(datafile) ;
+    
+    if(textfile) {
+      TextFile_Delete(textfile) ;
+      free(textfile) ;
+      DataFile_GetTextFile(datafile) = NULL ;
+    }
+  }
+  
+  {
+    char* line = DataFile_GetTextLine(datafile) ;
+    
+    if(line) {
+      free(line) ;
+      DataFile_GetTextLine(datafile) = NULL ;
+    }
+  }
 }
 
 

@@ -15,7 +15,7 @@
 
 
 
-ObVals_t*  ObVals_New(const int n_obvals)
+ObVals_t*  (ObVals_New)(const int n_obvals)
 {
   ObVals_t* obvals = (ObVals_t*) Mry_New(ObVals_t) ;
   
@@ -32,6 +32,7 @@ ObVals_t*  ObVals_New(const int n_obvals)
       ObVal_t* ob = ObVal_New() ;
       
       obval[i] = ob[0] ;
+      free(ob) ;
     }
 
     ObVals_GetObVal(obvals) = obval ;
@@ -42,9 +43,24 @@ ObVals_t*  ObVals_New(const int n_obvals)
 
 
 
+void  (ObVals_Delete)(void* self)
+{
+  ObVals_t* obvals = (ObVals_t*) self ;
+  
+  {
+    int n_obvals = ObVals_GetNbOfObVals(obvals) ;
+    ObVal_t* obval = ObVals_GetObVal(obvals) ;
+    
+    Mry_Delete(obval,n_obvals,ObVal_Delete) ;
+    free(obval) ;
+  }
+}
+
+
+
 
 #if 0
-ObVals_t*  ObVals_Create(DataFile_t* datafile,Mesh_t* mesh,Materials_t* mats)
+ObVals_t*  (ObVals_Create)(DataFile_t* datafile,Mesh_t* mesh,Materials_t* mats)
 {
   ObVals_t* obvals = (ObVals_t*) malloc(sizeof(ObVals_t)) ;
   
@@ -258,7 +274,7 @@ ObVals_t*  ObVals_Create(DataFile_t* datafile,Mesh_t* mesh,Materials_t* mats)
 
 
 #if 1
-ObVals_t*  ObVals_Create(DataFile_t* datafile,Mesh_t* mesh,Materials_t* mats)
+ObVals_t*  (ObVals_Create)(DataFile_t* datafile,Mesh_t* mesh,Materials_t* mats)
 {
   char* filecontent = DataFile_GetFileContent(datafile) ;
   char* c  = String_FindToken(filecontent,"OBJE,Objective Variations",",") ;
@@ -373,7 +389,7 @@ ObVals_t*  ObVals_Create(DataFile_t* datafile,Mesh_t* mesh,Materials_t* mats)
 
       
 
-int ObVals_FindObValIndex(ObVals_t* obvals,char* name)
+int (ObVals_FindObValIndex)(ObVals_t* obvals,char* name)
 {
   int n_obvals = ObVals_GetNbOfObVals(obvals) ;
   ObVal_t* obval = ObVals_GetObVal(obvals) ;

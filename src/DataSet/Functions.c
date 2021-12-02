@@ -8,9 +8,6 @@
 #include "Functions.h"
 
 
-static int    lit_fonction(Function_t*,char*) ;
-
-
 
 Functions_t* (Functions_New)(const int n_fncts)
 {
@@ -75,77 +72,27 @@ Functions_t* (Functions_Create)(DataFile_t* datafile)
 
 
 
-/* Intern Functions */
-
-int lit_fonction(Function_t* fn,char* nom)
-/* Lecture des fonctions du temps dans le fichier "nom"
-   retourne le nb de fonctions lues */
+void (Functions_Delete)(void* self)
 {
-  int    n_points,n_fonctions ;
-  char   line[Function_MaxLengthOfTextLine],*c ;
-  FILE   *fict ;
-  int    i ;
-  int long pos ;
-
-  fict = fopen(nom,"r") ;
-  if(!fict) arret("lit_fonction(1) : immpossible d ouvrir le fichier") ;
-
-  /* nb de fonctions */
-  n_fonctions = 0 ;
-  do {
-    fgets(line,sizeof(line),fict) ;
-    c = (char*) strtok(line," \n") ;
-    /* } while(c != NULL && *c == '#' && !feof(fict)) ; */
-  } while((c == NULL || *c == '#') && !feof(fict)) ;
-  while((char*) strtok(NULL," \n") != NULL) n_fonctions++ ;
-
-  /* nb de points */
-  n_points = 1 ;
-  while(!feof(fict) && fgets(line,sizeof(line),fict)) {
-    c = (char*) strtok(line," \n") ;
-    if(c != NULL && *c != '#') n_points++ ;
-  }
-
-  /* reservation de la memoire */
+  Functions_t* functions = (Functions_t*) self ;
+  
   {
-    double* t = (double*) malloc(n_points*sizeof(double)) ;
-    double* f = (double*) malloc(n_fonctions*n_points*sizeof(double)) ;
-    if(!t) arret("lit_fonction(2) : impossible d\'allouer la memoire") ;
-    if(!f) arret("lit_fonction(3) : impossible d\'allouer la memoire") ;
+    int n_functions = Functions_GetNbOfFunctions(functions) ;
     
-    for(i = 0 ; i < n_fonctions ;i++) {
-      Function_GetNbOfPoints(fn + i) = n_points ;
-      Function_GetXValue(fn + i) = t ; /* meme temps pour les fonctions */
-      Function_GetFValue(fn + i) = f + i*n_points ;
-    }
-  }
-
-  /* positionnement dans le fichier */
-  rewind(fict) ;
-  do {
-    pos = ftell(fict) ;
-    fgets(line,sizeof(line),fict) ;
-    c = (char*) strtok(line," \n") ;
-    /* } while(c != NULL && *c == '#' && !feof(fict)) ; */
-  } while((c == NULL || *c == '#') && !feof(fict)) ;
-  fseek(fict,pos,SEEK_SET) ;
-  
-  
-  /* Read time and function values */
-  for(i = 0 ; i < n_points ; i++) {
-    double* x = Function_GetXValue(fn) ;
-    int    j ;
-    
-    fscanf(fict,"%le",x + i) ;
-    
-    for(j = 0 ; j < n_fonctions ; j++) {
-      double* f = Function_GetFValue(fn + j) ;
+    if(n_functions > 0) {
+      Function_t* function = Functions_GetFunction(functions) ;
       
-      fscanf(fict,"%le",f + i) ;
+      if(function) {
+        int i ;
+      
+        for(i = 0 ; i < n_functions ; i++) {
+          Function_t* functioni = function + i ;
+        
+          Function_Delete(functioni) ;
+        }
+      
+        free(function) ;
+      }
     }
   }
-
-  fclose(fict) ;
-
-  return(n_fonctions) ;
 }

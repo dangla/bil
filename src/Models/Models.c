@@ -14,18 +14,32 @@
 
 
 static Models_t* (Models_Create)(Geometry_t*) ;
-static void      (Models_Delete)(void*) ;
 
 
-Models_t* Models_New(const int n_models)
+Models_t* (Models_New)(const int n_models)
 {
   Models_t* models = (Models_t*) Mry_New(Models_t) ;
   
+  Models_GetMaxNbOfModels(models) = n_models ;
+  Models_GetNbOfModels(models) = 0 ;
+    
   {
-    Models_GetMaxNbOfModels(models) = n_models ;
-    Models_GetModel(models) = Model_Create(n_models) ;
-    Models_GetNbOfModels(models) = 0 ;
+    Model_t* model = (Model_t*) Mry_New(Model_t[n_models]) ;
+      
+    {
+      int i ;
+  
+      for(i = 0 ; i < n_models ; i++) {
+        Model_t* mod = Model_New() ;
+    
+        model[i] = mod[0] ;
+        free(mod) ;
+      }
+    }
+      
+    Models_GetModel(models) = model ;
   }
+
   
   return(models) ;
 }
@@ -33,7 +47,7 @@ Models_t* Models_New(const int n_models)
 
 
 
-Models_t* Models_Create(Geometry_t* geom)
+Models_t* (Models_Create)(Geometry_t* geom)
 /** Create the models found in "ListOfModels.h"  */
 {
   Models_t* models = Models_New(Models_NbOfModels) ;
@@ -57,40 +71,34 @@ Models_t* Models_Create(Geometry_t* geom)
 
 
 
-void  Models_Delete(void* self)
+void  (Models_Delete)(void* self)
 {
-  Models_t** pmodels = (Models_t**) self ;
-  Models_t*   models = *pmodels ;
+  Models_t* models = (Models_t*) self ;
   
-  
-  /*
   {
-    int n_models = Models_GetNbOfModels(models) ;
+    int n_models = Models_GetMaxNbOfModels(models) ;
     Model_t* model = Models_GetModel(models) ;
-    int i ;
     
-    for(i = 0 ; i < n_models ; i++) {
-      Model_t* modeli = model + i ;
+    {
+      int i ;
       
-      Model_Delete(&modeli) ;
+      for(i = 0 ; i < n_models ; i++) {
+        Model_t* modeli = model + i ;
+        
+        Model_Delete(modeli) ;
+      }
     }
-  }
-  */
-  
-  {
-    int n_models = Models_GetNbOfModels(models) ;
-    Model_t* model = Models_GetModel(models) ;
     
-    Model_Delete(&model,n_models) ;
+    free(model) ;
+    Models_GetModel(models) = NULL ;
+    Models_GetMaxNbOfModels(models) = 0 ;
+    Models_GetNbOfModels(models) = 0 ;
   }
-  
-  free(models) ;
-  *pmodels = NULL ;
 }
 
 
 
-void Models_Print(char* codename,FILE* ficd)
+void (Models_Print)(char* codename,FILE* ficd)
 {
   Geometry_t geom = {3} ;
   Models_t* models = Models_Create(&geom) ;
@@ -131,12 +139,13 @@ void Models_Print(char* codename,FILE* ficd)
     }
   }
   
-  Models_Delete(&models) ;
+  Models_Delete(models) ;
+  free(models) ;
 }
 
 
 
-int Models_FindModelIndex(Models_t* models,const char* codename)
+int (Models_FindModelIndex)(Models_t* models,const char* codename)
 {
   Model_t* model = Models_GetModel(models) ;
   int n_models = Models_GetNbOfModels(models) ;
@@ -154,7 +163,7 @@ int Models_FindModelIndex(Models_t* models,const char* codename)
 
 
 
-Model_t* Models_FindModel(Models_t* models,const char* codename)
+Model_t* (Models_FindModel)(Models_t* models,const char* codename)
 {
   int j = Models_FindModelIndex(models,codename) ;
   
@@ -169,7 +178,7 @@ Model_t* Models_FindModel(Models_t* models,const char* codename)
 
 
 
-Model_t* Models_FindOrAppendModel(Models_t* models,const char* codename,Geometry_t* geom,DataFile_t* datafile)
+Model_t* (Models_FindOrAppendModel)(Models_t* models,const char* codename,Geometry_t* geom,DataFile_t* datafile)
 {
   Model_t* model = Models_FindModel(models,codename) ;
       

@@ -12,7 +12,8 @@ struct NCFormat_s      ; typedef struct NCFormat_s      NCFormat_t ;
 #include "Mesh.h"
 
 
-extern NCFormat_t* (NCFormat_Create)(Mesh_t*) ;
+//extern NCFormat_t* (NCFormat_Create)(Mesh_t*) ;
+extern NCFormat_t* (NCFormat_Create)(Mesh_t*,const int) ;
 extern void        (NCFormat_Delete)(void*) ;
 extern void (NCFormat_AssembleElementMatrix)(NCFormat_t*,double*,int*,int*,int,int*,int) ;
 extern void (NCFormat_PrintMatrix)(NCFormat_t*,unsigned int,const char*) ;

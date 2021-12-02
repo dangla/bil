@@ -6,6 +6,7 @@
 #include "Nodes.h"
 #include "Session.h"
 #include "GenericData.h"
+#include "Mry.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -17,23 +18,19 @@
 
 //static FVM_t* instancefvm = NULL ;
 
-static FVM_t*  FVM_Create(void) ;
-static int     FVM_FindHalfSpace(FVM_t*,int,int,double*) ;
+static FVM_t*  (FVM_Create)(void) ;
+static int     (FVM_FindHalfSpace)(FVM_t*,int,int,double*) ;
 
 
-FVM_t* FVM_Create(void)
+FVM_t* (FVM_Create)(void)
 {
-  FVM_t* fvm = (FVM_t*) malloc(sizeof(FVM_t)) ;
-  
-  if(!fvm) arret("FVM_Create") ;
+  FVM_t* fvm = (FVM_t*) Mry_New(FVM_t) ;
   
   
   /* Space allocation for output */
   {
     size_t sz = FVM_MaxSizeOfOutput ;
-    double* output = (double*) malloc(sz) ;
-    
-    if(!output) arret("FVM_Create") ;
+    double* output = (double*) Mry_New(sz) ;
     
     FVM_GetOutput(fvm) = output ;
   }
@@ -42,9 +39,7 @@ FVM_t* FVM_Create(void)
   /* Space allocation for input */
   {
     size_t sz = FVM_MaxSizeOfInput ;
-    double* input = (double*) malloc(sz) ;
-    
-    if(!input) arret("FVM_Create") ;
+    double* input = (double*) Mry_New(sz) ;
     
     FVM_GetInput(fvm)= input ;
   }
@@ -61,16 +56,14 @@ FVM_t* FVM_Create(void)
 }
 
 
-void FVM_Delete(void* self)
+void (FVM_Delete)(void* self)
 {
-  FVM_t** pfvm = (FVM_t**) self ;
-  FVM_t*   fvm = *pfvm ;
+  FVM_t* fvm = (FVM_t*) self ;
   
   free(FVM_GetOutput(fvm)) ;
   free(FVM_GetInput(fvm)) ;
-  Buffer_Delete(&FVM_GetBuffer(fvm)) ;
-  free(fvm) ;
-  *pfvm = NULL ;
+  Buffer_Delete(FVM_GetBuffer(fvm)) ;
+  free(FVM_GetBuffer(fvm)) ;
 }
 
 
@@ -127,7 +120,7 @@ FVM_t*  (FVM_GetInstance)(Element_t* el)
 
 
 
-double* FVM_ComputeSurfaceLoadResidu(FVM_t* fvm,Load_t* load,double t,double dt)
+double* (FVM_ComputeSurfaceLoadResidu)(FVM_t* fvm,Load_t* load,double t,double dt)
 /* Compute the residu force due to surface loads (r) */
 {
   Element_t* el = FVM_GetElement(fvm) ;

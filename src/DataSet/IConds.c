@@ -12,7 +12,7 @@ static IConds_t* IConds_New(const int) ;
 
 
 
-IConds_t* IConds_New(const int n_iconds)
+IConds_t* (IConds_New)(const int n_iconds)
 {
   IConds_t* iconds  = (IConds_t*) Mry_New(IConds_t) ;
     
@@ -37,6 +37,7 @@ IConds_t* IConds_New(const int n_iconds)
       ICond_t* ic  = ICond_New() ;
       
       icond[i] = ic[0] ;
+      free(ic) ;
     }
 
     IConds_GetICond(iconds) = icond ;
@@ -49,7 +50,7 @@ IConds_t* IConds_New(const int n_iconds)
 
 
 
-IConds_t* IConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* functions)
+IConds_t* (IConds_Create)(DataFile_t* datafile,Fields_t* fields,Functions_t* functions)
 {
   char* filecontent = DataFile_GetFileContent(datafile) ;
   char* c  = String_FindToken(filecontent,"INIT,Initialization,Initial Conditions",",") ;
@@ -121,9 +122,45 @@ IConds_t* IConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* funct
 
 
 
+void (IConds_Delete)(void* self)
+{
+  IConds_t* iconds = (IConds_t*) self ;
+  
+  free(IConds_GetFileNameOfNodalValues(iconds)) ;
+  
+  #if 0
+  {
+    int n_iconds = IConds_GetNbOfIConds(iconds) ;
+    ICond_t* icond  = IConds_GetICond(iconds) ;
+    int i ;
+
+    for(i = 0 ; i < n_iconds ; i++) {
+      ICond_t* bc  = icond + i ;
+      
+      ICond_Delete(bc) ;
+    }
+    
+    free(icond) ;
+  }
+  #endif
+  
+  #if 1
+  {
+    int n_iconds = IConds_GetNbOfIConds(iconds) ;
+    ICond_t* icond  = IConds_GetICond(iconds) ;
+    
+    Mry_Delete(icond,n_iconds,ICond_Delete) ;
+    
+    free(icond) ;
+  }
+  #endif
+}
 
 
-void   IConds_AssignInitialConditions(IConds_t* iconds,Mesh_t* mesh,double t)
+
+
+
+void   (IConds_AssignInitialConditions)(IConds_t* iconds,Mesh_t* mesh,double t)
 /** Assign the initial conditions */
 {
   unsigned short int dim = Mesh_GetDimension(mesh) ;
@@ -224,7 +261,7 @@ void   IConds_AssignInitialConditions(IConds_t* iconds,Mesh_t* mesh,double t)
         /* Index of prescribed unknown */
         j = Element_FindUnknownPositionIndex(el + ie,inc_ic) ;
         if(j < 0) arret("IConds_AssignInitialConditions(1)") ;
-	
+  
         /* We assign the prescribed value to the unknown */
         for(i = 0 ; i < nn ; i++) {
           int jj = Element_GetUnknownPosition(el + ie)[i*neq + j] ;

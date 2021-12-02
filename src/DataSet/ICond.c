@@ -11,7 +11,7 @@
 
 
 
-ICond_t* ICond_New(void)
+ICond_t* (ICond_New)(void)
 {
   ICond_t* icond = (ICond_t*) Mry_New(ICond_t) ;
     
@@ -37,7 +37,17 @@ ICond_t* ICond_New(void)
 
 
 
-void ICond_Scan(ICond_t* icond,DataFile_t* datafile)
+void (ICond_Delete)(void* self)
+{
+  ICond_t* icond = (ICond_t*) self ;
+  
+  free(ICond_GetNameOfUnknown(icond)) ;
+  free(ICond_GetFileNameOfNodalValues(icond)) ;
+}
+
+
+
+void (ICond_Scan)(ICond_t* icond,DataFile_t* datafile)
 {
   char* line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
   

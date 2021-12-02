@@ -13,8 +13,8 @@ struct CoordinateFormat_s      ; typedef struct CoordinateFormat_s      Coordina
 #include "Mesh.h"
 #include "Options.h"
 
-extern CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t*,Options_t*) ;
-extern CoordinateFormat_t* (CoordinateFormat_CreateSelectedMatrix)(Mesh_t*,Options_t*,const int) ;
+//extern CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t*,Options_t*) ;
+extern CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t*,Options_t*,const int) ;
 extern void                (CoordinateFormat_Delete)(void*) ;
 //extern int                 (CoordinateFormat_AssembleElementMatrix)(CoordinateFormat_t*,Element_t*,double*,int) ;
 extern int                 (CoordinateFormat_AssembleElementMatrix)(CoordinateFormat_t*,double*,int*,int*,int,int) ;

@@ -40,7 +40,7 @@ BIL_HOST      := ${shell hostname}: ${shell hostname -I}
 BIL_PACKAGER  := ${shell whoami}
 BIL_OS        := ${shell uname -sr}
 BIL_URL       := "http://bil.ifsttar.fr"
-BIL_EMAIL     := "patrick.dangla@ifsttar.fr"
+BIL_EMAIL     := "patrick.dangla@univ-eiffel.fr"
 #BIL_COPYRIGHT := "Copyright \(C\) 2002-"${BIL_YEAR}" Patrick Dangla"
 BIL_COPYRIGHT := "Copyright \(C\) 2002 Patrick Dangla"
 BIL_PROGNAME  := "Bil, a modeling platform based on FEM/FVM"
@@ -94,7 +94,7 @@ all: bin doc
 .PHONY: bin
 bin: make.inc path_init version_init info_init lib compile link
 
-compile: make.inc version_init info_init lib
+compile: make.inc path_init version_init info_init lib
 	@echo "\nCompilation"
 	mkdir -p ${BIL_LIBDIR}
 	for i in ${BIL_DIRS}; do (cd $$i && ${MAKE}); done
@@ -296,6 +296,12 @@ githelp:
 	@( echo "  pushing to remote ifsttar: git push ifsttar master" )
 	@( echo "  pushing to remote dangla: git push dangla master" )
 	@( echo "  adding a remote: git remote add <shortname> <url>" )
+	@( echo "  Note: Github will no longer accept account passwords" )
+	@( echo "  for authenticating Git operations and will require " )
+	@( echo "  a personal access token." )
+	@( echo "  Such a personal access token can be generated" )
+	@( echo "  in the github account by clicking:" )
+	@( echo "  Settings, Developer settings, Personal access tokens.")
 	@( echo "" )
 	@( echo "Tagging" )
 	@( echo "  listing the available tags: git tag" )

@@ -36,6 +36,8 @@ enum {
   E_Last
 } ;
 
+#define E_Mech
+
 
 
 /* Nb of equations */
@@ -496,7 +498,8 @@ enum {
 
 
 /* To retrieve the material properties */
-#define GetProperty(a)   (Element_GetProperty(el)[pm(a)])
+#define GetProperty(a) \
+        (pm(a) < 0) ? 0 : Element_GetProperty(el)[pm(a)]
 
 
 
@@ -677,7 +680,9 @@ int pm(const char *s)
   else if(strcmp(s,"G_s") == 0)        return (25) ;
   else if(strcmp(s,"B_i") == 0)        return (26) ;
   else if(strcmp(s,"B_p") == 0)        return (27) ;
-  else return(-1) ;
+  else {
+    return(-1) ;
+  }
 }
 
 
@@ -784,11 +789,6 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
     Material_GetProperty(mat)[pm("AlphaCoef")] = 0 ;
     Material_GetProperty(mat)[pm("BetaCoef")]  = 0 ;
     Material_GetProperty(mat)[pm("r0")] = 16*nm ;
-    Material_GetProperty(mat)[pm("K_s")] = 32*GPa ;
-    Material_GetProperty(mat)[pm("G_s")] = 32*1.5*(1 - 2*0.25)/(1 + 0.25)*GPa ;
-    
-    Material_GetProperty(mat)[pm("K_s")] = 1.e3*GPa ;
-    Material_GetProperty(mat)[pm("G_s")] = 1.e3*GPa ;
     
     Material_GetProperty(mat)[pm("B_i")] = -1 ;
     Material_GetProperty(mat)[pm("B_p")] = -1 ;
@@ -2028,6 +2028,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   double s_l = LiquidSaturationDegree(r) ;
   double s_c = 1 - s_l ;
   
+#ifdef E_Mech
   /* Compute the saturation index at the pore wall, beta_p */
   double beta_pn   = x_n[I_Beta_p] ;
   double varphi_cn = x_n[I_VarPHI_C] ;
@@ -2035,14 +2036,23 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   double straind_n = x_n[I_Straind] ;
   double beta_p = PoreWallEquilibriumSaturationIndex(beta_pn,varphi_cn,strain_n,straind_n,beta,s_c,dt) ;
   
+  /* The crystallization pressure */
+  double p_c       = CrystallizationPressure(beta_p) ;
   /* Compute the crystal pore deformation */
   /* Kinetic law */
   double phicrate  = PoreCrystalGrowthRate(s_c,beta,beta_p) ;
   double varphi_c  = varphi_cn + dt*phicrate ;
   /* Compute the strain */
-  //double pc      = CrystallizationPressure(beta_p) ;
-  //double strain  = (s_c > 0) ?  varphi_c/s_c - ( pc/N_Biot +  pc*s_l/G_Biot) : 0 ;
+  //double strain  = (s_c > 0) ?  varphi_c/s_c - ( p_c/N_Biot +  p_c*s_l/G_Biot) : 0 ;
   double strain    = strain_n + ((s_c > 0) ? dt*phicrate/s_c : 0) ;
+  double straind   = DamageStrain(strain,straind_n) ;
+#else
+  double beta_p    = 1 ;
+  double p_c       = 0 ;
+  double varphi_c  = 0 ;
+  double strain    = 0 ;
+  double straind   = 0 ;
+#endif
   
   
   /* Solid contents
@@ -2158,7 +2168,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   x[I_S_C       ] = s_c ;
   
   /* Crystallization pressure */
-  x[I_P_C       ] = CrystallizationPressure(beta_p) ;
+  x[I_P_C       ] = p_c ;
   
   /* Radius */
   x[I_Radius    ] = r ;
@@ -2166,7 +2176,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   /* Strains */
   x[I_Beta_p    ] = beta_p ;
   x[I_Strain    ] = strain ;
-  x[I_Straind   ] = DamageStrain(strain,straind_n) ;
+  x[I_Straind   ] = straind ;
   x[I_VarPHI_C  ] = varphi_c ;
   
   

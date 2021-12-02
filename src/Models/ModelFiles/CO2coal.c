@@ -17,11 +17,6 @@
 /* Nb of equations of the model */
 #define NEQ   (dim+1)
 
-/* Nb of terms per point */
-#define NVI   (21)    /*  nb of implicit terms per point */
-#define NVE   (1)     /*  nb of explicit terms per point */
-#define NV0   (0)     /*  nb of constant terms per point */
-
 
 /* Indices of equations */
 #define E_Mech   (0)
@@ -44,6 +39,12 @@
 #define U_p_co2    U_CO2
 
 
+
+
+/* Nb of terms per point */
+#define NVI   (21)    /*  nb of implicit terms per point */
+#define NVE   (1)     /*  nb of explicit terms per point */
+#define NV0   (0)     /*  nb of constant terms per point */
 
 
 /* We define some names for implicit terms (vim must be used as pointer below) */

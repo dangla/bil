@@ -14,6 +14,7 @@ struct IntFcts_s      ; typedef struct IntFcts_s      IntFcts_t ;
 /* 1. IntFcts_t 
  * ------------*/
 extern IntFcts_t*  (IntFcts_Create)(void) ;
+extern void        (IntFcts_Delete)(void*) ;
 extern int         (IntFcts_FindIntFct)(IntFcts_t*,int,int,const char*) ;
 extern int         (IntFcts_AddIntFct)(IntFcts_t*,int,int,const char*) ;
 

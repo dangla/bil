@@ -1,43 +1,30 @@
 #include <string.h>
 #include "Message.h"
+#include "Mry.h"
 #include "Result.h"
 #include "View.h"
 
 
 
 
-Result_t* Result_Create(int n)
+Result_t* (Result_Create)(void)
 {
-  Result_t* result = (Result_t*) malloc(n*sizeof(Result_t)) ;
-  
-  if(!result) {
-    arret("Result_Create(1)") ;
-  }
+  Result_t* result = (Result_t*) Mry_New(Result_t) ;
   
   /* Allocate memory for the values */
   {
-    double* v = (double*) malloc(n*9*sizeof(double)) ;
-    int i ;
+    double* v = (double*) Mry_New(double[9]) ;
     
-    if(!v) {
-      arret("Result_Create(2)") ;
-    }
-    
-    for(i = 0 ; i < n ; i++) {
-      Result_GetValue(result + i)   = v + 9*i ; ;
-    }
+    Result_GetValue(result) = v ; ;
   }
   
   /* Views */
   {
-    View_t* view = View_Create(n) ;
-    int i ;
+    View_t* view = View_Create() ;
     
-    for(i = 0 ; i < n ; i++) {
-      Result_GetView(result + i) = view + i ;
-      /* Should be eliminated (used in old models) */
-      Result_GetNameOfValue(result + i) = Result_GetNameOfView(result + i) ;
-    }
+    Result_GetView(result) = view ;
+    /* Should be eliminated (used in old models) */
+    Result_GetNameOfValue(result) = Result_GetNameOfView(result) ;
   }
   
   return(result) ;
@@ -45,22 +32,23 @@ Result_t* Result_Create(int n)
 
 
 
-void Result_Delete(void* self)
+void (Result_Delete)(void* self)
 {
-  Result_t** presult = (Result_t**) self ;
-  Result_t*   result = *presult ;
-  View_t* view = Result_GetView(result) ;
-  
-  View_Delete(&view) ;
+  Result_t* result = (Result_t*) self ;
   
   free(Result_GetValue(result)) ;
-  free(result) ;
-  *presult = NULL ;
+  
+  {
+    View_t* view = Result_GetView(result) ;
+  
+    View_Delete(view) ;
+    free(view) ;
+  }
 }
 
 
 
-void Result_Store(Result_t *r,double *v,const char* name,int n)
+void (Result_Store)(Result_t *r,double *v,const char* name,int n)
 {
   double* value = Result_GetValue(r) ;
   int i ;
@@ -77,7 +65,7 @@ void Result_Store(Result_t *r,double *v,const char* name,int n)
 
 
 
-void Result_SetValuesToZero(Result_t *r)
+void (Result_SetValuesToZero)(Result_t *r)
 {
   double* v = Result_GetValue(r) ;
   int i ;

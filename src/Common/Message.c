@@ -66,11 +66,11 @@ Message_t*  (Message_Create)(void)
 
 void  (Message_Delete)(void* self)
 {
-  Message_t** pmsg = (Message_t**) self ;
+  Message_t* msg = (Message_t*) self ;
   
-  free(Message_GetLaunchDate(*pmsg)) ;
-  free(Message_GetLaunchTime(*pmsg)) ;
-  free(*pmsg) ;
+  free(Message_GetLaunchDate(msg)) ;
+  free(Message_GetLaunchTime(msg)) ;
+  Message_GetDelete(msg) = NULL ;
 }
 
 

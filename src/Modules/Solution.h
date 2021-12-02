@@ -15,19 +15,40 @@ struct Solution_s     ; typedef struct Solution_s     Solution_t ;
 #include "Mesh.h"
  
 extern Solution_t*  (Solution_Create)  (Mesh_t*) ;
+extern void         (Solution_Delete)  (void*) ;
 extern void         (Solution_Copy)    (Solution_t*,Solution_t*) ;
-extern Solution_t*  (Solution_GetSolutionInDistantFuture)(Solution_t*,unsigned int) ;
-extern Solution_t*  (Solution_GetSolutionInDistantPast)(Solution_t*,unsigned int) ;
+extern void         (Solution_InterpolateCurrentUnknowns)(Solution_t*,const int) ;
+extern void         (Solution_CopySelectedSequentialUnknowns)(Solution_t*,Solution_t*,const int) ;
+//extern Solution_t*  (Solution_GetSolutionInDistantFuture)(Solution_t*,unsigned int) ;
+//extern Solution_t*  (Solution_GetSolutionInDistantPast)(Solution_t*,unsigned int) ;
 
 
-#define Solution_GetTime(SOL)                 ((SOL)->t)
-#define Solution_GetTimeStep(SOL)             ((SOL)->dt)
-#define Solution_GetStepIndex(SOL)            ((SOL)->step)
+//#define Solution_GetTime(SOL)                 ((SOL)->t)
+#define Solution_GetNbOfSequences(SOL)        ((SOL)->nbofsequences)
+#define Solution_GetSequentialTime(SOL)       ((SOL)->sequentialtime)
+#define Solution_GetSequentialTimeStep(SOL)   ((SOL)->sequentialtimestep)
+#define Solution_GetSequentialStepIndex(SOL)  ((SOL)->sequentialstepindex)
 #define Solution_GetNodesSol(SOL)             ((SOL)->nodessol)
 #define Solution_GetElementsSol(SOL)          ((SOL)->elementssol)
 #define Solution_GetPreviousSolution(SOL)     ((SOL)->sol_p)
 #define Solution_GetNextSolution(SOL)         ((SOL)->sol_n)
 
+
+
+/* The time, time step and step index */
+#define Solution_GetTime(SOL) \
+        Solution_GetSequentialTime(SOL)[Solution_GetNbOfSequences(SOL)-1]
+        
+#define Solution_GetTimeStep(SOL) \
+        Solution_GetSequentialTimeStep(SOL)[Solution_GetNbOfSequences(SOL)-1]
+        
+#define Solution_GetStepIndex(SOL) \
+        Solution_GetSequentialStepIndex(SOL)[Solution_GetNbOfSequences(SOL)-1]
+        
+
+/* Access to Nodes */
+#define Solution_GetNodes(SOL) \
+        NodesSol_GetNodes(Solution_GetNodesSol(SOL))
 
 
 /* Access to node solutions */
@@ -37,11 +58,11 @@ extern Solution_t*  (Solution_GetSolutionInDistantPast)(Solution_t*,unsigned int
 #define Solution_GetNbOfNodes(SOL) \
         NodesSol_GetNbOfNodes(Solution_GetNodesSol(SOL))
 
-#define Solution_GetNbOfDOF(SOL) \
-        NodesSol_GetNbOfDOF(Solution_GetNodesSol(SOL))
+//#define Solution_GetNbOfDOF(SOL) \
+//        NodesSol_GetNbOfDOF(Solution_GetNodesSol(SOL))
 
-#define Solution_GetNodalValue(SOL) \
-        NodesSol_GetNodalValue(Solution_GetNodesSol(SOL))
+//#define Solution_GetNodalValue(SOL) \
+//        NodesSol_GetNodalValue(Solution_GetNodesSol(SOL))
 
 
 
@@ -54,8 +75,8 @@ extern Solution_t*  (Solution_GetSolutionInDistantPast)(Solution_t*,unsigned int
 
 
 
-/* Copy the N solutions, SOL+[0:N-1], in the next position */
-#define Solution_CopyInDistantFuture(SOL,N) \
+/* Copy the N solutions SOL+[0:N-1] in SOL+[1:N] */
+/* #define Solution_CopyInDistantFuture(SOL,N) \
         do { \
           int dist = (N) - 1 ; \
           while(dist >= 0) { \
@@ -64,8 +85,89 @@ extern Solution_t*  (Solution_GetSolutionInDistantPast)(Solution_t*,unsigned int
             Solution_Copy(sol_dest,sol_src) ; \
             dist-- ; \
           } \
+        } while(0) */
+        
+        
+#define Solution_InitializeSequentialTimes(SOL) \
+        do { \
+          int i ; \
+          for(i = 0 ; i < Solution_GetNbOfSequences(SOL) ; i++) { \
+            Solution_GetSequentialTime(SOL)[i] = Solution_GetTime(SOL) ; \
+          } \
         } while(0)
 
+
+
+/* Allocate memory */
+#define Solution_AllocateMemoryForImplicitTerms(SOL) \
+        do { \
+          ElementsSol_t* elementssol = Solution_GetElementsSol(SOL) ; \
+          ElementsSol_AllocateMemoryForImplicitTerms(elementssol) ; \
+        } while(0)
+
+
+#define Solution_AllocateMemoryForExplicitTerms(SOL) \
+        do { \
+          ElementsSol_t* elementssol = Solution_GetElementsSol(SOL) ; \
+          ElementsSol_AllocateMemoryForExplicitTerms(elementssol) ; \
+        } while(0)
+
+
+#define Solution_AllocateMemoryForConstantTerms(SOL) \
+        do { \
+          ElementsSol_t* elementssol = Solution_GetElementsSol(SOL) ; \
+          ElementsSol_AllocateMemoryForConstantTerms(elementssol) ; \
+        } while(0)
+
+
+
+/* Share data */
+#define Solution_ShareConstantTerms(SOL_DEST,SOL_SRC) \
+        do { \
+          ElementsSol_t* elementssol_s = Solution_GetElementsSol(SOL_SRC) ; \
+          ElementsSol_t* elementssol_d = Solution_GetElementsSol(SOL_DEST) ; \
+          ElementsSol_ShareConstantGenericData(elementssol_d,elementssol_s) ; \
+        } while(0)
+
+
+#define Solution_ShareExplicitTerms(SOL_DEST,SOL_SRC) \
+        do { \
+          ElementsSol_t* elementssol_s = Solution_GetElementsSol(SOL_SRC) ; \
+          ElementsSol_t* elementssol_d = Solution_GetElementsSol(SOL_DEST) ; \
+          ElementsSol_ShareExplicitGenericData(elementssol_d,elementssol_s) ; \
+        } while(0)
+
+
+
+/* Delete data */
+#define Solution_DeleteConstantTerms(SOL) \
+        do { \
+          ElementsSol_t* elementssol = Solution_GetElementsSol(SOL) ; \
+          ElementsSol_DeleteConstantGenericData(elementssol) ; \
+        } while(0)
+
+
+#define Solution_DeleteExplicitTerms(SOL) \
+        do { \
+          ElementsSol_t* elementssol = Solution_GetElementsSol(SOL) ; \
+          ElementsSol_DeleteExplicitGenericData(elementssol) ; \
+        } while(0)
+
+
+
+/* Set pointers to null */
+#define Solution_DiscardExplicitGenericData(SOL) \
+        do { \
+          ElementsSol_t* elementssol = Solution_GetElementsSol(SOL) ; \
+          ElementsSol_DiscardExplicitGenericData(elementssol) ; \
+        } while(0)
+
+
+#define Solution_DiscardConstantGenericData(SOL) \
+        do { \
+          ElementsSol_t* elementssol = Solution_GetElementsSol(SOL) ; \
+          ElementsSol_DiscardConstantGenericData(elementssol) ; \
+        } while(0)
 
 
 
@@ -73,9 +175,13 @@ extern Solution_t*  (Solution_GetSolutionInDistantPast)(Solution_t*,unsigned int
 #include "ElementsSol.h"
 
 struct Solution_s {           /* solution at a time t */
-  double t ;
-  double dt ;
-  int    step ;
+  int   nbofsequences ;
+  //double  t ;
+  //double  dt ;
+  //int     index ;
+  double* sequentialtime ;
+  double* sequentialtimestep ;
+  int*    sequentialstepindex ;
   NodesSol_t* nodessol ;
   ElementsSol_t* elementssol ;
   Solution_t* sol_p ;         /* previous solution */

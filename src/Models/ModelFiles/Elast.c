@@ -250,12 +250,12 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       char* p = strstr(method," ") ;
       char* cellname = p + strspn(p," ") ;
       Options_t* options = Options_Create(NULL) ;
-      DataSet_t* jdd = DataSet_Create(cellname,options) ;
+      DataSet_t* dataset = DataSet_Create(cellname,options) ;
       double* c = Elasticity_GetStiffnessTensor(elasty) ;
       
-      CheckMicrostructureDataSet(jdd) ;
+      CheckMicrostructureDataSet(dataset) ;
       
-      MicrostructureElasticTensor(jdd,c) ;
+      MicrostructureElasticTensor(dataset,c) ;
       
     /* isotropic Hooke's law */
     } else {
@@ -725,7 +725,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
 
 
   
-double* MicrostructureElasticTensor(DataSet_t* jdd,double* c)
+double* MicrostructureElasticTensor(DataSet_t* dataset,double* c)
 {
 #define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
 
@@ -752,7 +752,7 @@ double* MicrostructureElasticTensor(DataSet_t* jdd,double* c)
           Message_Direct("Start a microstructure calculation") ;
           Message_Direct("\n") ;
           
-          ComputeMicrostructure(jdd,grd,sig) ;
+          ComputeMicrostructure(dataset,grd,sig) ;
           
           Session_Close() ;
         }
@@ -776,13 +776,13 @@ double* MicrostructureElasticTensor(DataSet_t* jdd,double* c)
 
 
 
-void ComputeMicrostructure(DataSet_t* jdd,double* macrograd,double* sig)
+void ComputeMicrostructure(DataSet_t* dataset,double* macrograd,double* sig)
 {
   /* Set input data of the microstructure */
   {
     /* Update the macro-gradient */
     {
-      Materials_t* mats = DataSet_GetMaterials(jdd) ;
+      Materials_t* mats = DataSet_GetMaterials(dataset) ;
       int nmats = Materials_GetNbOfMaterials(mats) ;
       int j ;
     
@@ -805,14 +805,14 @@ void ComputeMicrostructure(DataSet_t* jdd,double* macrograd,double* sig)
     
   /* Compute the microstructure */
   {
-    Module_t* module_i = DataSet_GetModule(jdd) ;
+    Module_t* module = DataSet_GetModule(dataset) ;
     
-    Module_ComputeProblem(module_i,jdd) ;
+    Module_ComputeProblem(module,dataset) ;
   }
 
   /* Backup stresses as averaged stresses */
   {
-    Mesh_t* mesh = DataSet_GetMesh(jdd) ;
+    Mesh_t* mesh = DataSet_GetMesh(dataset) ;
     
     //Mesh_InitializeSolutionPointers(mesh,sols) ;
     FEM_AverageStresses(mesh,sig) ;
@@ -822,13 +822,13 @@ void ComputeMicrostructure(DataSet_t* jdd,double* macrograd,double* sig)
 
 
 
-void CheckMicrostructureDataSet(DataSet_t* jdd)
+void CheckMicrostructureDataSet(DataSet_t* dataset)
 {
   /* Set input data of the microstructure */
   {
     /* Update the macro-fctindex */
     {
-      Materials_t* mats = DataSet_GetMaterials(jdd) ;
+      Materials_t* mats = DataSet_GetMaterials(dataset) ;
       int nmats = Materials_GetNbOfMaterials(mats) ;
       int j ;
     
@@ -854,7 +854,7 @@ void CheckMicrostructureDataSet(DataSet_t* jdd)
 
     /* Check and update the function of time */
     {
-      Functions_t* fcts = DataSet_GetFunctions(jdd) ;
+      Functions_t* fcts = DataSet_GetFunctions(dataset) ;
       int nfcts = Functions_GetNbOfFunctions(fcts) ;
       
       if(nfcts < 1) {
@@ -885,7 +885,7 @@ void CheckMicrostructureDataSet(DataSet_t* jdd)
     /* The dates */
     {
       {
-        Dates_t* dates = DataSet_GetDates(jdd) ;
+        Dates_t* dates = DataSet_GetDates(dataset) ;
         int     nbofdates  = Dates_GetNbOfDates(dates) ;
           
         if(nbofdates < 2) {

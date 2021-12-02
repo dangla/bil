@@ -9,11 +9,8 @@ struct Date_s        ; typedef struct Date_s        Date_t ;
 
 
 
-extern Date_t*  Date_Create(int) ;
-
-
-#define  Date_New() \
-         (Date_t*) Mry_New(Date_t)
+extern Date_t*  (Date_New)    (void) ;
+extern void     (Date_Delete) (void*) ;
 
 
 

@@ -1,42 +1,29 @@
 #include <string.h>
 #include "Message.h"
+#include "Mry.h"
 #include "View.h"
 
 
 
-View_t* View_Create(int n)
+View_t* (View_Create)(void)
 {
-  View_t* view = (View_t*) malloc(n*sizeof(View_t)) ;
-  
-  if(!view) {
-    arret("View_Create(1)") ;
-  }
-  
-  
-  /* Allocate memory for the names */
+  View_t* view = (View_t*) Mry_New(View_t) ;
+
+  /* Allocate memory for the name */
   {
-    char* text = (char*) malloc(n*View_MaxLengthOfViewName*sizeof(char)) ;
-    int i ;
+    char* text = (char*) Mry_New(char[View_MaxLengthOfViewName]) ;
     
-    if(!text) {
-      arret("View_Create(3)") ;
-    }
-    
-    for(i = 0 ; i < n ; i++) {
-      View_GetNameOfView(view + i) = text + View_MaxLengthOfViewName*i ;
-    }
+    View_GetNameOfView(view) = text ;
   }
   
   return(view) ;
 }
 
 
-void View_Delete(void* self)
+
+void (View_Delete)(void* self)
 {
-  View_t** pview = (View_t**) self ;
-  View_t*   view = *pview ;
+  View_t* view = (View_t*) self ;
   
   free(View_GetNameOfView(view)) ;
-  free(view) ;
-  *pview = NULL ;
 }

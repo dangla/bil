@@ -18,6 +18,7 @@
 #include "BilInfo.h"
 #include "Session.h"
 #include "Mry.h"
+#include "TypeId.h"
 
 
 
@@ -46,18 +47,24 @@ Bil_t*    (Bil_Create)(int argc,char** argv)
 
 
 
-void Bil_Delete(void* self)
+void (Bil_Delete)(void* self)
 {
-  Bil_t** pbil = (Bil_t**) self ;
-  Bil_t*   bil = *pbil ;
+  Bil_t* bil = (Bil_t*) self ;
   
-  Context_Delete(&(Bil_GetContext(bil))) ;
-  free(bil) ;
+  {
+    Context_t* ctx = Bil_GetContext(bil) ;
+    
+    if(ctx) {
+      Context_Delete(ctx) ;
+      free(ctx) ;
+      Bil_GetContext(bil) = NULL ;
+    }
+  }
 }
 
 
 
-int Bil_Main(Bil_t* bil)
+int (Bil_Main)(Bil_t* bil)
 {
   int val = 0 ;
   
@@ -151,65 +158,75 @@ void Bil_CLI(Bil_t* bil)
   if(Context_IsReadOnly(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
+    DataSet_t* dataset = DataSet_Create(filename,options) ;
     
-    DataSet_Create(filename,options) ;
+    DataSet_Delete(dataset) ;
+    free(dataset) ;
     return ;
   }
   
   if(Context_IsGraph(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
-    DataSet_t* jdd =  DataSet_Create(filename,options) ;
-    Mesh_t* mesh = DataSet_GetMesh(jdd) ;
+    DataSet_t* dataset =  DataSet_Create(filename,options) ;
+    Mesh_t* mesh = DataSet_GetMesh(dataset) ;
     char* method = Options_GetGraphMethod(options) ;
       
     Message_Direct("Graph (method %s)\n",method) ;
     Mesh_WriteGraph(mesh,filename,method) ;
+    DataSet_Delete(dataset) ;
+    free(dataset) ;
     return ;
   }
   
   if(Context_IsInversePermutation(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
-    DataSet_t* jdd =  DataSet_Create(filename,options) ;
-    Mesh_t* mesh = DataSet_GetMesh(jdd) ;
+    DataSet_t* dataset =  DataSet_Create(filename,options) ;
+    Mesh_t* mesh = DataSet_GetMesh(dataset) ;
     char method[] = "hsl" ;
       
     Message_Direct("Inverse permutations (method %s)\n",method) ;
     Mesh_WriteInversePermutation(mesh,filename,method) ;
+    DataSet_Delete(dataset) ;
+    free(dataset) ;
     return ;
   }
   
   if(Context_IsNodalOrdering(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
-    DataSet_t* jdd =  DataSet_Create(filename,options) ;
-    Mesh_t* mesh = DataSet_GetMesh(jdd) ;
+    DataSet_t* dataset =  DataSet_Create(filename,options) ;
+    Mesh_t* mesh = DataSet_GetMesh(dataset) ;
     char* method = Options_GetNodalOrderingMethod(options) ;
       
     Message_Direct("Nodal ordering (method %s)\n",method) ;
     Mesh_WriteInversePermutation(mesh,filename,method) ;
+    DataSet_Delete(dataset) ;
+    free(dataset) ;
     return ;
   }
   
   if(Context_IsElementOrdering(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
-    DataSet_t* jdd =  DataSet_Create(filename,options) ;
-    Mesh_t* mesh = DataSet_GetMesh(jdd) ;
+    DataSet_t* dataset =  DataSet_Create(filename,options) ;
+    Mesh_t* mesh = DataSet_GetMesh(dataset) ;
     char* method = Options_GetElementOrderingMethod(options) ;
       
     Message_Direct("Element ordering (method %s)\n",method) ;
     Mesh_WriteInversePermutation(mesh,filename,method) ;
+    DataSet_Delete(dataset) ;
+    free(dataset) ;
     return ;
   }
   
   if(Context_IsPostProcessing(ctx)) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
-    DataSet_t* jdd =  DataSet_Create(filename,options) ;
-    int n_dates = Dates_GetNbOfDates(DataSet_GetDates(jdd)) ;
-    int n_points = Points_GetNbOfPoints(DataSet_GetPoints(jdd)) ;
+    DataSet_t* dataset =  DataSet_Create(filename,options) ;
+    int n_dates = Dates_GetNbOfDates(DataSet_GetDates(dataset)) ;
+    int n_points = Points_GetNbOfPoints(DataSet_GetPoints(dataset)) ;
     OutputFiles_t* outputfiles = OutputFiles_Create(filename,n_dates,n_points) ;
     char* method = Options_GetPostProcessingMethod(options) ;
       
@@ -217,17 +234,20 @@ void Bil_CLI(Bil_t* bil)
     
     /* GMSH Parsed file format */
     if(strncmp(method,"GmshParsedFileFormat",strlen(method)) == 0) {
-      OutputFiles_PostProcessForGmshParsedFileFormat(outputfiles,jdd) ;
+      OutputFiles_PostProcessForGmshParsedFileFormat(outputfiles,dataset) ;
       
     /* GMSH ASCII file format */
     } else if(strncmp(method,"GmshASCIIFileFormat",strlen(method)) == 0) {
-      OutputFiles_PostProcessForGmshASCIIFileFormat(outputfiles,jdd) ;
+      OutputFiles_PostProcessForGmshASCIIFileFormat(outputfiles,dataset) ;
       
     } else {
       Message_FatalError("Format not available") ;
     }
 
-    OutputFiles_Delete(&outputfiles) ;
+    OutputFiles_Delete(outputfiles) ;
+    free(outputfiles) ;
+    DataSet_Delete(dataset) ;
+    free(dataset) ;
     return ;
   }
   
@@ -239,13 +259,15 @@ void Bil_CLI(Bil_t* bil)
     
       HardenedCementChemistry_SetRoomTemperature(hcc,temp) ;
       HardenedCementChemistry_PrintChemicalConstants(hcc) ;
+      HardenedCementChemistry_Delete(hcc) ;
     }
     
     {
-      CementSolutionChemistry_t* csc = CementSolutionChemistry_Create(1) ;
+      CementSolutionChemistry_t* csc = CementSolutionChemistry_Create() ;
       
       CementSolutionChemistry_GetRoomTemperature(csc) = temp ;
       CementSolutionChemistry_PrintChemicalConstants(csc) ;
+      CementSolutionChemistry_Delete(csc) ;
     }
     
     return ;
@@ -253,8 +275,15 @@ void Bil_CLI(Bil_t* bil)
   
   if(Context_IsTest(ctx)) {
     #if 1
+    TypeId_t id = TypeId_Create(double) ;
+    char s[] = Utils_STR(TypeId_Type(TypeId_Code(double))) ;
+    printf("typeid = %d\n",id) ;
+    printf("type = %s\n",s) ;
+    #endif
+    #if 0
     {
       LogActivityOfWaterInBrine_t* law = LogActivityOfWaterInBrine_Create() ;
+      LogActivityOfWaterInBrine_Delete(law) ;
       return ;
     }
     #endif
@@ -262,8 +291,10 @@ void Bil_CLI(Bil_t* bil)
     {
       char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
       Options_t* options = Context_GetOptions(ctx) ;
-    
-      DataSet_Create1(filename,options) ;
+      DataSet_t* dataset = DataSet_Create1(filename,options) ;
+      
+      DataSet_Delete(dataset) ;
+      free(dataset) ;
       return ;
     }
     #endif
@@ -274,13 +305,16 @@ void Bil_CLI(Bil_t* bil)
   if(1) {
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
-    DataSet_t* jdd =  DataSet_Create(filename,options) ;
-    Module_t* module_i = DataSet_GetModule(jdd) ;
+    DataSet_t* dataset =  DataSet_Create(filename,options) ;
+    Module_t* module = DataSet_GetModule(dataset) ;
   
     Message_Direct("Calculation of %s\n",filename) ;
-    Message_Direct("Enter in %s\n",Module_GetCodeNameOfModule(module_i)) ;
-    Module_ComputeProblem(module_i,jdd) ;
+    Message_Direct("Enter in %s\n",Module_GetCodeNameOfModule(module)) ;
+    Module_ComputeProblem(module,dataset) ;
     Message_Direct("End of calculation\n") ;
+    
+    DataSet_Delete(dataset) ;
+    free(dataset) ;
     
     Message_Info("CPU time %g seconds\n",Message_CPUTime()) ;
     return ;

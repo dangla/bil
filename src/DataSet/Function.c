@@ -36,7 +36,32 @@ Function_t*  (Function_New)(const int n)
 
 
 
-int Function_Scan(Function_t* function,DataFile_t* datafile)
+void (Function_Delete)(void* self)
+{
+  Function_t* function = (Function_t*) self ;
+  
+  {
+    double* x = Function_GetXValue(function) ;
+    
+    if(x) {
+      free(x) ;
+      Function_GetXValue(function) = NULL ;
+    }
+  }
+  
+  {
+    double* f = Function_GetFValue(function) ;
+    
+    if(f) {
+      free(f) ;
+      Function_GetFValue(function) = NULL ;
+    }
+  }
+}
+
+
+
+int (Function_Scan)(Function_t* function,DataFile_t* datafile)
 {
   char* cur = DataFile_GetCurrentPositionInFileContent(datafile) ;
   char* line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
@@ -52,7 +77,8 @@ int Function_Scan(Function_t* function,DataFile_t* datafile)
       if(n) {
         Function_t* fct = Function_New(n_tm) ;
         
-        *function = *fct ;
+        function[0] = fct[0] ;
+        free(fct) ;
       }
       
       
@@ -212,14 +238,13 @@ double (Function_ComputeValue)(Function_t* fn,double t)
 
 
 
-int Function_ReadInFile(Function_t* fn,char* line1)
+int (Function_ReadInFile)(Function_t* fn,char* line1)
 /* Lecture des fonctions du temps dans le fichier "nom"
    retourne le nb de fonctions lues */
 {
   int    n_points,n_fonctions ;
   char   line[Function_MaxLengthOfTextLine],*c ;
   FILE   *fict ;
-  int    i ;
   int long pos ;
   char nom[Function_MaxLengthOfFileName] ;
   
@@ -253,15 +278,13 @@ int Function_ReadInFile(Function_t* fn,char* line1)
 
     /* reservation de la memoire */
     {
-      double* t = (double*) malloc(n_points*sizeof(double)) ;
-      double* f = (double*) malloc(n_fonctions*n_points*sizeof(double)) ;
-      if(!t) arret("Function_ReadInFile: unable to allocate the memory") ;
-      if(!f) arret("Function_ReadInFile: unable to allocate the memory") ;
+      int i ;
     
       for(i = 0 ; i < n_fonctions ;i++) {
-        Function_GetNbOfPoints(fn + i) = n_points ;
-        Function_GetXValue(fn + i) = t ; /* meme temps pour les fonctions */
-        Function_GetFValue(fn + i) = f + i*n_points ;
+        Function_t* fct = Function_New(n_points) ;
+        
+        fn[i] = fct[0] ;
+        free(fct) ;
       }
     }
   
@@ -280,16 +303,22 @@ int Function_ReadInFile(Function_t* fn,char* line1)
   
   
       /* Read time and function values */
-      for(i = 0 ; i < n_points ; i++) {
-        double* x = Function_GetXValue(fn) ;
-        int    j ;
+      {
+        int i ;
+        
+        for(i = 0 ; i < n_points ; i++) {
+          double x ;
+          int    j ;
     
-        fscanf(fict,"%le",x + i) ;
+          fscanf(fict,"%le",&x) ;
     
-        for(j = 0 ; j < n_fonctions ; j++) {
-          double* f = Function_GetFValue(fn + j) ;
-      
-          fscanf(fict,"%le",f + i) ;
+          for(j = 0 ; j < n_fonctions ; j++) {
+            double* t = Function_GetXValue(fn + j) ;
+            double* f = Function_GetFValue(fn + j) ;
+            
+            t[i] = x ;
+            fscanf(fict,"%le",f + i) ;
+          }
         }
       }
     }
@@ -309,37 +338,40 @@ int Function_ReadInFile(Function_t* fn,char* line1)
 
     /* reservation de la memoire */
     {
-      double* t = (double*) Mry_New(double[n_points]) ;
-      double* f = (double*) Mry_New(double[n_fonctions*n_points]) ;
+      int i ;
     
       for(i = 0 ; i < n_fonctions ;i++) {
-        Function_GetNbOfPoints(fn + i) = n_points ;
-        Function_GetXValue(fn + i) = t ; /* meme temps pour les fonctions */
-        Function_GetFValue(fn + i) = f + i*n_points ;
+        Function_t* fct = Function_New(n_points) ;
+        
+        fn[i] = fct[0] ;
+        free(fct) ;
       }
     }
   
     {
       double* t = Curve_CreateSamplingOfX(curve) ;
+      int i ;
       
       /* Read time and function values */
       for(i = 0 ; i < n_points ; i++) {
-        double* x = Function_GetXValue(fn) ;
         int    j ;
-
-        x[i] = t[i] ;
     
         for(j = 0 ; j < n_fonctions ; j++) {
           Curve_t* curve_j = curve + j ;
           double* y = Curve_GetYValue(curve_j) ;
+          double* x = Function_GetXValue(fn + j) ;
           double* f = Function_GetFValue(fn + j) ;
           
+          x[i] = t[i] ;
           f[i] = y[i] ;
         }
       }
+      
+      free(t) ;
     }
     
-    Curves_Delete(&curves) ;
+    Curves_Delete(curves) ;
+    free(curves) ;
   }
 
   fclose(fict) ;

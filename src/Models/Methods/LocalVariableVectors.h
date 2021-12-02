@@ -12,8 +12,8 @@ typedef struct LocalVariableVectors_s     LocalVariableVectors_t ;
 /* Declaration of Macros, Methods and Structures */
 
 
-extern LocalVariableVectors_t*     LocalVariableVectors_Create(int) ;
-extern void                        LocalVariableVectors_Delete(void*) ;
+extern LocalVariableVectors_t*     (LocalVariableVectors_Create)(int) ;
+extern void                        (LocalVariableVectors_Delete)(void*) ;
 
 
 

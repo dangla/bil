@@ -14,7 +14,7 @@ static TimeStep_t*  TimeStep_New(void) ;
 
 
 
-TimeStep_t*  TimeStep_New(void)
+TimeStep_t*  (TimeStep_New)(void)
 {
   TimeStep_t* timestep = (TimeStep_t*) Mry_New(TimeStep_t) ;
 
@@ -27,20 +27,27 @@ TimeStep_t*  TimeStep_New(void)
   TimeStep_GetObVals(timestep)             = NULL ;
   TimeStep_GetLocation(timestep)           = 0 ;
   TimeStep_SetLocationAtBegin(timestep) ;
-  TimeStep_GetSequentialIndex(timestep)    = 0 ;
+  //TimeStep_GetSequentialIndex(timestep)    = 0 ;
 
   return(timestep) ;
 }
 
 
 
-TimeStep_t*  TimeStep_Create(DataFile_t* datafile,ObVals_t* obvals)
+void  (TimeStep_Delete)(void* self)
+{
+  TimeStep_t* timestep = (TimeStep_t*) self ;
+}
+
+
+
+TimeStep_t*  (TimeStep_Create)(DataFile_t* datafile,ObVals_t* obvals)
 {
   TimeStep_t* timestep = TimeStep_New() ;
   char*   line ;
   char*   pline ;
   
-  
+  TimeStep_GetDataFile(timestep) = datafile ;
   TimeStep_GetObVals(timestep) = obvals ;
   
   DataFile_OpenFile(datafile,"r") ;
@@ -111,17 +118,31 @@ TimeStep_t*  TimeStep_Create(DataFile_t* datafile,ObVals_t* obvals)
 
 
 
-double TimeStep_ComputeTimeStep(TimeStep_t* timestep,Nodes_t* nodes,double tn,double dtn,double t1,double t2)
+double (TimeStep_ComputeTimeStep)(TimeStep_t* timestep,Solution_t* soln,double t1,double t2)
 /** Return the current time increment dt so that the current time is t = tn + dt.
  *  The two times tn and t should lie within the range between t1 and t2.
  *  Also set the location of the time step dt within the range between t1 and t2 
  *  as being either at the beginning, in between or at the end of the  range [t1:t2].
  **/
 {
+  Nodes_t* nodes = Solution_GetNodes(soln) ;
+  int nbofsequences = Nodes_GetNbOfMatrices(nodes) ;
+  int sequentialindex = TimeStep_GetSequentialIndex(timestep) ;
+  double tn = Solution_GetSequentialTime(soln)[sequentialindex] ;
+  double dtn = Solution_GetSequentialTimeStep(soln)[sequentialindex] ;
   double dt ;
   double zero = 0. ;
   //static unsigned short int step ;
   //unsigned short int debut=0,entre=1,fin=2 ;
+  
+  if(tn < t1) {
+    Message_RuntimeError("TimeStep_ComputeTimeStep: tn=%g outside the range t1=%g-t2=%g",tn,t1,t2) ;
+  }
+  
+
+  if(nbofsequences > 1) {
+    Message_Direct("S%d-",sequentialindex) ;
+  }
   
   
   /* Compute the time increment dt */
@@ -140,9 +161,8 @@ double TimeStep_ComputeTimeStep(TimeStep_t* timestep,Nodes_t* nodes,double tn,do
     unsigned int n_no = Nodes_GetNbOfNodes(nodes) ;
     Node_t* no = Nodes_GetNode(nodes) ;
     ObVal_t* obval = TimeStep_GetObVal(timestep) ;
-    int sequentialindex = TimeStep_GetSequentialIndex(timestep) ;
     int    obvalindex = 0 ;
-    int    nodeindex = 0 ;
+    int    nodeindex = -1 ;
     double varmax = zero ;
     double rs ;
     unsigned int i ;
@@ -155,22 +175,24 @@ double TimeStep_ComputeTimeStep(TimeStep_t* timestep,Nodes_t* nodes,double tn,do
       int neq = Node_GetNbOfEquations(nodi) ;
       //double* u_1 = Node_GetCurrentUnknown(nodi) ;
       //double* u_n = Node_GetPreviousUnknown(nodi) ;
-      double* u_n = Node_GetUnknownInDistantPast(nodi,2) ;
-      double* u_1 = Node_GetPreviousUnknown(nodi) ;
+      double* u_n2 = Node_GetUnknownInDistantPast(nodi,2) ;
+      double* u_n = Node_GetPreviousUnknown(nodi) ;
       int*    node_seq_ind = Node_GetSequentialIndexOfUnknown(nodi) ;
       int j ;
       
       for(j = 0 ; j < neq ; j++) {
-        if(node_seq_ind[j] == sequentialindex) {
+        int k = node_seq_ind[j] ;
+        
+        if(k == sequentialindex) {
           ObVal_t* obval_j = obval + Node_GetObValIndex(nodi)[j] ;
           double val = ObVal_GetValue(obval_j) ;
-          double varrel = fabs(u_1[j] - u_n[j])/val ;
+          double varrel = fabs(u_n[j] - u_n2[j])/val ;
         
           if(ObVal_IsRelativeValue(obval_j)) {
-            if(fabs(u_n[j]) > 0.) varrel /= fabs(u_n[j]) ;
+            if(fabs(u_n2[j]) > 0.) varrel /= fabs(u_n2[j]) ;
           }
-        
-          if(varrel > varmax) {
+
+          if(nodeindex < 0 || varrel >= varmax) {
             varmax = varrel ;
             obvalindex = Node_GetObValIndex(nodi)[j] ;
             nodeindex = i ;
@@ -194,14 +216,28 @@ double TimeStep_ComputeTimeStep(TimeStep_t* timestep,Nodes_t* nodes,double tn,do
     if(dt < TimeStep_GetMinimumTimeStep(timestep) && dt > zero) {
       dt = TimeStep_GetMinimumTimeStep(timestep) ;
     }
-
-    Message_Direct("(%s[%d])",ObVal_GetNameOfUnknown(TimeStep_GetObVal(timestep) + obvalindex),nodeindex) ;
-    //Message_Direct("(%s)",ObVal_GetNameOfUnknown(TimeStep_GetObVal(timestep) + obvalindex)) ;
+    
+    if(nodeindex >= 0) {
+      Message_Direct("(%s[%d])",ObVal_GetNameOfUnknown(TimeStep_GetObVal(timestep) + obvalindex),nodeindex) ;
+    } else {
+      Message_Direct("(none[-])") ;
+    }
   }
   
   /* tn + dt should not be greater than the next date */
-  if(tn + dt > t2) {
-    dt = t2 - tn ;
+  if(TimeStep_IsLocatedAtBegin(timestep)) {
+    if(tn + dt > t2) {
+      dt = t2 - tn ;
+    }
+  } else {
+  /* The factor c>1 ensures that the last time step be not too small
+   * since it will lie in between (1-c)*dt and c*dt.
+   */
+    double c = 1.1 ;
+    
+    if(tn + c*dt > t2) {
+      dt = t2 - tn ;
+    }
   }
 
   //if(tn + dt == t2) step = fin ; 
@@ -210,6 +246,9 @@ double TimeStep_ComputeTimeStep(TimeStep_t* timestep,Nodes_t* nodes,double tn,do
     TimeStep_SetLocationAtEnd(timestep) ;
   }
 
-  if(dt < zero) arret("ComputeTimeStep: dt < 0") ;
+  if(dt < zero) {
+    arret("TimeStep_ComputeTimeStep: dt < 0") ;
+  }
+  
   return(dt) ;
 }

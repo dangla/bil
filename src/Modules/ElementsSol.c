@@ -5,9 +5,6 @@
 #include "Mry.h"
 
 
-static void   (ElementSol_Initialize)(ElementSol_t*) ;
-
-
 /* Extern functions */
 
 ElementsSol_t*   (ElementsSol_Create)(Mesh_t* mesh)
@@ -28,15 +25,12 @@ ElementsSol_t*   (ElementsSol_Create)(Mesh_t* mesh)
       int i ;
       
       for(i = 0 ; i < NbOfElements ; i++) {
-        ElementSol_t* elementsol_i = elementsol + i ;
+        ElementSol_t* elementsol_i = ElementSol_New() ;
         
-        ElementSol_Initialize(elementsol_i) ;
+        elementsol[i] = elementsol_i[0] ;
+        free(elementsol_i) ;
       }
     }
-  
-    ElementsSol_GetNbOfImplicitTerms(elementssol) = 0 ;
-    ElementsSol_GetNbOfExplicitTerms(elementssol) = 0 ;
-    ElementsSol_GetNbOfConstantTerms(elementssol) = 0 ;
   }
   
   return(elementssol) ;
@@ -44,17 +38,27 @@ ElementsSol_t*   (ElementsSol_Create)(Mesh_t* mesh)
 
 
 
-void ElementsSol_Delete(void* self)
+void (ElementsSol_Delete)(void* self)
 {
-  ElementsSol_t** pelementssol = (ElementsSol_t**) self ;
-  ElementsSol_t*   elementssol = *pelementssol ;
+  ElementsSol_t* elementssol = (ElementsSol_t*) self ;
   
   {
+    int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
     ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
     
+    if(elementsol) {
+      int i ;
+      
+      for(i = 0 ; i < NbOfElements ; i++) {
+        ElementSol_t* elementsol_i = elementsol + i ;
+      
+        ElementSol_Delete(elementsol_i) ;
+      }
+    
+      free(elementsol) ;
+      ElementsSol_GetElementSol(elementssol) = NULL ;
+    }
   }
-  
-  free(elementssol) ;
 }
 
 
@@ -65,44 +69,14 @@ void (ElementsSol_AllocateMemoryForImplicitTerms)(ElementsSol_t* elementssol)
  *   in "elementssol".
  */
 {
-
-  /* Compute the total nb of implicit terms */
+  int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
+  ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
+  
   {
-    int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
-    ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
     int    i ;
-    int    n_vi = 0 ;
-  
+
     for(i = 0 ; i < NbOfElements ; i++) {
-      ElementSol_t* elementsol_i = elementsol + i ;
-      
-      n_vi += ElementSol_GetNbOfImplicitTerms(elementsol_i) ;
-    }
-  
-    ElementsSol_GetNbOfImplicitTerms(elementssol) = n_vi ;
-  }
-  
-  
-  /* Allocation of space for implicit terms */
-  {
-    int  n_vi = ElementsSol_GetNbOfImplicitTerms(elementssol) ;
-  
-    {
-      int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
-      ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
-      int    i ;
-      double* vi = (double*) Mry_New(double[n_vi]) ;
-  
-  
-      for(i = 0 ; i < NbOfElements ; i++) {
-        ElementSol_t* elementsol_i = elementsol + i ;
-        int ni = ElementSol_GetNbOfImplicitTerms(elementsol_i) ;
-        GenericData_t* gdat = ElementSol_GetImplicitGenericData(elementsol_i) ;
-        
-        GenericData_Initialize(gdat,ni,vi,double,"implicit terms") ;
-          
-        vi += ni ;
-      }
+      ElementSol_AllocateMemoryForImplicitTerms(elementsol + i) ;
     }
   }
 }
@@ -115,46 +89,16 @@ void (ElementsSol_AllocateMemoryForExplicitTerms)(ElementsSol_t* elementssol)
  *   in "elementssol".
  */
 {
-
-  /* Compute the total nb of explicit terms */
-  {
-    int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
-    ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
-    int    i ;
-    int    n_ve = 0 ;
-  
-    for(i = 0 ; i < NbOfElements ; i++) {
-      ElementSol_t* elementsol_i = elementsol + i ;
-      
-      n_ve += ElementSol_GetNbOfExplicitTerms(elementsol_i) ;
-    }
-  
-    ElementsSol_GetNbOfExplicitTerms(elementssol) = n_ve ;
-  }
-  
-  
-  /* Allocation of space for explicit terms */
-  {
-    int  n_ve = ElementsSol_GetNbOfExplicitTerms(elementssol) ;
+  int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
+  ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
   
     {
-      int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
-      ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
       int    i ;
-      double* ve = (double*) Mry_New(double[n_ve]) ;
 
-  
       for(i = 0 ; i < NbOfElements ; i++) {
-        ElementSol_t* elementsol_i = elementsol + i ;
-        int ne = ElementSol_GetNbOfExplicitTerms(elementsol_i) ;
-        GenericData_t* gdat = ElementSol_GetExplicitGenericData(elementsol_i) ;
-        
-        GenericData_Initialize(gdat,ne,ve,double,"explicit terms") ;
-          
-        ve += ne ;
+        ElementSol_AllocateMemoryForExplicitTerms(elementsol + i) ;
       }
     }
-  }
 }
 
 
@@ -165,82 +109,16 @@ void (ElementsSol_AllocateMemoryForConstantTerms)(ElementsSol_t* elementssol)
  *   in "elementssol".
  */
 {
-
-  /* Compute the total nb of constant terms */
-  {
-    int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
-    ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
-    int    i ;
-    int    n_v0 = 0 ;
-  
-    for(i = 0 ; i < NbOfElements ; i++) {
-      ElementSol_t* elementsol_i = elementsol + i ;
-      
-      n_v0 += ElementSol_GetNbOfConstantTerms(elementsol_i) ;
-    }
-  
-    ElementsSol_GetNbOfConstantTerms(elementssol) = n_v0 ;
-  }
-  
-  
-  /* Allocation of space for constant terms */
-  {
-    int  n_v0 = ElementsSol_GetNbOfConstantTerms(elementssol) ;
+  int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
+  ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
   
     {
-      int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
-      ElementSol_t* elementsol = ElementsSol_GetElementSol(elementssol) ;
-      int    i ;
-      double* v0 = (double*) Mry_New(double[n_v0]) ;
-  
-  
-      for(i = 0 ; i < NbOfElements ; i++) {
-        ElementSol_t* elementsol_i = elementsol + i ;
-        int n0 = ElementSol_GetNbOfConstantTerms(elementsol_i) ;
-        GenericData_t* gdat = ElementSol_GetConstantGenericData(elementsol_i) ;
-        
-        GenericData_Initialize(gdat,n0,v0,double,"constant terms") ;
-          
-        v0 += n0 ;
-      }
-    }
-  }
-}
-
-
-
-void   (ElementsSol_ShareConstantTermsFrom)(ElementsSol_t* elementssol0,ElementsSol_t* elementssol)
-/**  Initialize the constant terms on the basis of "elementssol0".
- */
-{
-
-  /* Compute the nb of constant terms */
-  {
-    int  n_v0 = ElementsSol_GetNbOfConstantTerms(elementssol0) ;
-  
-    ElementsSol_GetNbOfConstantTerms(elementssol) = n_v0 ;
-  }
-  
-  
-  /* Initialize the constant terms */
-  {
-    {
-      int NbOfElements = ElementsSol_GetNbOfElements(elementssol) ;
-      ElementSol_t* elementsol0 = ElementsSol_GetElementSol(elementssol0) ;
-      ElementSol_t* elementsol  = ElementsSol_GetElementSol(elementssol) ;
       int    i ;
 
-      /* Elements of elementssol and elementssol0 share the same constant terms */
       for(i = 0 ; i < NbOfElements ; i++) {
-        int n0 = ElementSol_GetNbOfConstantTerms(elementsol0 + i) ;
-        void* v0 = ElementSol_GetConstantTerm(elementsol0 + i) ;
-        GenericData_t* gdat = ElementSol_GetConstantGenericData(elementsol + i) ;
-        
-        GenericData_Initialize(gdat,n0,v0,double,"constant terms") ;
+        ElementSol_AllocateMemoryForConstantTerms(elementsol + i) ;
       }
-
     }
-  }
 }
 
 
@@ -257,54 +135,61 @@ void ElementsSol_Copy(ElementsSol_t* elementssol_dest,ElementsSol_t* elementssol
   
     /* Implicit terms */
     {
-      unsigned int ni = ElementsSol_GetNbOfImplicitTerms(elementssol_src) ;
-      double* vi_s = (double*) ElementSol_GetImplicitTerm(elementsol_s) ;
-      double* vi_d = (double*) ElementSol_GetImplicitTerm(elementsol_d) ;
-      unsigned int i ;
-      
-      ElementsSol_GetNbOfImplicitTerms(elementssol_dest) = ni ;
-    
-      for(i = 0 ; i < ni ; i++) {
-        vi_d[i] = vi_s[i] ;
+      int ie ;
+        
+      for(ie = 0 ; ie < nelts ; ie++) {
+        ElementSol_t* elementsoli_s = elementsol_s + ie ;
+        ElementSol_t* elementsoli_d = elementsol_d + ie ;
+        double* vi_s = (double*) ElementSol_GetImplicitTerm(elementsoli_s) ;
+        double* vi_d = (double*) ElementSol_GetImplicitTerm(elementsoli_d) ;
+        int nvi = ElementSol_GetNbOfImplicitTerms(elementsoli_s) ;
+        unsigned int i ;
+        
+        if(vi_d != vi_s) {
+          for(i = 0 ; i < nvi ; i++) {
+            vi_d[i] = vi_s[i] ;
+          }
+        }
       }
     }
 
     /* Explicit terms */
     {
-      unsigned int ne = ElementsSol_GetNbOfExplicitTerms(elementssol_src) ;
-      double* ve_s = (double*) ElementSol_GetExplicitTerm(elementsol_s) ;
-      double* ve_d = (double*) ElementSol_GetExplicitTerm(elementsol_d) ;
-      unsigned int i ;
+      int ie ;
+        
+      for(ie = 0 ; ie < nelts ; ie++) {
+        ElementSol_t* elementsoli_s = elementsol_s + ie ;
+        ElementSol_t* elementsoli_d = elementsol_d + ie ;
+        double* ve_s = (double*) ElementSol_GetExplicitTerm(elementsoli_s) ;
+        double* ve_d = (double*) ElementSol_GetExplicitTerm(elementsoli_d) ;
+        int nve = ElementSol_GetNbOfExplicitTerms(elementsoli_s) ;
+        unsigned int i ;
       
-      ElementsSol_GetNbOfExplicitTerms(elementssol_dest) = ne ;
-      
-      for(i = 0 ; i < ne ; i++) {
-        ve_d[i] = ve_s[i] ;
+        if(ve_d != ve_s) {
+          for(i = 0 ; i < nve ; i++) {
+            ve_d[i] = ve_s[i] ;
+          }
+        }
       }
     }
 
     /* Constant terms */
     {
-      unsigned int nc = ElementsSol_GetNbOfConstantTerms(elementssol_src) ;
-      double* vc_s = (double*) ElementSol_GetConstantTerm(elementsol_s) ;
-      double* vc_d = (double*) ElementSol_GetConstantTerm(elementsol_d) ;
-      unsigned int i ;
-      
-      ElementsSol_GetNbOfConstantTerms(elementssol_dest) = nc ;
-      
-      for(i = 0 ; i < nc ; i++) {
-        vc_d[i] = vc_s[i] ;
+      int ie ;
+        
+      for(ie = 0 ; ie < nelts ; ie++) {
+        ElementSol_t* elementsoli_s = elementsol_s + ie ;
+        ElementSol_t* elementsoli_d = elementsol_d + ie ;
+        double* vc_s = (double*) ElementSol_GetConstantTerm(elementsoli_s) ;
+        double* vc_d = (double*) ElementSol_GetConstantTerm(elementsoli_d) ;
+        int nvc = ElementSol_GetNbOfConstantTerms(elementsoli_s) ;
+        unsigned int i ;
+        
+        if(vc_d != vc_s) {
+          for(i = 0 ; i < nvc ; i++) {
+            vc_d[i] = vc_s[i] ;
+          }
+        }
       }
     }
-}
-
-
-
-/* Intern functions */
-
-void   (ElementSol_Initialize)(ElementSol_t* elementsol)
-{
-  ElementSol_GetImplicitGenericData(elementsol) = GenericData_New() ;
-  ElementSol_GetExplicitGenericData(elementsol) = GenericData_New() ;
-  ElementSol_GetConstantGenericData(elementsol) = GenericData_New() ;
 }

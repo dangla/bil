@@ -2,7 +2,6 @@
 #define BASENAME_SETMODELPROP_H
 
 
-
 #include "Utils.h"
 
 #define BASENAME_SETMODELPROP(base)   (Utils_CAT(base,_SetModelProp))

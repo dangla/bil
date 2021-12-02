@@ -17,24 +17,14 @@ char   OutputFile_TypeOfCurrentFile ;
 
 
 
-OutputFile_t*   (OutputFile_Create)(char* filename,int nfiles)
+OutputFile_t*   (OutputFile_Create)(char* filename)
 {
-  OutputFile_t* outputfile = (OutputFile_t*) Mry_New(OutputFile_t[nfiles]) ;
+  OutputFile_t* outputfile = (OutputFile_t*) Mry_New(OutputFile_t) ;
   
   {
-    char* c = filename + strlen(filename) - 1 ;
-    int j = (int) (*c - '0') ;
-    int i ;
-    
-    for(i = 0 ; i < nfiles ; i++) {
-      sprintf(c,"%d",j+i) ;
-      
-      {
-        TextFile_t* textfile = TextFile_Create(filename) ;
-          
-        OutputFile_GetTextFile(outputfile + i) = textfile ;
-      }
-    }
+    TextFile_t* textfile = TextFile_Create(filename) ;
+
+    OutputFile_GetTextFile(outputfile) = textfile ;
   }
     
   return(outputfile) ;
@@ -42,18 +32,14 @@ OutputFile_t*   (OutputFile_Create)(char* filename,int nfiles)
 
 
 
-void   (OutputFile_Delete)(void* self,int nfiles)
+void   (OutputFile_Delete)(void* self)
 {
-  OutputFile_t** poutputfile = (OutputFile_t**) self ;
-  OutputFile_t*   outputfile = *poutputfile ;
-  int i ;
+  OutputFile_t* outputfile = (OutputFile_t*) self ;
   
-  for(i = 0 ; i < nfiles ; i++) {
-    TextFile_t* textfile = OutputFile_GetTextFile(outputfile + i) ;
+  {
+    TextFile_t* textfile = OutputFile_GetTextFile(outputfile) ;
     
-    TextFile_Delete(&textfile) ;
+    TextFile_Delete(textfile) ;
+    free(textfile) ;
   }
-  
-  free(outputfile) ;
-  *poutputfile = NULL ;
 }

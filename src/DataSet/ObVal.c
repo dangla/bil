@@ -11,7 +11,7 @@
 
 
 
-ObVal_t*  ObVal_New(void)
+ObVal_t*  (ObVal_New)(void)
 {
   ObVal_t* obval = (ObVal_t*) Mry_New(ObVal_t) ;
   
@@ -33,8 +33,17 @@ ObVal_t*  ObVal_New(void)
 
 
 
+void (ObVal_Delete)(void* self)
+{
+  ObVal_t* obval = (ObVal_t*) self ;
 
-void  ObVal_Scan(ObVal_t* obval,DataFile_t* datafile)
+  free(ObVal_GetNameOfUnknown(obval)) ;
+}
+
+
+
+
+void  (ObVal_Scan)(ObVal_t* obval,DataFile_t* datafile)
 {
   char* line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
 

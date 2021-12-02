@@ -6,6 +6,7 @@
 #include "Exception.h"
 #include "Tools/Math.h"
 #include "Temperature.h"
+#include "Mry.h"
 #include "CementSolutionChemistry.h"
 
 #define Ln10      Math_Ln10
@@ -51,7 +52,7 @@ static double* instancevalence = NULL ;
 
 
 
-double* CementSolutionChemistry_GetValence()
+double* (CementSolutionChemistry_GetValence)(void)
 {
   if(!instancevalence) {
     instancevalence = CementSolutionChemistry_CreateValence() ;
@@ -61,28 +62,19 @@ double* CementSolutionChemistry_GetValence()
 }
 
 
-CementSolutionChemistry_t* CementSolutionChemistry_Create(const int n)
+CementSolutionChemistry_t* (CementSolutionChemistry_Create)(void)
 {
-  CementSolutionChemistry_t* csc = (CementSolutionChemistry_t*) malloc(n*sizeof(CementSolutionChemistry_t)) ;
-  
-  assert(csc) ;
+  CementSolutionChemistry_t* csc = (CementSolutionChemistry_t*) Mry_New(CementSolutionChemistry_t) ;
   
   {
-    int i ;
-      
-    for(i = 0 ; i < n ; i++) {
-      CementSolutionChemistry_t* csci = csc + i ;
-    
-      /* Memory allocation */
-      CementSolutionChemistry_AllocateMemory(csci) ;
+    /* Memory allocation */
+    CementSolutionChemistry_AllocateMemory(csc) ;
   
-      /* Initialize the equilibrium constants */
-      CementSolutionChemistry_UpdateChemicalConstants(csci) ;
+    /* Initialize the equilibrium constants */
+    CementSolutionChemistry_UpdateChemicalConstants(csc) ;
   
-  
-      /* Initialize concentrations to zero and other related variables */
-      CementSolutionChemistry_Initialize(csci) ;
-    }
+    /* Initialize concentrations to zero and other related variables */
+    CementSolutionChemistry_Initialize(csc) ;
   }
   
   return(csc) ;
@@ -90,10 +82,76 @@ CementSolutionChemistry_t* CementSolutionChemistry_Create(const int n)
 
 
 
-void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_Delete)(void* self)
 {
-  
-  
+  CementSolutionChemistry_t* csc = (CementSolutionChemistry_t*) self ;
+
+  {
+    Temperature_t* temp = CementSolutionChemistry_GetTemperature(csc) ;
+    
+    Temperature_Delete(temp) ;
+  }
+
+  {
+    int* ind = CementSolutionChemistry_GetPrimaryVariableIndex(csc) ;
+    
+    free(ind) ;
+  }
+
+  {
+    double* var = CementSolutionChemistry_GetPrimaryVariable(csc) ;
+    
+    free(var) ;
+  }
+
+  {
+    double* a = CementSolutionChemistry_GetActivity(csc) ;
+    
+    free(a) ;
+  }
+
+  {
+    double* loga = CementSolutionChemistry_GetLogActivity(csc) ;
+    
+    free(loga) ;
+  }
+
+  {
+    double* c = CementSolutionChemistry_GetConcentration(csc) ;
+    
+    free(c) ;
+  }
+
+  {
+    double* logc = CementSolutionChemistry_GetLogConcentration(csc) ;
+    
+    free(logc) ;
+  }
+
+  {
+    double* ec = CementSolutionChemistry_GetElementConcentration(csc) ;
+    
+    free(ec) ;
+  }
+
+  {
+    double* var = CementSolutionChemistry_GetOtherVariable(csc) ;
+    
+    free(var) ;
+  }
+
+  {
+    double* keq = CementSolutionChemistry_GetLog10Keq(csc) ;
+    
+    free(keq) ;
+  }
+}
+
+
+
+void (CementSolutionChemistry_AllocateMemory)(CementSolutionChemistry_t* csc)
+{
+
   /* Allocation of space for the temperature */
   {
     Temperature_t* temp = Temperature_Create() ;
@@ -104,10 +162,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
   
   /* Allocation of space for the primary variable indexes */
   {
-    size_t sz = CementSolutionChemistry_NbOfPrimaryVariables*sizeof(int) ;
-    int* ind = (int*) malloc(sz) ;
-    
-    assert(ind) ;
+    int* ind = (int*) Mry_New(int[CementSolutionChemistry_NbOfPrimaryVariables]) ;
     
     CementSolutionChemistry_GetPrimaryVariableIndex(csc) = ind ;
   }
@@ -115,10 +170,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
   
   /* Allocation of space for the primary variables */
   {
-    size_t sz = CementSolutionChemistry_NbOfPrimaryVariables*sizeof(double) ;
-    double* var = (double*) malloc(sz) ;
-    
-    assert(var) ;
+    double* var = (double*) Mry_New(double[CementSolutionChemistry_NbOfPrimaryVariables]) ;
     
     CementSolutionChemistry_GetPrimaryVariable(csc) = var ;
   }
@@ -126,10 +178,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
   
   /* Allocation of space for the activities */
   {
-    size_t sz = CementSolutionChemistry_NbOfSpecies*sizeof(double) ;
-    double* a = (double*) malloc(sz) ;
-    
-    assert(a) ;
+    double* a = (double*) Mry_New(double[CementSolutionChemistry_NbOfSpecies]) ;
     
     CementSolutionChemistry_GetActivity(csc) = a ;
   }
@@ -137,10 +186,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
   
   /* Allocation of space for the log of activities */
   {
-    size_t sz = CementSolutionChemistry_NbOfSpecies*sizeof(double) ;
-    double* loga = (double*) malloc(sz) ;
-    
-    assert(loga) ;
+    double* loga = (double*) Mry_New(double[CementSolutionChemistry_NbOfSpecies]) ;
     
     CementSolutionChemistry_GetLogActivity(csc) = loga ;
   }
@@ -148,10 +194,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
   
   /* Allocation of space for the concentrations */
   {
-    size_t sz = CementSolutionChemistry_NbOfSpecies*sizeof(double) ;
-    double* c = (double*) malloc(sz) ;
-    
-    assert(c) ;
+    double* c = (double*) Mry_New(double[CementSolutionChemistry_NbOfSpecies]) ;
     
     CementSolutionChemistry_GetConcentration(csc) = c ;
   }
@@ -159,10 +202,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
   
   /* Allocation of space for the log of concentrations */
   {
-    size_t sz = CementSolutionChemistry_NbOfSpecies*sizeof(double) ;
-    double* logc = (double*) malloc(sz) ;
-    
-    assert(logc) ;
+    double* logc = (double*) Mry_New(double[CementSolutionChemistry_NbOfSpecies]) ;
     
     CementSolutionChemistry_GetLogConcentration(csc) = logc ;
   }
@@ -170,10 +210,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
   
   /* Allocation of space for the element concentrations */
   {
-    size_t sz = CementSolutionChemistry_NbOfElementConcentrations*sizeof(double) ;
-    double* ec = (double*) malloc(sz) ;
-    
-    assert(ec) ;
+    double* ec = (double*) Mry_New(double[CementSolutionChemistry_NbOfElementConcentrations]) ;
     
     CementSolutionChemistry_GetElementConcentration(csc) = ec ;
   }
@@ -181,10 +218,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
   
   /* Allocation of space for other variables */
   {
-    size_t sz = CementSolutionChemistry_NbOfOtherVariables*sizeof(double) ;
-    double* var = (double*) malloc(sz) ;
-    
-    assert(var) ;
+    double* var = (double*) Mry_New(double[CementSolutionChemistry_NbOfOtherVariables]) ;
     
     CementSolutionChemistry_GetOtherVariable(csc) = var ;
   }
@@ -192,10 +226,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
   
   /* Allocation of space for the equilibrium constants */
   {
-    size_t sz = CementSolutionChemistry_NbOfSpecies*sizeof(double) ;
-    double* keq = (double*) malloc(sz) ;
-    
-    assert(keq) ;
+    double* keq = (double*) Mry_New(double[CementSolutionChemistry_NbOfSpecies]) ;
     
     CementSolutionChemistry_GetLog10Keq(csc) = keq ;
   }
@@ -203,7 +234,7 @@ void CementSolutionChemistry_AllocateMemory(CementSolutionChemistry_t* csc)
 
 
 
-double* CementSolutionChemistry_CreateValence(void)
+double* (CementSolutionChemistry_CreateValence)(void)
 {
   size_t sz = CementSolutionChemistry_NbOfSpecies*sizeof(double) ;
   double* z = (double*) malloc(sz) ;
@@ -224,7 +255,7 @@ double* CementSolutionChemistry_CreateValence(void)
        ((Z)[CementSolutionChemistry_GetIndexOf(CPD)])
 
 
-void CementSolutionChemistry_InitializeValence(double* z)
+void (CementSolutionChemistry_InitializeValence)(double* z)
 {
   int     n = CementSolutionChemistry_NbOfSpecies ;
   int i ;
@@ -294,7 +325,7 @@ void CementSolutionChemistry_InitializeValence(double* z)
 
 
 
-void CementSolutionChemistry_UpdateChemicalConstants(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_UpdateChemicalConstants)(CementSolutionChemistry_t* csc)
 {
   double T = CementSolutionChemistry_GetRoomTemperature(csc) ;
   
@@ -387,7 +418,7 @@ void CementSolutionChemistry_UpdateChemicalConstants(CementSolutionChemistry_t* 
 
 
 
-void CementSolutionChemistry_PrintChemicalConstants(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_PrintChemicalConstants)(CementSolutionChemistry_t* csc)
 {
   double T = CementSolutionChemistry_GetRoomTemperature(csc) ;
   
@@ -411,7 +442,7 @@ void CementSolutionChemistry_PrintChemicalConstants(CementSolutionChemistry_t* c
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O)(CementSolutionChemistry_t* csc)
 {
   double logq_ch = Input(LogQ_CH) ;
   double logq_sh = Input(LogQ_SH) ;
@@ -558,7 +589,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(CementSolutionC
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
@@ -569,7 +600,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O(CementSolut
 
 
 
-void CementSolutionChemistry_SupplementSystemWith_CO2(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_SupplementSystemWith_CO2)(CementSolutionChemistry_t* csc)
 {
   /* Supplement with CO2 */
   double loga_co2  = Input(LogA_CO2) ;
@@ -669,7 +700,7 @@ void CementSolutionChemistry_SupplementSystemWith_CO2(CementSolutionChemistry_t*
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
@@ -683,7 +714,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(CementSolut
 
 
 
-void CementSolutionChemistry_SupplementSystemWith_SO3(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_SupplementSystemWith_SO3)(CementSolutionChemistry_t* csc)
 {
   if(CementSolutionChemistry_InputSO3Is(csc,LogA_H2SO4)) {
     CementSolutionChemistry_SupplementSystemWith_SO3_1(csc) ;
@@ -700,7 +731,7 @@ void CementSolutionChemistry_SupplementSystemWith_SO3(CementSolutionChemistry_t*
 
 
 
-void CementSolutionChemistry_SupplementSystemWith_SO3_1(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_SupplementSystemWith_SO3_1)(CementSolutionChemistry_t* csc)
 {
   /* Supplement with SO3 */
   double loga_h2so4 = Input(LogA_H2SO4) ;
@@ -785,7 +816,7 @@ void CementSolutionChemistry_SupplementSystemWith_SO3_1(CementSolutionChemistry_
 
 
 
-void CementSolutionChemistry_SupplementSystemWith_SO3_2(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_SupplementSystemWith_SO3_2)(CementSolutionChemistry_t* csc)
 {
   /* Supplement with SO3 */
   double loga_so4 = Input(LogA_SO4) ;
@@ -859,7 +890,7 @@ void CementSolutionChemistry_SupplementSystemWith_SO3_2(CementSolutionChemistry_
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
@@ -910,7 +941,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(CementSol
 
 
 
-void CementSolutionChemistry_SupplementSystemWith_Cl(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_SupplementSystemWith_Cl)(CementSolutionChemistry_t* csc)
 {
   /* Supplement with Cl */
   double loga_cl   = Input(LogA_Cl) ;
@@ -939,7 +970,7 @@ void CementSolutionChemistry_SupplementSystemWith_Cl(CementSolutionChemistry_t* 
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_Cl_H2O(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_Cl_H2O)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-Al2O3-K2O */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(csc) ;
@@ -952,7 +983,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_Cl_H2O(Cement
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_H2O(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_H2O)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O-Al2O3 */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(csc) ;
@@ -965,7 +996,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_H2O(Cemen
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_Cl_H2O(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_Cl_H2O)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O-Al2O3 */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(csc) ;
@@ -979,7 +1010,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_Cl_H2O(Ce
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_SO3_H2O(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_SO3_H2O)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O-Al2O3 */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(csc) ;
@@ -992,7 +1023,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_SO3_H2O(Cemen
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O-SO3 */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(csc) ;
@@ -1041,7 +1072,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O(Cemen
 
 
 
-void CementSolutionChemistry_CopyConcentrations(CementSolutionChemistry_t* csc,double* v)
+void (CementSolutionChemistry_CopyConcentrations)(CementSolutionChemistry_t* csc,double* v)
 {
   {
     int     n = CementSolutionChemistry_NbOfSpecies ;
@@ -1059,7 +1090,7 @@ void CementSolutionChemistry_CopyConcentrations(CementSolutionChemistry_t* csc,d
 
 
 
-void CementSolutionChemistry_CopyLogConcentrations(CementSolutionChemistry_t* csc,double* v)
+void (CementSolutionChemistry_CopyLogConcentrations)(CementSolutionChemistry_t* csc,double* v)
 {
   {
     int     n = CementSolutionChemistry_NbOfSpecies ;
@@ -1077,7 +1108,7 @@ void CementSolutionChemistry_CopyLogConcentrations(CementSolutionChemistry_t* cs
 
 
 
-void CementSolutionChemistry_CopyChemicalPotential(CementSolutionChemistry_t* csc,double* v)
+void (CementSolutionChemistry_CopyChemicalPotential)(CementSolutionChemistry_t* csc,double* v)
 {
   {
     int     n = CementSolutionChemistry_NbOfSpecies ;
@@ -1097,7 +1128,7 @@ void CementSolutionChemistry_CopyChemicalPotential(CementSolutionChemistry_t* cs
 
 
 
-void CementSolutionChemistry_UpdateSolution(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_UpdateSolution)(CementSolutionChemistry_t* csc)
 {
   /* Charge density */
   {
@@ -1125,7 +1156,7 @@ void CementSolutionChemistry_UpdateSolution(CementSolutionChemistry_t* csc)
 
 
 
-int CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t* csc)
+int (CementSolutionChemistry_SolveElectroneutrality)(CementSolutionChemistry_t* csc)
 /** Solve the electroneutrality equation, SUM(z_i c_i) = 0,
  ** for c_h or c_oh, as root of a 4th order polynomial:
  ** ax^4 + bx^3 + cx^2 + dx + e = 0
@@ -1401,7 +1432,7 @@ int CementSolutionChemistry_SolveElectroneutrality(CementSolutionChemistry_t* cs
 
 #include "EquilibriumConstantOfHomogeneousReactionInWater.h"
 
-int CementSolutionChemistry_SolveExplicitElectroneutrality(CementSolutionChemistry_t* csc)
+int (CementSolutionChemistry_SolveExplicitElectroneutrality)(CementSolutionChemistry_t* csc)
 /** Solve the electroneutrality equation, SUM(z_i c_i) = 0,
  ** for c_h or c_oh, as root of a 2th order polynomial:
  ** ax^2 + bx + c = 0, keeping constant all other ion concentrations.
@@ -1439,7 +1470,7 @@ int CementSolutionChemistry_SolveExplicitElectroneutrality(CementSolutionChemist
 
 /* Intern functions */
 
-double CementSolutionChemistry_ComputeChargeDensity(CementSolutionChemistry_t* csc)
+double (CementSolutionChemistry_ComputeChargeDensity)(CementSolutionChemistry_t* csc)
 /** Return the charge **/
 {
   double c_h        = Concentration(H) ;
@@ -1533,7 +1564,7 @@ double CementSolutionChemistry_ComputeChargeDensity(CementSolutionChemistry_t* c
 
 
 
-double CementSolutionChemistry_ComputeLiquidMassDensity(CementSolutionChemistry_t* csc)
+double (CementSolutionChemistry_ComputeLiquidMassDensity)(CementSolutionChemistry_t* csc)
 /** Return the liquid mass density **/
 {
   double c_h        = Concentration(H) ;
@@ -1634,7 +1665,7 @@ double CementSolutionChemistry_ComputeLiquidMassDensity(CementSolutionChemistry_
 
 
 
-void CementSolutionChemistry_Initialize(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_Initialize)(CementSolutionChemistry_t* csc)
 {
   /* Concentrations */
   {
@@ -1711,7 +1742,7 @@ void CementSolutionChemistry_Initialize(CementSolutionChemistry_t* csc)
 
 
 
-void CementSolutionChemistry_UpdateElementConcentrations(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_UpdateElementConcentrations)(CementSolutionChemistry_t* csc)
 /** Update the element concentrations **/
 {
   //double c_h        = Concentration(H) ;
@@ -1798,7 +1829,7 @@ void CementSolutionChemistry_UpdateElementConcentrations(CementSolutionChemistry
 
 
 
-void CementSolutionChemistry_TranslateConcentrationsIntoActivities(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_TranslateConcentrationsIntoActivities)(CementSolutionChemistry_t* csc)
 {
   double logc0 = LogC0_ref ;
   int     n = CementSolutionChemistry_NbOfSpecies ;
@@ -1817,7 +1848,7 @@ void CementSolutionChemistry_TranslateConcentrationsIntoActivities(CementSolutio
 
 
 
-double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh)
+double (poly4)(double a,double b,double c,double d,double e,double a_h,double a_oh)
 /* Solve ax^4 + bx^3 + cx^2 + dx + e = 0 
  * for x in the range defined by x*a_h < 1 and a_oh/x < 1 (a_oh < x < 1/a_h)
  * because a_h and a_oh should be < 1 (ie 0 < pH < -logKw) 
@@ -1869,7 +1900,7 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
 
 /* Not used */
 #if 0
-double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh)
+double (poly4)(double a,double b,double c,double d,double e,double a_h,double a_oh)
 /* Solve ax^4 + bx^3 + cx^2 + dx + e = 0 
  * for x in the range defined by x*a_h < 1 and a_oh/x < 1 (a_oh < x < 1/a_h)
  * because a_h and a_oh should be < 1 (ie 0 < pH < -logKw) */
@@ -1917,7 +1948,7 @@ double poly4(double a,double b,double c,double d,double e,double a_h,double a_oh
 
 /* Not used */
 #if 0
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_1(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_1)(CementSolutionChemistry_t* csc)
 {
   double s_ch    = Input(S_CH) ;
   double s_sh    = Input(S_SH) ;
@@ -2015,7 +2046,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_1(CementSolutionChe
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_1(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_1)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O-SO3 */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(csc) ;
@@ -2065,7 +2096,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_1(CementS
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_2(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_2)(CementSolutionChemistry_t* csc)
 {
   double logq_ch = Input(LogQ_CH) ;
   double logq_sh = Input(LogQ_SH) ;
@@ -2155,7 +2186,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_2(CementSolutionChe
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_2(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_2)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_2(csc) ;
@@ -2226,7 +2257,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_2(CementSolutio
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_2(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_2)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_2(csc) ;
@@ -2284,7 +2315,7 @@ void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_2(CementSolutio
 
 
 
-void CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_2(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_2)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O-SO3 */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_2(csc) ;

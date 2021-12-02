@@ -1,34 +1,49 @@
 #include <string.h>
 #include "Message.h"
+#include "Mry.h"
 #include "Results.h"
 
 
 
 
-Results_t* Results_Create(int n)
+Results_t* (Results_Create)(int n)
 {
-  Results_t* results = (Results_t*) malloc(sizeof(Results_t)) ;
-  
-  if(!results) {
-    arret("Results_Create") ;
-  }
+  Results_t* results = (Results_t*) Mry_New(Results_t) ;
   
   Results_GetNbOfResults(results) = n ;
   
-  Results_GetResult(results) = Result_Create(n) ;
+  {
+    Result_t* result = (Result_t*) Mry_New(Result_t[n]) ;
+    int i ;
+    
+    for(i = 0 ; i < n ; i++) {
+      Result_t* rs = Result_Create() ;
+  
+      result[i] = rs[0] ;
+      free(rs) ;
+    }
+  
+    Results_GetResult(results) = result ;
+  }
   
   return(results);
 }
 
 
 
-void Results_Delete(void* self)
+void (Results_Delete)(void* self)
 {
-  Results_t** presults = (Results_t**) self ;
-  Results_t*   results =  *presults;
-  Result_t* result = Results_GetResult(results) ;
+  Results_t* results = (Results_t*) self ;
   
-  Result_Delete(&result) ;
-  free(results) ;
-  *presults = NULL ;
+  {
+    int n = Results_GetNbOfResults(results) ;
+    Result_t* result = Results_GetResult(results) ;
+    int i ;
+
+    for(i = 0 ; i < n ; i++) {
+      Result_Delete(result + i) ;
+    }
+
+    free(result) ;
+  }
 }

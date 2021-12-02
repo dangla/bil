@@ -38,6 +38,16 @@ BCond_t* BCond_New(void)
 
 
 
+void (BCond_Delete)(void* self)
+{
+  BCond_t* bcond = (BCond_t*) self ;
+  
+  free(BCond_GetNameOfUnknown(bcond)) ;
+  free(BCond_GetNameOfEquation(bcond)) ;
+}
+
+
+
 void BCond_Scan(BCond_t* bcond,DataFile_t* datafile)
 {
   char* line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;

@@ -7,6 +7,7 @@
 #include <stdarg.h>
 
 #include "Message.h"
+#include "Mry.h"
 #include "Tools/Math.h"
 #include "Buffer.h"
 #include "Curves.h"
@@ -72,18 +73,12 @@ static double (langmuir)(double,double,double,double) ;
 
 CurvesFile_t*   (CurvesFile_Create)(void)
 {
-  CurvesFile_t* curvesfile   = (CurvesFile_t*) malloc(sizeof(CurvesFile_t)) ;
-  
-  if(!curvesfile) arret("CurvesFile_Create(0)") ;
+  CurvesFile_t* curvesfile   = (CurvesFile_t*) Mry_New(CurvesFile_t) ;
   
 
   /* Memory space for textfile */
   {
     TextFile_t* textfile = TextFile_Create(NULL) ;
-    
-    if(!textfile) {
-      arret("CurvesFile_Create(1)") ;
-    }
     
     CurvesFile_GetTextFile(curvesfile) = textfile ;
   }
@@ -105,11 +100,7 @@ CurvesFile_t*   (CurvesFile_Create)(void)
   /* Memory space for the text line to be read */
   {
     int n = CurvesFile_MaxLengthOfTextLine ;
-    char *line = (char*) malloc(n*sizeof(char)) ;
-    
-    if(!line) {
-      arret("CurvesFile_Create(4)") ;
-    }
+    char* line = (char*) Mry_New(char[n]) ;
     
     CurvesFile_GetTextLine(curvesfile) = line ;
   }
@@ -131,19 +122,28 @@ CurvesFile_t*   (CurvesFile_Create)(void)
 }
 
 
+
 void (CurvesFile_Delete)(void* self)
 {
-  CurvesFile_t** pcurvesfile = (CurvesFile_t**) self ;
-  CurvesFile_t*   curvesfile = *pcurvesfile ;
+  CurvesFile_t* curvesfile = (CurvesFile_t*) self ;
   
-  TextFile_Delete(&CurvesFile_GetTextFile(curvesfile)) ;
-  /* free(CurvesFile_GetFileName(curvesfile)) ; */
-  /* free(CurvesFile_GetFilePositionStartingInputData(curvesfile)) ; */
+  {
+    TextFile_t* textfile = CurvesFile_GetTextFile(curvesfile) ;
+    
+    TextFile_Delete(textfile) ;
+    free(textfile) ;
+  }
+  
   free(CurvesFile_GetTextLine(curvesfile)) ;
-  Buffer_Delete(&CurvesFile_GetBuffer(curvesfile)) ;
-  free(curvesfile) ;
-  *pcurvesfile = NULL ;
+  
+  {
+    Buffer_t* buf = CurvesFile_GetBuffer(curvesfile) ;
+    
+    Buffer_Delete(buf) ;
+    free(buf) ;
+  }
 }
+
 
 
 #ifdef NOTDEFINED
@@ -511,7 +511,8 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
         PasteColumn(FromCurve,crvj) ;
         
         /* Free memory */
-        Curve_Delete(&crvj) ;
+        Curve_Delete(crvj) ;
+        free(crvj) ;
       }
       
     } else if(String_Is(YMODEL,"Evaluate")){

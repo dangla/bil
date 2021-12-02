@@ -21,7 +21,7 @@ extern void      (Nodes_InitializeMatrixRowColumnIndexes)(Nodes_t*) ;
 
 
 /* Some constants */
-#define Nodes_MaxNbOfMatrices        (2)
+#define Nodes_MaxNbOfMatrices        (10)
 
 
 #define Nodes_GetNbOfNodes(NODS)          ((NODS)->n_no)
@@ -32,6 +32,22 @@ extern void      (Nodes_InitializeMatrixRowColumnIndexes)(Nodes_t*) ;
 #define Nodes_GetNbOfDOF(NODS)            ((NODS)->n_dof)
 #define Nodes_GetObjectiveValues(NODS)    ((NODS)->obvals)
 #define Nodes_GetNbOfMatrices(NODS)       ((NODS)->NbOfMatrices)
+
+
+
+#define Nodes_InitializePointerToElements(NODS) \
+        do { \
+          int nno = Nodes_GetNbOfNodes(NODS) ; \
+          Node_t* node = Nodes_GetNode(NODS) ; \
+          Element_t** pel = Node_GetPointerToElement(node) ; \
+          int nc = 0 ; \
+          int jn ; \
+          for(jn = 0 ; jn < nno ; jn++) { \
+            Node_t* node_j = node + jn ; \
+            Node_GetPointerToElement(node_j) = pel + nc ; \
+            nc += Node_GetNbOfElements(node_j) ; \
+          } \
+        } while(0)
 
 
 

@@ -11,61 +11,50 @@
 NodesSol_t* (NodesSol_Create)(Mesh_t* mesh)
 {
   NodesSol_t* nodessol = (NodesSol_t*) Mry_New(NodesSol_t) ;
-  
-
-  /* Verification */
-  {
-    unsigned int  NbOfNodes = Mesh_GetNbOfNodes(mesh) ;
-    Node_t* node = Mesh_GetNode(mesh) ;
-    Nodes_t* nodes = Mesh_GetNodes(mesh) ;
-    unsigned int n_u = 0 ;
-    unsigned int    i ;
-    
-    for(i = 0 ; i < NbOfNodes ; i++) n_u += Node_GetNbOfUnknowns(node + i) ;
-    
-    if(n_u != Nodes_GetNbOfDOF(nodes)) {
-      arret("NodesSol_Create") ;
-    }
-  }
-  
 
   {
     /* Allocation of memory for the nodesol */
     {
       unsigned int  NbOfNodes = Mesh_GetNbOfNodes(mesh) ;
       Nodes_t* nodes = Mesh_GetNodes(mesh) ;
-      unsigned int    n_u = Nodes_GetNbOfDOF(nodes) ;
       NodeSol_t* nodesol = (NodeSol_t*) Mry_New(NodeSol_t[NbOfNodes]) ;
-      double* u = (double*) Mry_New(double[n_u]) ;
     
       NodesSol_GetNodeSol(nodessol) = nodesol ;
       NodesSol_GetNbOfNodes(nodessol) = NbOfNodes ;
-      NodesSol_GetNbOfDOF(nodessol) = n_u ;
-      NodesSol_GetNodalValue(nodessol) = u ;
+      NodesSol_GetNodes(nodessol) = nodes ;
       
       
       {
         Node_t* node = Mesh_GetNode(mesh) ;
         unsigned int    i ;
         
-        /* The nb of unknowns per nodesol */
         for(i = 0 ; i < NbOfNodes ; i++) {
-          NodeSol_t* nodesol_i = nodesol + i ;
-          Node_t* node_i = node + i ;
-        
-          NodeSol_GetNbOfUnknowns(nodesol_i) = Node_GetNbOfUnknowns(node_i) ;
-    
-          NodeSol_GetUnknown(nodesol_i) = u ;
+          int nu = Node_GetNbOfUnknowns(node + i) ;
+          NodeSol_t* nsol = NodeSol_Create(nu) ;
           
-          u += NodeSol_GetNbOfUnknowns(nodesol_i) ;
+          nodesol[i] = nsol[0] ;
+          free(nsol) ;
         }
       }
     }
   }
   
-  //NodesSol_AllocateMemory(nodessol) ;
-  
   return(nodessol) ;
+}
+
+
+
+void (NodesSol_Delete)(void* self)
+{
+  NodesSol_t* nodessol = (NodesSol_t*) self ;
+  
+  {
+    int  NbOfNodes = NodesSol_GetNbOfNodes(nodessol) ;
+    NodeSol_t* nodesol = NodesSol_GetNodeSol(nodessol) ;
+    
+    Mry_Delete(nodesol,NbOfNodes,NodeSol_Delete) ;
+    free(nodesol) ;
+  }
 }
 
 
@@ -73,137 +62,67 @@ NodesSol_t* (NodesSol_Create)(Mesh_t* mesh)
 void NodesSol_Copy(NodesSol_t* nodessol_dest,NodesSol_t* nodessol_src)
 /** Copy the nodal unknowns from nodessol_src to nodessol_dest */
 {
+  Nodes_t* nodes = NodesSol_GetNodes(nodessol_src) ;
   unsigned int nno = NodesSol_GetNbOfNodes(nodessol_src) ;
   
+  NodesSol_GetNodes(nodessol_dest) = nodes ;
   NodesSol_GetNbOfNodes(nodessol_dest) = nno ;
   
   /* Nodal values */
-  {
-    unsigned int ndof = NodesSol_GetNbOfDOF(nodessol_src) ;
-    double* u_s = NodesSol_GetNodalValue(nodessol_src) ;
-    double* u_d = NodesSol_GetNodalValue(nodessol_dest) ;
-    unsigned int i ;
-    
-    NodesSol_GetNbOfDOF(nodessol_dest) = ndof ;
-    
-    for(i = 0 ; i < ndof ; i++) {
-      u_d[i] = u_s[i] ;
+    {
+      NodeSol_t* nodesol_s = NodesSol_GetNodeSol(nodessol_src) ;
+      NodeSol_t* nodesol_d = NodesSol_GetNodeSol(nodessol_dest) ;
+      unsigned int in ;
+      
+      for(in = 0 ; in < nno ; in++) {
+        NodeSol_t* nodesoli_s = nodesol_s + in ;
+        NodeSol_t* nodesoli_d = nodesol_d + in ;
+        double* u_s = NodeSol_GetUnknown(nodesoli_s) ;
+        double* u_d = NodeSol_GetUnknown(nodesoli_d) ;
+        unsigned int nu = NodeSol_GetNbOfUnknowns(nodesoli_s) ;
+        unsigned int i ;
+        
+        for(i = 0 ; i < nu ; i++) {
+          u_d[i] = u_s[i] ;
+        }
+      }
     }
-  }
 }
 
 
 
-/* Intern functions */
-
-
-
-/* Not used from here */
-#if 0
-static void           (NodesSol_AllocateMemory)(NodesSol_t*) ;
-
-void (NodesSol_AllocateMemory)(NodesSol_t* nodessol)
+void NodesSol_CopySelectedSequentialUnknowns(NodesSol_t* nodessol_dest,NodesSol_t* nodessol_src,const int sequentialindex)
+/** Copy the nodal unknowns of given sequential index 
+ * ("sequentialindex") from nodessol_src to nodessol_dest. */
 {
+  Nodes_t* nodes = NodesSol_GetNodes(nodessol_src) ;
+  unsigned int nb_nodes = Nodes_GetNbOfNodes(nodes) ;
+  Node_t* node = Nodes_GetNode(nodes) ;
+  NodeSol_t* nodesol_src = NodesSol_GetNodeSol(nodessol_src) ;
+  NodeSol_t* nodesol_dest = NodesSol_GetNodeSol(nodessol_dest) ;
+
   {
-    /* Allocation of memory for the total nb of dof */
-    //unsigned int n_u = NodesSol_GetNbOfDOF(nodessol) ;
-    //double* u = (double*) Mry_New(double[n_u]) ;
-    
-    double* u = NodesSol_GetNodalValue(nodessol) ;
-    
-    
-    {
-      unsigned int  NbOfNodes = NodesSol_GetNbOfNodes(nodessol) ;
-      unsigned int  i ;
-      
-      for(i = 0 ; i < NbOfNodes ; i++) {
-        NodeSol_t* nodesol_i = NodesSol_GetNodeSol(nodessol) + i ;
-    
-        if(i == 0) {
-          NodeSol_GetUnknown(nodesol_i) = u ;
-        } else {
-          NodeSol_GetUnknown(nodesol_i) = NodeSol_GetUnknown(nodesol_i - 1) + NodeSol_GetNbOfUnknowns(nodesol_i - 1) ;
+      int   i ;
+  
+      for(i = 0 ; i < nb_nodes ; i++) {
+        Node_t* nodi = node + i ;
+        int*    node_seq_ind = Node_GetSequentialIndexOfUnknown(nodi) ;
+        int  nb_unk = Node_GetNbOfUnknowns(nodi) ;
+        double* u_src = NodeSol_GetUnknown(nodesol_src + i) ;
+        double* u_dest = NodeSol_GetUnknown(nodesol_dest + i) ;
+        
+        {
+          int j ;
+
+          for(j = 0 ; j < nb_unk ; j++) {
+            int k = node_seq_ind[j] ;
+          
+            if(k == sequentialindex) {
+              u_dest[j] = u_src[j] ;
+            }
+          }
         }
       }
-    }
   }
 }
-#endif
 
-#if 0
-NodesSol_t* (NodesSol_Create1)(Mesh_t* mesh)
-{
-  NodesSol_t* nodessol = (NodesSol_t*) malloc(sizeof(NodesSol_t)) ;
-  unsigned int    i ;
-  
-  if(!nodessol) arret("NodesSol_Create") ;
-  
-
-  /* Verification */
-  {
-    unsigned int  NbOfNodes = Mesh_GetNbOfNodes(mesh) ;
-    Node_t* node = Mesh_GetNode(mesh) ;
-    Nodes_t* nodes = Mesh_GetNodes(mesh) ;
-    unsigned int n_u = 0 ;
-    
-    for(i = 0 ; i < NbOfNodes ; i++) n_u += Node_GetNbOfUnknowns(node + i) ;
-    
-    if(n_u != Nodes_GetNbOfDOF(nodes)) arret("NodesSol_Create") ;
-  }
-  
-  
-  /* Allocation of memory */
-  {
-    /* Allocation of memory for the nodesol */
-    {
-      unsigned int  NbOfNodes = Mesh_GetNbOfNodes(mesh) ;
-      NodeSol_t* nodesol = (NodeSol_t*) malloc(NbOfNodes*sizeof(NodeSol_t)) ;
-    
-      if(!nodesol) {
-        arret("NodesSol_Create (1) : impossible d\'allouer la memoire") ;
-      }
-    
-      NodesSol_GetNodeSol(nodessol) = nodesol ;
-      NodesSol_GetNbOfNodes(nodessol) = NbOfNodes ;
-      
-      {
-        Nodes_t* nodes = Mesh_GetNodes(mesh) ;
-        Node_t* node = Mesh_GetNode(mesh) ;
-        unsigned int    n_u = Nodes_GetNbOfDOF(nodes) ;
-        
-        /* The total nb of dof */
-        NodesSol_GetNbOfDOF(nodessol) = n_u ;
-        
-        /* The nb of unknowns per nodesol */
-        for(i = 0 ; i < NbOfNodes ; i++) {
-          NodeSol_t* nodesol_i = NodesSol_GetNodeSol(nodessol) + i ;
-        
-          NodeSol_GetNbOfUnknowns(nodesol_i) = Node_GetNbOfUnknowns(node + i) ;
-        }
-      }
-    }
-  
-    /* Allocation of memory for the total nb of dof */
-    {
-      unsigned int  NbOfNodes = NodesSol_GetNbOfNodes(nodessol) ;
-      unsigned int n_u = NodesSol_GetNbOfDOF(nodessol) ;
-      double* u = (double*) calloc(n_u,sizeof(double)) ;
-    
-      if(!u) arret("NodesSol_Create (2) : impossible d\'allouer la memoire") ;
-      
-  
-      for(i = 0 ; i < NbOfNodes ; i++) {
-        NodeSol_t* nodesol_i = NodesSol_GetNodeSol(nodessol) + i ;
-    
-        if(i == 0) {
-          NodeSol_GetUnknown(nodesol_i) = u ;
-        } else {
-          NodeSol_GetUnknown(nodesol_i) = NodeSol_GetUnknown(nodesol_i - 1) + NodeSol_GetNbOfUnknowns(nodesol_i - 1) ;
-        }
-      }
-    }
-  }
-  
-  return(nodessol) ;
-}
-#endif

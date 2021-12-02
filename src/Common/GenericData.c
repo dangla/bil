@@ -10,8 +10,6 @@
 #include "Mry.h"
 
 
-static void           (GenericData_Remove)(GenericData_t**) ;
-
 
 /* Global functions */
 
@@ -33,6 +31,7 @@ GenericData_t* (GenericData_New)(void)
     GenericData_GetData(gdat) = NULL ;
     GenericData_GetNextGenericData(gdat) = NULL ;
     GenericData_GetPreviousGenericData(gdat) = NULL ;
+    GenericData_GetSize(gdat) = 0 ;
   }
   
   GenericData_GetDelete(gdat) = GenericData_Delete ;
@@ -43,62 +42,88 @@ GenericData_t* (GenericData_New)(void)
 
 
 
-GenericData_t* (GenericData_Create_)(int n,void* data,TypeId_t typ,const char* name)
+GenericData_t* (GenericData_Create_)(int n,void* data,TypeId_t typ,size_t size,const char* name)
 {
   GenericData_t* gdat = GenericData_New() ;
   
-  GenericData_Initialize_(gdat,n,data,typ,name) ;
+  GenericData_Initialize_(gdat,n,data,typ,size,name) ;
   
   return(gdat) ;
 }
 
 
 
-
 void (GenericData_Delete)(void* self)
 {
-  GenericData_t** pgdat = (GenericData_t**) self ;
+  GenericData_t*   gdat = (GenericData_t*) self ;
   
-  while(*pgdat) GenericData_Remove(pgdat) ;
-}
+  if(gdat) {
+    {
+      char* name = GenericData_GetName(gdat) ;
 
-
-
-void (GenericData_Remove)(GenericData_t** pgdat)
-{
-  GenericData_t* gdat = *pgdat ;
-  GenericData_t* prev = GenericData_GetPreviousGenericData(gdat) ;
-  GenericData_t* next = GenericData_GetNextGenericData(gdat) ;
-  
-  /* Connect prev and next */
-  if(prev) GenericData_GetNextGenericData(prev) = next ;
-  if(next) GenericData_GetPreviousGenericData(next) = prev ;
-  
-  {
-    TypeId_t typ = GenericData_GetTypeId(gdat) ;
-    void* data = GenericData_GetData(gdat) ;
+      if(name) {
+        free(name) ;
+        GenericData_GetName(gdat) = NULL ;
+      }
+    }
     
-    TypeId_Delete(typ,&data) ;
-    //GenericObject_Delete(&data) ;
-  }
+    {
+      void* data = GenericData_GetData(gdat) ;
+    
+      if(data) {
+        TypeId_t typ = GenericData_GetTypeId(gdat) ;
+        int n = GenericData_GetNbOfData(gdat) ;
+
+        //TypeId_Delete(typ,data) ;
+        {
+          size_t sz = GenericData_GetSize(gdat) ;
+          int i ;
+          
+          for(i = 0 ; i < n ; i++) {
+            void* data_i = ((char*) data) + i*sz ;
+            
+            TypeId_Delete(typ,data_i) ;
+          }
+        }
+      
+        free(data) ;
+        GenericData_GetData(gdat) = NULL ;
+        //GenericObject_Delete(&data) ;
+      }
+    }
   
-  free(gdat) ;
+    /* Delete also the linked generic data  */
+    {
+      GenericData_t*   prev = GenericData_GetPreviousGenericData(gdat) ;
+      GenericData_t*   next = GenericData_GetNextGenericData(gdat) ;
+      
+      /* Connect prev and next */
+      if(prev) GenericData_GetNextGenericData(prev) = next ;
+      if(next) GenericData_GetPreviousGenericData(next) = prev ;
+    
+      if(prev) {
+        GenericData_Delete(prev) ;
+        free(prev) ;
+        GenericData_GetPreviousGenericData(gdat) = NULL ;
+      }
   
-  /* *pgdat set to NULL if the content is empty */
-  if(prev) {
-    *pgdat = prev ;
-  } else {
-    *pgdat = next ;
+      if(next) {
+        GenericData_Delete(next) ;
+        free(next) ;
+        GenericData_GetNextGenericData(gdat) = NULL ;
+      }
+    }
   }
 }
 
 
 
-void (GenericData_Initialize_)(GenericData_t* gdat,int n,void* data,TypeId_t typ,const char* name)
+void (GenericData_Initialize_)(GenericData_t* gdat,int n,void* data,TypeId_t typ,size_t size,const char* name)
 {
   GenericData_GetTypeId(gdat) = typ ;
   GenericData_GetNbOfData(gdat) = n ;
   GenericData_GetData(gdat) = data ;
+  GenericData_GetSize(gdat) = size ;
     
   {
     int len = MIN(strlen(name),GenericData_MaxLengthOfKeyWord) ;

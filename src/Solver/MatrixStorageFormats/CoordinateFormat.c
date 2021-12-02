@@ -12,7 +12,7 @@
 
 
 
-CoordinateFormat_t* (CoordinateFormat_CreateSelectedMatrix)(Mesh_t* mesh,Options_t* options,const int imatrix)
+CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t* mesh,Options_t* options,const int imatrix)
 /** Create a matrix in CoordinateFormat format with duplicate entries */
 {
   CoordinateFormat_t* cfmt = (CoordinateFormat_t*) Mry_New(CoordinateFormat_t) ;
@@ -60,6 +60,7 @@ CoordinateFormat_t* (CoordinateFormat_CreateSelectedMatrix)(Mesh_t* mesh,Options
 
 
 
+#if 0
 CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t* mesh,Options_t* options)
 /** Create a matrix in CoordinateFormat format with duplicate entries */
 {
@@ -105,18 +106,16 @@ CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t* mesh,Options_t* options)
   
   return(cfmt) ;
 }
+#endif
 
 
 
 void (CoordinateFormat_Delete)(void* self)
 {
-  CoordinateFormat_t** pac = (CoordinateFormat_t**) self ;
-  CoordinateFormat_t*   ac = *pac ;
+  CoordinateFormat_t* ac = (CoordinateFormat_t*) self ;
   
   free(CoordinateFormat_GetNonZeroValue(ac)) ;
   free(CoordinateFormat_GetIndex(ac)) ;
-  free(ac) ;
-  *pac = NULL ;
 }
 
 

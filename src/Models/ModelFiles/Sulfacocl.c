@@ -39,6 +39,8 @@ enum {
   E_Last
 } ;
 
+#define E_Mech
+
 
 
 /* Nb of equations */
@@ -228,7 +230,7 @@ enum {
 
 /* Nb of (im/ex)plicit and constant terms */
 #define NVE     ((1 + CementSolutionDiffusion_NbOfConcentrations)*NN)
-#define NVI     (7*NN*NN + 15*NN)
+#define NVI     (7*NN*NN + 16*NN)
 #define NV0     (2)
 
 
@@ -332,6 +334,9 @@ enum {
 
 #define N_FriedelSalt(i)  (f   + 7*NN*NN + 14*NN)[i]
 #define N_FriedelSaltn(i) (f_n + 7*NN*NN + 14*NN)[i]
+
+#define N_KuzelSalt(i)  (f   + 7*NN*NN + 15*NN)[i]
+#define N_KuzelSaltn(i) (f_n + 7*NN*NN + 15*NN)[i]
 
 
 
@@ -584,6 +589,28 @@ enum {
 
 
 
+
+
+/* Kuzel's salt Properties
+ * ------------------ ------ */
+/* Molar mass of Kuzel's salt */
+#define M_CaSO4        (MolarMassOfMolecule(Ca) + MolarMassOfMolecule(SO4))
+#define M_KuzelSalt    (3*M_CaO + M_Al2O3 + 11*M_H2O + 0.5*M_CaCl2 + 0.5*M_CaSO4)
+/* Molar volume of Kuzel's salt */
+#define V_KuzelSalt    MolarVolumeOfCementHydrate(KuzelSalt)
+/* Below is how to manage dissolution/precipitation kinetics */
+#if defined (E_Chlorine)
+  #define KuzelSaltContent_kin(n,s,dt) \
+          MAX((n + dt*r_ks*(s - 1)),0.)
+          
+  #define KuzelSaltContent(n_ksn,s_ks,dt) \
+          KuzelSaltContent_kin(n_ksn,s_ks,dt)
+#else
+  #define KuzelSaltContent(...)  (0)
+#endif
+
+
+
 /* To retrieve the material properties */
 #define GetProperty(a)   (Element_GetProperty(el)[pm(a)])
 
@@ -629,7 +656,7 @@ static double DamageStrain(double,double) ;
 /* Parameters */
 static double phi0 ;
 static double phimin = 0.01 ;
-static double r_afm,r_aft,r_c3ah6,r_csh2,r_fs ;
+static double r_afm,r_aft,r_c3ah6,r_csh2,r_fs,r_ks ;
 static double n_ca_ref,n_si_ref,n_al_ref ;
 static double n_afm_0,n_aft_0,n_c3ah6_0,n_csh2_0 ;
 static double ai_AFt,di_AFt ;
@@ -682,6 +709,7 @@ I_N_AFt,
 I_N_C3AH6,
 I_N_CSH,
 I_N_FriedelSalt,
+I_N_KuzelSalt,
 
 I_PHI,
 I_PHI_C,
@@ -768,6 +796,7 @@ int pm(const char *s)
   else if(strcmp(s,"B_i") == 0)        return (26) ;
   else if(strcmp(s,"B_p") == 0)        return (27) ;
   else if(strcmp(s,"R_FS") == 0)       return (28) ;
+  else if(strcmp(s,"R_KS") == 0)       return (29) ;
   else return(-1) ;
 }
 
@@ -787,6 +816,7 @@ void GetProperties(Element_t* el)
   r_c3ah6   = GetProperty("R_C3AH6") ;
   r_csh2    = GetProperty("R_CSH2") ;
   r_fs      = GetProperty("R_FS") ;
+  r_ks      = GetProperty("R_KS") ;
   ai_AFt    = GetProperty("A_i") ;
   K_bulk    = GetProperty("K_bulk") ;
   strain0   = GetProperty("Strain0") ;
@@ -869,7 +899,7 @@ int SetModelProp(Model_t* model)
 int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 /* Lecture des donnees materiaux dans le fichier ficd */
 {
-  int  NbOfProp = 29 ;
+  int  NbOfProp = 30 ;
 
   {
     /* Self-initialization */
@@ -885,6 +915,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
     Material_GetProperty(mat)[pm("R_C3AH6")] = 1.e-10 ;
     Material_GetProperty(mat)[pm("R_CSH2")]  = 1.e-10 ;
     Material_GetProperty(mat)[pm("R_FS")]  = 1.e-10 ;
+    Material_GetProperty(mat)[pm("R_KS")]  = 1.e-10 ;
     Material_GetProperty(mat)[pm("AlphaCoef")] = 0 ;
     Material_GetProperty(mat)[pm("BetaCoef")]  = 0 ;
     Material_GetProperty(mat)[pm("r0")] = 16*nm ;
@@ -1146,6 +1177,7 @@ int ComputeInitialState(Element_t* el)
         N_AFt(i)   = n_aft ;
         N_C3AH6(i) = n_c3ah6 ;
         N_FriedelSalt(i) = 0 ;
+        N_KuzelSalt(i) = 0 ;
         PHI(i)     = phi ;
         PHI_C(i)   = phi_c ;
 
@@ -1203,6 +1235,7 @@ int ComputeInitialState(Element_t* el)
       N_AFt(i)   = x[I_N_AFt] ;
       N_C3AH6(i) = x[I_N_C3AH6] ;
       N_FriedelSalt(i) = x[I_N_FriedelSalt] ;
+      N_KuzelSalt(i) = x[I_N_KuzelSalt] ;
       PHI(i)     = x[I_PHI] ;
       PHI_C(i)   = x[I_PHI_C] ;
 
@@ -1328,6 +1361,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
       N_AFt(i)   = x[I_N_AFt] ;
       N_C3AH6(i) = x[I_N_C3AH6] ;
       N_FriedelSalt(i) = x[I_N_FriedelSalt] ;
+      N_KuzelSalt(i) = x[I_N_KuzelSalt] ;
       PHI(i)     = x[I_PHI] ;
       PHI_C(i)   = x[I_PHI_C] ;
       
@@ -1744,7 +1778,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   double* f = Element_GetCurrentImplicitTerm(el) ;
   FVM_t* fvm = FVM_GetInstance(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
-  int    nso = 62 ;
+  int    nso = 64 ;
   double zero = 0 ;
   //double one = 1 ;
   int    i ;
@@ -1889,6 +1923,9 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     /* Friedel's salt */
     Result_Store(r + i++,x + I_N_FriedelSalt,"n_Friedel's salt",1) ;
     Result_Store(r + i++,ptS(FriedelSalt),"s_friedelsalt",1) ;
+    /* Kuzel's salt */
+    Result_Store(r + i++,x + I_N_KuzelSalt,"n_Kuzel's salt",1) ;
+    Result_Store(r + i++,ptS(KuzelSalt),"s_kuzelsalt",1) ;
     
     
     if(i != nso) {
@@ -2104,6 +2141,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
   x_n[I_Straind] = Straind_n(n);
   x_n[I_VarPHI_C] = VarPHI_Cn(n) ;
   x_n[I_N_FriedelSalt]  = N_FriedelSaltn(n) ;
+  x_n[I_N_KuzelSalt]  = N_KuzelSaltn(n) ;
 
   {
     double* v0   = Element_GetConstantTerm(el) ;
@@ -2199,6 +2237,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   double s_aft  = HardenedCementChemistry_GetSaturationIndexOf(hcc,AFt) ;
   double s_c3ah6 = HardenedCementChemistry_GetSaturationIndexOf(hcc,C3AH6) ;
   double s_friedelsalt = HardenedCementChemistry_GetSaturationIndexOf(hcc,FriedelSalt) ;
+  double s_kuzelsalt = HardenedCementChemistry_GetSaturationIndexOf(hcc,KuzelSalt) ;
   
   double c_so4  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,SO4) ;
   //double c_oh   = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,OH) ;
@@ -2215,6 +2254,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   double s_l = LiquidSaturationDegree(r) ;
   double s_c = 1 - s_l ;
   
+#ifdef E_Mech
   /* Compute the saturation index at the pore wall, beta_p */
   double beta_pn   = x_n[I_Beta_p] ;
   double varphi_cn = x_n[I_VarPHI_C] ;
@@ -2222,6 +2262,8 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   double straind_n = x_n[I_Straind] ;
   double beta_p = PoreWallEquilibriumSaturationIndex(beta_pn,varphi_cn,strain_n,straind_n,beta,s_c,dt) ;
   
+  /* The crystallization pressure */
+  double p_c       = CrystallizationPressure(beta_p) ;
   /* Compute the crystal pore deformation */
   /* Kinetic law */
   double phicrate  = PoreCrystalGrowthRate(s_c,beta,beta_p) ;
@@ -2230,6 +2272,14 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   //double pc      = CrystallizationPressure(beta_p) ;
   //double strain  = (s_c > 0) ?  varphi_c/s_c - ( pc/N_Biot +  pc*s_l/G_Biot) : 0 ;
   double strain    = strain_n + ((s_c > 0) ? dt*phicrate/s_c : 0) ;
+  double straind   = DamageStrain(strain,straind_n) ;
+#else
+  double beta_p    = 1 ;
+  double p_c       = 0 ;
+  double varphi_c  = 0 ;
+  double strain    = 0 ;
+  double straind   = 0 ;
+#endif
   
   
   /* Solid contents
@@ -2261,21 +2311,27 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   double n_so4ads   = n_csh * AdsorbedSulfatePerUnitMoleOfCSH(c_so4,c_oh) ;
   double n_friedelsaltn = x_n[I_N_FriedelSalt] ;
   double n_friedelsalt = FriedelSaltContent(n_friedelsaltn,s_friedelsalt,dt) ;
+  double n_kuzelsaltn = x_n[I_N_KuzelSalt] ;
+  double n_kuzelsalt = KuzelSaltContent(n_kuzelsaltn,s_kuzelsalt,dt) ;
+  
+  #if 0
+    double logs_kuzelsalt    = 4*loga_ca + 2*loga_alo4h4 + loga_cl + 0.5*loga_so4 + 4*loga_oh + 6*loga_h2o - logk_kuzelsalt ;
+  #endif
   
   /* ... as elements: S, Ca, Si, Al, Cl */
   //double x_csh      = CalciumSiliconRatioInCSH(s_ch) ;
   double x_csh      = HardenedCementChemistry_GetCalciumSiliconRatioInCSH(hcc) ;
   double n_si_s     = n_csh ;
-  double n_ca_s     = n_ch + n_csh2 + x_csh*n_csh + 4*n_afm + 6*n_aft + 3*n_c3ah6 + 4*n_friedelsalt ;
-  double n_s_s      = n_csh2 + n_afm + 3*n_aft + n_so4ads ;
-  double n_al_s     = 2*(n_ah3 + n_afm + n_aft + n_c3ah6 + n_friedelsalt) ;
+  double n_ca_s     = n_ch + n_csh2 + x_csh*n_csh + 4*n_afm + 6*n_aft + 3*n_c3ah6 + 4*n_friedelsalt + 4*n_kuzelsalt ;
+  double n_s_s      = n_csh2 + n_afm + 3*n_aft + n_so4ads + 0.5*n_kuzelsalt ;
+  double n_al_s     = 2*(n_ah3 + n_afm + n_aft + n_c3ah6 + n_friedelsalt + n_kuzelsalt) ;
   double n_cl_ads   = n_csh * AdsorbedChloridePerUnitMoleOfCSH(c_cl,x_csh) ;
-  double n_cl_s     = n_cl_ads + 2 * n_friedelsalt ;
+  double n_cl_s     = n_cl_ads + 2 * n_friedelsalt + n_kuzelsalt ;
   /* ... as volume */
   double v_csh      = MolarVolumeOfCSH(x_csh) ;
   //double v_gyp      = V_Gyp*n_csh2 ;
   //double v_csh2     = V_CSH2*n_csh2 ;
-  double v_cem      = V_CH*n_ch + v_csh*n_csh + V_AH3*n_ah3 + V_AFm*n_afm + V_AFt*n_aft + V_C3AH6*n_c3ah6 + V_CSH2*n_csh2 + V_FriedelSalt*n_friedelsalt ;
+  double v_cem      = V_CH*n_ch + v_csh*n_csh + V_AH3*n_ah3 + V_AFm*n_afm + V_AFt*n_aft + V_C3AH6*n_c3ah6 + V_CSH2*n_csh2 + V_FriedelSalt*n_friedelsalt + V_KuzelSalt*n_kuzelsalt ;
 
 
   /* Porosities in unconfined conditions (no pressure) */
@@ -2333,6 +2389,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   x[I_N_C3AH6   ] = n_c3ah6 ;
   x[I_N_CSH     ] = n_csh ;
   x[I_N_FriedelSalt] = n_friedelsalt ;
+  x[I_N_KuzelSalt] = n_kuzelsalt ;
   
   x[I_ZN_Ca_S   ] = zn_ca_s ;  
   x[I_ZN_Al_S   ] = zn_al_s ;  
@@ -2350,7 +2407,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   x[I_S_C       ] = s_c ;
   
   /* Crystallization pressure */
-  x[I_P_C       ] = CrystallizationPressure(beta_p) ;
+  x[I_P_C       ] = p_c ;
   
   /* Radius */
   x[I_Radius    ] = r ;
@@ -2358,7 +2415,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   /* Strains */
   x[I_Beta_p    ] = beta_p ;
   x[I_Strain    ] = strain ;
-  x[I_Straind   ] = DamageStrain(strain,straind_n) ;
+  x[I_Straind   ] = straind ;
   x[I_VarPHI_C  ] = varphi_c ;
   
   

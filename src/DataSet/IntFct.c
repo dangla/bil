@@ -16,26 +16,56 @@ static void   (IntFct_ComputeIsoShapeFct)(int,int,double*,double*,double*) ;
 static void   IntFct_ComputeAtMidSurfacePoints(IntFct_t*,int,int) ;
 static void   midpoints(double*,double) ;
 static void   normale(int,int,double**,double*,double*) ;
-static void   (IntFct_AllocateMemory)(IntFct_t*) ;
 
 
 /* Extern functions */
 
-IntFct_t* (IntFct_Create)(int nn,int dim,const char* type)
+IntFct_t* (IntFct_New)(void)
 {
   IntFct_t* intfct = (IntFct_t*) Mry_New(IntFct_t) ;
   
+  {
+    char* p = (char*) Mry_New(char[IntFct_MaxLengthOfKeyWord]) ;
+    
+    IntFct_GetType(intfct) = p ;
+  }
   
+  {
+    int dim = 3 ;
+    int nn  = IntFct_MaxNbOfFunctions ;
+    int np  = IntFct_MaxNbOfIntPoints ;
+    int k   = np*(1 + nn*(1 + dim) + dim) ;
+    double* weight = (double*) Mry_New(double[k]) ;
+    
+    IntFct_GetWeight(intfct)           = weight ;
+    IntFct_GetFunction(intfct)         = weight + np ;
+    IntFct_GetFunctionGradient(intfct) = weight + np*(1 + nn) ;
+    IntFct_GetPointCoordinates(intfct) = weight + np*(1 + nn*(1 + dim)) ;
+  }
+  
+  IntFct_GetDimension(intfct) = 0 ;
+  IntFct_GetNbOfFunctions(intfct) = 0 ;
+  IntFct_GetNbOfPoints(intfct) = 0 ;
+  IntFct_SetType(intfct,"\0") ;
+  
+  return(intfct) ;
+}
+
+
+
+IntFct_t* (IntFct_Create)(int nn,int dim,const char* type)
+{
+  IntFct_t* intfct = (IntFct_t*) IntFct_New() ;
+
   IntFct_GetDimension(intfct) = dim ;
   IntFct_GetNbOfFunctions(intfct) = nn ;
+  IntFct_SetType(intfct,type) ;
   
   if(nn > IntFct_MaxNbOfFunctions) {
     arret("IntFct_Create: too many functions") ;
   }
   
-  IntFct_AllocateMemory(intfct) ;
-  
-  IntFct_SetType(intfct,type) ;
+  //IntFct_AllocateMemory(intfct) ;
     
   if(IntFct_TypeIs(intfct,"Nodes")) {
     IntFct_ComputeAtNodes(intfct,nn,dim) ;
@@ -52,52 +82,28 @@ IntFct_t* (IntFct_Create)(int nn,int dim,const char* type)
 
 
 
-void IntFct_Delete(void* self)
+void (IntFct_Delete)(void* self)
 {
-  IntFct_t** pintfct = (IntFct_t**) self ;
-  IntFct_t*   intfct = *pintfct ;
+  IntFct_t* intfct = (IntFct_t*) self ;
   
   {
     char* p = IntFct_GetType(intfct) ;
+    
+    if(p) {
+      free(p) ;
+      IntFct_GetType(intfct) = NULL ;
+    }
+  }
+  
+  {
     double* weight = IntFct_GetWeight(intfct) ;
     
-    free(p) ;
-    free(weight) ;
+    if(weight) {
+      free(weight) ;
+      IntFct_GetWeight(intfct) = NULL ;
+    }
   }
-  
-  //free(intfct) ;
 }
-
-
-
-
-void (IntFct_AllocateMemory)(IntFct_t* intfct)
-{
-  
-  {
-    char* p = (char*) Mry_New(char[IntFct_MaxLengthOfKeyWord]) ;
-    
-    IntFct_GetType(intfct) = p ;
-  }
-  
-  {
-    int dim = 3 ;
-    //int dim = IntFct_GetDimension(intfct) ;
-    int nn  = IntFct_MaxNbOfFunctions ;
-    //int nn  = IntFct_GetNbOfFunctions(intfct) ;
-    int np  = IntFct_MaxNbOfIntPoints ;
-    int k   = np*(1 + nn*(1 + dim) + dim) ;
-    double* weight = (double*) Mry_New(double[k]) ;
-    
-    IntFct_GetWeight(intfct)           = weight ;
-    IntFct_GetFunction(intfct)         = weight + np ;
-    IntFct_GetFunctionGradient(intfct) = weight + np*(1 + nn) ;
-    IntFct_GetPointCoordinates(intfct) = weight + np*(1 + nn*(1 + dim)) ;
-  }
-  
-  return ;
-}
-
 
 
 
