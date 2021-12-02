@@ -1,3 +1,6 @@
+News in 2.9: a new algorithm is implemented in the module SNIA which
+is based on a sequential non iterative approach (SNIA).
+
 News in 2.8: Re-arranging some allocation of memory space for the mesh.
 Reformulation of the jacobian matrix of the transformation between the
 element in the reference frame and that in the current frame. Zero-thickness
@@ -23,7 +26,7 @@ session of the stack. Only those of the top session are currently used.
 
 News in 2.4: Two new database interfaces: "HardenedCementChemistry.h" and
 "CementSolutionDiffusion.h" to be used for cement-based materials. 
-New models now use these interfaces. The references used to implemente some
+New models now use these interfaces. The references used to implement some
 databases are now copied in the folder "src/Models/DataBases/References".
 
 News in 2.3: Use of C++ compiler. Programmation is now extended to 

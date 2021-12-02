@@ -29,6 +29,7 @@ struct Models_s       ; typedef struct Models_s       Models_t ;
 
 
 extern Models_t* (Models_New)(const int) ;
+extern void      (Models_Delete)(void*) ;
 extern void      (Models_Print)(char*,FILE *) ;
 extern Model_t*  (Models_FindModel)(Models_t*,const char*) ;
 extern int       (Models_FindModelIndex)(Models_t*,const char*) ;

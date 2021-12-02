@@ -43,21 +43,25 @@ Options_t*  (Options_Create)(Context_t* ctx)
 
 
 
-void Options_Delete(void* self)
+void (Options_Delete)(void* self)
 {
-  Options_t** poptions = (Options_t**) self ;
-  Options_t*  options = *poptions ;
+  Options_t* options = (Options_t*) self ;
   
-  Context_Delete(&(Options_GetContext(options))) ;
-  free(Options_GetPrintedInfos(options)) ;
-  free(options) ;
+  {
+    char* c = Options_GetPrintedInfos(options) ;
+    
+    if(c) {
+      free(c) ;
+      Options_GetPrintedInfos(options) = NULL ;
+    }
+  }
 }
 
 
 
 /* Local functions */
 
-void Options_SetDefault(Options_t* options)
+void (Options_SetDefault)(Options_t* options)
 /* Set default options */
 {
   const char*  modulenames[] = {Modules_ListOfNames} ;

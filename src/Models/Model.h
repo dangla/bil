@@ -62,8 +62,7 @@ typedef int    (Model_ReadMaterialProperties_t)(Material_t*,DataFile_t*) ;
 #include "DataFile.h"
 
 extern Model_t*  (Model_New)       (void) ;
-extern Model_t*  (Model_Create)    (int) ;
-extern void      (Model_Delete)    (void*,const int) ;
+extern void      (Model_Delete)    (void*) ;
 extern Model_t*  (Model_Initialize)(Model_t*,const char*,Geometry_t*,DataFile_t*) ;
 extern double*   (Model_ComputeVariableDerivatives)(Element_t*,double,double,double,int,int) ;
 

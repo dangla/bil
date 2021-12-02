@@ -15,6 +15,35 @@
 static Graph_t*  (Periodicities_ComputeGraph)(Mesh_t*) ;
 
 
+
+
+Periodicities_t* (Periodicities_New)(const int n)
+{
+  Periodicities_t* periodicities = (Periodicities_t*) Mry_New(Periodicities_t) ;
+  
+  Periodicities_GetNbOfPeriodicities(periodicities) = 0 ;
+  Periodicities_GetPeriodicity(periodicities) = NULL ;
+
+  if(n > 0) {
+    Periodicity_t* periodicity = (Periodicity_t*) Mry_New(Periodicity_t[n]) ;
+    int i ;
+    
+    for(i = 0 ; i < n ; i++) {
+      Periodicity_t* period = Periodicity_New() ;
+      
+      periodicity[i] = period[0] ;
+      free(period) ;
+    }
+    
+    Periodicities_GetNbOfPeriodicities(periodicities) = n ;
+    Periodicities_GetPeriodicity(periodicities) = periodicity ;
+  }
+  
+  return(periodicities) ;
+}
+
+
+
 Periodicities_t* (Periodicities_Create)(DataFile_t* datafile)
 {
   Periodicities_t* periodicities = NULL ;
@@ -29,7 +58,7 @@ Periodicities_t* (Periodicities_Create)(DataFile_t* datafile)
       arret("Periodicities_Create") ;
     }
     
-    periodicities  = (Periodicities_t*) Mry_New(Periodicities_t) ;
+    //periodicities  = (Periodicities_t*) Mry_New(Periodicities_t) ;
   }
   
   
@@ -45,11 +74,13 @@ Periodicities_t* (Periodicities_Create)(DataFile_t* datafile)
     char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
     int   n = atoi(line) ;
     
-    Periodicities_GetNbOfPeriodicities(periodicities) = n ;
+    periodicities = Periodicities_New(n) ;
+    
+    //Periodicities_GetNbOfPeriodicities(periodicities) = n ;
     if(n <= 0) return(periodicities) ;
   }
 
-
+  /*
   {
     int n = Periodicities_GetNbOfPeriodicities(periodicities) ;
     Periodicity_t* periodicity = (Periodicity_t*) Mry_New(Periodicity_t[n]) ;
@@ -69,6 +100,7 @@ Periodicities_t* (Periodicities_Create)(DataFile_t* datafile)
       Periodicity_GetPeriodVector(periodicity) = vector + 3*i ;
     }
   }
+  */
 
 
   /* Reading */
@@ -125,37 +157,26 @@ Periodicities_t* (Periodicities_Create)(DataFile_t* datafile)
 
 
 
-Periodicities_t* (Periodicities_New)(const int n)
+void (Periodicities_Delete)(void* self)
 {
-  Periodicities_t* periodicities = (Periodicities_t*) Mry_New(Periodicities_t) ;
-  
-  Periodicities_GetNbOfPeriodicities(periodicities) = 0 ;
-  Periodicities_GetPeriodicity(periodicities) = NULL ;
-
-  if(n > 0) {
-    Periodicities_GetNbOfPeriodicities(periodicities) = n ;
-    Periodicities_GetPeriodicity(periodicities) = Periodicity_New(n) ;
-  }
-  
-  return(periodicities) ;
-}
-
-
-
-
-void Periodicities_Delete(void* self)
-{
-  Periodicities_t** pperiodicities = (Periodicities_t**) self ;
-  Periodicities_t*   periodicities = *pperiodicities ;
+  Periodicities_t* periodicities = (Periodicities_t*) self ;
   
   {
-    Periodicity_t* periodicity = Periodicities_GetPeriodicity(periodicities) ;
+    int n = Periodicities_GetNbOfPeriodicities(periodicities) ;
     
-    free(Periodicity_GetPeriodVector(periodicity)) ;
+    if(n > 0) {
+      Periodicity_t* periodicity = Periodicities_GetPeriodicity(periodicities) ;
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        Periodicity_t* period = periodicity + i ;
+        
+        Periodicity_Delete(period) ;
+      }
+      
+      free(periodicity) ;
+    }
   }
-  free(periodicities) ;
-  
-  //*pperiodicities = NULL ;
 }
 
 
@@ -317,7 +338,7 @@ Graph_t*  (Periodicities_ComputeGraph)(Mesh_t* mesh)
               int  degrj = Graph_GetDegreeOfVertex(graph,j) ;
               int* listj = Graph_GetNeighborOfVertex(graph,j) ;
         
-	            if(i == j) continue ;
+              if(i == j) continue ;
         
               /* Has j been already met? */
               {
@@ -337,14 +358,14 @@ Graph_t*  (Periodicities_ComputeGraph)(Mesh_t* mesh)
               /* Not already met. So we increment with j and i */
               if(listi[degri] < 0) {
                 Graph_GetDegreeOfVertex(graph,i) += 1 ;
-	              listi[degri] = j ;
+                listi[degri] = j ;
               } else {
                 arret("Periodicities_ComputeGraph(3): not enough space") ;
               }
           
               if(listj[degrj] < 0) {
                 Graph_GetDegreeOfVertex(graph,j) += 1 ;
-	              listj[degrj] = i ;
+                listj[degrj] = i ;
               } else {
                 arret("Periodicities_ComputeGraph(4): not enough space") ;
               }
@@ -420,7 +441,8 @@ void  (Periodicities_UpdateGraph)(Mesh_t* mesh,Graph_t* graph)
     }
   }
   
-  Graph_Delete(&pgraph) ;
+  Graph_Delete(pgraph) ;
+  free(pgraph) ;
   
   
   /* Nb of edges */
@@ -482,7 +504,8 @@ void  (Periodicities_UpdateMatrixRowColumnIndexes)(Mesh_t* mesh)
       }
     }
   
-    Graph_Delete(&graph) ;
+    Graph_Delete(graph) ;
+    free(graph) ;
   }
   
 }

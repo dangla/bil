@@ -34,40 +34,47 @@ Nodes_t*  Nodes_New(const int nn,const int dim,const int nc)
   {
     Node_t* node = Nodes_GetNode(nodes) ;
     double* x = (double*) Mry_New(double[nn*dim]) ;
+    int i ;
     
-    Node_GetCoordinate(node) = x ;
+    for(i = 0 ; i < nn ; i++) {
+      Node_t* node_i = node + i ;
+      
+      Node_GetCoordinate(node_i)        = x + i*dim ;
+    }
   }
   
   /* Allocation of space for the pointers to "element" */
   {
     Element_t** pel = (Element_t**) Mry_New(Element_t*[nc]) ;
     Node_t* node = Nodes_GetNode(nodes) ;
-        
-    Node_GetPointerToElement(node) = pel ;
+    int i ;
+    
+    for(i = 0 ; i < nn ; i++) {
+      Node_t* node_i = node + i ;
+      
+      Node_GetPointerToElement(node_i)  = pel ;
+    }
   }
   
   /* Initialization */
   {
     Node_t* node = Nodes_GetNode(nodes) ;
-    Element_t** pel = Node_GetPointerToElement(node) ;
-    double* x = Node_GetCoordinate(node) ;
     int i ;
     
     for(i = 0 ; i < nn ; i++) {
       Node_t* node_i = node + i ;
       
       Node_GetNodeIndex(node_i)         = i ;
-      Node_GetCoordinate(node_i)        = x + i*dim ;
       Node_GetNbOfEquations(node_i)     = 0 ;
       Node_GetNbOfUnknowns(node_i)      = 0 ;
       Node_GetNameOfEquation(node_i)    = NULL ;
       Node_GetNameOfUnknown(node_i)     = NULL ;
+      Node_GetSequentialIndexOfUnknown(node_i) = NULL ;
       Node_GetObValIndex(node_i)        = 0 ;
       Node_GetMatrixColumnIndex(node_i) = NULL ;
       Node_GetMatrixRowIndex(node_i)    = NULL ;
       Node_GetNodeSol(node_i)           = NULL ;
-      Node_GetNbOfElements(node_i)      = 0 ;  
-      Node_GetPointerToElement(node_i)  = pel ;
+      Node_GetNbOfElements(node_i)      = 0 ;
     }
   }
   
@@ -76,22 +83,203 @@ Nodes_t*  Nodes_New(const int nn,const int dim,const int nc)
 
 
 
-void Nodes_Delete(void* self)
+
+void  Nodes_CreateMore(Nodes_t* nodes)
+/** Allocate memory space at each node for:
+ *  - the names of unknowns/equations
+ *  - the sequential indexes of unknowns/equations
+ *  - the indexes of matrix rows and matrix columns
+ *  - the indexes of objective values
+ */
 {
-  Nodes_t** pnodes = (Nodes_t**) self ;
-  Nodes_t*   nodes = *pnodes ;
+  int    n_no = Nodes_GetNbOfNodes(nodes) ;
+  Node_t* node = Nodes_GetNode(nodes) ;
   
+  Nodes_UpdateTheNbOfUnknownsAndEquationsPerNode(nodes) ;
+  
+  
+  /* Allocate memory space for names of equations and unknowns */
   {
-    Node_t* node = Nodes_GetNode(nodes) ;
-    double* x = Node_GetCoordinate(node) ;
-    Element_t** pel = Node_GetPointerToElement(node) ;
-    
-    free(node) ;
-    free(x) ;
-    free(pel) ;
+    {
+      int n_dof = Nodes_GetNbOfDOF(nodes) ;
+      char** uname = (char**) Mry_New(char*[2*n_dof]) ;
+      char** ename = uname + n_dof ;
+      int in ;
+  
+      for(in = 0 ; in < n_no ; in++) {
+        Node_GetNameOfUnknown(node + in)  = uname ;
+        Node_GetNameOfEquation(node + in) = ename ;
+        uname += Node_GetNbOfUnknowns(node + in) ;
+        ename += Node_GetNbOfEquations(node + in) ;
+      }
+    }
   }
   
-  free(nodes) ;
+  
+  /* Allocate memory space for the sequential indexes of unknowns/equations */
+  {
+    {
+      int n_dof = Nodes_GetNbOfDOF(nodes) ;
+      int* index = (int*) Mry_New(int[n_dof]) ;
+      int in ;
+  
+      for(in = 0 ; in < n_no ; in++) {
+        Node_GetSequentialIndexOfUnknown(node + in)  = index ;
+        index += Node_GetNbOfUnknowns(node + in) ;
+      }
+    }
+  }
+  
+  
+  /* Allocation of space for the nb of matrix rows and columns */
+  {
+    int  n = Nodes_MaxNbOfMatrices ;
+    unsigned int* nb_rows = (unsigned int*) Mry_New(int[2*n]) ;
+    unsigned int* nb_cols = nb_rows + n ;
+    
+    Nodes_GetNbOfMatrixRows(nodes) = nb_rows ;
+    Nodes_GetNbOfMatrixColumns(nodes) = nb_cols ;
+  }
+
+
+  /* Allocation of space for the matrix column indexes */
+  {
+    int n_dof = Nodes_GetNbOfDOF(nodes) ;
+    int* colind = (int*) Mry_New(int[n_dof]) ;
+    int    i ;
+    
+    for(i = 0 ; i < n_no ; i++) {
+      Node_GetMatrixColumnIndex(node + i) = colind ;
+      colind += Node_GetNbOfUnknowns(node + i) ;
+    }
+  }
+
+
+  /* Allocation of space for the matrix row indexes */
+  {
+    int n_dof = Nodes_GetNbOfDOF(nodes) ;
+    int* rowind = (int*) Mry_New(int[n_dof]) ;
+    int    i ;
+    
+    for(i = 0 ; i < n_no ; i++) {
+      Node_GetMatrixRowIndex(node + i) = rowind ;
+      rowind += Node_GetNbOfEquations(node + i) ;
+    }
+  }
+  
+  
+  
+  /* Allocation of space for the index of objective values */
+  {
+    unsigned int n_dof = Nodes_GetNbOfDOF(nodes) ;
+    unsigned short int* index = (unsigned short int*) Mry_New(unsigned short int[n_dof]) ;
+    
+    {
+      int i ;
+      
+      for(i = 0 ; i < n_no ; i++) {
+        Node_GetObValIndex(node + i) = index ;
+        index += Node_GetNbOfEquations(node + i) ;
+      }
+    }
+  }
+
+  /* Space allocation for buffer */
+  {
+    Buffer_t* buf = Buffer_Create(Node_SizeOfBuffer) ;
+    int i ;
+  
+    /* ATTENTION: same memory space (buffer) for all nodes */
+    for(i = 0 ; i < n_no ; i++) {
+      Node_GetBuffer(node + i) = buf ;
+    }
+  }
+}
+
+
+
+void (Nodes_Delete)(void* self)
+{
+  Nodes_t* nodes = (Nodes_t*) self ;
+    
+  {
+    Node_t* node = Nodes_GetNode(nodes) ;
+    
+    {
+      double* x = Node_GetCoordinate(node) ;
+      
+      if(x) {
+        free(x) ;
+      }
+    }
+  
+    {
+      Element_t** pel = Node_GetPointerToElement(node) ;
+    
+      if(pel) {
+        free(pel) ;
+      }
+    }
+    
+    {
+      char** uname = Node_GetNameOfUnknown(node) ;
+      
+      if(uname) {
+        free(uname) ;
+      }
+    }
+    
+    {
+      int* seq = Node_GetSequentialIndexOfUnknown(node) ;
+      
+      if(seq) {
+        free(seq) ;
+      }
+    }
+    
+    {
+      int* colind = Node_GetMatrixColumnIndex(node) ;
+      
+      if(colind) {
+        free(colind) ;
+      }
+    }
+    
+    {
+      int* rowind = Node_GetMatrixRowIndex(node) ;
+      
+      if(rowind) {
+        free(rowind) ;
+      }
+    }
+    
+    {
+      unsigned short int* index = Node_GetObValIndex(node) ;
+      
+      if(index) {
+        free(index) ;
+      }
+    }
+    
+    {
+      Buffer_t* buf = Node_GetBuffer(node) ;
+      
+      if(buf) {
+        Buffer_Delete(buf) ;
+        free(buf) ;
+      }
+    }
+    
+    free(node) ;
+  }
+
+  {
+    unsigned int* nb_rows = Nodes_GetNbOfMatrixRows(nodes) ;
+    
+    if(nb_rows) {
+      free(nb_rows) ;
+    }
+  }
 }
 
 
@@ -231,139 +419,49 @@ int  Nodes_UpdateTheNbOfUnknownsAndEquationsPerNode(Nodes_t* nodes)
 
 
 
-
-void  Nodes_CreateMore(Nodes_t* nodes)
-/** Allocate memory space at each node for:
- *  - the names of unknowns/equations
- *  - the sequential indexes of unknowns/equations
- *  - the indexes of matrix rows and matrix columns
- *  - the indexes of objective values
- */
-{
-  int    n_no = Nodes_GetNbOfNodes(nodes) ;
-  Node_t* node = Nodes_GetNode(nodes) ;
-  
-  Nodes_UpdateTheNbOfUnknownsAndEquationsPerNode(nodes) ;
-  
-  
-  /* Allocate memory space for names of equations and unknowns */
-  {
-    {
-      int n_dof = Nodes_GetNbOfDOF(nodes) ;
-      char** uname = (char**) Mry_New(char*[2*n_dof]) ;
-      char** ename = uname + n_dof ;
-      int in ;
-  
-      for(in = 0 ; in < n_no ; in++) {
-        Node_GetNameOfUnknown(node + in)  = uname ;
-        Node_GetNameOfEquation(node + in) = ename ;
-        uname += Node_GetNbOfUnknowns(node + in) ;
-        ename += Node_GetNbOfEquations(node + in) ;
-      }
-    }
-  }
-  
-  
-  /* Allocate memory space for the sequential indexes of unknowns/equations */
-  {
-    {
-      int n_dof = Nodes_GetNbOfDOF(nodes) ;
-      int* index = (int*) Mry_New(int[n_dof]) ;
-      int in ;
-  
-      for(in = 0 ; in < n_no ; in++) {
-        Node_GetSequentialIndexOfUnknown(node + in)  = index ;
-        index += Node_GetNbOfUnknowns(node + in) ;
-      }
-    }
-  }
-  
-  
-  /* Allocation of space for the nb of matrix rows and columns */
-  {
-    int  n = Nodes_MaxNbOfMatrices ;
-    unsigned int* nb_rows = (unsigned int*) Mry_New(int[2*n]) ;
-    unsigned int* nb_cols = nb_rows + n ;
-    
-    Nodes_GetNbOfMatrixRows(nodes) = nb_rows ;
-    Nodes_GetNbOfMatrixColumns(nodes) = nb_cols ;
-  }
-
-
-  /* Allocation of space for the matrix column indexes */
-  {
-    int n_dof = Nodes_GetNbOfDOF(nodes) ;
-    int* colind = (int*) Mry_New(int[n_dof]) ;
-    int    i ;
-    
-    for(i = 0 ; i < n_no ; i++) {
-      Node_GetMatrixColumnIndex(node + i) = colind ;
-      colind += Node_GetNbOfUnknowns(node + i) ;
-    }
-  }
-
-
-  /* Allocation of space for the matrix row indexes */
-  {
-    int n_dof = Nodes_GetNbOfDOF(nodes) ;
-    int* rowind = (int*) Mry_New(int[n_dof]) ;
-    int    i ;
-    
-    for(i = 0 ; i < n_no ; i++) {
-      Node_GetMatrixRowIndex(node + i) = rowind ;
-      rowind += Node_GetNbOfEquations(node + i) ;
-    }
-  }
-  
-  
-  
-  /* Allocation of space for the index of objective values */
-  {
-    unsigned int n_dof = Nodes_GetNbOfDOF(nodes) ;
-    unsigned short int* index = (unsigned short int*) Mry_New(unsigned short int[n_dof]) ;
-    
-    {
-      int i ;
-      
-      for(i = 0 ; i < n_no ; i++) {
-        Node_GetObValIndex(node + i) = index ;
-        index += Node_GetNbOfEquations(node + i) ;
-      }
-    }
-  }
-
-  /* Space allocation for buffer */
-  {
-    Buffer_t* buf = Buffer_Create(Node_SizeOfBuffer) ;
-    int i ;
-  
-    /* ATTENTION: same memory space (buffer) for all nodes */
-    for(i = 0 ; i < n_no ; i++) {
-      Node_GetBuffer(node + i) = buf ;
-    }
-  }
-}
-
-
-
 void Nodes_DeleteMore(void* self)
 {
-  Nodes_t** pnodes = (Nodes_t**) self ;
-  Nodes_t*   nodes = *pnodes ;
+  Nodes_t* nodes = (Nodes_t*) self ;
   
   {
     Node_t* node = Nodes_GetNode(nodes) ;
+    unsigned int* nb_rows = Nodes_GetNbOfMatrixRows(nodes) ;
     char** uname = Node_GetNameOfUnknown(node) ;
+    int* seq = Node_GetSequentialIndexOfUnknown(node) ;
     int* colind = Node_GetMatrixColumnIndex(node) ;
     int* rowind = Node_GetMatrixRowIndex(node) ;
     unsigned short int* index = Node_GetObValIndex(node) ;
     Buffer_t* buf = Node_GetBuffer(node) ;
     
-    free(uname) ;
-    free(colind) ;
-    free(rowind) ;
-    free(index) ;
-    Buffer_Delete(&buf) ;
+    
+    if(uname) {
+      free(uname) ;
+    }
+    
+    if(seq) {
+      free(seq) ;
+    }
+    
+    if(nb_rows) {
+      free(nb_rows) ;
+    }
+    
+    if(colind) {
+      free(colind) ;
+    }
+    
+    if(rowind) {
+      free(rowind) ;
+    }
+    
+    if(index) {
+      free(index) ;
+    }
+    
+    if(buf) {
+      Buffer_Delete(buf) ;
+      free(buf) ;
+    }
   }
 }
 

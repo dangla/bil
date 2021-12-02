@@ -21,13 +21,13 @@
 
 /* Extern functions */
 
-Matrix_t*   Matrix_CreateSelectedMatrix(Mesh_t* mesh,Options_t* options,const int imatrix)
+Matrix_t*   (Matrix_Create)(Mesh_t* mesh,Options_t* options,const int imatrix)
 /* Alloue la memoire de la matrice */
 {
   Matrix_t* a = (Matrix_t*) Mry_New(Matrix_t) ;
   
   if(imatrix >= Mesh_GetNbOfMatrices(mesh)) {
-    arret("Matrix_CreateSelectedMatrix") ;
+    arret("Matrix_Create") ;
   }
   
   Matrix_GetMatrixIndex(a) = imatrix ;
@@ -63,7 +63,7 @@ Matrix_t*   Matrix_CreateSelectedMatrix(Mesh_t* mesh,Options_t* options,const in
   {
     /* Skyline format */
     if(Matrix_StorageFormatIs(a,LDUSKL)) {
-      LDUSKLFormat_t* askl = LDUSKLFormat_CreateSelectedMatrix(mesh,imatrix) ;
+      LDUSKLFormat_t* askl = LDUSKLFormat_Create(mesh,imatrix) ;
     
       Matrix_GetStorage(a) = (void*) askl ;
       Matrix_GetNbOfNonZeroValues(a) = LDUSKLFormat_GetNbOfNonZeroValues(askl) ;
@@ -72,7 +72,7 @@ Matrix_t*   Matrix_CreateSelectedMatrix(Mesh_t* mesh,Options_t* options,const in
     /* SuperLU format */
     #ifdef SUPERLULIB
     } else if(Matrix_StorageFormatIs(a,SuperLU)) {
-      SuperLUFormat_t* aslu = SuperLUFormat_CreateSelectedMatrix(mesh,imatrix) ;
+      SuperLUFormat_t* aslu = SuperLUFormat_Create(mesh,imatrix) ;
       NCFormat_t*  asluNC = (NCFormat_t*) SuperLUFormat_GetStorage(aslu) ;
     
       Matrix_GetStorage(a) = (void*) aslu ;
@@ -89,7 +89,7 @@ Matrix_t*   Matrix_CreateSelectedMatrix(Mesh_t* mesh,Options_t* options,const in
     #endif
     
     } else if(Matrix_StorageFormatIs(a,Coordinate)) {
-      CoordinateFormat_t* ac = CoordinateFormat_CreateSelectedMatrix(mesh,options,imatrix) ;
+      CoordinateFormat_t* ac = CoordinateFormat_Create(mesh,options,imatrix) ;
     
       Matrix_GetStorage(a) = (void*) ac ;
       Matrix_GetNbOfNonZeroValues(a) = CoordinateFormat_GetNbOfNonZeroValues(ac) ;
@@ -119,8 +119,8 @@ Matrix_t*   Matrix_CreateSelectedMatrix(Mesh_t* mesh,Options_t* options,const in
 }
 
 
-
-Matrix_t*   Matrix_Create(Mesh_t* mesh,Options_t* options)
+#if 0
+Matrix_t*   (Matrix_Create)(Mesh_t* mesh,Options_t* options)
 /* Alloue la memoire de la matrice */
 {
   Matrix_t* a = (Matrix_t*) Mry_New(Matrix_t) ;
@@ -212,48 +212,62 @@ Matrix_t*   Matrix_Create(Mesh_t* mesh,Options_t* options)
   
   return(a) ;
 }
+#endif
 
 
 
-void Matrix_Delete(void* self)
+void (Matrix_Delete)(void* self)
 {
-  Matrix_t** pa = (Matrix_t**) self ;
-  Matrix_t* a   = *pa ;
+  Matrix_t* a = (Matrix_t*) self ;
   void* storage = Matrix_GetStorage(a) ;
 
 
   /* Skyline format */
   if(Matrix_StorageFormatIs(a,LDUSKL)) {
     LDUSKLFormat_t* askl = (LDUSKLFormat_t*) storage ;
-      
-    LDUSKLFormat_Delete(&askl) ;
+    
+    if(askl) {
+      LDUSKLFormat_Delete(askl) ;
+      free(askl) ;
+    }
     
   /* SuperLU format */
   #ifdef SUPERLULIB
   } else if(Matrix_StorageFormatIs(a,SuperLU)) {
     SuperLUFormat_t* aslu = (SuperLUFormat_t*) storage ;
-      
-    SuperLUFormat_Delete(&aslu) ;
+    
+    if(aslu) {
+      SuperLUFormat_Delete(aslu) ;
+      free(aslu) ;
+    }
+    
+    {
+      void* work = Matrix_GetWorkSpace(a) ;
 
-    free(Matrix_GetWorkSpace(a)) ;
+      free(work) ;
+    }
   #endif
   
   } else if(Matrix_StorageFormatIs(a,Coordinate)) {
     CoordinateFormat_t* ac = (CoordinateFormat_t*) storage ;
-      
-    CoordinateFormat_Delete(&ac) ;
+    
+    if(ac) {
+      CoordinateFormat_Delete(ac) ;
+      free(ac) ;
+    }
+    
+    {
+      void* work = Matrix_GetWorkSpace(a) ;
 
-    free(Matrix_GetWorkSpace(a)) ;
+      free(work) ;
+    }
 
   } else {
     arret("Matrix_Delete(2): unknown format") ;
   }
-  
-  free(a) ;
 }
 
 
-#if 1
 void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
 /** Assemble the element matrix ke in the global matrix a */
 {
@@ -293,54 +307,6 @@ void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
   
   arret("Matrix_AssembleElementMatrix: unknown format") ;
 }
-#endif
-
-
-#if 0
-void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
-/** Assemble the element matrix ke in the global matrix a */
-{
-  int  ndof = Element_GetNbOfDOF(el) ;
-
-  /* Skyline format */
-  if(Matrix_StorageFormatIs(a,LDUSKL)) {
-    int* row = Element_ComputeMatrixRowAndColumnIndices(el) ;
-    int* col = row + ndof ;
-    LDUSKLFormat_t* askl = (LDUSKLFormat_t*) Matrix_GetStorage(a) ;
-    
-    LDUSKLFormat_AssembleElementMatrix(askl,ke,col,row,ndof) ;
-    return ;
-    
-#ifdef SUPERLULIB
-  /* CCS format (or Harwell-Boeing format) used in SuperLU */
-  } else if(Matrix_StorageFormatIs(a,SuperLU)) {
-    int* row = Element_ComputeMatrixRowAndColumnIndices(el) ;
-    int* col = row + ndof ;
-    SuperLUFormat_t* aslu   = (SuperLUFormat_t*) Matrix_GetStorage(a) ;
-    NCFormat_t*    asluNC = (NCFormat_t*) SuperLUFormat_GetStorage(aslu) ;
-    int*        rowptr = (int*) Matrix_GetWorkSpace(a) ;
-    int         nrow = SuperLUFormat_GetNbOfRows(aslu) ;
-    
-    NCFormat_AssembleElementMatrix(asluNC,ke,col,row,ndof,rowptr,nrow) ;
-    return ;
-#endif
-  
-  } else if(Matrix_StorageFormatIs(a,Coordinate)) {
-    int* row = Element_ComputeSelectedMatrixRowAndColumnIndices(el,imatrix) ;
-    int* col = row + ndof ;
-    CoordinateFormat_t* ac = (CoordinateFormat_t*) Matrix_GetStorage(a) ;
-    int len = Matrix_GetNbOfEntries(a) ;
-    
-    //len = CoordinateFormat_AssembleElementMatrix(ac,el,ke,len) ;
-    len = CoordinateFormat_AssembleElementMatrix(ac,ke,col,row,ndof,len) ;
-    
-    Matrix_GetNbOfEntries(a) = len ;
-    return ;
-  }
-  
-  arret("Matrix_AssembleElementMatrix: unknown format") ;
-}
-#endif
 
 
 

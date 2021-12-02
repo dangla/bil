@@ -106,8 +106,7 @@ Plasticity_t*  (Plasticity_Create)(void)
 
 void  (Plasticity_Delete)(void* self)
 {
-  Plasticity_t** pplasty = (Plasticity_t**) self ;
-  Plasticity_t*  plasty  = *pplasty ;
+  Plasticity_t* plasty = (Plasticity_t*) self ;
   
   {
     char* name = Plasticity_GetCodeNameOfModel(plasty) ;
@@ -152,15 +151,14 @@ void  (Plasticity_Delete)(void* self)
   {
     Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
     
-    Elasticity_Delete(&elasty) ;
+    Elasticity_Delete(elasty) ;
+    free(elasty) ;
   }
   
   {
     double* c = Plasticity_GetParameter(plasty) ;
     free(c) ;
   }
-  
-  free(*pplasty) ;
 }
 
 

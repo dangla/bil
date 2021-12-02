@@ -14,13 +14,13 @@
 /* Extern functions */
 
 
-LDUSKLFormat_t* LDUSKLFormat_CreateSelectedMatrix(Mesh_t* mesh,const int imatrix)
+LDUSKLFormat_t* (LDUSKLFormat_Create)(Mesh_t* mesh,const int imatrix)
 /** Create a matrix in LDU Skyline format */
 {
   LDUSKLFormat_t* a = (LDUSKLFormat_t*) Mry_New(LDUSKLFormat_t) ;
   
   if(imatrix >= Mesh_GetNbOfMatrices(mesh)) {
-    arret("LDUSKLFormat_CreateSelectedMatrix") ;
+    arret("LDUSKLFormat_Create") ;
   }
 
 
@@ -157,7 +157,8 @@ LDUSKLFormat_t* LDUSKLFormat_CreateSelectedMatrix(Mesh_t* mesh,const int imatrix
 
 
 
-LDUSKLFormat_t* LDUSKLFormat_Create(Mesh_t* mesh)
+#if 0
+LDUSKLFormat_t* (LDUSKLFormat_Create)(Mesh_t* mesh)
 /** Create a matrix in LDU Skyline format */
 {
   LDUSKLFormat_t* a = (LDUSKLFormat_t*) Mry_New(LDUSKLFormat_t) ;
@@ -291,19 +292,17 @@ LDUSKLFormat_t* LDUSKLFormat_Create(Mesh_t* mesh)
 
   return(a) ;
 }
+#endif
 
 
 
 
-void LDUSKLFormat_Delete(void* self)
+void (LDUSKLFormat_Delete)(void* self)
 {
-  LDUSKLFormat_t** pa = (LDUSKLFormat_t**) self ;
-  LDUSKLFormat_t*   a = *pa ;
+  LDUSKLFormat_t* a = (LDUSKLFormat_t*) self ;
   
   free(LDUSKLFormat_GetNonZeroValue(a)) ;
   free(LDUSKLFormat_GetPointerToLowerRow(a)) ;
-  free(a) ;
-  *pa = NULL ;
 }
 
 

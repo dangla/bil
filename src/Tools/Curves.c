@@ -7,6 +7,7 @@
 #include <stdarg.h>
 
 #include "Message.h"
+#include "Mry.h"
 #include "Tools/Math.h"
 #include "Buffer.h"
 #include "CurvesFile.h"
@@ -16,19 +17,15 @@
 
 /* Extern functions */
 
-Curves_t* Curves_Create(unsigned int n_curves)
+Curves_t* (Curves_Create)(unsigned int n_curves)
 {
-  Curves_t *curves   = (Curves_t*) malloc(sizeof(Curves_t)) ;
-  
-  if(!curves) arret("Curves_Create (0)") ;
+  Curves_t *curves   = (Curves_t*) Mry_New(Curves_t) ;
   
   Curves_GetNbOfAllocatedCurves(curves) = n_curves ;
   Curves_GetNbOfCurves(curves) = 0 ; /* Important initialization */
   
   {
-    Curve_t* cv = (Curve_t*) malloc(n_curves*sizeof(Curve_t)) ;
-    
-    if(!cv) arret("Curves_Create (1)") ;
+    Curve_t* cv = (Curve_t*) Mry_New(Curve_t[n_curves]) ;
     
     Curves_GetCurve(curves) = cv ;
   }
@@ -40,16 +37,40 @@ Curves_t* Curves_Create(unsigned int n_curves)
 }
 
 
-void Curves_Delete(void* self)
+
+void (Curves_Delete)(void* self)
 {
-  Curves_t** pcurves   = (Curves_t**) self ;
-  Curves_t*   curves   =  *pcurves;
+  Curves_t* curves   = (Curves_t*) self ;
   
-  free(Curves_GetCurve(curves)) ;
-  free(Curves_GetBuffer(curves)) ;
-  free(curves) ;
-  *pcurves = NULL ;
+  {
+    int n = Curves_GetNbOfAllocatedCurves(curves) ;
+    Curve_t* curve = Curves_GetCurve(curves) ;
+    
+    if(curve) {
+      int i ;
+    
+      for(i = 0 ; i < n ; i++) {
+        Curve_t* cv = curve + i ;
+      
+        Curve_Delete(cv) ;
+      }
+    
+      free(curve) ;
+      Curves_GetCurve(curves) = NULL ;
+    }
+  }
+  
+  {
+    Buffer_t* buf = Curves_GetBuffer(curves) ;
+    
+    if(buf) {
+      Buffer_Delete(buf) ;
+      free(buf) ;
+      Curves_GetBuffer(curves) = NULL ;
+    }
+  }
 }
+
 
 
 int Curves_Append(Curves_t* curves, Curve_t* cv)
@@ -63,7 +84,7 @@ int Curves_Append(Curves_t* curves, Curve_t* cv)
       arret("Curves_Append") ;
     }
     
-    curve[NbOfCurves] = *cv ;
+    curve[NbOfCurves] = cv[0] ;
     
     Curves_GetNbOfCurves(curves) += 1 ;
     
@@ -117,6 +138,39 @@ Curve_t* Curves_FindCurve(Curves_t* curves,const char* label)
 
 
 
+int (Curves_CreateDerivative)(Curves_t* curves,Curve_t* cv)
+{
+  Curve_t* dcv = Curve_CreateDerivative(cv) ;
+  int i = Curves_Append(curves,dcv) ;
+  
+  free(dcv) ;
+  return(i) ;
+}
+
+
+
+int (Curves_CreateIntegral)(Curves_t* curves,Curve_t* cv)
+{
+  Curve_t* icv = Curve_CreateIntegral(cv) ;
+  int i = Curves_Append(curves,icv) ;
+  
+  free(icv) ;
+  return(i) ;
+}
+
+
+
+int (Curves_CreateInverse)(Curves_t* curves,Curve_t* cv,const char sc)
+{
+  Curve_t* icv = Curve_CreateInverse(cv,sc) ;
+  int i = Curves_Append(curves,icv) ;
+  
+  free(icv) ;
+  return(i) ;
+}
+
+
+
 
 int   Curves_ReadCurves(Curves_t* curves,const char* dline)
 /** Read new curves as defined in the filename found in dline 
@@ -126,7 +180,6 @@ int   Curves_ReadCurves(Curves_t* curves,const char* dline)
   int    n_curves ;
   int    n_points ;
   CurvesFile_t* curvesfile = CurvesFile_Create() ;
-  int    i ;
 
   /* Is there a file name? */
   if(!CurvesFile_Initialize(curvesfile,dline)) {
@@ -154,11 +207,16 @@ int   Curves_ReadCurves(Curves_t* curves,const char* dline)
   
   
   /* Allocate memory for the curves */
-  for(i = 0 ; i < n_curves ; i++) {
-    Curve_t *cb_i = Curves_GetCurve(curves) + Curves_GetNbOfCurves(curves) + i ;
-    Curve_t *cb   = Curve_Create(n_points) ;
+  {
+    int i ;
     
-    *cb_i = *cb ;
+    for(i = 0 ; i < n_curves ; i++) {
+      Curve_t* cb_i = Curves_GetCurve(curves) + Curves_GetNbOfCurves(curves) + i ;
+      Curve_t* cb   = Curve_Create(n_points) ;
+    
+      cb_i[0] = cb[0] ;
+      free(cb) ;
+    }
   }
   
   
@@ -184,6 +242,7 @@ int   Curves_ReadCurves(Curves_t* curves,const char* dline)
       if(line) {
         char xlabel[Curve_MaxLengthOfCurveName] ;
         char* c ;
+        int i ;
         
         /* Save the label of x-axis */
         strcpy(xlabel,line) ;
@@ -191,7 +250,7 @@ int   Curves_ReadCurves(Curves_t* curves,const char* dline)
         if((c = strchr(xlabel,'('))) c[0] = '\0' ;
       
         for(i = 0 ; i < n_curves ; i++) {
-          Curve_t *cb_i = Curves_GetCurve(curves) + Curves_GetNbOfCurves(curves) + i ;
+          Curve_t* cb_i = Curves_GetCurve(curves) + Curves_GetNbOfCurves(curves) + i ;
           char* xname = Curve_GetNameOfXAxis(cb_i) ;
           char* yname = Curve_GetNameOfYAxis(cb_i) ;
         
@@ -220,6 +279,7 @@ int   Curves_ReadCurves(Curves_t* curves,const char* dline)
     double a_1,a_2 ;
     char *line ;
     FILE   *fict = CurvesFile_OpenFile(curvesfile,"r") ;
+    int i ;
     
     do {
       CurvesFile_StoreFilePosition(curvesfile) ;
@@ -248,8 +308,8 @@ int   Curves_ReadCurves(Curves_t* curves,const char* dline)
       }
     
       for(j = 0 ; j < n_curves ; j++) {
-        Curve_t *cb_j = Curves_GetCurve(curves) + Curves_GetNbOfCurves(curves) + j ;
-        double *y = Curve_GetYValue(cb_j) + i ;
+        Curve_t* cb_j = Curves_GetCurve(curves) + Curves_GetNbOfCurves(curves) + j ;
+        double* y = Curve_GetYValue(cb_j) + i ;
         char fmt[] = "%*[" CurvesFile_FieldDelimiters "] %le" ;
       
         fscanf(fict,fmt,y) ;
@@ -271,6 +331,7 @@ int   Curves_ReadCurves(Curves_t* curves,const char* dline)
   /* Scale */
   {
     char   scale = CurvesFile_GetScaleType(curvesfile) ;
+    int i ;
 
     for(i = 0 ; i < n_curves ; i++) {
       Curve_t *cb_i = Curves_GetCurve(curves) + Curves_GetNbOfCurves(curves) + i ;
@@ -281,7 +342,8 @@ int   Curves_ReadCurves(Curves_t* curves,const char* dline)
   
   Curves_GetNbOfCurves(curves) += n_curves ;
   
-  CurvesFile_Delete(&curvesfile) ;
+  CurvesFile_Delete(curvesfile) ;
+  free(curvesfile) ;
 
   return(n_curves) ;
 }
@@ -438,10 +500,10 @@ int   (Curves_WriteCurves1)(char *dline)
         do {
           fgets(ltmp,sizeof(ltmp),ftmp) ;
         } while(ltmp[0] == '#') ;
-	
+  
         sscanf(ltmp,FCOLX(colx),&p) ;
         fprintf(ftmp1,"%e %e\n",p,kh) ;
-	
+  
         while(fgets(ltmp,sizeof(ltmp),ftmp)) {
           if(ltmp[0] != '#') {
             double pdp = p ;
@@ -452,14 +514,14 @@ int   (Curves_WriteCurves1)(char *dline)
               double s_w = vangenuchten(pdp/a_w,m_w) ;
               double hdh = (s_d - s_w)/(1. - s_w) ;
               double h,dh ;
-	      
+        
               s_d = vangenuchten(p/a_d,m_d) ;
               s_w = vangenuchten(p/a_w,m_w) ;
               h   = (s_d - s_w)/(1. - s_w) ;
-	      
+        
               dh  = h - hdh ;
               kh += dh/(p - 0.5*dp) ;
-	      
+        
               fprintf(ftmp1,"%e %e\n",p,kh) ;
             }
           }
@@ -474,21 +536,21 @@ int   (Curves_WriteCurves1)(char *dline)
         if(ltmp[0] != '#') {
           double kh ;
           double p ;
-	  
+    
           fgets(ltmp1,sizeof(ltmp1),ftmp1) ;
           sscanf(ltmp1,FCOLX(2),&kh) ;
           kh = 1. - kh/kh_max ;
-	  
+    
           sscanf(ltmp,FCOLX(colx),&p) ;
-	  
+    
           {
             double s_w  = vangenuchten(p/a_w,m_w) ;
             double kl   = 1 - pow(1 - pow(s_w,1./m_w),m_w) ;
-	    
+      
             double s_d  = vangenuchten(p/a_d,m_d) ;
-	    
+      
             double k_rd = sqrt(s_d)*(kl + (1. - kl)*kh) ;
-	    
+      
             sprintf(strchr(ltmp,'\n')," %e\n",k_rd) ;
           }
         }
@@ -908,7 +970,7 @@ int   (Curves_WriteCurves1)(char *dline)
       sscanf(line,"{ %*s = %lf , %*s = %lf , %*s = %lf , %*s = %lf }",&y_Tob1,&y_Tob2,&y_Jen,&z_SH) ;
       
       /* Amorpheous silica */
-      v_SH 	  = 29.e-3 + 7.e-3*z_SH;
+      v_SH    = 29.e-3 + 7.e-3*z_SH;
       /* Jennite */
       x_Jen   = x_Jen0*y_Jen ;
       z_Jen   = z_Jen0*y_Jen ;

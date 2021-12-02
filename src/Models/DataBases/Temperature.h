@@ -9,6 +9,7 @@ struct Temperature_s ; typedef struct Temperature_s Temperature_t ;
 
 
 extern Temperature_t* (Temperature_Create)(void) ;
+extern void           (Temperature_Delete)(void*) ;
 
 
 

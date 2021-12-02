@@ -10,6 +10,7 @@ struct DataSet_s      ; typedef struct DataSet_s      DataSet_t ;
 #include "Options.h"
 
 extern DataSet_t*  (DataSet_Create)    (char*,Options_t*) ;
+extern void        (DataSet_Delete)    (void*) ;
 extern DataSet_t*  (DataSet_Create1)   (char*,Options_t*) ;
 extern void        (DataSet_PrintData) (DataSet_t*,char*) ;
 
@@ -22,6 +23,7 @@ extern void        (DataSet_PrintData) (DataSet_t*,char*) ;
 
 
 
+#define DataSet_GetUnits(DS)          ((DS)->units)
 #define DataSet_GetDataFile(DS)       ((DS)->datafile)
 #define DataSet_GetGeometry(DS)       ((DS)->geometry)
 #define DataSet_GetMesh(DS)           ((DS)->mesh)
@@ -57,6 +59,7 @@ extern void        (DataSet_PrintData) (DataSet_t*,char*) ;
 
 
 
+#include "Units.h"
 #include "DataFile.h"
 #include "Geometry.h"
 #include "Mesh.h"
@@ -78,6 +81,7 @@ extern void        (DataSet_PrintData) (DataSet_t*,char*) ;
 
 
 struct DataSet_s {               /* set of data for the problem to work out */
+  Units_t*       units ;         /* Units */
   DataFile_t*    datafile ;      /* data file */
   Geometry_t*    geometry ;      /* Geometry */
   Mesh_t*        mesh ;          /* Mesh */

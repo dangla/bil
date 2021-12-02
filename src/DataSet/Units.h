@@ -14,6 +14,7 @@ struct Units_s        ; typedef struct Units_s        Units_t ;
  
 extern Units_t* (Units_New)     (void) ;
 extern Units_t* (Units_Create)  (DataFile_t*) ;
+extern void     (Units_Delete)  (void*) ;
 
 
 #define Units_MaxNbOfUnits   (7)

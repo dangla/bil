@@ -10,7 +10,7 @@
 
 /* Extern functions */
 
-IntFcts_t*  IntFcts_Create(void)
+IntFcts_t*  (IntFcts_Create)(void)
 {
   IntFcts_t* intfcts = (IntFcts_t*) Mry_New(IntFcts_t) ;
 
@@ -30,26 +30,26 @@ IntFcts_t*  IntFcts_Create(void)
 
 
 
-void IntFcts_Delete(void* self)
+void (IntFcts_Delete)(void* self)
 {
-  IntFcts_t** pintfcts = (IntFcts_t**) self ;
-  IntFcts_t*   intfcts = *pintfcts ;
+  IntFcts_t* intfcts = (IntFcts_t*) self ;
   
   {
     int n = IntFcts_GetNbOfIntFcts(intfcts) ;
     IntFct_t* intfct = IntFcts_GetIntFct(intfcts) ;
-    int i ;
     
-    for(i = 0 ; i < n ; i++) {
-      IntFct_t* intfct_i = intfct + i ;
+    if(intfct) {
+      int i ;
+    
+      for(i = 0 ; i < n ; i++) {
+        IntFct_t* intfct_i = intfct + i ;
       
-      IntFct_Delete(&intfct_i) ;
-    }
+        IntFct_Delete(intfct_i) ;
+      }
     
-    free(intfct) ;
+      free(intfct) ;
+    }
   }
-  
-  free(intfcts) ;
 }
 
 
@@ -106,6 +106,7 @@ int IntFcts_AddIntFct(IntFcts_t* intfcts,int nn,int dim,const char* type)
     IntFct_t* intfcti = IntFct_Create(nn,dim,type) ;
     
     intfct[i] = intfcti[0] ;
+    free(intfcti) ;
   }
   
   return(i) ;

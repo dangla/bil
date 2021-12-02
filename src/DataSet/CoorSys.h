@@ -2,10 +2,10 @@
 #define COORSYS_H
 
 enum CoorSys_e {              /* coordinate system */
-  COORSYS_CARTESIAN,
-  COORSYS_CYLINDRICAL,
-  COORSYS_SPHERICAL,
-  CARTESIAN = COORSYS_CARTESIAN /* Should be eliminated */
+  CoorSys_Cartesian,
+  CoorSys_Cylindrical,
+  CoorSys_Spherical,
+  CARTESIAN = CoorSys_Cartesian /* Should be eliminated */
 } ;
 
 
@@ -18,25 +18,25 @@ typedef enum CoorSys_e      CoorSys_t ;
 
 /* Test the coordinate system */
 #define CoorSys_IsCartesian(COO) \
-        (COO == COORSYS_CARTESIAN)
+        (COO == CoorSys_Cartesian)
         
 #define CoorSys_IsCylindrical(COO) \
-        (COO == COORSYS_CYLINDRICAL)
+        (COO == CoorSys_Cylindrical)
         
 #define CoorSys_IsSpherical(COO) \
-        (COO == COORSYS_SPHERICAL)
+        (COO == CoorSys_Spherical)
 
 
 
 /* Set the coordinate system */
 #define CoorSys_SetCartesian(COO) \
-        (COO = COORSYS_CARTESIAN)
+        (COO = CoorSys_Cartesian)
         
 #define CoorSys_SetCylindrical(COO) \
-        (COO = COORSYS_CYLINDRICAL)
+        (COO = CoorSys_Cylindrical)
         
 #define CoorSys_SetSpherical(COO) \
-        (COO = COORSYS_SPHERICAL)
+        (COO = CoorSys_Spherical)
         
 
 #endif

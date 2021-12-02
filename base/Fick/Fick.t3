@@ -1,9 +1,9 @@
-# Version 2.8, Fri Dec 13 13:26:07 2019
+# Version 2.8.3, Mon Nov 22 15:16:59 2021
 # Time = 3.153600e+07
 # Model = Fick
 # Number of views = 2
 # Numbers of components per view = 1 1
-# Coordinates(1) x_na(4) n_solute(5)
+# Coordinates(1) solute concentration(4) solute content(5)
  0.000000e+00   0.000000e+00   0.000000e+00   1.523769e+01   5.774743e+00  
  3.000000e-04   0.000000e+00   0.000000e+00   1.523589e+01   5.774743e+00  
  3.000000e-04   0.000000e+00   0.000000e+00   1.523589e+01   5.773379e+00  

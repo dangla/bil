@@ -27,6 +27,22 @@ NodeSol_t* (NodeSol_Create)(const int n)
 
 
 
+void (NodeSol_Delete)(void* self)
+{
+  NodeSol_t* nodesol = (NodeSol_t*) self ;
+  
+  {
+    double* u = NodeSol_GetUnknown(nodesol) ;
+    
+    if(u) {
+      free(u) ;
+      NodeSol_GetUnknown(nodesol) = NULL ;
+    }
+  }
+}
+
+
+
 NodeSol_t* (NodeSol_GetNodeSolInDistantPast)(NodeSol_t* nodesol,unsigned int dist)
 {
   while(dist--) nodesol = NodeSol_GetPreviousNodeSol(nodesol) ;

@@ -65,10 +65,9 @@ Exception_t*  (Exception_Create)(void)
 
 void  (Exception_Delete)(void* self)
 {
-  Exception_t** pexception = (Exception_t**) self ;
+  Exception_t* exception = (Exception_t*) self ;
   
-  free(*pexception) ;
-  *pexception = NULL ;
+  Exception_GetDelete(exception) = NULL ;
 }
 
 
@@ -115,8 +114,8 @@ void (SignalHandler)(int sigid)
       Message_Direct("Check the possible issues:\n") ;
       Message_Direct("- A bad \"iperm\" file? (if so remove it!)\n") ;
       Message_Direct("- A mesh with physical index out of range?\n") ;
-      Exception_BackupAndTerminate ;
-      return ;
+      //Exception_BackupAndTerminate ;
+      break ;
     
     case SIGFPE:
   

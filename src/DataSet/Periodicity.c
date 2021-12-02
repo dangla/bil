@@ -7,18 +7,14 @@
 
 
 
-Periodicity_t* (Periodicity_New)(const int n)
+Periodicity_t* (Periodicity_New)(void)
 {
-  Periodicity_t* periodicity = (Periodicity_t*) Mry_New(Periodicity_t[n]) ;
-   
+  Periodicity_t* periodicity = (Periodicity_t*) Mry_New(Periodicity_t) ;
+
+  {
+    double* vector = (double*) Mry_New(double[3]) ;
     
-  if(n > 0) {
-    double* vector = (double*) Mry_New(double[n*3]) ;
-    int i ;
-    
-    for(i = 0 ; i < n ; i++) {
-      Periodicity_GetPeriodVector(periodicity + i) = vector + 3*i ;
-    }
+    Periodicity_GetPeriodVector(periodicity) = vector ;
   }
   
   return(periodicity) ;
@@ -26,14 +22,9 @@ Periodicity_t* (Periodicity_New)(const int n)
 
 
 
-
-void Periodicity_Delete(void* self)
+void (Periodicity_Delete)(void* self)
 {
-  Periodicity_t** pperiodicity = (Periodicity_t**) self ;
-  Periodicity_t*   periodicity = *pperiodicity ;
+  Periodicity_t* periodicity = (Periodicity_t*) self ;
   
   free(Periodicity_GetPeriodVector(periodicity)) ;
-  free(periodicity) ;
-  
-  //*pperiodicity = NULL ;
 }

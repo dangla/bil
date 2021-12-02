@@ -7,6 +7,7 @@
 #include <stdarg.h>
 
 #include "Message.h"
+#include "Mry.h"
 #include "Tools/Math.h"
 #include "Curve.h"
 
@@ -21,20 +22,16 @@ static double icourbe_log(double,Curve_t*) ;
 
 /* Extern functions */
 
-Curve_t* Curve_Create(unsigned int n_points)
+Curve_t* (Curve_Create)(unsigned int n_points)
 {
-  Curve_t* curve   = (Curve_t*) malloc(sizeof(Curve_t)) ;
-  
-  if(!curve) arret("Curve_Create (0)") ;
+  Curve_t* curve   = (Curve_t*) Mry_New(Curve_t) ;
 
   Curve_GetNbOfPoints(curve) = n_points ;
   
   
   /* Allocate memory space for the values */
   {
-    double* mry = (double *) malloc((n_points + 2)*sizeof(double)) ;
-    
-    if(!mry) arret("Curve_Create (1) : not enough memory") ;
+    double* mry = (double *) Mry_New(double[n_points + 2]) ;
     
     Curve_GetXRange(curve) = mry ;
     Curve_GetYValue(curve) = mry + 2 ;
@@ -43,9 +40,7 @@ Curve_t* Curve_Create(unsigned int n_points)
   
   /* Allocate memory space for the names of axis */
   {
-    char* name = (char*) malloc(2*Curve_MaxLengthOfCurveName*sizeof(char)) ;
-    
-    if(!name) arret("Curve_Create (2) : not enough memory") ;
+    char* name = (char*) Mry_New(char[2*Curve_MaxLengthOfCurveName]) ;
     
     Curve_GetNameOfXAxis(curve) = name ;
     Curve_GetNameOfYAxis(curve) = name + Curve_MaxLengthOfCurveName ;
@@ -59,15 +54,27 @@ Curve_t* Curve_Create(unsigned int n_points)
 
 
 
-void Curve_Delete(void* self)
+void (Curve_Delete)(void* self)
 {
-  Curve_t** pcurve   = (Curve_t**) self ;
-  Curve_t*   curve   = *pcurve ;
+  Curve_t* curve   = (Curve_t*) self ;
   
-  free(Curve_GetXRange(curve)) ;
-  free(Curve_GetNameOfXAxis(curve)) ;
-  free(curve) ;
-  *pcurve = NULL ;
+  {
+    double* mry = Curve_GetXRange(curve) ;
+    
+    if(mry) {
+      free(mry) ;
+      Curve_GetXRange(curve) = NULL ;
+    }
+  }
+  
+  {
+    char* name = Curve_GetNameOfXAxis(curve) ;
+    
+    if(name) {
+      free(name) ;
+      Curve_GetNameOfXAxis(curve) = NULL ;
+    }
+  }
 }
 
 
@@ -201,17 +208,15 @@ Curve_t* Curve_CreateInverse(Curve_t* curve,const char scale)
 
 
 
-double* Curve_CreateSamplingOfX(Curve_t *curve)
+double* Curve_CreateSamplingOfX(Curve_t* curve)
 {
   int n_points = Curve_GetNbOfPoints(curve) ;
-  double *x    = Curve_GetXRange(curve) ;
+  double* x    = Curve_GetXRange(curve) ;
   char scale   = Curve_GetScaleType(curve) ;
   int ni    = n_points - 1 ;
   double x1 = x[0] ;
   double x2 = x[1] ;
-  double *xs = (double*) malloc(n_points*sizeof(double)) ;
-  
-  if(!xs) arret("Curve_CreateSamplingOfX: not enough memory") ;
+  double* xs = (double*) Mry_New(double[n_points]) ;
   
   if(scale == 'n') {
     double dx = (x2 - x1) ;
@@ -246,7 +251,7 @@ double* Curve_CreateSamplingOfX(Curve_t *curve)
 
 
 
-double Curve_ComputeValue(Curve_t *cb,double a)
+double Curve_ComputeValue(Curve_t* cb,double a)
 /** Return the value at a */
 {
   if(cb) {
@@ -262,7 +267,7 @@ double Curve_ComputeValue(Curve_t *cb,double a)
 
 
 
-double Curve_ComputeDerivative(Curve_t *cb,double a)
+double Curve_ComputeDerivative(Curve_t* cb,double a)
 /** Return the derivative at a */
 {
   if(cb) {
@@ -278,7 +283,7 @@ double Curve_ComputeDerivative(Curve_t *cb,double a)
 
 
 
-double Curve_ComputeIntegral(Curve_t *cb,double a)
+double Curve_ComputeIntegral(Curve_t* cb,double a)
 /** Return the integral from begin to a */
 {
   if(cb) {
@@ -321,15 +326,15 @@ char* Curve_PrintInFile(Curve_t* curve)
 
 /* Intern functions */
 
-double courbe_nor(double a,Curve_t *cb)
+double courbe_nor(double a,Curve_t* cb)
 {
   /* Retourne la valeur de la courbe en a */
   int    ni = Curve_GetNbOfPoints(cb) - 1 ;
   double a1 = Curve_GetXRange(cb)[0] ;
   double a2 = Curve_GetXRange(cb)[1] ;
 
-  if(a < a1) return(Curve_GetYValue(cb)[0]) ;
-  else if(a > a2) return(Curve_GetYValue(cb)[ni]) ;
+  if(a <= a1) return(Curve_GetYValue(cb)[0]) ;
+  else if(a >= a2) return(Curve_GetYValue(cb)[ni]) ;
   else {
     double da = (a2 - a1)/ni ;
     double r  = (a - a1)/da ;
@@ -343,7 +348,7 @@ double courbe_nor(double a,Curve_t *cb)
 
 
 
-double dcourbe_nor(double a,Curve_t *cb)
+double dcourbe_nor(double a,Curve_t* cb)
 {
   /* Retourne la derivee de la courbe en a */
   int    n_i = Curve_GetNbOfPoints(cb) - 1 ;
@@ -354,7 +359,7 @@ double dcourbe_nor(double a,Curve_t *cb)
 
 
 
-double icourbe_nor(double a,Curve_t *cb)
+double icourbe_nor(double a,Curve_t* cb)
 /* Return the integral computed from cb */ 
 {
   int    n_i = Curve_GetNbOfPoints(cb) - 1 ;
@@ -380,15 +385,15 @@ double icourbe_nor(double a,Curve_t *cb)
 
 
 
-double courbe_log(double a,Curve_t *cb)
+double courbe_log(double a,Curve_t* cb)
 /* Retourne la valeur en a de la courbe echantillonnee en base log10 */
 {
   int    ni = Curve_GetNbOfPoints(cb) - 1 ;
   double a1 = Curve_GetXRange(cb)[0] ;
   double a2 = Curve_GetXRange(cb)[1] ;
 
-  if(a < a1) return(Curve_GetYValue(cb)[0]) ;
-  else if(a > a2) return(Curve_GetYValue(cb)[ni]) ;
+  if(a <= a1) return(Curve_GetYValue(cb)[0]) ;
+  else if(a >= a2) return(Curve_GetYValue(cb)[ni]) ;
   else {
     double loga1 = log10(a1) ;
     double loga2 = log10(a2) ;
@@ -396,6 +401,7 @@ double courbe_log(double a,Curve_t *cb)
     double loga  = log10(a) ;
     double r  = (loga - loga1)/dloga ;
     int    i  = floor(r) ;
+    if(i >= ni) arret("courbe_log: loga = %g; loga2 = %g",loga,loga2) ;
     double loga0 = loga1 + i*dloga ;
     double dv = (Curve_GetYValue(cb)[i+1] - Curve_GetYValue(cb)[i])/dloga ;
     double v  = Curve_GetYValue(cb)[i] + dv*(loga - loga0) ;
@@ -405,21 +411,24 @@ double courbe_log(double a,Curve_t *cb)
 
 
 
-double dcourbe_log(double a,Curve_t *cb)
+double dcourbe_log(double a,Curve_t* cb)
 {
   int    n_i = Curve_GetNbOfPoints(cb) - 1 ;
-  double a1 = Curve_GetXRange(cb)[0],a2 = Curve_GetXRange(cb)[1] ;
-  double loga1 = log10(a1),loga2 = log10(a2) ;
+  double a1 = Curve_GetXRange(cb)[0] ;
+  double a2 = Curve_GetXRange(cb)[1] ;
+  double loga1 = log10(a1) ;
+  double loga2 = log10(a2) ;
   double dloga = (loga2 - loga1)/n_i ;
-  double ada = a*pow(10.,dloga),da = ada - a ;
+  double ada = a*pow(10.,dloga) ;
+  double da = ada - a ;
 
-  if(a < a1) return(0.) ; /* pour le cas a = 0 ! */
+  if(a <= a1) return(0.) ; /* pour le cas a = 0 ! */
   else return((courbe_log(a + da,cb) - courbe_log(a - da,cb))*0.5/da) ;
 }
 
 
 
-double icourbe_log(double a,Curve_t *cb)
+double icourbe_log(double a,Curve_t* cb)
 /* Return the integral curve computed from cb */ 
 {
   int    n_i = Curve_GetNbOfPoints(cb) - 1 ;

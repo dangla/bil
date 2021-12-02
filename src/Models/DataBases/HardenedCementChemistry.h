@@ -9,6 +9,7 @@ typedef struct HardenedCementChemistry_s     HardenedCementChemistry_t ;
 
 
 extern HardenedCementChemistry_t* (HardenedCementChemistry_Create)(void) ;
+extern void                       (HardenedCementChemistry_Delete)(void*) ;
 extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O)            (HardenedCementChemistry_t*) ;
 extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O)      (HardenedCementChemistry_t*) ;
 extern void (HardenedCementChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Cl_H2O)         (HardenedCementChemistry_t*) ;

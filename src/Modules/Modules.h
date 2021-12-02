@@ -12,10 +12,9 @@ struct Modules_s       ; typedef struct Modules_s       Modules_t ;
 
 #include "Module.h"
 
-extern Modules_t* Modules_Create(void) ;
-extern void       Modules_Delete(void*) ;
-extern void       Modules_Print(char*) ;
-extern Module_t*  Modules_FindModule(Modules_t*,const char*) ;
+extern void       (Modules_Delete)(void*) ;
+extern void       (Modules_Print)(char*) ;
+extern Module_t*  (Modules_FindModule)(Modules_t*,const char*) ;
 
 
 #include "ListOfModules.h"

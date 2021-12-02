@@ -2,12 +2,12 @@
 #define SYMMETRY_H
 
 enum Symmetry_e {             /* symmetry of the problem */
-  SYMMETRY_NO,
-  SYMMETRY_PLAN,
-  SYMMETRY_AXIS,
-  SYMMETRY_SPHE,
-  AXIS = SYMMETRY_AXIS,       /* Should be eliminated */
-  SPHE = SYMMETRY_SPHE, 
+  Symmetry_None,
+  Symmetry_Plane,
+  Symmetry_Cylindrical,
+  Symmetry_Spherical,
+  AXIS = Symmetry_Cylindrical,       /* Should be eliminated */
+  SPHE = Symmetry_Spherical, 
 } ;
 
 
@@ -20,28 +20,28 @@ typedef enum Symmetry_e     Symmetry_t ;
 
 /* Test the symmetry */
 #define Symmetry_IsCylindrical(SYM) \
-        (SYM == SYMMETRY_AXIS)
+        (SYM == Symmetry_Cylindrical)
         
 #define Symmetry_IsSpherical(SYM) \
-        (SYM == SYMMETRY_SPHE)
+        (SYM == Symmetry_Spherical)
         
 #define Symmetry_IsPlane(SYM) \
-        (SYM == SYMMETRY_PLAN)
+        (SYM == Symmetry_Plane)
 
 
 
 /* Set the symmetry */
 #define Symmetry_SetNoSymmetry(SYM) \
-        (SYM = SYMMETRY_NO)
+        (SYM = Symmetry_None)
         
 #define Symmetry_SetPlaneSymmetry(SYM) \
-        (SYM = SYMMETRY_PLAN)
+        (SYM = Symmetry_Plane)
         
 #define Symmetry_SetCylindricalSymmetry(SYM) \
-        (SYM = SYMMETRY_AXIS)
+        (SYM = Symmetry_Cylindrical)
         
 #define Symmetry_SetSphericalSymmetry(SYM) \
-        (SYM = SYMMETRY_SPHE)
+        (SYM = Symmetry_Spherical)
 
 
 

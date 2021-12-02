@@ -30,6 +30,7 @@ Materials_t* (Materials_New)(const int n_mats)
       Material_t* mat   = Material_New() ;
       
       material[i] = mat[0] ;
+      free(mat) ;
     }
     
     Materials_GetMaterial(materials) = material ;
@@ -217,3 +218,36 @@ Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* 
   return(materials) ;
 }
 #endif
+
+
+
+void (Materials_Delete)(void* self)
+{
+  Materials_t* materials = (Materials_t*) self ;
+  
+  {
+    int n_mats = Materials_GetNbOfMaterials(materials) ;
+    Material_t* material = Materials_GetMaterial(materials) ;
+    
+    if(material) {
+      int i ;
+      
+      for(i = 0 ; i < n_mats ; i++) {
+        Material_Delete(material+i) ;
+      }
+      //Mry_Delete(material,n_mats,Material_Delete) ;
+      free(material) ;
+      Materials_GetMaterial(materials) = NULL ;
+    }
+  }
+  
+  {
+    Models_t* usedmodels = Materials_GetUsedModels(materials) ;
+    
+    if(usedmodels) {
+      Models_Delete(usedmodels) ;
+      free(usedmodels) ;
+      Materials_GetUsedModels(materials) = NULL ;
+    }
+  }
+}

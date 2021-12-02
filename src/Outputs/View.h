@@ -7,8 +7,8 @@
 struct View_s       ; typedef struct View_s       View_t ;
 
 
-extern View_t*    View_Create(int) ;
-extern void       View_Delete(void*) ;
+extern View_t*    (View_Create)(void) ;
+extern void       (View_Delete)(void*) ;
 
 
 #define View_MaxLengthOfViewName    (50)      /* Max length of view name */

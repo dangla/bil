@@ -6,8 +6,8 @@
 struct Graph_s          ; typedef struct Graph_s Graph_t ;
 
 
-extern Graph_t*  Graph_Create(int,int*) ;
-extern void      Graph_Delete(void*) ;
+extern Graph_t*  (Graph_Create)(int,int*) ;
+extern void      (Graph_Delete)(void*) ;
 
 
 #define Graph_GetNbOfVertices(graph)              ((graph)->nvertices)
@@ -22,16 +22,16 @@ extern void      Graph_Delete(void*) ;
         AdjacencyList_GetNeighbor(Graph_GetAdjacencyList(graph) + i)
 
 
-#define Graph_UpdateTheNbOfEdges(graph)               \
-  {                                                   \
-    int nvert = Graph_GetNbOfVertices(graph) ;        \
-    int nedges = 0 ;                                  \
-    int i ;                                           \
-    for(i = 0 ; i < nvert ; i++) {                    \
-      nedges += Graph_GetDegreeOfVertex(graph,i) ;    \
-    }                                                 \
-    Graph_GetNbOfEdges(graph) = nedges/2 ;              \
-  }
+#define Graph_UpdateTheNbOfEdges(graph) \
+        do { \
+          int nvert = Graph_GetNbOfVertices(graph) ; \
+          int nedges = 0 ; \
+          int i ; \
+          for(i = 0 ; i < nvert ; i++) { \
+            nedges += Graph_GetDegreeOfVertex(graph,i) ; \
+          } \
+          Graph_GetNbOfEdges(graph) = nedges/2 ; \
+        } while(0)
 
 
 

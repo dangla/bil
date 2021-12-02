@@ -3,6 +3,9 @@
 
 #include "TypeId.h"
 #include "BCond.h"
+#include "Damage.h"
+#include "Elasticity.h"
+#include "Plasticity.h"
 #include "ElementsSol.h"
 #include "GenericData.h"
 #include "Message.h"
@@ -10,6 +13,7 @@
 #include "FVM.h"
 #include "Exception.h"
 #include "InternationalSystemOfUnits.h"
+#include "Math.h"
 
 
 
@@ -19,16 +23,16 @@ void  (TypeId_Delete)(TypeId_t typ,void* self)
 {
   switch(typ) {
     case TypeId_undefined       : break ;
-    case TypeId_unsigned_char   : free(self); return ;
-    case TypeId_char            : free(self); return ;
-    case TypeId_double          : free(self); return ;
-    case TypeId_long_double     : free(self); return ;
-    case TypeId_float           : free(self); return ;
-    case TypeId_unsigned_int    : free(self); return ;
-    case TypeId_short_int       : free(self); return ;
-    case TypeId_int             : free(self); return ;
-    case TypeId_unsigned_long   : free(self); return ;
-    case TypeId_long_int        : free(self); return ;
+    case TypeId_unsigned_char   : return ;
+    case TypeId_char            : return ;
+    case TypeId_double          : return ;
+    case TypeId_long_double     : return ;
+    case TypeId_float           : return ;
+    case TypeId_unsigned_int    : return ;
+    case TypeId_short_int       : return ;
+    case TypeId_int             : return ;
+    case TypeId_unsigned_long   : return ;
+    case TypeId_long_int        : return ;
     case TypeId_BCond_t         : break ;
     case TypeId_BConds_t        : break ;
     case TypeId_Buffer_t        : break ;
@@ -37,15 +41,16 @@ void  (TypeId_Delete)(TypeId_t typ,void* self)
     case TypeId_Curve_t         : break ;
     case TypeId_Curves_t        : break ;
     case TypeId_CurvesFile_t    : break ;
-    case TypeId_Damage_t        : break ;
+    case TypeId_Damage_t        : Damage_Delete(self); return ;
     case TypeId_DataFile_t      : break ;
-    case TypeId_DataSet_t       : break ;
+    case TypeId_DataSet_t       : DataSet_Delete(self); return ;
     case TypeId_Date_t          : break ;
     case TypeId_Dates_t         : break ;
+    case TypeId_Elasticity_t    : Elasticity_Delete(self); return ;
     case TypeId_Element_t       : break ;
     case TypeId_Elements_t      : break ;
     case TypeId_ElementSol_t    : break ;
-    case TypeId_ElementsSol_t   : break ; //ElementsSol_Delete(self); return ;
+    case TypeId_ElementsSol_t   : ElementsSol_Delete(self); return ;
     case TypeId_Exception_t     : Exception_Delete(self); return ;
     case TypeId_FEM_t           : FEM_Delete(self); return ;
     case TypeId_Field_t         : break ;
@@ -80,11 +85,12 @@ void  (TypeId_Delete)(TypeId_t typ,void* self)
     case TypeId_NodesSol_t      : break ;
     case TypeId_ObVals_t        : break ;
     case TypeId_ObVal_t         : break ;
-    case TypeId_Options_t       : break ;
+    case TypeId_Options_t       : Options_Delete(self); return ;
     case TypeId_OutputFile_t    : break ;
     case TypeId_OutputFiles_t   : break ;
     case TypeId_Periodicity_t   : break ;
     case TypeId_Periodicities_t : break ;
+    case TypeId_Plasticity_t    : Plasticity_Delete(self); return ;
     case TypeId_Point_t         : break ;
     case TypeId_Points_t        : break ;
     case TypeId_Result_t        : break ;
@@ -93,8 +99,9 @@ void  (TypeId_Delete)(TypeId_t typ,void* self)
     case TypeId_ShapeFct_t      : break ;
     case TypeId_ShapeFcts_t     : break ;
     case TypeId_Solution_t      : break ;
-    case TypeId_Solutions_t     : break ;
-    case TypeId_Solver_t        : break ;
+    case TypeId_Solutions_t     : Solutions_Delete(self); return ;
+    case TypeId_Solver_t        : Solver_Delete(self); return ;
+    case TypeId_Solvers_t       : Solvers_Delete(self); return ;
     case TypeId_TextFile_t      : break ;
     case TypeId_TimeStep_t      : break ;
     case TypeId_Unit_t          : break ;

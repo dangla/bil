@@ -13,7 +13,7 @@ static void   lit_grille(FieldGrid_t* ,int,char*) ;
 
 
 
-Fields_t* Fields_New(const int n_fields)
+Fields_t* (Fields_New)(const int n_fields)
 {
   Fields_t* fields = (Fields_t*) Mry_New(Fields_t) ;
   
@@ -29,6 +29,7 @@ Fields_t* Fields_New(const int n_fields)
         Field_t* fld = Field_New() ;
         
         field[i] = fld[0] ;
+        free(fld) ;
       }
       
       Fields_GetField(fields) = field ;
@@ -40,7 +41,7 @@ Fields_t* Fields_New(const int n_fields)
 
 
 
-Fields_t* Fields_Create(DataFile_t* datafile)
+Fields_t* (Fields_Create)(DataFile_t* datafile)
 {
   char* filecontent = DataFile_GetFileContent(datafile) ;
   char* c  = String_FindToken(filecontent,"CHMP,FLDS,Fields",",") ;
@@ -77,4 +78,28 @@ Fields_t* Fields_Create(DataFile_t* datafile)
   }
   
   return(fields) ;
+}
+
+
+
+void (Fields_Delete)(void* self)
+{
+  Fields_t* fields = (Fields_t*) self ;
+
+  {
+    int n_fields = Fields_GetNbOfFields(fields) ;
+    
+    if(n_fields > 0) {
+      Field_t* field = Fields_GetField(fields) ;
+      int i ;
+      
+      for(i = 0 ; i < n_fields ; i++) {
+        Field_t* fieldi = field + i ;
+        
+        Field_Delete(fieldi) ;
+      }
+      
+      free(field) ;
+    }
+  }
 }

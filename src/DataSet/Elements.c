@@ -22,7 +22,7 @@ static double   (Elements_ComputeMinimumSizeOfElements)(Elements_t*) ;
 
 
 
-Elements_t*  Elements_New(const int n,const int nc)
+Elements_t*  (Elements_New)(const int n,const int nc)
 {
   Elements_t* elts = (Elements_t*) Mry_New(Elements_t) ;
   
@@ -42,15 +42,23 @@ Elements_t*  Elements_New(const int n,const int nc)
   {
     Node_t** pnode = (Node_t**) Mry_New(Node_t*[nc]) ;
     Element_t* el = Elements_GetElement(elts) ;
+    int i ;
     
-    Element_GetPointerToNode(el) = pnode ;
+    for(i = 0 ; i < n ; i++) {
+      Element_t* el_i = el + i ;
+      
+      Element_GetPointerToNode(el_i) = pnode ;
+    }
   }
   
   
   /* Initialization */
+  
+  Elements_GetShapeFcts(elts) = NULL ;
+  Elements_GetIntFcts(elts) = NULL ;
+  
   {
     Element_t* el = Elements_GetElement(elts) ;
-    Node_t** pnode = Element_GetPointerToNode(el) ;
     int i ;
     
     for(i = 0 ; i < n ; i++) {
@@ -59,7 +67,6 @@ Elements_t*  Elements_New(const int n,const int nc)
       Element_GetElementIndex(el_i)      = i ;
       Element_GetDimension(el_i)         = -1 ;
       Element_GetNbOfNodes(el_i)         = 0 ;
-      Element_GetPointerToNode(el_i)     = pnode ;
       Element_GetRegionIndex(el_i)       = -1 ;
       Element_GetMaterial(el_i)          = NULL ;
       Element_GetMaterialIndex(el_i)     = -1 ;
@@ -77,25 +84,69 @@ Elements_t*  Elements_New(const int n,const int nc)
 
 
 
-void Elements_Delete(void* self)
+void (Elements_Delete)(void* self)
 {
-  Elements_t** pelements = (Elements_t**) self ;
-  Elements_t*   elements = *pelements ;
+  Elements_t* elements = (Elements_t*) self ;
   
   {
     Element_t* el = Elements_GetElement(elements) ;
-    Node_t** pnode = Element_GetPointerToNode(el) ;
     
-    free(pnode) ;
+    {
+      Node_t** pnode = Element_GetPointerToNode(el) ;
+    
+      if(pnode) {
+        free(pnode) ;
+      }
+      
+      Element_GetPointerToNode(el) = NULL ;
+    }
+    
+    {
+      short int* upos = Element_GetUnknownPosition(el) ;
+    
+      if(upos) {
+        free(upos) ;
+      }
+      
+      Element_GetUnknownPosition(el) = NULL ;
+    }
+    
+    {
+      Buffer_t* buf = Element_GetBuffer(el) ;
+    
+      if(buf) {
+        Buffer_Delete(buf) ;
+        free(buf) ;
+      }
+      
+      Element_GetBuffer(el) = NULL ;
+    }
+    
     free(el) ;
   }
   
-  free(elements) ;
+  {
+    ShapeFcts_t* shapefcts = Elements_GetShapeFcts(elements) ;
+    
+    if(shapefcts) {
+      ShapeFcts_Delete(shapefcts) ;
+      free(shapefcts) ;
+    }
+  }
+  
+  {
+    IntFcts_t* intfcts = Elements_GetIntFcts(elements) ;
+    
+    if(intfcts) {
+      IntFcts_Delete(intfcts) ;
+      free(intfcts) ;
+    }
+  }
 }
 
 
 
-void Elements_LinkUp(Elements_t* elements,Materials_t* materials)
+void (Elements_LinkUp)(Elements_t* elements,Materials_t* materials)
 {
   int n_el = Elements_GetNbOfElements(elements) ;
   Element_t* el = Elements_GetElement(elements) ;
@@ -120,7 +171,7 @@ void Elements_LinkUp(Elements_t* elements,Materials_t* materials)
 
 
 
-void Elements_CreateMore(Elements_t* elements)
+void (Elements_CreateMore)(Elements_t* elements)
 {
   int n_el = Elements_GetNbOfElements(elements) ;
   Element_t* el = Elements_GetElement(elements) ;
@@ -255,29 +306,7 @@ void Elements_CreateMore(Elements_t* elements)
 
 
 
-void Elements_DeleteMore(void* self)
-{
-  Elements_t** pelements = (Elements_t**) self ;
-  Elements_t*   elements = *pelements ;
-  
-  {
-    Element_t* el = Elements_GetElement(elements) ;
-    short int* upos = Element_GetUnknownPosition(el) ;
-    Buffer_t* buf = Element_GetBuffer(el) ;
-    ShapeFcts_t* shapefcts = Elements_GetShapeFcts(elements) ;
-    IntFcts_t* intfcts = Elements_GetIntFcts(elements) ;
-    
-    free(upos) ;
-    Buffer_Delete(&buf) ;
-    ShapeFcts_Delete(&shapefcts) ;
-    IntFcts_Delete(&intfcts) ;
-  }
-  
-}
-
-
-
-void  Elements_DefineProperties(Elements_t* elements)
+void  (Elements_DefineProperties)(Elements_t* elements)
 /** Define the element properties including:
  **  1. the shape and interpolation functions
  **  2. the allocation memory of internal data (abstract data type)
@@ -337,7 +366,7 @@ void  Elements_DefineProperties(Elements_t* elements)
 
 
 
-double Elements_ComputeMaximumSizeOfElements(Elements_t* elements)
+double (Elements_ComputeMaximumSizeOfElements)(Elements_t* elements)
 {
   int n_el = Elements_GetNbOfElements(elements) ;
   Element_t* el = Elements_GetElement(elements) ;
@@ -357,7 +386,7 @@ double Elements_ComputeMaximumSizeOfElements(Elements_t* elements)
 
 
 
-double Elements_ComputeMinimumSizeOfElements(Elements_t* elements)
+double (Elements_ComputeMinimumSizeOfElements)(Elements_t* elements)
 {
   int n_el = Elements_GetNbOfElements(elements) ;
   Element_t* el = Elements_GetElement(elements) ;
@@ -380,7 +409,7 @@ double Elements_ComputeMinimumSizeOfElements(Elements_t* elements)
 
 
 
-int Elements_ComputeNbOfMatrixEntries(Elements_t* elements)
+int (Elements_ComputeNbOfMatrixEntries)(Elements_t* elements)
 {
   int nel = Elements_GetNbOfElements(elements) ;
   Element_t* el = Elements_GetElement(elements) ;
@@ -400,7 +429,7 @@ int Elements_ComputeNbOfMatrixEntries(Elements_t* elements)
 
 
 
-void  Elements_InitializeMatrixRowColumnIndexes(Elements_t* elements)
+void  (Elements_InitializeMatrixRowColumnIndexes)(Elements_t* elements)
 /** Initialize the Matrix Row/Column Indexes to 0 
  *  for nodes belonging to elements */
 {

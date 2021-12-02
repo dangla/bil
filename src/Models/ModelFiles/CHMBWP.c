@@ -138,6 +138,9 @@
         
 #define ShearModulusMoriTanaka(Ks,Gs,n) \
         ((1 - (n))*(Gs)*(9*(Ks) + 8*(Gs))/(9*(Ks)*(1 + 2*(n)/3) + 8*(Gs)*(1 + 3*(n)/2)))
+        
+#define BiotCoefficientMoriTanaka(Ks,Gs,n) \
+        (1 - (1 - (n))*4*(Gs)/(3*(n)*(Ks) + 4*(Gs)))
 
 /* Permeability */
 #define IntrinsicPermeability(n) \
@@ -236,7 +239,7 @@ static double w_s_i;      //Initial solute mass fraction
 static double phi_c_i;      //Initial crystal volumetric fraction
 static double p_i;        //Initial pore water pressure
 /**********************************************************************/
-static double b;        //Biot coefficient
+//static double biot;        //Biot coefficient
 /**********************************************************************/
 /** Coefficients dependency  */
 /**********************************************************************/
@@ -395,7 +398,7 @@ void GetProperties(Element_t* el)// copy the value of material properties
   w_s_i      = GetProperty("w_s_i");
   phi_c_i    = GetProperty("phi_c_i");
   p_i        = GetProperty("p_i");
-  b             = GetProperty("b");
+  //biot       = GetProperty("b");
   D_dep         = GetProperty("D_dep");
   K_dep         = GetProperty("K_dep");
   Tau_dep       = GetProperty("Tau_dep");
@@ -599,6 +602,10 @@ int ComputeInitialState(Element_t* el)
       Phi_c = phi_c_i ;
       
       {
+        double K_s = young/(3 - 6*poisson) ;
+        double G_s = young/(2 + 2*poisson) ;
+        double n   = phi_l_i ;
+        double biot = BiotCoefficientMoriTanaka(K_s,G_s,n) ;
         double sigm = (SIG[0]+SIG[4]+SIG[8])/3 ;
       
         for(i = 0 ; i < 9 ; i++) SIG_D[i] = SIG[i] ;
@@ -607,7 +614,7 @@ int ComputeInitialState(Element_t* el)
         SIG_D[4] -= sigm ;
         SIG_D[8] -= sigm ; 
       
-        SIG_M = sigm - b*(p - p_i) ;
+        SIG_M = sigm - biot*(p - p_i) ;
       }
     }
   
@@ -1537,9 +1544,13 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
   
   /* Porosities */
   {
+    double K_s = young/(3 - 6*poisson) ;
+    double G_s = young/(2 + 2*poisson) ;
+    double n_n = x_n[I_Poro_E] ;
+    double biot = BiotCoefficientMoriTanaka(K_s,G_s,n_n) ;
     /** Strain */
     double tre   = eps[0] + eps[4] + eps[8] ;
-    double dphi_l_epsi = b*tre ;
+    double dphi_l_epsi = biot*tre ;
     /** crystal salt dissolution */
     double phi_c_n = x_n[I_PHI_C] ;
     double phi_c = CrystalVolumeFraction(phi_c_n,w_s,dt) ;
@@ -1616,6 +1627,8 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
     double eta_v_mt = BulkModulusMoriTanaka(eta_v,eta_d,n) ;
     double eta_d_mt = ShearModulusMoriTanaka(eta_v,eta_d,n) ;
     
+    double biot = BiotCoefficientMoriTanaka(K_s,G_s,n) ;
+    
     double  deps[9] ;
     int    i ;
       
@@ -1654,7 +1667,7 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
   
       /* Total stresses */
       {
-        double sig_m = x[I_SIG_M] - b*(p - p_i) ;
+        double sig_m = x[I_SIG_M] - biot*(p - p_i) ;
         
         for(i = 0 ; i < 9 ; i++) sig[i] = sig_d[i] ;
 

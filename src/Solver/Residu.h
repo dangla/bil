@@ -28,18 +28,18 @@ extern void        (Residu_AssembleElementResidu)(Residu_t*,Element_t*,double*) 
 #define Residu_AssembleElementResidu(R,EL,RE) \
         do { \
           if(Element_GetMaterial(EL)) { \
-            int  nn  = Element_GetNbOfNodes(EL) ; \
-            int  neq = Element_GetNbOfEquations(EL) ; \
-            int i ; \
-            for(i = 0 ; i < nn ; i++) { \
-              Node_t* node_i = Element_GetNode(EL,i) ; \
-              int j ; \
-              for(j = 0 ; j < neq ; j++) { \
-                int ij = i*neq + j ; \
-                int ii = Element_GetUnknownPosition(EL)[ij] ; \
-                if(ii >= 0) { \
-                  int k = Node_GetMatrixColumnIndex(node_i)[ii] ; \
-                  if(k >= 0) R[k] += RE[ij] ; \
+            int Residu_nn  = Element_GetNbOfNodes(EL) ; \
+            int Residu_neq = Element_GetNbOfEquations(EL) ; \
+            int Residu_i ; \
+            for(Residu_i = 0 ; Residu_i < Residu_nn ; Residu_i++) { \
+              Node_t* node_i = Element_GetNode(EL,Residu_i) ; \
+              int Residu_j ; \
+              for(Residu_j = 0 ; Residu_j < Residu_neq ; Residu_j++) { \
+                int Residu_ij = Residu_i*Residu_neq + Residu_j ; \
+                int Residu_ii = Element_GetUnknownPosition(EL)[Residu_ij] ; \
+                if(Residu_ii >= 0) { \
+                  int Residu_k = Node_GetMatrixColumnIndex(node_i)[Residu_ii] ; \
+                  if(Residu_k >= 0) R[Residu_k] += RE[Residu_ij] ; \
                 } \
               } \
             } \
@@ -51,16 +51,17 @@ extern void        (Residu_AssembleElementResidu)(Residu_t*,Element_t*,double*) 
 /* Initialize the residu */
 #define Residu_SetValuesToZero(RS) \
         do { \
-          unsigned int k ; \
-          for(k = 0 ; k < Residu_GetLengthOfRHS(RS) ; k++) { \
-            Residu_GetRHS(RS)[k] = 0. ; \
+          unsigned int Residu_n = Residu_GetNbOfRHS(RS)*Residu_GetLengthOfRHS(RS) ; \
+          unsigned int Residu_k ; \
+          for(Residu_k = 0 ; Residu_k < Residu_n ; Residu_k++) { \
+            Residu_GetRHS(RS)[Residu_k] = 0. ; \
           } \
         } while(0)
         
         
 
 struct Residu_s {             /* Residu */
-  unsigned int index ;        /* Matrix index */
+  unsigned int index ;        /* Residu index */
   unsigned int    n ;         /* Length of the rhs */
   unsigned int    n_rhs ;     /* Nb of right hand sides */
   double*         rhs ;       /* The values of the rhs */

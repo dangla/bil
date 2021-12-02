@@ -18,7 +18,7 @@ static double   champgrille(double*,int,FieldGrid_t) ;
 
 
 
-Field_t* Field_New(void)
+Field_t* (Field_New)(void)
 {
   Field_t* field = (Field_t*) Mry_New(Field_t) ;
 
@@ -39,30 +39,31 @@ Field_t* Field_New(void)
 
 
 
-void Field_Delete(void* self)
+void (Field_Delete)(void* self)
 {
-  Field_t** pfield = (Field_t**) self ;
-  Field_t*   field = *pfield ;
+  Field_t* field = (Field_t*) self ;
   
   {
+    void* fieldfmt = Field_GetFieldFormat(field) ;
     char* type = Field_GetType(field) ;
     
-    if(String_Is(type,"affine")) {
-      void* fieldfmt = Field_GetFieldFormat(field) ;
+    if(fieldfmt) {
+      if(String_Is(type,"affine")) {
+        FieldAffine_Delete(fieldfmt) ;
+      } else if(String_Is(type,"grid")) {
+        FieldGrid_Delete(fieldfmt) ;
+      }
       
-      FieldAffine_Delete(&fieldfmt) ;
+      free(fieldfmt) ;
     }
   }
   
   free(Field_GetType(field)) ;
-  free(field) ;
-  
-  *pfield = NULL ;
 }
 
 
 
-void Field_Scan(Field_t* field,DataFile_t* datafile)
+void (Field_Scan)(Field_t* field,DataFile_t* datafile)
 {
   char* line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
 
@@ -194,7 +195,7 @@ void Field_Scan(Field_t* field,DataFile_t* datafile)
 
 
 #if 1
-FieldGrid_t* FieldGrid_Create(char* filename)
+FieldGrid_t* (FieldGrid_Create)(char* filename)
 {
   FieldGrid_t* grid = (FieldGrid_t*) Mry_New(FieldGrid_t) ;
   int    n_x = 1,n_y = 1,n_z = 1 ;
@@ -213,7 +214,8 @@ FieldGrid_t* FieldGrid_Create(char* filename)
       if((n_z = strtol(c,&c,10)) == 0) n_z = 1 ;
     }
   
-    DataFile_Delete(&dfile) ;
+    DataFile_Delete(dfile) ;
+    free(dfile) ;
   }
 
   FieldGrid_GetNbOfPointsAlongX(grid) = n_x ;
@@ -292,7 +294,8 @@ FieldGrid_t* FieldGrid_Create(char* filename)
       String_ReadArray(line,n," %lf",v) ;
     }
   
-    DataFile_Delete(&dfile) ;
+    DataFile_Delete(dfile) ;
+    free(dfile) ;
   }
 
   return(grid) ;
@@ -301,7 +304,18 @@ FieldGrid_t* FieldGrid_Create(char* filename)
 
 
 
-FieldAffine_t* FieldAffine_Create(void)
+void (FieldGrid_Delete)(void* self)
+{
+  FieldGrid_t* field = (FieldGrid_t*) self ;
+  
+  free(FieldGrid_GetFileName(field)) ;
+  free(FieldGrid_GetCoordinateAlongX(field)) ;
+  free(FieldGrid_GetValue(field)) ;
+}
+
+
+
+FieldAffine_t* (FieldAffine_Create)(void)
 {
   FieldAffine_t* affine = (FieldAffine_t*) Mry_New(FieldAffine_t) ;
 
@@ -318,21 +332,17 @@ FieldAffine_t* FieldAffine_Create(void)
 
 
 
-void FieldAffine_Delete(void* self)
+void (FieldAffine_Delete)(void* self)
 {
-  FieldAffine_t** pfield = (FieldAffine_t**) self ;
-  FieldAffine_t*   field = *pfield ;
+  FieldAffine_t* field = (FieldAffine_t*) self ;
   
   free(FieldAffine_GetGradient(field)) ;
-  free(field) ;
-  
-  *pfield = NULL ;
 }
 
 
 
 
-double Field_ComputeValueAtPoint(Field_t* ch,double* x,int dim)
+double (Field_ComputeValueAtPoint)(Field_t* ch,double* x,int dim)
 {
   char*   type = Field_GetType(ch) ;
   double v ;
@@ -504,7 +514,8 @@ FieldGrid_t* FieldGrid_Create(char* filename,int dim)
   
     DataFile_CloseFile(dfile) ;
   
-    DataFile_Delete(&dfile) ;
+    DataFile_Delete(dfile) ;
+    free(dfile) ;
   }
 
   FieldGrid_GetNbOfPointsAlongX(grid) = n_x ;
@@ -610,7 +621,8 @@ FieldGrid_t* FieldGrid_Create(char* filename,int dim)
   
     DataFile_CloseFile(dfile) ;
   
-    DataFile_Delete(&dfile) ;
+    DataFile_Delete(dfile) ;
+    free(dfile) ;
   }
 
   return(grid) ;
@@ -772,7 +784,8 @@ void Field_ReadGrid(FieldGrid_t* grid,int dim,char* filename)
   
   DataFile_CloseFile(dfile) ;
   
-  DataFile_Delete(&dfile) ;
+  DataFile_Delete(dfile) ;
+  free(dfile) ;
   
   return ;
 }

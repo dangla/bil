@@ -13,6 +13,7 @@ struct Points_s       ; typedef struct Points_s       Points_t ;
 
 extern Points_t*  (Points_New)     (const int) ;
 extern Points_t*  (Points_Create)  (DataFile_t*,Mesh_t*) ;
+extern void       (Points_Delete)  (void*) ;
 
 
 

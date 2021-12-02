@@ -7,6 +7,7 @@ include ../make.inc
 LIBBILa     = ${BIL_LIBDIR}/libbil-${BIL_VERSION}.a
 
 LIBBILso    = ${BIL_LIBDIR}/libbil-${BIL_VERSION}.so
+LIBBILsoname= libbil-${BIL_VERSION}.so
 
 # Library to be installed
 LIBBIL      = ${BIL_LIBDIR}/libbil-${BIL_VERSION}.${LIBBILEXT}
@@ -115,7 +116,7 @@ ${LIBBILa}: ${SRCALL} ${OBJALL}
 
 ${LIBBILso}: ${SRCALL} ${OBJALL}
 	@echo "\nCreating the shared library "${LIBBILso}
-	${CCSO} ${OPTIM} -Wl,-soname=${LIBBILso} -o ${LIBBILso} ${OBJALL1}
+	${CCSO} ${OPTIM} -Wl,-soname=${LIBBILsoname} -o ${LIBBILso} ${OBJALL1}
 	
 
 
@@ -216,6 +217,12 @@ parser:
 	( ${MAKE} -C Parser )
 
 
+EMPTY :=
+SPACE := ${EMPTY} ${EMPTY}
+# The two 'PRINT' methods work
+#PRINT = echo -e ${addsuffix '\n',$(1)}
+PRINT = echo -e ${foreach a,$(1),${a}'\n'}
+
 
 
 #=======================================================================
@@ -225,20 +232,20 @@ listsources:
 	@echo '----------------------------------------------'
 	@echo 'Sources'
 	@echo '----------------------------------------------'
-	@echo '1. All source files'
-	@echo 'SRCALL = '${SRCALL}
+	@echo '1. All source files (SRCALL)'
+	@${call PRINT,${SRCALL}}
 	@echo '----------------------------------------------'
-	@echo '2. Source Model Files'
-	@echo 'SRCMODELS = '${SRCMODELS}
+	@echo '2. Source Model Files (SRCMODELS)'
+	@${call PRINT,${SRCMODELS}}
 	@echo '----------------------------------------------'
-	@echo '3. Source Module Files'
-	@echo 'SRCMODULES = '${SRCMODULES}
+	@echo '3. Source Module Files (SRCMODULES)'
+	@${call PRINT,${SRCMODULES}}
 	@echo '----------------------------------------------'
-	@echo '4. Other source files .c'
-	@echo 'SRCOTHERC = '${SRCOTHERC}
+	@echo '4. Other source files .c (SRCOTHERC)'
+	@${call PRINT,${SRCOTHERC}}
 	@echo '----------------------------------------------'
-	@echo '5. Other source files .cpp'
-	@echo 'SRCOTHERCPP = '${SRCOTHERCPP}
+	@echo '5. Other source files .cpp (SRCOTHERCPP)'
+	@${call PRINT,${SRCOTHERCPP}}
 	@echo '----------------------------------------------'
 
 
@@ -251,17 +258,17 @@ listheaders:
 	@echo '----------------------------------------------'
 	@echo 'Headers'
 	@echo '----------------------------------------------'
-	@echo '1. All Headers'
-	@echo 'HEADERSALL = '${HEADERSALL}
+	@echo '1. All Headers (HEADERSALL)'
+	@${call PRINT,${HEADERSALL}}
 	@echo '----------------------------------------------'
-	@echo '2. Headers from sources .h'
-	@echo 'HEADERSC = '${HEADERSC}
+	@echo '2. Headers from sources .h (HEADERSC)'
+	@${call PRINT,${HEADERSC}}
 	@echo '----------------------------------------------'
-	@echo '3. Headers from sources .hpp'
-	@echo 'HEADERSCPP = '${HEADERSCPP}
+	@echo '3. Headers from sources .hpp (HEADERSCPP)'
+	@${call PRINT,${HEADERSCPP}}
 	@echo '----------------------------------------------'
-	@echo '4. Header files without associated source files'
-	@echo 'HEADERSONLY = '${HEADERSONLY}
+	@echo '4. Header files without associated source files (HEADERSONLY)'
+	@${call PRINT,${HEADERSONLY}}
 	@echo '----------------------------------------------'
 	@echo '----------------------------------------------'
 
@@ -273,72 +280,51 @@ listheaders:
 
 listobjects:
 	@echo '----------------------------------------------'
-	@echo 'Objects'
+	@echo 'Objects (OBJALL)'
 	@echo '----------------------------------------------'
-	@echo 'OBJALL = '${OBJALL}
+	@${call PRINT,${OBJALL}}
 	@echo '----------------------------------------------'
 
 
 
 
 #=======================================================================
-# Target rules for testing
+# Target rules for listing directories
+
+listdirectories:
+	@echo '----------------------------------------------'
+	@echo 'Directories'
+	@echo '----------------------------------------------'
+	@echo '1. All directories (DIRSALL)'
+	@${call PRINT,${DIRSALL}}
+	@echo '----------------------------------------------'
+	@echo '2. Directories except ModelFiles and ModuleFiles (DIRSOTHER)'
+	@${call PRINT,${DIRSOTHER}}
+	@echo '----------------------------------------------'
+
+
+
+DIRS = ${shell ls -d */ */*/}
+LISTDIRS = ${shell ls -d ${1}/}
+LISTN = ${foreach a,${1},${call LISTN,${a}}}
 
 test:
 	@echo '----------------------------------------------'
 	@echo 'Directories'
 	@echo '----------------------------------------------'
-	@echo '1. All directories'
-	@echo 'DIRSALL = '${DIRSALL}
+	@echo '1. All directories (DIRS)'
+	@echo ${DIRS}
 	@echo '----------------------------------------------'
-	@echo '2. Directories except those of Models and Modules'
-	@echo 'DIRSOTHER = '${DIRSOTHER}
-	@echo '----------------------------------------------'
-	@echo '----------------------------------------------'
-	@echo 'Sources'
-	@echo '----------------------------------------------'
-	@echo '1. All source files'
-	@echo 'SRCALL = '${SRCALL}
-	@echo '----------------------------------------------'
-	@echo '2. Source Model Files'
-	@echo 'SRCMODELS = '${SRCMODELS}
-	@echo '----------------------------------------------'
-	@echo '3. Source Module Files'
-	@echo 'SRCMODULES = '${SRCMODULES}
-	@echo '----------------------------------------------'
-	@echo '4. Other source files .c'
-	@echo 'SRCOTHERC = '${SRCOTHERC}
-	@echo '----------------------------------------------'
-	@echo '5. Other source files .cpp'
-	@echo 'SRCOTHERCPP = '${SRCOTHERCPP}
-	@echo '----------------------------------------------'
-	@echo '----------------------------------------------'
-	@echo 'Headers'
-	@echo '----------------------------------------------'
-	@echo '1. All Headers'
-	@echo 'HEADERSALL = '${HEADERSALL}
-	@echo '----------------------------------------------'
-	@echo '2. Headers from sources .h'
-	@echo 'HEADERSC = '${HEADERSC}
-	@echo '----------------------------------------------'
-	@echo '3. Headers from sources .hpp'
-	@echo 'HEADERSCPP = '${HEADERSCPP}
-	@echo '----------------------------------------------'
-	@echo '4. Header files without associated source files'
-	@echo 'HEADERSONLY = '${HEADERSONLY}
-	@echo '----------------------------------------------'
-	@echo '----------------------------------------------'
-	@echo 'Objects'
-	@echo '----------------------------------------------'
-	@echo 'OBJALL = '${OBJALL}
-	@echo '----------------------------------------------'
+	@${call PRINT,${DIRS}}
+
+
 
 test1:
 	@echo '----------------------------------------------'
-	@echo 'Source files .cpp'
-	@echo 'SRCALL = '${wildcard ${addsuffix *.c,${DIRSOTHER}}} ${wildcard ${addsuffix *.cpp,${DIRSOTHER}}}
+	@echo 'Source files .cpp (SRCALL)'
+	@${call PRINT,${wildcard ${addsuffix *.c,${DIRSOTHER}}} ${wildcard ${addsuffix *.cpp,${DIRSOTHER}}}}
 	@echo '----------------------------------------------'
-	@echo 'Object files'
-	@echo 'OBJCPP from SRCOTHERC = '${SRCOTHERC:%.cpp=%.o}
-	@echo 'OBJCPP from SRCOTHERC = '${filter %.o,${patsubst %.c,%.o,toto.cpp titi.c}}
+	@echo 'Object files (OBJCPP from SRCOTHERC)'
+	@${call PRINT,${SRCOTHERC:%.cpp=%.o}}
+	@${call PRINT,${filter %.o,${patsubst %.c,%.o,toto.cpp titi.c}}}
 

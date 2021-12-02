@@ -1,9 +1,9 @@
-# Version 2.4, Wed Sep 20 03:18:37 2017
+# Version 2.8.3, Mon Nov 22 15:16:59 2021
 # Time = 0.000000e+00
 # Model = Frostaco
 # Number of views = 16
 # Numbers of components per view = 1 1 1 1 3 3 1 1 1 1 1 1 1 1 1 1
-# Coordinates(1) Liquid pressure(4) Salt concentration(5) Temperature(6) Liquid saturation(7) Liquid mass flux vector(8) Salt mass flux vector(11) Ice pressure(14) Solution density(15) Ice density(16) strain(17) stress(18) strain_temperature(19) strain_pressure(20) deformation of ice pores(21) deformation of liquid pores(22) Lna_w(23)
+# Coordinates(1) Liquid pressure(4) Salt concentration(5) Temperature(6) Liquid saturation(7) Liquid mass flux vector(8) Salt mass flux vector(11) Ice pressure(14) Solution density(15) Ice density(16) Strain_xx(17) Stress_yy(18) Strain_temperature(19) Strain_pressure(20) Deformation of ice pores(21) Deformation of liquid pores(22) Lna_w(23)
  0.000000e+00   0.000000e+00   0.000000e+00   1.000000e+05   1.000000e+03   2.730000e+02   1.000000e+00  -0.000000e+00   0.000000e+00   0.000000e+00  -0.000000e+00   0.000000e+00   0.000000e+00  -3.901487e+06   1.042320e+03   9.164934e+02   0.000000e+00  -0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00  -3.460616e-02  
  2.000000e-04   0.000000e+00   0.000000e+00   1.000000e+05   1.000000e+03   2.730000e+02   1.000000e+00  -0.000000e+00   0.000000e+00   0.000000e+00  -0.000000e+00   0.000000e+00   0.000000e+00  -3.901487e+06   1.042320e+03   9.164934e+02   0.000000e+00  -0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00  -3.460616e-02  
  2.000000e-04   0.000000e+00   0.000000e+00   1.000000e+05   1.000000e+03   2.730000e+02   1.000000e+00  -0.000000e+00   0.000000e+00   0.000000e+00  -0.000000e+00   0.000000e+00   0.000000e+00  -3.901487e+06   1.042320e+03   9.164934e+02   0.000000e+00  -0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00   0.000000e+00  -3.460616e-02  

@@ -6,7 +6,7 @@
 #include "Message.h"
 
 
-Buffer_t* Buffer_Create(size_t size)
+Buffer_t* (Buffer_Create)(size_t size)
 {
   Buffer_t* buffer = (Buffer_t*) Mry_New(Buffer_t) ;
   
@@ -22,7 +22,7 @@ Buffer_t* Buffer_Create(size_t size)
 
 
 
-void Buffer_Free(Buffer_t* buffer)
+void (Buffer_Free)(Buffer_t* buffer)
 {
   Buffer_GetHeadOfBuffer(buffer)  = Buffer_GetBeginOfBuffer(buffer) ;
   Buffer_GetTailOfBuffer(buffer)  = Buffer_GetHeadOfBuffer(buffer) ;
@@ -31,18 +31,23 @@ void Buffer_Free(Buffer_t* buffer)
 
 
 
-void Buffer_Delete(void* self)
+void (Buffer_Delete)(void* self)
 {
-  Buffer_t** pbuffer = (Buffer_t**) self ;
-  Buffer_t*   buffer = *pbuffer ;
+  Buffer_t* buffer = (Buffer_t*) self ;
   
-  free(Buffer_GetBeginOfBuffer(buffer)) ;
-  free(buffer) ;
+  {
+    void* v = Buffer_GetBeginOfBuffer(buffer) ;
+  
+    if(v) {
+      free(v) ;
+      Buffer_GetBeginOfBuffer(buffer) = NULL ;
+    }
+  }
 }
 
 
 
-void* Buffer_Allocate(Buffer_t* buffer,size_t sz)
+void* (Buffer_Allocate)(Buffer_t* buffer,size_t sz)
 {
   char* head = (char*) Buffer_GetHeadOfBuffer(buffer) ;
   char* end  = (char*) Buffer_GetEndOfBuffer(buffer) ;
@@ -65,7 +70,7 @@ void* Buffer_Allocate(Buffer_t* buffer,size_t sz)
 
 
 
-void Buffer_FreeFrom(Buffer_t* buffer,char* p)
+void (Buffer_FreeFrom)(Buffer_t* buffer,char* p)
 {
   char* begin = (char*) Buffer_GetBeginOfBuffer(buffer) ;
   char* end   = (char*) Buffer_GetEndOfBuffer(buffer) ;

@@ -1,4 +1,4 @@
-/* This is a "mother" model from which "daughter" models can derived.
+/* This is a "mother" model from which "daughter" models are derived.
  * The following models have been derived accordingly:
  * - Carbocem
  * - Chloricem
@@ -78,7 +78,7 @@ enum {
   //#define E_Chlorine E_Chlorine
   /* Uncomment/Comment the next two lines to consider/suppress air */
   //E_Air    ,
-  //#define E_air E_air
+  //#define E_Air E_Air
   E_Last
 } ;
 

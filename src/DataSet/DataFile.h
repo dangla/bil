@@ -138,6 +138,23 @@ extern int*         (DataFile_ReadInversePermutationOfNodes)(DataFile_t*,int) ;
         
 #define DataFile_ContextSetToNoInitialization(DF) \
         do {DataFile_GetInitialization(DF) = 2 ;} while(0)
+        
+
+
+#include "DataSet.h"
+
+/* The dataset */
+#define DataFile_GetDataSet(DF) \
+        ((DataSet_t*) DataFile_GetParent(DF))
+
+
+/* The sequential index */
+#define DataFile_GetSequentialIndex(DF) \
+        DataSet_GetSequentialIndex(DataFile_GetDataSet(DF))
+
+
+#define DataFile_GetNbOfSequences(DF) \
+        DataSet_GetNbOfSequences(DataFile_GetDataSet(DF))
 
 
 struct DataFile_s {

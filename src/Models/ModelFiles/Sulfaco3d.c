@@ -38,7 +38,9 @@ enum {
   #define E_eneutral E_eneutral
   E_kinetics,
   #define E_kinetics E_kinetics
-  E_Mech,
+  /* Uncomment/comment the two next lines to consider/suppress mechanics */
+  //E_Mech,
+  //#define E_Mech E_Mech
   E_Last
 } ;
 
@@ -64,7 +66,9 @@ enum {
 #ifdef E_kinetics
 #define U_kinetics   E_kinetics
 #endif
+#ifdef E_Mech
 #define U_Mech       E_Mech
+#endif
 
 
 
@@ -113,7 +117,9 @@ enum {
 #endif
 
 /* Mechanics */
+#ifdef E_Mech
 #define U_Dis   U_Mech
+#endif
 
 
 
@@ -135,33 +141,47 @@ enum {
 
 
 /* We define some names for implicit terms (vi must be used as pointer below) */
-#define N_S         (vi)[0]
-#define N_Sn        (vi_n)[0]
-#define W_S         (vi + 1)
+#define NW_S        (vi)
+#define NW_Sn       (vi_n)
+#define N_S         (NW_S)[0]
+#define N_Sn        (NW_Sn)[0]
+#define W_S         (NW_S + 1)
 
-#define N_q         (vi + 4)[0]
-#define N_qn        (vi_n + 4)[0]
-#define W_q         (vi + 5)
+#define NW_q        (vi + 4)
+#define NW_qn       (vi_n + 4)
+#define N_q         (NW_q)[0]
+#define N_qn        (NW_qn)[0]
+#define W_q         (NW_q + 1)
 
-#define N_Ca        (vi + 8)[0]
-#define N_Can       (vi_n + 8)[0]
-#define W_Ca        (vi + 9)
+#define NW_Ca       (vi + 8)
+#define NW_Can      (vi_n + 8)
+#define N_Ca        (NW_Ca)[0]
+#define N_Can       (NW_Can)[0]
+#define W_Ca        (NW_Ca + 1)
 
-#define N_K         (vi + 12)[0]
-#define N_Kn        (vi_n + 12)[0]
-#define W_K         (vi + 13)
+#define NW_K        (vi + 12)
+#define NW_Kn       (vi_n + 12)
+#define N_K         (NW_K)[0]
+#define N_Kn        (NW_Kn)[0]
+#define W_K         (NW_K + 1)
 
-#define N_Si        (vi + 16)[0]
-#define N_Sin       (vi_n + 16)[0]
-#define W_Si        (vi + 17)
+#define NW_Si       (vi + 16)
+#define NW_Sin      (vi_n + 16)
+#define N_Si        (NW_Si)[0]
+#define N_Sin       (NW_Sin)[0]
+#define W_Si        (NW_Si + 1)
 
-#define N_Al        (vi + 20)[0]
-#define N_Aln       (vi_n + 20)[0]
-#define W_Al        (vi + 21)
+#define NW_Al       (vi + 20)
+#define NW_Aln      (vi_n + 20)
+#define N_Al        (NW_Al)[0]
+#define N_Aln       (NW_Aln)[0]
+#define W_Al        (NW_Al + 1)
 
-#define N_Cl        (vi + 24)[0]
-#define N_Cln       (vi_n + 24)[0]
-#define W_Cl        (vi + 25)
+#define NW_Cl       (vi + 24)
+#define NW_Cln      (vi_n + 24)
+#define N_Cl        (NW_Cl)[0]
+#define N_Cln       (NW_Cln)[0]
+#define W_Cl        (NW_Cl + 1)
 
 #define Stress      (vi + 28) /* this a 3D tensor */
 #define Stress_n    (vi_n + 28) /* this a 3D tensor */
@@ -768,9 +788,11 @@ int SetModelProp(Model_t* model)
 #ifdef E_kinetics
   Model_CopyNameOfEquation(model,E_kinetics,"kinetics") ;
 #endif
+#ifdef E_Mech
   for(i = 0 ; i < dim ; i++) {
     Model_CopyNameOfEquation(model,E_Mech + i,name_eqn[i]) ;
   }
+#endif
 
 
   /** Names of the main (nodal) unknowns */
@@ -805,9 +827,11 @@ int SetModelProp(Model_t* model)
 #ifdef E_kinetics
   Model_CopyNameOfUnknown(model,E_kinetics,"p_c") ;
 #endif
+#ifdef E_Mech
   for(i = 0 ; i < dim ; i++) {
     Model_CopyNameOfUnknown(model,U_Mech + i,name_unk[i]) ;
   }
+#endif
   
   
   Model_GetComputePropertyIndex(model) = pm ;
@@ -1500,6 +1524,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   /*
   ** Poromechanics matrix
   */
+  #ifdef E_Mech
   {
     int ndif = NEQ - dim ;
     int n = 81 + ndif*9 + ndif*(9 + ndif) ;
@@ -1515,6 +1540,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
       }
     }
   }
+  #endif
   
   /*
   ** Conduction Matrix
@@ -1623,7 +1649,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   
   /* Compute here the residu R(n,i) */
   
-
+#ifdef E_Mech
   /* 1. Mechanics */
   
   /* 1.1 Stresses */
@@ -1651,6 +1677,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     
   }
   #endif
+#endif
   
   
   /* 2. Conservation of sulfur */
@@ -2526,6 +2553,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
   {
     int    i ;
     
+#ifdef E_Mech
     /* Displacements */
     for(i = 0 ; i < dim ; i++) {
       x[I_Dis + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_Mech + i) ;
@@ -2545,6 +2573,13 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       
       FEM_FreeBufferFrom(fem,eps) ;
     }
+#else
+    {
+      for(i = 0 ; i < 9 ; i++) {
+        x[I_Strain + i] = 0 ;
+      }
+    }
+#endif
 
     /* Other primary unknowns and their gradients */
     /* Sulfur */
@@ -2641,7 +2676,8 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
   /* Variables at the previous time */
   {
     double* vi_n  = f_n + p*NVI ;
-    
+
+#ifdef E_Mech
     /* Strains, stresses at previous time step */
     {
       double* eps_n =  FEM_ComputeLinearStrainTensor(fem,u_n,intfct,p,U_Mech) ;
@@ -2657,6 +2693,19 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       
       FEM_FreeBufferFrom(fem,eps_n) ;
     }
+#else
+    {
+      int    i ;
+    
+      for(i = 0 ; i < 9 ; i++) {
+        x_n[I_Strain + i] = 0 ;
+        x_n[I_Stress + i] = 0 ;
+      }
+      
+      x_n[I_Hardv]  = 0 ;
+      x_n[I_Damage] = 0 ;
+    }
+#endif
     
     /* Other variables at previous time step */
     {
@@ -2784,7 +2833,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   double r   = Radius(r_n,beta,dt,el) ;
   double s_l = LiquidSaturationDegree(r) ;
   double s_c = 1 - s_l ;
-  
+
   /* Compute the saturation index at the pore wall, beta_p */
   double beta_pn   = x_n[I_Beta_p] ;
   double varphi_cn = x_n[I_VarPHI_C] ;
@@ -2901,7 +2950,8 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   /* Backup crystallization pressure */
   x[I_P_C] = p_c ;
   x[I_Beta_p] = beta_p ;
-  
+
+#ifdef E_Mech
   /* Stresses, damage and hardening variables */
   {
     double* eps   = x + I_Strain ;
@@ -2946,6 +2996,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       //Damage_PrintStiffnessTensor(damage) ;
     }
   }
+#endif
 
 
   /* Solid components */
@@ -3111,8 +3162,8 @@ double TortuosityToLiquid_OhJang(double phi)
 {
   double phi_cap = 0.5 * phi  ;
   double phi_c   = 0.17 ;         /* Percolation capilar porosity */
-  double n       = 2.7 ; 		      /* OPC n  = 2.7  --------  Fly ash n  = 4.5 */
-  double ds      = 1.e-4 ;	      /* OPC ds = 1e-4 --------  Fly ash ds = 5e-5 */
+  double n       = 2.7 ;          /* OPC n  = 2.7  --------  Fly ash n  = 4.5 */
+  double ds      = 1.e-4 ;        /* OPC ds = 1e-4 --------  Fly ash ds = 5e-5 */
   double dsn     = pow(ds,1/n) ;
   double m_phi   = 0.5 * ((phi_cap - phi_c) + dsn * (1 - phi_c - phi_cap)) / (1 - phi_c) ;
   double tausat  = pow(m_phi + sqrt(m_phi*m_phi + dsn * phi_c/(1 - phi_c)),n) ;

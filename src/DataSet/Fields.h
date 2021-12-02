@@ -14,6 +14,7 @@ struct Fields_s       ; typedef struct Fields_s       Fields_t ;
 
 extern Fields_t*   (Fields_New)     (const int) ;
 extern Fields_t*   (Fields_Create)  (DataFile_t*) ;
+extern void        (Fields_Delete)  (void*) ;
 
 
 #define Fields_GetNbOfFields(FLDS)    ((FLDS)->n_ch)

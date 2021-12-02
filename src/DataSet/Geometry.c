@@ -13,7 +13,7 @@
 
 /* Global functions */
 
-Geometry_t*  Geometry_New(void)
+Geometry_t*  (Geometry_New)(void)
 {
   Geometry_t* geom = (Geometry_t*) Mry_New(Geometry_t) ;
   
@@ -27,21 +27,23 @@ Geometry_t*  Geometry_New(void)
 
 
 
-void Geometry_Delete(void* self)
+void (Geometry_Delete)(void* self)
 {
-  Geometry_t** pgeom = (Geometry_t**) self ;
-  Geometry_t*   geom = *pgeom ;
+  Geometry_t* geom = (Geometry_t*) self ;
   
-  Periodicities_Delete(&Geometry_GetPeriodicities(geom)) ;
-  
-  free(geom) ;
-  
-  *pgeom = NULL ;
+  {
+    Periodicities_t* periodicities = Geometry_GetPeriodicities(geom) ;
+    
+    if(periodicities) {
+      Periodicities_Delete(periodicities) ;
+      free(periodicities) ;
+    }
+  }
 }
 
 
 
-Geometry_t*  Geometry_Create(DataFile_t* datafile)
+Geometry_t*  (Geometry_Create)(DataFile_t* datafile)
 {
   Geometry_t* geom = Geometry_New() ; ;
   
@@ -70,7 +72,7 @@ Geometry_t*  Geometry_Create(DataFile_t* datafile)
     if(dim > 0 && dim < 3) {
       char* pline = line ;
     
-      if(String_CaseIgnoredIs(pline,"plan",4))  {
+      if(String_CaseIgnoredIs(pline,"plane",4))  {
         
         Geometry_SetPlaneSymmetry(geom) ;
         
@@ -86,7 +88,7 @@ Geometry_t*  Geometry_Create(DataFile_t* datafile)
         
         arret("Geometry_Create: geometry not available\n\
         Available geometries are:\n\
-        PLAN, AXIS, SPHE") ;
+        PLANE, AXIS, SPHE") ;
         
       }
     }

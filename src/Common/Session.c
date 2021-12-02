@@ -61,7 +61,9 @@ Session_t*   (Session_Close)(void)
   GenericData_t* gdat = Session_GetGenericData(cursession) ;
 
   if(gdat) {
-    GenericData_Delete(&gdat) ;
+    GenericData_Delete(gdat) ;
+    free(gdat) ;
+    Session_GetGenericData(cursession) = NULL ;
   }
 
   {

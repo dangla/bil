@@ -8,44 +8,47 @@
 
 
 
-static void        (ShapeFct_AllocateMemory)(ShapeFct_t*) ;
-
-
-
 /* Extern functions */
 
 
-ShapeFct_t* ShapeFct_Create(int nn,int dim)
+ShapeFct_t* (ShapeFct_Create)(int nn,int dim)
 {
   ShapeFct_t* shapefct = (ShapeFct_t*) Mry_New(ShapeFct_t) ;
   
   ShapeFct_GetDimension(shapefct) = dim ;
   ShapeFct_GetNbOfNodes(shapefct) = nn ;
   
-  ShapeFct_AllocateMemory(shapefct) ;
+  {
+    int k = 3 + ShapeFct_MaxNbOfNodes*(1 + 3) ;
+    double* b = (double*) Mry_New(double[k]) ;
+    
+    ShapeFct_GetCoordinate(shapefct)       = b ;
+    ShapeFct_GetFunction(shapefct)         = b + 3 ;
+    ShapeFct_GetFunctionGradient(shapefct) = b + 3 + ShapeFct_MaxNbOfNodes ;
+  }
   
   return(shapefct) ;
 }
 
 
 
-void  ShapeFct_Delete(void* self)
+void  (ShapeFct_Delete)(void* self)
 {
-  ShapeFct_t** pshapefct = (ShapeFct_t**) self ;
-  ShapeFct_t*   shapefct = *pshapefct ;
+  ShapeFct_t* shapefct = (ShapeFct_t*) self ;
   
   {
     double* b = ShapeFct_GetCoordinate(shapefct) ;
     
-    free(b) ;
+    if(b) {
+      free(b) ;
+      ShapeFct_GetCoordinate(shapefct) = NULL ;
+    }
   }
-  
-  //free(shapefct) ;
 }
 
 
 
-void ShapeFct_ComputeValuesAtPoint(int dim,int nn,double* x,double* h,double* dh)
+void (ShapeFct_ComputeValuesAtPoint)(int dim,int nn,double* x,double* h,double* dh)
 /* Compute shape functions (h) and their gradients (dh) at point x */
 {
 #define X         x[0]
@@ -270,27 +273,4 @@ void ShapeFct_ComputeValuesAtPoint(int dim,int nn,double* x,double* h,double* dh
 #undef DHx
 #undef DHy
 #undef DHz
-}
-
-
-
-/* Intern functions */
-
-void ShapeFct_AllocateMemory(ShapeFct_t* shapefct)
-{
-  int dim = 3 ;
-  //int dim = ShapeFct_GetDimension(shapefct) ;
-  int nn  = ShapeFct_MaxNbOfNodes ;
-  //int nn  = ShapeFct_GetNbOfNodes(shapefct) ;
-  
-  {
-    int k = dim + nn*(1 + dim) ;
-    double* b = (double*) Mry_New(double[k]) ;
-    
-    ShapeFct_GetCoordinate(shapefct)       = b ;
-    ShapeFct_GetFunction(shapefct)         = b + dim ;
-    ShapeFct_GetFunctionGradient(shapefct) = b + dim + nn ;
-  }
-  
-  return ;
 }

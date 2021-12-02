@@ -14,3 +14,10 @@ Temperature_t* (Temperature_Create)(void)
   
   return(temperature) ;
 }
+
+
+
+void (Temperature_Delete)(void* self)
+{
+  Temperature_t* temperature = (Temperature_t*) self ;
+}

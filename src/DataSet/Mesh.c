@@ -37,7 +37,7 @@ extern void   mc43ad_(int*,int*,int*,int*,int*,int*,int*,int*,int*,int*,int*) ;
 static int*      (Mesh_ComputeInversePermutationOfNodes)(Mesh_t*,const char*) ;
 static int*      (Mesh_ComputeInversePermutationOfElements)(Mesh_t*,const char*) ;
 static Graph_t*  (Mesh_CreateGraph)(Mesh_t*) ;
-static void      (Mesh_DeleteMore)(void*) ;
+static void      (Mesh_SetNodeConnectivities)(Mesh_t*) ;
 
 
 static void   Mesh_OneNode(Mesh_t*) ;
@@ -67,7 +67,7 @@ static int    gmsh_DimElement(int) ;
 
 
 #if 0
-Mesh_t*  Mesh_New(void)
+Mesh_t*  (Mesh_New)(void)
 {
   Mesh_t* mesh = (Mesh_t*) Mry_New(Mesh_t) ;
   
@@ -81,7 +81,7 @@ Mesh_t*  Mesh_New(void)
 
 
 
-Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geometry)
+Mesh_t*  (Mesh_Create)(DataFile_t* datafile,Materials_t* materials,Geometry_t* geometry)
 {
   //Mesh_t* mesh = Mesh_New() ;
   Mesh_t* mesh = (Mesh_t*) Mry_New(Mesh_t) ;
@@ -119,8 +119,9 @@ Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geo
       Message_FatalError("Mesh_Create: No such file name") ;
     }
     
-    /* Allocation of space for the connectivity of nodes */
-    Mesh_CreateMore(mesh) ;
+    /* Set the node connectivities */
+    //Mesh_CreateMore(mesh) ;
+    Mesh_SetNodeConnectivities(mesh) ;
   }
   
   
@@ -150,43 +151,41 @@ Mesh_t*  Mesh_Create(DataFile_t* datafile,Materials_t* materials,Geometry_t* geo
 
 
 
-void Mesh_Delete(void* self)
+void (Mesh_Delete)(void* self)
 {
-  Mesh_t** pmesh = (Mesh_t**) self ;
-  Mesh_t*   mesh = *pmesh ;
+  Mesh_t* mesh = (Mesh_t*) self ;
+  
+  {
+    Mesh_GetDataFile(mesh) = NULL ;
+    Mesh_GetGeometry(mesh) = NULL ;
+  }
+  
+  {
+    Elements_t* elts = Mesh_GetElements(mesh) ;
+    
+    if(elts) {
+      Elements_Delete(elts) ;
+      free(elts) ;
+    }
+    
+    Mesh_GetElements(mesh) = NULL ;
+  }
   
   {
     Nodes_t* nodes = Mesh_GetNodes(mesh) ;
-    Elements_t* elts = Mesh_GetElements(mesh) ;
     
-    Mesh_DeleteMore(pmesh) ;
-    Nodes_DeleteMore(&nodes) ;
-    Elements_DeleteMore(&elts) ;
-    Nodes_Delete(&nodes) ;
-    Elements_Delete(&elts) ;
-  }
-  
-  free(mesh) ;
-}
-
-
-
-void Mesh_DeleteMore(void* self)
-{
-  Mesh_t** pmesh = (Mesh_t**) self ;
-  Mesh_t*   mesh = *pmesh ;
-  
-  {
-    Node_t* node = Mesh_GetNode(mesh) ;
-    Element_t** pel = Node_GetPointerToElement(node) ;
+    if(nodes) {
+      Nodes_Delete(nodes) ;
+      free(nodes) ;
+    }
     
-    free(pel) ;
+    Mesh_GetNodes(mesh) = NULL ;
   }
 }
 
 
 
-char*  Mesh_Scan(Mesh_t* mesh,char* line)
+char*  (Mesh_Scan)(Mesh_t* mesh,char* line)
 {
   char  nom_mail[Mesh_MaxLengthOfFileName] ;
 
@@ -232,7 +231,8 @@ char*  Mesh_Scan(Mesh_t* mesh,char* line)
 }
 
 
-void Mesh_CreateMore(Mesh_t* mesh)
+#if 0
+void (Mesh_CreateMore)(Mesh_t* mesh)
 {
   /* The number of elements per node */
   {
@@ -271,9 +271,10 @@ void Mesh_CreateMore(Mesh_t* mesh)
   /* Allocation of space for the pointers to elements */
   {
     int nc = Mesh_GetNbOfConnectivities(mesh) ;
-    Element_t** pel = (Element_t**) Mry_New(Element_t*[nc]) ;
     int nno = Mesh_GetNbOfNodes(mesh) ;
     Node_t* node = Mesh_GetNode(mesh) ;
+    //Element_t** pel = (Element_t**) Mry_New(Element_t*[nc]) ;
+    Element_t** pel = Node_GetPointerToElement(node) ;
     
     {
       int jn ;
@@ -326,10 +327,107 @@ void Mesh_CreateMore(Mesh_t* mesh)
     }
   }
 }
+#endif
 
 
 
-Graph_t* Mesh_CreateGraph(Mesh_t* mesh)
+void (Mesh_SetNodeConnectivities)(Mesh_t* mesh)
+{
+  /* Set the nb of elements per node */
+  {
+    int nno = Mesh_GetNbOfNodes(mesh) ;
+    Node_t* node = Mesh_GetNode(mesh) ;
+    int nel = Mesh_GetNbOfElements(mesh) ;
+    Element_t* el = Mesh_GetElement(mesh) ;
+    
+    {
+      int jn ;
+    
+      for(jn = 0 ; jn < nno ; jn++) {
+        Node_t* node_j = node + jn ;
+        
+        Node_GetNbOfElements(node_j) = 0 ;
+      }
+    }
+    
+    {
+      int je ;
+      
+      for(je = 0 ; je < nel ; je++) {
+        Element_t* el_j = el + je ;
+        int nn = Element_GetNbOfNodes(el_j) ;
+        int k ;
+      
+        for(k = 0 ; k < nn ; k++) {
+          Node_t* node_k = Element_GetNode(el_j,k) ;
+          
+          Node_GetNbOfElements(node_k) += 1 ;
+        }
+      }
+    }
+  }
+    
+  /* Set the pointers */
+  {
+    int nno = Mesh_GetNbOfNodes(mesh) ;
+    Node_t* node = Mesh_GetNode(mesh) ;
+    Element_t** pel = Node_GetPointerToElement(node) ;
+    int nc = 0 ;
+    
+    {
+      int jn ;
+          
+      for(jn = 0 ; jn < nno ; jn++) {
+        Node_t* node_j = node + jn ;
+        
+        Node_GetPointerToElement(node_j) = pel + nc ;
+        nc += Node_GetNbOfElements(node_j) ;
+      }
+    }
+  }
+    
+  
+  /* Set the node connectivities */
+  {
+    int nno = Mesh_GetNbOfNodes(mesh) ;
+    Node_t* node = Mesh_GetNode(mesh) ;
+    int nel = Mesh_GetNbOfElements(mesh) ;
+    Element_t* el = Mesh_GetElement(mesh) ;
+
+    {
+      int jn ;
+    
+      for(jn = 0 ; jn < nno ; jn++) {
+        Node_t* node_j = node + jn ;
+        
+        Node_GetNbOfElements(node_j) = 0 ;
+      }
+    }
+    
+    {
+      int je ;
+    
+      for(je = 0 ; je < nel ; je++) {
+        Element_t* el_j = el + je ;
+        int nn = Element_GetNbOfNodes(el_j) ;
+        int k ;
+      
+        for(k = 0 ; k < nn ; k++) {
+          Node_t* node_k = Element_GetNode(el_j,k) ;
+          int ne = Node_GetNbOfElements(node_k) ;
+          
+          Node_GetElement(node_k,ne) = el_j ;
+
+          Node_GetNbOfElements(node_k) += 1 ;
+        }
+      }
+    }
+  }
+}
+
+
+
+Graph_t* (Mesh_CreateGraph)(Mesh_t* mesh)
 /** Create the graph matrix of node indexes.
  *  Return a pointer to Graph_t.
  **/
@@ -450,7 +548,7 @@ Graph_t* Mesh_CreateGraph(Mesh_t* mesh)
 
 
 
-void  Mesh_SetMatrixRowColumnIndexes(Mesh_t* mesh,BConds_t* bconds)
+void  (Mesh_SetMatrixRowColumnIndexes)(Mesh_t* mesh,BConds_t* bconds)
 /** Set matrix row (column) index which node equation (unknown) points to
  *  by using the inverse permutation vector.
  **/
@@ -470,7 +568,7 @@ void  Mesh_SetMatrixRowColumnIndexes(Mesh_t* mesh,BConds_t* bconds)
 
 
 
-void  Mesh_UpdateMatrixRowColumnIndexes(Mesh_t* mesh)
+void  (Mesh_UpdateMatrixRowColumnIndexes)(Mesh_t* mesh)
 /** Set matrix row (column) index which node equation (unknown) points to
  *  by using the inverse permutation vector.
  **/
@@ -510,7 +608,7 @@ void  Mesh_UpdateMatrixRowColumnIndexes(Mesh_t* mesh)
 
 
 
-void  Mesh_InitializeMatrixRowColumnIndexes(Mesh_t* mesh)
+void  (Mesh_InitializeMatrixRowColumnIndexes)(Mesh_t* mesh)
 /** Initialize the Matrix Row/Column Indexes to >= 0 */
 {
 
@@ -544,7 +642,7 @@ void  Mesh_InitializeMatrixRowColumnIndexes(Mesh_t* mesh)
 
 
 
-void Mesh_WriteGraph(Mesh_t* mesh,const char* nom,const char* format)
+void (Mesh_WriteGraph)(Mesh_t* mesh,const char* nom,const char* format)
 /** Create the graph file "nom.graph" in the format "format"
  */
 {
@@ -623,11 +721,12 @@ void Mesh_WriteGraph(Mesh_t* mesh,const char* nom,const char* format)
   /* fermeture du fichier */
   fclose(fic_graph) ;
   
-  Graph_Delete(&graph) ;
+  Graph_Delete(graph) ;
+  free(graph) ;
 }
 
 
-void   Mesh_WriteInversePermutation(Mesh_t* mesh,const char* nom,const char* format)
+void   (Mesh_WriteInversePermutation)(Mesh_t* mesh,const char* nom,const char* format)
 /** Create the inverse permutation file "nom.graph.iperm" */
 {
   char   nom_iperm[Mesh_MaxLengthOfFileName] ;
@@ -673,7 +772,7 @@ void   Mesh_WriteInversePermutation(Mesh_t* mesh,const char* nom,const char* for
 }
 
 
-int*   Mesh_ComputeInversePermutationOfNodes(Mesh_t* mesh,const char* format)
+int*   (Mesh_ComputeInversePermutationOfNodes)(Mesh_t* mesh,const char* format)
 {
   int    n_no = Mesh_GetNbOfNodes(mesh) ;
   int*   iperm = (int*) malloc(n_no*sizeof(int)) ;
@@ -715,7 +814,8 @@ int*   Mesh_ComputeInversePermutationOfNodes(Mesh_t* mesh,const char* format)
       }
     }
   
-    Graph_Delete(&graph) ;
+    Graph_Delete(graph) ;
+    free(graph) ;
     
     /* From the package HSL_MC40 */
     {
@@ -760,7 +860,7 @@ int*   Mesh_ComputeInversePermutationOfNodes(Mesh_t* mesh,const char* format)
 }
 
 
-int*   Mesh_ComputeInversePermutationOfElements(Mesh_t* mesh,const char* format)
+int*   (Mesh_ComputeInversePermutationOfElements)(Mesh_t* mesh,const char* format)
 {
   int    nelt = Mesh_GetNbOfNodes(mesh) ;
   int*   norder = (int*) malloc(nelt*sizeof(int)) ;
@@ -887,7 +987,7 @@ int*   Mesh_ComputeInversePermutationOfElements(Mesh_t* mesh,const char* format)
 
 
 
-void Mesh_SetEquationContinuity(Mesh_t* mesh)
+void (Mesh_SetEquationContinuity)(Mesh_t* mesh)
 /** Set the continuity of unknowns/equations at nodes, i.e.:
  *  - the number of unknowns/equations at nodes
  *  - the names of unknowns/equations at nodes
@@ -1284,47 +1384,6 @@ void (Mesh_SetCurrentUnknownsWithBoundaryConditions)(Mesh_t* mesh,BConds_t* bcon
 
 
 
-void (Mesh_InterpolateCurrentUnknowns)(Mesh_t* mesh,Solutions_t* sols,const int sequentialindex)
-/** Interpolate the current nodal values of unknowns 
- *  the sequential index of which is lower than sequentialindex. */
-{
-  Solution_t* sol = Solutions_GetSolution(sols) ;
-  double dt_1 = Solution_GetTimeStep(sol) ;
-  unsigned int nb_nodes = Mesh_GetNbOfNodes(mesh) ;
-  Node_t* node = Mesh_GetNode(mesh) ;
-  
-  if(sequentialindex <= 0) return ;
-  
-  {
-    int   i ;
-  
-    for(i = 0 ; i < nb_nodes ; i++) {
-      Node_t* nodi = node + i ;
-      int*    node_seq_ind = Node_GetSequentialIndexOfUnknown(nodi) ;
-      int  nb_unk = Node_GetNbOfUnknowns(nodi) ;
-      double* u_n = Node_GetPreviousUnknown(nodi) ;
-      double* u_1 = Node_GetCurrentUnknown(nodi) ;
-      int k ;
-        
-      for(k = sequentialindex ; k > 0 ; k--) {
-        int dist = sequentialindex - k + 1 ;
-        double* u_2 = Node_GetUnknownInDistantFuture(nodi,dist) ;
-        Solution_t* sol2 = Solution_GetSolutionInDistantFuture(sol,dist) ;
-        double dt_2 = Solution_GetTimeStep(sol2) ;
-        int j ;
-      
-        for(j = 0 ; j < nb_unk ; j++) {
-          if(node_seq_ind[j] < sequentialindex) {
-            u_1[j] = u_n[j] + (u_2[j] - u_n[j]) * dt_1 / dt_2 ;
-          }
-        }
-      }
-    }
-  }
-}
-
-
-
 void (Mesh_UpdateCurrentUnknowns)(Mesh_t* mesh,Solver_t* solver)
 {
   double* x = Solver_GetSolution(solver) ;
@@ -1355,10 +1414,170 @@ void (Mesh_UpdateCurrentUnknowns)(Mesh_t* mesh,Solver_t* solver)
 
 
 
+
+int (Mesh_ComputeInitialState)(Mesh_t* mesh,double t)
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  unsigned int    ie ;
+
+  for(ie = 0 ; ie < n_el ; ie++) {
+    Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+    if(mat) {
+      int i ;
+      
+      Element_FreeBuffer(el + ie) ;
+      i = Element_ComputeInitialState(el + ie,t) ;
+      if(i != 0) return(i) ;
+    }
+  }
+  
+  return(0) ;
+}
+
+
+
+int (Mesh_ComputeExplicitTerms)(Mesh_t* mesh,double t)
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  unsigned int    ie ;
+
+  for(ie = 0 ; ie < n_el ; ie++) {
+    Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+    if(mat) {
+      int    i ;
+      
+      Element_FreeBuffer(el + ie) ;
+      i = Element_ComputeExplicitTerms(el + ie,t) ;
+      if(i != 0) return(i) ;
+    }
+  }
+  
+  return(0) ;
+}
+
+
+
+int (Mesh_ComputeMatrix)(Mesh_t* mesh,double t,double dt,Matrix_t* a)
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  unsigned int    ie ;
+
+  Matrix_SetValuesToZero(a) ;
+  
+  for(ie = 0 ; ie < n_el ; ie++) {
+    Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+    if(mat) {
+#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+      double ke[NE*NE] ;
+#undef NE
+      int    i ;
+      
+      Element_FreeBuffer(el + ie) ;
+      i = Element_ComputeMatrix(el + ie,t,dt,ke) ;
+      if(i != 0) return(i) ;
+      
+      Matrix_AssembleElementMatrix(a,el+ie,ke) ;
+    }
+  }
+  
+  return(0) ;
+}
+
+
+
+void (Mesh_ComputeResidu)(Mesh_t* mesh,double t,double dt,Residu_t* r,Loads_t* loads)
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  
+  Residu_SetValuesToZero(r) ;
+  
+  /* Residu */
+  {
+    unsigned int ie ;
+  
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+      if(mat) {
+#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+        double re[NE] ;
+#undef NE
+      
+        Element_FreeBuffer(el + ie) ;
+        Element_ComputeResidu(el + ie,t,dt,re) ;
+      
+        Residu_AssembleElementResidu(r,el + ie,re) ;
+      }
+    }
+  }
+  
+  /* Loads */
+  {
+    unsigned int n_cg = Loads_GetNbOfLoads(loads) ;
+    Load_t* cg = Loads_GetLoad(loads) ;
+    unsigned int i_cg ;
+    
+    for(i_cg = 0 ; i_cg < n_cg ; i_cg++) {
+      int reg_cg = Load_GetRegionIndex(cg + i_cg) ;
+      unsigned int ie ;
+    
+      for(ie = 0 ; ie < n_el ; ie++) {
+        if(Element_GetRegionIndex(el + ie) == reg_cg) {
+          Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+          if(mat) {
+#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+            double re[NE] ;
+#undef NE
+        
+            Element_FreeBuffer(el + ie) ;
+            Element_ComputeLoads(el + ie,t,dt,cg + i_cg,re) ;
+      
+            Residu_AssembleElementResidu(r,el + ie,re) ;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+int (Mesh_ComputeImplicitTerms)(Mesh_t* mesh,double t,double dt)
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  unsigned int    ie ;
+
+  for(ie = 0 ; ie < n_el ; ie++) {
+    Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+    if(mat) {
+      int    i ;
+      
+      Element_FreeBuffer(el + ie) ;
+      i = Element_ComputeImplicitTerms(el + ie,t,dt) ;
+      if(i != 0) return(i) ;
+    }
+  }
+  
+  return(0) ;
+}
+
+
+
+
 /* Intern functions */
 
 
-void Mesh_OneNode(Mesh_t* mesh)
+void (Mesh_OneNode)(Mesh_t* mesh)
 {
   int n_el = 1 ;
   int n_no = 1 ;
@@ -1379,17 +1598,17 @@ void Mesh_OneNode(Mesh_t* mesh)
     Element_GetMaterialIndex(el) = 0 ;
     Element_GetRegionIndex(el) = 1 ;
 
-    Element_GetNbOfNodes(el) = 1 ;
     Element_GetDimension(el) = 0 ;
 
     /* Numbering */
+    Element_GetNbOfNodes(el) = 1 ;
     Element_GetNode(el,0) = no ;
   }
 }
 
 
 
-void Mesh_ReadInline1d(Mesh_t* mesh,char* str)
+void (Mesh_ReadInline1d)(Mesh_t* mesh,char* str)
 /* 1D Mesh */
 {
   int     npt ;
@@ -1480,7 +1699,7 @@ void Mesh_ReadInline1d(Mesh_t* mesh,char* str)
   free(ne) ;
 
 
-  /* Set the remaining attributes of element */
+  /* Set the remaining attributes of elements and nodes */
   {
     int n_el = Mesh_GetNbOfElements(mesh) ;
     Element_t* el = Mesh_GetElement(mesh) ;
@@ -1520,6 +1739,12 @@ void Mesh_ReadInline1d(Mesh_t* mesh,char* str)
       }
     }
   }
+    
+  {
+    Nodes_t* nodes = Mesh_GetNodes(mesh) ;
+      
+    Nodes_InitializePointerToElements(nodes) ;
+  }
 }
 
 
@@ -1527,7 +1752,7 @@ void Mesh_ReadInline1d(Mesh_t* mesh,char* str)
 
 
 
-void Mesh_ReadFormatGmsh(Mesh_t* mesh,const char* nom_msh)
+void (Mesh_ReadFormatGmsh)(Mesh_t* mesh,const char* nom_msh)
 /* Read a mesh in a file under the format GMSH */
 {
   char   line[Mesh_MaxLengthOfTextLine] ;
@@ -1558,7 +1783,7 @@ void Mesh_ReadFormatGmsh(Mesh_t* mesh,const char* nom_msh)
 
 
 
-void Mesh_ReadFormatGmsh_1(Mesh_t* mesh,const char* name)
+void (Mesh_ReadFormatGmsh_1)(Mesh_t* mesh,const char* name)
 /* Read a mesh in a file under the format GMSH version 1.0 */
 {
   TextFile_t* textfile = TextFile_Create(name) ;
@@ -1752,14 +1977,21 @@ void Mesh_ReadFormatGmsh_1(Mesh_t* mesh,const char* name)
   
     fscanf(strfile,"%s",mot) ;
   }
+    
+  {
+    Nodes_t* nodes = Mesh_GetNodes(mesh) ;
+      
+    Nodes_InitializePointerToElements(nodes) ;
+  }
   
-  TextFile_Delete(&textfile) ;
+  TextFile_Delete(textfile) ;
+  free(textfile) ;
 }
 
 
 
 
-void Mesh_ReadFormatGmsh_2(Mesh_t* mesh,const char* nom_msh)
+void (Mesh_ReadFormatGmsh_2)(Mesh_t* mesh,const char* nom_msh)
 /* Read a mesh in a file under the format GMSH version 2.0 */
 {
   TextFile_t* textfile = TextFile_Create(nom_msh) ;
@@ -1988,13 +2220,20 @@ void Mesh_ReadFormatGmsh_2(Mesh_t* mesh,const char* nom_msh)
   
     fscanf(fic_msh,"%s",mot) ;
   }
+    
+  {
+    Nodes_t* nodes = Mesh_GetNodes(mesh) ;
+      
+    Nodes_InitializePointerToElements(nodes) ;
+  }
   
-  TextFile_Delete(&textfile) ;
+  TextFile_Delete(textfile) ;
+  free(textfile) ;
 }
 
 
 
-void Mesh_Readm1d(Mesh_t* mesh,const char* nom_m1d)
+void (Mesh_Readm1d)(Mesh_t* mesh,const char* nom_m1d)
 /* Read a 1D mesh under the format m1d */
 {
   TextFile_t* textfile = TextFile_Create(nom_m1d) ;
@@ -2107,13 +2346,20 @@ void Mesh_Readm1d(Mesh_t* mesh,const char* nom_m1d)
       }
     }
   }
+    
+  {
+    Nodes_t* nodes = Mesh_GetNodes(mesh) ;
+      
+    Nodes_InitializePointerToElements(nodes) ;
+  }
   
-  TextFile_Delete(&textfile) ;
+  TextFile_Delete(textfile) ;
+  free(textfile) ;
 }
 
 
 
-void Mesh_ReadFormatCesar(Mesh_t* mesh,const char* nom)
+void (Mesh_ReadFormatCesar)(Mesh_t* mesh,const char* nom)
 /* Read a mesh in a file under the format CESAR */
 {
   TextFile_t* textfile = TextFile_Create(nom) ;
@@ -2312,15 +2558,22 @@ void Mesh_ReadFormatCesar(Mesh_t* mesh,const char* nom)
       Element_GetRegionIndex(el + i) = 10*Element_GetRegionIndex(el + i) + imat ;
     }
   }
+    
+  {
+    Nodes_t* nodes = Mesh_GetNodes(mesh) ;
+      
+    Nodes_InitializePointerToElements(nodes) ;
+  }
 
-  TextFile_Delete(&textfile) ;
+  TextFile_Delete(textfile) ;
+  free(textfile) ;
 }
 
 
 
 
 
-void maillage(double* pt,int* ne,double dx_ini,int npt,Node_t* no)
+void (maillage)(double* pt,int* ne,double dx_ini,int npt,Node_t* no)
 /* Calcul des coordonnees (no) d'un maillage 1D */
 {
   int    npt1 = npt - 1 ;
@@ -2357,7 +2610,7 @@ void maillage(double* pt,int* ne,double dx_ini,int npt,Node_t* no)
 
 
 
-int mesh1dnew(double* point, double* l_c, int n_reg, Node_t* no)
+int (mesh1dnew)(double* point, double* l_c, int n_reg, Node_t* no)
 /* Calcul des coordonnees (no) d'un maillage 1D
    et retourne le nombre d'elements */
 {

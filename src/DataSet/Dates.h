@@ -11,6 +11,7 @@ struct Dates_s        ; typedef struct Dates_s        Dates_t ;
 
 extern Dates_t*  (Dates_New)    (const int) ;
 extern Dates_t*  (Dates_Create) (DataFile_t*) ;
+extern void      (Dates_Delete) (void*) ;
 
 
 

@@ -100,8 +100,7 @@ Damage_t*  (Damage_Create)(void)
 
 void  (Damage_Delete)(void* self)
 {
-  Damage_t** pdamage = (Damage_t**) self ;
-  Damage_t*  damage  = *pdamage ;
+  Damage_t* damage = (Damage_t*) self ;
   
   {
     char* name = Damage_GetCodeNameOfModel(damage) ;
@@ -146,15 +145,14 @@ void  (Damage_Delete)(void* self)
   {
     Elasticity_t* elasty = Damage_GetElasticity(damage) ;
     
-    Elasticity_Delete(&elasty) ;
+    Elasticity_Delete(elasty) ;
+    free(elasty) ;
   }
   
   {
     double* c = Damage_GetParameter(damage) ;
     free(c) ;
   }
-  
-  free(*pdamage) ;
 }
 
 

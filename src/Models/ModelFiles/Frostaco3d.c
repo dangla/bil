@@ -803,6 +803,8 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
 
+  if(Element_IsSubmanifold(el)) return(0) ;
+  
   /*
     We load some input data
   */
@@ -952,10 +954,10 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   /* Compute here the residu R(n,i) */
   
 
-
   /* 1. Mechanics */
   
   /* 1.1 Stresses */
+  if(Element_EquationIsActive(el,E_Mech)) 
   {
     double* vi = vi_1 ;
     double* rw = FEM_ComputeStrainWorkResidu(fem,intfct,SIG,NVI) ;
@@ -971,6 +973,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   
   /* 1.2 Body forces */
   #if 0
+  if(Element_EquationIsActive(el,E_Mech)) 
   {
     double* vi = vi_1 ;
     double* rbf = FEM_ComputeBodyForceResidu(fem,intfct,F_MASS + dim - 1,NVI) ;
@@ -988,6 +991,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   /* 2. Conservation of total mass */
   
   /* 2.1 Accumulation Terms */
+  if(Element_EquationIsActive(el,E_Mass)) 
   {
     double* vi = vi_1 ;
     double* vi_n = Element_GetPreviousImplicitTerm(el) ;
@@ -1004,6 +1008,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   }
   
   /* 2.2 Transport Terms */
+  if(Element_EquationIsActive(el,E_Mass)) 
   {
     double* vi = vi_1 ;
     double* rf = FEM_ComputeFluxResidu(fem,intfct,W_TOT,NVI) ;
@@ -1017,6 +1022,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   /* 3. Conservation of salt */
   
   /* 3.1 Accumulation Terms */
+  if(Element_EquationIsActive(el,E_Salt)) 
   {
     double* vi = vi_1 ;
     double* vi_n = Element_GetPreviousImplicitTerm(el) ;
@@ -1033,6 +1039,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   }
   
   /* 3.2 Transport Terms */
+  if(Element_EquationIsActive(el,E_Salt)) 
   {
     double* vi = vi_1 ;
     double* rf = FEM_ComputeFluxResidu(fem,intfct,W_SALT,NVI) ;
@@ -1046,6 +1053,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   /* 4. Entropy balance */
   
   /* 3.1 Accumulation Terms */
+  if(Element_EquationIsActive(el,E_The)) 
   {
     double* vi = vi_1 ;
     double* vi_n = Element_GetPreviousImplicitTerm(el) ;
@@ -1062,6 +1070,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   }
   
   /* 3.2 Transport Terms */
+  if(Element_EquationIsActive(el,E_The)) 
   {
     double* vi = vi_1 ;
     double* rf = FEM_ComputeFluxResidu(fem,intfct,W_THE,NVI) ;

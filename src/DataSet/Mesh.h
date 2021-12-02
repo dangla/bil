@@ -13,13 +13,17 @@ struct Mesh_s         ; typedef struct Mesh_s         Mesh_t ;
 #include "BConds.h"
 #include "DataFile.h"
 #include "Solutions.h"
+#include "Solution.h"
 #include "Solver.h"
+#include "Matrix.h"
+#include "Residu.h"
+#include "Loads.h"
 
 
 //extern Mesh_t*  (Mesh_New)(void) ;
 extern Mesh_t*  (Mesh_Create)(DataFile_t*,Materials_t*,Geometry_t*) ;
 extern void     (Mesh_Delete)(void*) ;
-extern void     (Mesh_CreateMore)(Mesh_t*) ; // declared as extern only for Parser.y
+//extern void     (Mesh_CreateMore)(Mesh_t*) ; // declared as extern only for Parser.y
 extern char*    (Mesh_Scan)(Mesh_t*,char*) ;
 extern void     (Mesh_SetMatrixRowColumnIndexes)(Mesh_t*,BConds_t*) ;
 extern void     (Mesh_UpdateMatrixRowColumnIndexes)(Mesh_t*) ;
@@ -33,7 +37,12 @@ extern void     (Mesh_SetCurrentUnknownsWithBoundaryConditions)(Mesh_t*,BConds_t
 extern void     (Mesh_UpdateCurrentUnknowns)(Mesh_t*,Solver_t*) ;
 extern void     (Mesh_SetEquationContinuity)(Mesh_t*) ;
 extern void     (Mesh_PrintData)(Mesh_t*,char*) ;
-extern void     (Mesh_InterpolateCurrentUnknowns)(Mesh_t*,Solutions_t*,const int) ;
+
+extern int      (Mesh_ComputeInitialState)(Mesh_t*,double) ;
+extern int      (Mesh_ComputeExplicitTerms)(Mesh_t*,double) ;
+extern int      (Mesh_ComputeMatrix)(Mesh_t*,double,double,Matrix_t*) ;
+extern void     (Mesh_ComputeResidu)(Mesh_t*,double,double,Residu_t*,Loads_t*) ;
+extern int      (Mesh_ComputeImplicitTerms)(Mesh_t*,double,double) ;
 
 
 

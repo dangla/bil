@@ -23,7 +23,7 @@
 
 #ifdef SUPERLULIB
 
-SuperLUFormat_t* SuperLUFormat_CreateSelectedMatrix(Mesh_t* mesh,const int imatrix)
+SuperLUFormat_t* (SuperLUFormat_Create)(Mesh_t* mesh,const int imatrix)
 /* Create a matrix in SuperLUFormat format */
 {
   SuperLUFormat_t* aslu = (SuperLUFormat_t*) Mry_New(SuperLUFormat_t) ;
@@ -40,7 +40,7 @@ SuperLUFormat_t* SuperLUFormat_CreateSelectedMatrix(Mesh_t* mesh,const int imatr
   }
   
   {
-    NCFormat_t* asluNC = NCFormat_CreateSelectedMatrix(mesh,imatrix) ;
+    NCFormat_t* asluNC = NCFormat_Create(mesh,imatrix) ;
     
     SuperLUFormat_GetStorage(aslu)     = (void*) asluNC ;
   }
@@ -50,7 +50,8 @@ SuperLUFormat_t* SuperLUFormat_CreateSelectedMatrix(Mesh_t* mesh,const int imatr
 
 
 
-SuperLUFormat_t* SuperLUFormat_Create(Mesh_t* mesh)
+#if 0
+SuperLUFormat_t* (SuperLUFormat_Create)(Mesh_t* mesh)
 /* Create a matrix in SuperLUFormat format */
 {
   SuperLUFormat_t* aslu = (SuperLUFormat_t*) Mry_New(SuperLUFormat_t) ;
@@ -74,18 +75,16 @@ SuperLUFormat_t* SuperLUFormat_Create(Mesh_t* mesh)
   
   return(aslu) ;
 }
+#endif
 
 
 
-void SuperLUFormat_Delete(void* self)
+void (SuperLUFormat_Delete)(void* self)
 {
-  SuperLUFormat_t** aslu = (SuperLUFormat_t**) self ;
-  NCFormat_t* asluNC = (NCFormat_t*) SuperLUFormat_GetStorage(*aslu) ;
+  SuperLUFormat_t* aslu = (SuperLUFormat_t*) self ;
+  NCFormat_t* asluNC = (NCFormat_t*) SuperLUFormat_GetStorage(aslu) ;
   
-  NCFormat_Delete(&asluNC) ;
-  
-  free(*aslu) ;
-  *aslu = NULL ;
+  NCFormat_Delete(asluNC) ;
 }
 
 #endif

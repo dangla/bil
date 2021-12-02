@@ -7,8 +7,8 @@
 struct Results_s      ; typedef struct Results_s      Results_t ;
 
 
-extern Results_t* Results_Create(int) ;
-extern void       Results_Delete(void*) ;
+extern Results_t* (Results_Create)(int) ;
+extern void       (Results_Delete)(void*) ;
 
 
 #define Results_GetNbOfResults(results)      ((results)->nbofresults)

@@ -2,6 +2,7 @@
 #include "InternationalSystemOfUnits.h"
 #include "Session.h"
 #include "GenericData.h"
+#include "Mry.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -16,9 +17,7 @@ static void InternationalSystemOfUnits_UpdateDerivedUnits(InternationalSystemOfU
 
 InternationalSystemOfUnits_t* (InternationalSystemOfUnits_Create)(void)
 {
-  InternationalSystemOfUnits_t* si = (InternationalSystemOfUnits_t*) malloc(sizeof(InternationalSystemOfUnits_t)) ;
-
-  assert(si) ;
+  InternationalSystemOfUnits_t* si = (InternationalSystemOfUnits_t*) Mry_New(InternationalSystemOfUnits_t) ;
   
   
   /* Initialization */
@@ -40,9 +39,7 @@ InternationalSystemOfUnits_t* (InternationalSystemOfUnits_Create)(void)
 
 void (InternationalSystemOfUnits_Delete)(void* self)
 {
-  InternationalSystemOfUnits_t** pis = (InternationalSystemOfUnits_t**) self ;
-
-  free(*pis) ;
+  InternationalSystemOfUnits_t* is = (InternationalSystemOfUnits_t*) self ;
 }
 
 

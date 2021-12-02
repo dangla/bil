@@ -12,17 +12,15 @@
 
 
 
-Dates_t*  Dates_New(const int n_dates)
+Dates_t*  (Dates_New)(const int n_dates)
 {
   Dates_t* dates = (Dates_t*) Mry_New(Dates_t) ;
   
   {
     Dates_GetNbOfDates(dates) = n_dates ;
 
-    {
-      Date_t* date = (Date_t*) Mry_New(Date_t[n_dates]) ;
-    
-      Dates_GetDate(dates) = date ;
+    if(n_dates) {
+      Dates_GetDate(dates) = Mry_Create(Date_t,n_dates,Date_New()) ;
     }
   }
   
@@ -33,7 +31,7 @@ Dates_t*  Dates_New(const int n_dates)
 
 
 
-Dates_t*  Dates_Create(DataFile_t* datafile)
+Dates_t*  (Dates_Create)(DataFile_t* datafile)
 {
   char* filecontent = DataFile_GetFileContent(datafile) ;
   char* c  = String_FindToken(filecontent,"TEMP,DATE,Dates",",") ;
@@ -66,4 +64,20 @@ Dates_t*  Dates_Create(DataFile_t* datafile)
   
   
   return(dates) ;
+}
+
+
+
+void  (Dates_Delete)(void* self)
+{
+  Dates_t* dates = (Dates_t*) self ;
+  
+  {
+    int n_dates = Dates_GetNbOfDates(dates) ;
+    Date_t* date  = Dates_GetDate(dates) ;
+    
+    Mry_Delete(date,n_dates,Date_Delete) ;
+    
+    free(date) ;
+  }
 }

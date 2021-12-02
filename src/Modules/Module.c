@@ -5,6 +5,7 @@
 
 #include "Message.h"
 #include "Context.h"
+#include "Exception.h"
 #include "Mry.h"
 #include "Module.h"
 #include "Modules.h"
@@ -16,12 +17,8 @@ extern  Module_SetModuleProp_t  Modules_ListOfSetModuleProp ;
 
 
 
-static Module_t* Module_New(void) ;
 
-
-
-
-Module_t* Module_New(void)
+Module_t* (Module_New)(void)
 {
   Module_t* module = (Module_t*) Mry_New(Module_t) ;
   
@@ -65,22 +62,13 @@ Module_t* Module_New(void)
 
 
 
-Module_t* Module_Create(int n_module)
-/** Create modules */
+void  (Module_Delete)(void* self)
 {
-  Module_t* module = (Module_t*) Mry_New(Module_t[n_module]) ;
+  Module_t* module = (Module_t*) self ;
   
-  {
-    int i ;
-    
-    for(i = 0 ; i < n_module ; i++) {
-      Module_t* mod = Module_New() ;
-    
-      module[i] = mod[0] ;
-    }
-  }
-  
-  return(module) ;
+  free(Module_GetCodeNameOfModule(module)) ;
+  free(Module_GetShortTitle(module)) ;
+  free(Module_GetNameOfAuthors(module)) ;
 }
 
 
@@ -110,7 +98,7 @@ Module_t* (Module_Initialize)(Module_t* module,const char* codename)
 
 #if 0
 //void* Module_Initialize(void*) ;
-void* Module_Initialize(void* self)
+void* (Module_Initialize)(void* self)
 {
   Module_t* module_i = (Module_t*) self ;
   
@@ -145,4 +133,28 @@ void* Module_Initialize(void* self)
   
   return(module_i) ;
 }
+#endif
+
+
+
+
+
+/* Not used */
+
+#if 0
+static int  (Module_Iterate)(DataSet_t*,Solutions_t*,Solver_t*) ;
+static int  (Module_ComputeImplicitTerms)(Mesh_t*,double,double) ;
+static void (Module_ComputeResidu)(Mesh_t*,double,double,Residu_t*,Loads_t*) ;
+static int  (Module_ComputeMatrix)(Mesh_t*,double,double,Matrix_t*) ;
+static int  (Module_ComputeExplicitTerms)(Mesh_t*,double) ;
+static int  (Module_ComputeInitialState)(Mesh_t*,double) ;
+
+
+
+
+
+/*
+  Intern functions
+*/
+
 #endif

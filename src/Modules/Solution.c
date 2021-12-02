@@ -15,13 +15,33 @@ Solution_t*   (Solution_Create)(Mesh_t* mesh)
   Solution_t* sol = (Solution_t*) Mry_New(Solution_t) ;
   
   {
-      Solution_GetNodesSol(sol)    = NodesSol_Create(mesh) ;
-      Solution_GetElementsSol(sol) = ElementsSol_Create(mesh) ;
-      Solution_GetTime(sol)      = 0 ;
-      Solution_GetTimeStep(sol)  = 0 ;
-      Solution_GetStepIndex(sol) = 0 ;
-      Solution_GetPreviousSolution(sol) = NULL ;
-      Solution_GetNextSolution(sol)     = NULL ;
+    Solution_GetNodesSol(sol)    = NodesSol_Create(mesh) ;
+    Solution_GetElementsSol(sol) = ElementsSol_Create(mesh) ;
+  }
+  
+  Solution_GetNbOfSequences(sol) = Mesh_GetNbOfMatrices(mesh) ;
+  
+  /* Allocation of space for the times and the time steps */
+  {
+    int n = Solution_GetNbOfSequences(sol) ;
+    double* t = (double*) Mry_New(double[2*n]) ;
+    double* dt = t + n ;
+
+    Solution_GetSequentialTime(sol)      = t ;
+    Solution_GetSequentialTimeStep(sol)  = dt ;
+  }
+  
+  /* Allocation of space for the step indexes */
+  {
+    int n = Solution_GetNbOfSequences(sol) ;
+    int* index = (int*) Mry_New(int[n]) ;
+    
+    Solution_GetSequentialStepIndex(sol) = index ;
+  }
+  
+  {
+    Solution_GetPreviousSolution(sol) = NULL ;
+    Solution_GetNextSolution(sol)     = NULL ;
   }
   
   return(sol) ;
@@ -29,13 +49,72 @@ Solution_t*   (Solution_Create)(Mesh_t* mesh)
 
 
 
-void Solution_Copy(Solution_t* sol_dest,Solution_t* sol_src)
+
+void   (Solution_Delete)(void* self)
+{
+  Solution_t* sol = (Solution_t*) self ;
+  
+  {
+    NodesSol_t* nodessol = Solution_GetNodesSol(sol) ;
+    
+    if(nodessol) {
+      NodesSol_Delete(nodessol) ;
+      free(nodessol) ;
+      Solution_GetNodesSol(sol) = NULL ;
+    }
+  }
+  
+  {
+    ElementsSol_t* elementssol = Solution_GetElementsSol(sol) ;
+    
+    if(elementssol) {
+      ElementsSol_Delete(elementssol) ;
+      free(elementssol) ;
+      Solution_GetElementsSol(sol) = NULL ;
+    }
+  }
+
+  {
+    double* t = Solution_GetSequentialTime(sol) ;
+    
+    if(t) {
+      free(t) ;
+      Solution_GetSequentialTime(sol) = NULL ;
+    }
+  }
+  
+  {
+    int* index = Solution_GetSequentialStepIndex(sol) ;
+    
+    if(index) {
+      free(index) ;
+      Solution_GetSequentialStepIndex(sol) = NULL ;
+    }
+  }
+}
+
+
+
+void (Solution_Copy)(Solution_t* sol_dest,Solution_t* sol_src)
 /** Copy unknowns, (im/ex)plicit and constant terms 
  *  from sol_src to sol_dest */
 {
   Solution_GetTime(sol_dest) = Solution_GetTime(sol_src) ;
-  Solution_GetTimeStep(sol_dest) = Solution_GetTimeStep(sol_src) ;
-  Solution_GetStepIndex(sol_dest) = Solution_GetStepIndex(sol_src) ;
+  
+  /* Times, time steps and step indexes */
+  {
+    int n = Solution_GetNbOfSequences(sol_src) ;
+    double* t_src  = Solution_GetSequentialTime(sol_src) ;
+    double* dt_src = Solution_GetSequentialTimeStep(sol_src) ;
+    int* index_src = Solution_GetSequentialStepIndex(sol_src) ;
+    int i ;
+    
+    for(i = 0 ; i < n ; i++) {
+      Solution_GetSequentialTime(sol_dest)[i] = t_src[i] ;
+      Solution_GetSequentialTimeStep(sol_dest)[i] = dt_src[i] ;
+      Solution_GetSequentialStepIndex(sol_dest)[i] = index_src[i] ;
+    }
+  }
   
   /* Nodal values */
   {
@@ -56,6 +135,40 @@ void Solution_Copy(Solution_t* sol_dest,Solution_t* sol_src)
 
 
 
+void (Solution_CopySelectedSequentialUnknowns)(Solution_t* sol_dest,Solution_t* sol_src,const int sequentialindex)
+/** Copy unknowns of sequential index "sequentialindex"
+ *  from sol_src to sol_dest */
+{
+  /* Time, time step and step index */
+  {
+    double* t_src  = Solution_GetSequentialTime(sol_src) ;
+    double* dt_src = Solution_GetSequentialTimeStep(sol_src) ;
+    int* index_src = Solution_GetSequentialStepIndex(sol_src) ;
+    
+    {
+      int i = sequentialindex ;
+      
+      Solution_GetSequentialTime(sol_dest)[i] = t_src[i] ;
+      Solution_GetSequentialTimeStep(sol_dest)[i] = dt_src[i] ;
+      Solution_GetSequentialStepIndex(sol_dest)[i] = index_src[i] ;
+    }
+  }
+  
+  /* Nodal values */
+  {
+    NodesSol_t* nodessol_d = Solution_GetNodesSol(sol_dest) ;
+    NodesSol_t* nodessol_s = Solution_GetNodesSol(sol_src) ;
+    
+    {
+      int i = sequentialindex ;
+      
+      NodesSol_CopySelectedSequentialUnknowns(nodessol_d,nodessol_s,i) ;
+    }
+  }
+}
+
+
+#if 0
 Solution_t* (Solution_GetSolutionInDistantPast)(Solution_t* sol,unsigned int dist)
 {
   while(dist--) sol = Solution_GetPreviousSolution(sol) ;
@@ -69,52 +182,72 @@ Solution_t* (Solution_GetSolutionInDistantFuture)(Solution_t* sol,unsigned int d
   while(dist--) sol = Solution_GetNextSolution(sol) ;
   return(sol) ;
 }
+#endif
 
 
 
-/* Not used */
-#if 0
-void Solution_Move(Solution_t* dest,Solution_t* src)
+
+
+#if 1
+void (Solution_InterpolateCurrentUnknowns)(Solution_t* sol_1,const int sequentialindex)
+/** Interpolate the current nodal values of unknowns for which
+ *  the sequential indexes are lower than "sequentialindex", the
+ *  latter being the sequential index of the unknowns which are
+ *  being solved. */
 {
-  Solution_t* prev = Solution_GetPreviousSolution(src) ;
-  Solution_t* next = Solution_GetNextSolution(src) ;
-          
-  *dest = *src ;
-          
-  Solution_GetPreviousSolution(next) = dest ;
-  Solution_GetNextSolution(prev) = dest ;
-}
-
-
-
-void Solution_CopyPreviousToCurrentValues(Solution_t* sol)
-{
-  Solution_t* sol_p = Solution_GetPreviousSolution(sol) ;
-  unsigned int n_u  = Solution_GetNbOfDOF(sol) ;
-  unsigned int n_vi = Solution_GetNbOfImplicitTerms(sol) ;
-  unsigned int n_ve = Solution_GetNbOfExplicitTerms(sol) ;
-  double* u_1  = Solution_GetNodalValue(sol) ;
-  double* vi_1 = Solution_GetImplicitTerm(sol) ;
-  double* ve_1 = Solution_GetExplicitTerm(sol) ;
-  double* u_n  = Solution_GetNodalValue(sol_p) ;
-  double* vi_n = Solution_GetImplicitTerm(sol_p) ;
-  double* ve_n = Solution_GetExplicitTerm(sol_p) ;
-  unsigned int    i ;
   
-  Solution_GetTime(sol) = Solution_GetTime(sol_p) ;
-  Solution_GetTimeStep(sol) = Solution_GetTimeStep(sol_p) ;
-  Solution_GetStepIndex(sol) = Solution_GetStepIndex(sol_p) ;
-
-  for(i = 0 ; i < n_ve ; i++) {
-    ve_1[i] = ve_n[i] ;
-  }
+  if(sequentialindex <= 0) return ;
+  
+  {
+    Solution_t* sol_n = Solution_GetPreviousSolution(sol_1) ;
+    Solution_t* sol_2 = Solution_GetNextSolution(sol_1) ;
+    double* t_n = Solution_GetSequentialTime(sol_n) ;
+    double* t_1 = Solution_GetSequentialTime(sol_1) ;
+    double* t_2 = Solution_GetSequentialTime(sol_2) ;
     
-  for(i = 0 ; i < n_vi ; i++) {
-    vi_1[i] = vi_n[i] ;
-  }
+    /* Set the sequential time of the interpolated unknowns to the
+     * sequential time of the unknowns which are being solved, i.e.,
+     * those of index "sequentialindex". */
+    {
+      int k ;
+
+      for(k = 0 ; k < sequentialindex ; k++) {
+        t_1[k] = t_1[sequentialindex] ;
+      }
+    }
+
+    /* Interpolation of the specified unknowns */
+    {
+      Nodes_t* nodes = Solution_GetNodes(sol_1) ;
+      unsigned int nb_nodes = Nodes_GetNbOfNodes(nodes) ;
+      Node_t* node = Nodes_GetNode(nodes) ;
+      int   i ;
   
-  for(i = 0 ; i < n_u ; i++) {
-    u_1[i] = u_n[i] ;
+      for(i = 0 ; i < nb_nodes ; i++) {
+        Node_t* nodi = node + i ;
+        int*    node_seq_ind = Node_GetSequentialIndexOfUnknown(nodi) ;
+        int  nb_unk = Node_GetNbOfUnknowns(nodi) ;
+        double* u_n = Node_GetPreviousUnknown(nodi) ;
+        double* u_1 = Node_GetCurrentUnknown(nodi) ;
+        double* u_2 = Node_GetNextUnknown(nodi) ;
+        
+        {
+          int j ;
+
+          for(j = 0 ; j < nb_unk ; j++) {
+            int k = node_seq_ind[j] ;
+          
+            if(k < sequentialindex) {
+              double dt_1 = t_1[k] - t_n[k] ;
+              double dt_2 = t_2[k] - t_n[k] ;
+              double a = (dt_2 > 0) ? dt_1 / dt_2 : 1 ;
+              
+              u_1[j] = u_n[j] + (u_2[j] - u_n[j]) * a ;
+            }
+          }
+        }
+      }
+    }
   }
 }
 #endif

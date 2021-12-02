@@ -15,6 +15,7 @@ struct ObVals_s       ; typedef struct ObVals_s       ObVals_t ;
 
 extern ObVals_t*  (ObVals_New)(const int) ;
 extern ObVals_t*  (ObVals_Create)(DataFile_t*,Mesh_t*,Materials_t*) ;
+extern void       (ObVals_Delete)(void*) ;
 extern int        (ObVals_FindObValIndex)(ObVals_t*,char*) ;
 
 

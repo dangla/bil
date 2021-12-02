@@ -194,6 +194,7 @@ static double *popArgs(int nArgs) {                 /* fetch args */
 */
 
 #define WRAPPER_FUNCTION_1_ARG(FUN) \
+static double FUN##Wrapper(int,double*);\
 double FUN##Wrapper(int argc, double *argv) {\
   if (argc == 1) return FUN(argv[0]);\
   diagnoseError("Wrong Number of Arguments");\
@@ -206,6 +207,7 @@ double FUN##Wrapper(int argc, double *argv) {\
 */
 
 #define WRAPPER_FUNCTION_2_ARGS(FUN) \
+static double FUN##Wrapper(int,double*);\
 double FUN##Wrapper(int argc, double *argv) {\
   if (argc==2) return FUN(argv[0], argv[1]);\
   diagnoseError("Wrong Number of Arguments");\

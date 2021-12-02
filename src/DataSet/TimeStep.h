@@ -10,9 +10,11 @@ struct TimeStep_s     ; typedef struct TimeStep_s     TimeStep_t ;
 #include "DataFile.h"
 #include "ObVals.h"
 #include "Nodes.h"
+#include "Solution.h"
 
-extern TimeStep_t*  TimeStep_Create(DataFile_t*,ObVals_t*) ;
-extern double       TimeStep_ComputeTimeStep(TimeStep_t*,Nodes_t*,double,double,double,double) ;
+extern TimeStep_t*  (TimeStep_Create)(DataFile_t*,ObVals_t*) ;
+extern void         (TimeStep_Delete)(void*) ;
+extern double       (TimeStep_ComputeTimeStep)(TimeStep_t*,Solution_t*,double,double) ;
 
 
 #define TimeStep_GetInitialTimeStep(TS)       ((TS)->dtini)
@@ -22,7 +24,8 @@ extern double       TimeStep_ComputeTimeStep(TimeStep_t*,Nodes_t*,double,double,
 #define TimeStep_GetReductionFactor(TS)       ((TS)->fr)
 #define TimeStep_GetObVals(TS)                ((TS)->obvals)
 #define TimeStep_GetLocation(TS)              ((TS)->loc)
-#define TimeStep_GetSequentialIndex(TS)       ((TS)->sequentialindex)
+#define TimeStep_GetDataFile(TS)              ((TS)->datafile)
+//#define TimeStep_GetSequentialIndex(TS)       ((TS)->sequentialindex)
 
 
 
@@ -49,6 +52,12 @@ extern double       TimeStep_ComputeTimeStep(TimeStep_t*,Nodes_t*,double,double,
         
 #define TimeStep_IsLocatedAtEnd(TS) \
         (TimeStep_GetLocation(TS) == 2)
+        
+        
+
+/* The sequential index */
+#define TimeStep_GetSequentialIndex(TS) \
+        DataFile_GetSequentialIndex(TimeStep_GetDataFile(TS))
 
 
 
@@ -60,7 +69,8 @@ struct TimeStep_s {           /* Time step management */
   double fr ;                 /* Factor reducing the time step */
   ObVals_t* obvals ;          /* Objective variations */
   char   loc ;                /* Time location */
-  int sequentialindex ;
+  DataFile_t*    datafile ;   /* data file */
+  //int sequentialindex ;
 } ;
 
 #endif

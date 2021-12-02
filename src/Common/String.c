@@ -13,7 +13,7 @@ static  char   String_line[String_MaxLengthOfLine] ;
 
 
 #if 0
-char* String_Create(const char* filename)
+char* (String_Create)(const char* filename)
 {
   //String_t* string = (String_t*) Mry_New(String_t) ;
   char* str ;
@@ -55,13 +55,11 @@ char* String_Create(const char* filename)
 
 
 
-void String_Delete(void* self)
+void (String_Delete)(void* self)
 {
-  char** pstr = (char**) self ;
-  char*   str = *pstr ;
+  char* str = (char*) self ;
   
   free(str) ;
-  *pstr = NULL ;
 }
 #endif
 

@@ -1,31 +1,48 @@
 #include <string.h>
 #include "Message.h"
+#include "Mry.h"
 #include "Views.h"
 
 
-Views_t* Views_Create(int n)
+Views_t* (Views_Create)(int n)
 {
-  Views_t* views = (Views_t*) malloc(sizeof(Views_t)) ;
-  
-  if(!views) {
-    arret("Views_Create") ;
-  }
+  Views_t* views = (Views_t*) Mry_New(Views_t) ;
   
   Views_GetNbOfViews(views) = n ;
   
-  Views_GetView(views) = View_Create(n) ;
+  {
+    View_t* view = (View_t*) Mry_New(View_t[n]) ;
+    int i ;
+    
+    for(i = 0 ; i < n ; i++) {
+      View_t* vw = View_Create() ;
+  
+      view[i] = vw[0] ;
+      free(vw) ;
+    }
+  
+    Views_GetView(views) = view ;
+  }
   
   return(views);
 }
 
 
-void Views_Delete(void* self)
+
+void (Views_Delete)(void* self)
 {
-  Views_t** pviews = (Views_t**) self ;
-  Views_t*   views = *pviews ;
-  View_t* view = Views_GetView(views) ;
+  Views_t* views = (Views_t*) self ;
   
-  View_Delete(&view) ;
-  free(views) ;
-  *pviews = NULL ;
+  {
+    int n = Views_GetNbOfViews(views) ;
+    View_t* view = Views_GetView(views) ;
+    int i ;
+    
+    for(i = 0 ; i < n ; i++) {
+      View_Delete(view + i) ;
+    }
+    
+    free(view) ;
+    Views_GetView(views) = NULL ;
+  }
 }

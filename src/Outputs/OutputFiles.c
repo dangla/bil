@@ -47,11 +47,22 @@ OutputFiles_t*   (OutputFiles_Create)(char* filename,int n_dates,int n_points)
     int n = ceil(log10((double) n_dates+1)) ;
     int LengthOfName = strlen(filename) + 3 + n ;
     char* name = (char*) Mry_New(char[LengthOfName]) ;
-      
-    sprintf(name,"%s.t0",filename) ;
     
-    {  
-      OutputFile_t* outputfile = OutputFile_Create(name,n_dates) ;
+    {
+      OutputFile_t* outputfile = (OutputFile_t*) Mry_New(OutputFile_t[n_dates]) ;
+      int i ;
+      
+      for(i = 0 ; i < n_dates ; i++) {
+        sprintf(name,"%s.t%d",filename,i) ;
+        
+        {
+          OutputFile_t* opf = OutputFile_Create(name) ;
+        
+          outputfile[i] = opf[0] ;
+          free(opf) ;
+        }
+      }
+      //OutputFile_t* outputfile = OutputFile_Create(name,n_dates) ;
     
       OutputFiles_GetDateOutputFile(outputfiles) = outputfile ;
     }
@@ -68,11 +79,22 @@ OutputFiles_t*   (OutputFiles_Create)(char* filename,int n_dates,int n_points)
     int n = ceil(log10((double) n_points+1)) ;
     int LengthOfName = strlen(filename) + 3 + n ;
     char* name = (char*) Mry_New(char[LengthOfName]) ;
-      
-    sprintf(name,"%s.p1",filename) ;
     
     {  
-      OutputFile_t* outputfile = OutputFile_Create(name,n_points) ;
+      OutputFile_t* outputfile = (OutputFile_t*) Mry_New(OutputFile_t[n_points]) ;
+      int i ;
+      
+      for(i = 0 ; i < n_points ; i++) {
+        sprintf(name,"%s.p%d",filename,i+1) ;
+        
+        {
+          OutputFile_t* opf = OutputFile_Create(name) ;
+        
+          outputfile[i] = opf[0] ;
+          free(opf) ;
+        }
+      }
+      //OutputFile_t* outputfile = OutputFile_Create(name,n_points) ;
     
       OutputFiles_GetPointOutputFile(outputfiles) = outputfile ;
     }
@@ -104,22 +126,66 @@ OutputFiles_t*   (OutputFiles_Create)(char* filename,int n_dates,int n_points)
 
 void   (OutputFiles_Delete)(void* self)
 {
-  OutputFiles_t** poutputfiles = (OutputFiles_t**) self ;
-  OutputFiles_t*   outputfiles = *poutputfiles ;
-  int n_dates = OutputFiles_GetNbOfDateFiles(outputfiles) ;
-  int n_points = OutputFiles_GetNbOfPointFiles(outputfiles) ;
+  OutputFiles_t* outputfiles = (OutputFiles_t*) self ;
   
-  free(OutputFiles_GetDataFileName(outputfiles)) ;
+  {
+    char* name = OutputFiles_GetDataFileName(outputfiles) ;
     
-  OutputFile_Delete(&(OutputFiles_GetDateOutputFile(outputfiles)),n_dates) ;
-  OutputFile_Delete(&(OutputFiles_GetPointOutputFile(outputfiles)),n_points) ;
+    if(name) {
+      free(name) ;
+    }
+  }
+
+  {
+    int n_dates = OutputFiles_GetNbOfDateFiles(outputfiles) ;
+    OutputFile_t* outputfile = OutputFiles_GetDateOutputFile(outputfiles) ;
+    
+    if(outputfile) {
+      int i ;
+      
+      for(i = 0 ; i < n_dates ; i++) {
+        OutputFile_t* opf = outputfile + i ;
+      
+        OutputFile_Delete(opf) ;
+      }
+    
+      free(outputfile) ;
+    }
+  }
+
+  {
+    int n_points = OutputFiles_GetNbOfPointFiles(outputfiles) ;
+    OutputFile_t* outputfile = OutputFiles_GetPointOutputFile(outputfiles) ;
+    
+    if(outputfile) {
+      int i ;
+      
+      for(i = 0 ; i < n_points ; i++) {
+        OutputFile_t* opf = outputfile + i ;
+      
+        OutputFile_Delete(opf) ;
+      }
+    
+      free(outputfile) ;
+    }
+  }
   
-  Results_Delete(&(OutputFiles_GetResults(outputfiles))) ;
+  {
+    Results_t* results = OutputFiles_GetResults(outputfiles) ;
+    
+    if(results) {
+      Results_Delete(results) ;
+      free(results) ;
+    }
+  }
   
-  free(OutputFiles_GetTextLine(outputfiles)) ;
-  
-  free(outputfiles) ;
-  *poutputfiles = NULL ;
+  {
+    char* line = OutputFiles_GetTextLine(outputfiles) ;
+    
+    if(line) {
+      free(line) ;
+    }
+  }
 }
 
 

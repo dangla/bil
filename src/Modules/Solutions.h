@@ -15,13 +15,17 @@ struct Solutions_s     ; typedef struct Solutions_s     Solutions_t ;
 #include "Mesh.h"
  
 extern Solutions_t*   (Solutions_Create)(Mesh_t*,const int) ;
+extern void           (Solutions_Delete)(void*) ;
 extern void           (Solutions_MergeExplicitTerms)(Solutions_t*) ;
+extern void           (Solutions_MergeConstantTerms)(Solutions_t*) ;
 extern void           (Solutions_StepForward)(Solutions_t*) ;
 extern void           (Solutions_StepBackward)(Solutions_t*) ;
 
 
 #define Solutions_GetNbOfSolutions(SOLS)    ((SOLS)->n_sol)
 #define Solutions_GetSolution(SOLS)         ((SOLS)->solution)
+#define Solutions_GetSolutionHead(SOLS)     ((SOLS)->head)
+#define Solutions_GetMergeIndex(SOLS)       ((SOLS)->mergeindex)
 
 
 
@@ -44,10 +48,44 @@ extern void           (Solutions_StepBackward)(Solutions_t*) ;
         Solution_GetTime(Solutions_GetPreviousSolution(SOLS))
 
 
+
+/* Step forward ; Step backward */
+#if 1
+#define Solutions_StepForward(SOLS) \
+        do { \
+          Solutions_GetSolution(SOLS) = Solution_GetNextSolution(Solutions_GetSolution(SOLS)) ; \
+        } while(0)
+
+#define Solutions_StepBackward(SOLS) \
+        do { \
+          Solutions_GetSolution(SOLS) = Solution_GetPreviousSolution(Solutions_GetSolution(SOLS)) ; \
+        } while(0)
+#endif
+
+
+
+/* On merging explicit terms */
+#define Solutions_SetIndexForMergedExplicitTerms(SOLS) \
+        do { \
+          Solutions_GetMergeIndex(SOLS) = 1 ; \
+        } while(0)
+        
+#define Solutions_SetIndexForNotMergedExplicitTerms(SOLS) \
+        do { \
+          Solutions_GetMergeIndex(SOLS) = 0 ; \
+        } while(0)
+
+#define Solutions_ExplicitTermsAreMerged(SOLS) \
+        (Solutions_GetMergeIndex(SOLS) == 1)
+
+
+
 #include "Solution.h"
 
 struct Solutions_s {              /* Solutions */
   unsigned int n_sol ;            /* Nb of solutions */
+  char mergeindex ;
+  Solution_t* head ;              /* Solution head */
   Solution_t* solution ;          /* Solution */
 } ;
  

@@ -9,7 +9,8 @@ typedef struct CementSolutionChemistry_s     CementSolutionChemistry_t ;
 
 
 
-extern CementSolutionChemistry_t* (CementSolutionChemistry_Create)(const int) ;
+extern CementSolutionChemistry_t* (CementSolutionChemistry_Create)(void) ;
+extern void                       (CementSolutionChemistry_Delete)(void*) ;
 
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O)          (CementSolutionChemistry_t*) ;
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_CO2_H2O)      (CementSolutionChemistry_t*) ;

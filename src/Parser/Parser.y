@@ -252,7 +252,6 @@ Mesh :
       DataSet_GetMesh(dataset) = mesh ;
       Mesh_GetGeometry(mesh) = DataSet_GetGeometry(dataset) ;
       Mesh_Scan(mesh,$3) ;
-      Mesh_CreateMore(mesh) ;
       {
         Materials_t* materials = DataSet_GetMaterials(dataset) ;
         if(materials) {
@@ -331,25 +330,25 @@ Affectation :
 
       if(!v){
         if(map_set(&Parser_yysymbols,$1,0.)) {
-	  yymsg(0, "impossible to set '%s'", $1);
+    yymsg(0, "impossible to set '%s'", $1);
         }
         v = map_get(&Parser_yysymbols,$1);
       }
 
       {
-	switch($2){
-	case 0 : v[0]  = $3; break;
-	case 1 : v[0] += $3; break;
-	case 2 : v[0] -= $3; break;
-	case 3 : v[0] *= $3; break;
-	case 4 : 
-	  if($3) {
+  switch($2){
+  case 0 : v[0]  = $3; break;
+  case 1 : v[0] += $3; break;
+  case 2 : v[0] -= $3; break;
+  case 3 : v[0] *= $3; break;
+  case 4 : 
+    if($3) {
             v[0] /= $3; 
-	  } else {
+    } else {
             yymsg(0, "Division by zero in '%s /= %g'", $1, $3);
           }
-	  break;
-	}
+    break;
+  }
       }
 
       Free($1);
@@ -378,9 +377,9 @@ FExpr :
   | FExpr '/' FExpr
     { 
       if(!$3) {
-	yymsg(0, "Division by zero in '%g / %g'", $1, $3);
+  yymsg(0, "Division by zero in '%g / %g'", $1, $3);
       } else {
-	$$ = $1 / $3;
+  $$ = $1 / $3;
       }
     }
   | FExpr '%' FExpr                  { $$ = (int)$1 % (int)$3;  }
@@ -434,8 +433,8 @@ FExpr_Single :
       double* v = map_get(&Parser_yysymbols,$1);
 
       if(!v){
-	yymsg(0, "Unknown variable '%s'", $1);
-	$$ = 0.;
+  yymsg(0, "Unknown variable '%s'", $1);
+  $$ = 0.;
       } else {
         $$ = v[0];
       }
@@ -448,10 +447,10 @@ FExpr_Single :
       double* v = map_get(&Parser_yysymbols,$1);
 
       if(!v){
-	yymsg(0, "Unknown variable '%s'", $1);
-	$$ = 0.;
+  yymsg(0, "Unknown variable '%s'", $1);
+  $$ = 0.;
       } else {
-	$$ = v[index];
+  $$ = v[index];
       }
 
       Free($1);
@@ -519,15 +518,15 @@ int PrintListOfDouble(char *format, List_T *list, char *buffer)
     j++;
     if(j < (int)strlen(format)){
       if(format[j] == '%'){
-	strcat(buffer, "%");
-	j++;
+  strcat(buffer, "%");
+  j++;
       }
       while(j < (int)strlen(format) && format[j] != '%') j++;
       if(k != j){
-	strncpy(tmp1, &(format[k]), j-k);
-	tmp1[j-k] = '\0';
-	sprintf(tmp2, tmp1, *(double*)List_Pointer(list, i)); 
-	strcat(buffer, tmp2);
+  strncpy(tmp1, &(format[k]), j-k);
+  tmp1[j-k] = '\0';
+  sprintf(tmp2, tmp1, *(double*)List_Pointer(list, i)); 
+  strcat(buffer, tmp2);
       }
     }
     else
@@ -605,11 +604,9 @@ Parser_t* (Parser_Create)(void)
 
 void (Parser_Delete)(void* self)
 {
-  Parser_t** pparser = (Parser_t**) self ;
-  Parser_t*  parser  = *pparser ;
+  Parser_t* parser = (Parser_t*) self ;
   
-  free(parser) ;
-  *pparser = NULL ;
+  //free(parser) ;
 }
 
 

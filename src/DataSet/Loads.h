@@ -14,6 +14,7 @@ struct Loads_s        ; typedef struct Loads_s        Loads_t ;
 
 extern Loads_t* (Loads_New)(const int) ;
 extern Loads_t* (Loads_Create)(DataFile_t*,Fields_t*,Functions_t*) ;
+extern void     (Loads_Delete)(void*) ;
 
 #define Loads_GetNbOfLoads(LOADS)        ((LOADS)->n_cg)
 #define Loads_GetLoad(LOADS)             ((LOADS)->cg)

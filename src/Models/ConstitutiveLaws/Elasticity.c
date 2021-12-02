@@ -58,15 +58,12 @@ Elasticity_t*  (Elasticity_Create)(void)
 
 void  (Elasticity_Delete)(void* self)
 {
-  Elasticity_t** pelasty = (Elasticity_t**) self ;
-  Elasticity_t*  elasty  = *pelasty ;
+  Elasticity_t* elasty = (Elasticity_t*) self ;
   
   free(Elasticity_GetStiffnessTensor(elasty)) ;
   free(Elasticity_GetType(elasty)) ;
   free(Elasticity_GetParameter(elasty)) ;
   free(Elasticity_GetStressTensor(elasty)) ;
-  
-  free(*pelasty) ;
 }
 
 

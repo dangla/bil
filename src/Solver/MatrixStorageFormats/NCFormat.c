@@ -16,7 +16,7 @@
 
 
 
-NCFormat_t* NCFormat_CreateSelectedMatrix(Mesh_t* mesh,const int imatrix)
+NCFormat_t* (NCFormat_Create)(Mesh_t* mesh,const int imatrix)
 /** Create a matrix in NCFormat */
 {
   NCFormat_t* ncformat = (NCFormat_t*) Mry_New(NCFormat_t) ;
@@ -25,7 +25,7 @@ NCFormat_t* NCFormat_CreateSelectedMatrix(Mesh_t* mesh,const int imatrix)
   int*   colptr0 = (int*) Mry_New(int[n_col + 1]) ;
   
   if(imatrix >= Mesh_GetNbOfMatrices(mesh)) {
-    arret("NCFormat_CreateSelectedMatrix") ;
+    arret("NCFormat_Create") ;
   }
 
 
@@ -213,7 +213,8 @@ NCFormat_t* NCFormat_CreateSelectedMatrix(Mesh_t* mesh,const int imatrix)
 
 
 
-NCFormat_t* NCFormat_Create(Mesh_t* mesh)
+#if 0
+NCFormat_t* (NCFormat_Create)(Mesh_t* mesh)
 /** Create a matrix in NCFormat */
 {
   NCFormat_t* ncformat = (NCFormat_t*) Mry_New(NCFormat_t) ;
@@ -400,19 +401,18 @@ NCFormat_t* NCFormat_Create(Mesh_t* mesh)
   
   return(ncformat) ;
 }
+#endif
 
 
 
 
-void NCFormat_Delete(void* self)
+void (NCFormat_Delete)(void* self)
 {
-  NCFormat_t** a = (NCFormat_t**) self ;
+  NCFormat_t* a = (NCFormat_t*) self ;
   
-  free(NCFormat_GetFirstNonZeroValueIndexOfColumn(*a)) ;
-  free(NCFormat_GetRowIndexOfNonZeroValue(*a)) ;
-  free(NCFormat_GetNonZeroValue(*a)) ;
-  free(*a) ;
-  *a = NULL ;
+  free(NCFormat_GetFirstNonZeroValueIndexOfColumn(a)) ;
+  free(NCFormat_GetRowIndexOfNonZeroValue(a)) ;
+  free(NCFormat_GetNonZeroValue(a)) ;
 }
 
 

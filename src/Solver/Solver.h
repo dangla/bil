@@ -10,8 +10,8 @@ struct Solver_s       ; typedef struct Solver_s       Solver_t ;
 #include "Mesh.h"
 #include "Options.h"
 
-extern Solver_t*  (Solver_Create)(Mesh_t*,Options_t*,const int) ;
-extern Solver_t*  (Solver_CreateSelectedMatrix)(Mesh_t*,Options_t*,const int,const int) ;
+//extern Solver_t*  (Solver_Create)(Mesh_t*,Options_t*,const int) ;
+extern Solver_t*  (Solver_Create)(Mesh_t*,Options_t*,const int,const int) ;
 extern void       (Solver_Delete)(void*) ;
 extern void       (Solver_Print)(Solver_t*,char*) ;
 
@@ -62,8 +62,8 @@ struct Solver_s {             /* System solver */
   unsigned int    n ;         /* Nb of rows/columns */
   Matrix_t* a ;               /* Matrix */
   Residu_t* residu ;          /* Residu */
-  double* b ;                 /* RHS */
-  double* x ;                 /* Solution */
+  //double* b ;                 /* RHS */
+  //double* x ;                 /* Solution */
 } ;
 
 #endif

@@ -11,8 +11,8 @@ struct Matrix_s       ; typedef struct Matrix_s       Matrix_t ;
 #include "Options.h"
 #include "Element.h"
  
-extern Matrix_t*   (Matrix_Create)                (Mesh_t*,Options_t*) ;
-extern Matrix_t*   (Matrix_CreateSelectedMatrix)  (Mesh_t*,Options_t*,const int) ;
+//extern Matrix_t*   (Matrix_Create)                (Mesh_t*,Options_t*) ;
+extern Matrix_t*   (Matrix_Create)                (Mesh_t*,Options_t*,const int) ;
 extern void        (Matrix_Delete)                (void*) ;
 extern void        (Matrix_AssembleElementMatrix) (Matrix_t*,Element_t*,double*) ;
 extern void        (Matrix_PrintMatrix)           (Matrix_t*,const char* keyword) ;
@@ -51,9 +51,9 @@ extern void        (Matrix_PrintMatrix)           (Matrix_t*,const char* keyword
 /* Initialize the matrix */
 #define Matrix_SetValuesToZero(MAT) \
         do { \
-          unsigned int k ; \
-          for(k = 0 ; k < Matrix_GetNbOfNonZeroValues(MAT) ; k++) { \
-            Matrix_GetNonZeroValue(MAT)[k] = 0. ; \
+          unsigned int Matrix_k ; \
+          for(Matrix_k = 0 ; Matrix_k < Matrix_GetNbOfNonZeroValues(MAT) ; Matrix_k++) { \
+            Matrix_GetNonZeroValue(MAT)[Matrix_k] = 0. ; \
           } \
           Matrix_GetNbOfEntries(MAT) = 0 ; \
           Matrix_SetToInitialState(MAT) ; \

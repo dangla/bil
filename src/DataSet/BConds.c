@@ -16,7 +16,7 @@
 static void     BConds_SetDefaultNameOfEquations(BConds_t*,Mesh_t*) ;
 
 
-BConds_t* BConds_New(const int n_bconds)
+BConds_t* (BConds_New)(const int n_bconds)
 {
   BConds_t* bconds  = (BConds_t*) Mry_New(BConds_t) ;
     
@@ -24,6 +24,7 @@ BConds_t* BConds_New(const int n_bconds)
   
   
   /* Allocation of space for the boundary conditions */
+  #if 0
   if(n_bconds > 0) {
     BCond_t* bcond  = (BCond_t*) Mry_New(BCond_t[n_bconds]) ;
     int i ;
@@ -36,13 +37,20 @@ BConds_t* BConds_New(const int n_bconds)
 
     BConds_GetBCond(bconds) = bcond ;
   }
+  #endif
+  
+  #if 1
+  if(n_bconds > 0) {
+    BConds_GetBCond(bconds) = Mry_Create(BCond_t,n_bconds,BCond_New()) ;
+  }
+  #endif
   
   return(bconds) ;
 }
 
 
 
-BConds_t* BConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* functions)
+BConds_t* (BConds_Create)(DataFile_t* datafile,Fields_t* fields,Functions_t* functions)
 {
   char* filecontent = DataFile_GetFileContent(datafile) ;
   char* c  = String_FindToken(filecontent,"COND,Boundary Conditions",",") ;
@@ -88,7 +96,41 @@ BConds_t* BConds_Create(DataFile_t* datafile,Fields_t* fields,Functions_t* funct
 
 
 
-void  BConds_SetDefaultNameOfEquations(BConds_t* bconds,Mesh_t* mesh)
+void (BConds_Delete)(void* self)
+{
+  BConds_t* bconds = (BConds_t*) self ;
+  
+  #if 0
+  {
+    int n_bconds = BConds_GetNbOfBConds(bconds) ;
+    BCond_t* bcond  = BConds_GetBCond(bconds) ;
+    int i ;
+
+    for(i = 0 ; i < n_bconds ; i++) {
+      BCond_t* bc  = bcond + i ;
+      
+      BCond_Delete(bc) ;
+    }
+    
+    free(bcond) ;
+  }
+  #endif
+  
+  #if 1
+  {
+    int n_bconds = BConds_GetNbOfBConds(bconds) ;
+    BCond_t* bcond  = BConds_GetBCond(bconds) ;
+    
+    Mry_Delete(bcond,n_bconds,BCond_Delete) ;
+    
+    free(bcond) ;
+  }
+  #endif
+}
+
+
+
+void  (BConds_SetDefaultNameOfEquations)(BConds_t* bconds,Mesh_t* mesh)
 /** Set the name of equations to be eliminated to their default names */
 {
   int n_elts = Mesh_GetNbOfElements(mesh) ;
@@ -310,7 +352,7 @@ void   BConds_AssignBoundaryConditions(BConds_t* bconds,Mesh_t* mesh,double t)
         /* Index of prescribed unknown */
         j = Element_FindUnknownPositionIndex(el_i,inc_cl) ;
         if(j < 0) arret("BConds_AssignBoundaryConditions(1)") ;
-	
+  
         /* We assign the prescribed value to the unknown */
         for(i = 0 ; i < nn ; i++) {
           int jj = Element_GetUnknownPosition(el_i)[i*neq + j] ;

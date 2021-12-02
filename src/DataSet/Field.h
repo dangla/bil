@@ -43,6 +43,7 @@ extern void           (FieldAffine_Delete) (void*) ;
 /* 4. FieldGrid */
 
 extern FieldGrid_t*   (FieldGrid_Create)(char*) ;
+extern void           (FieldGrid_Delete)(void*) ;
 
 
 #define FieldGrid_GetFileName(FLD)                ((FLD)->name)

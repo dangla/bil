@@ -243,13 +243,20 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       char* p = strstr(method," ") ;
       char* cellname = p + strspn(p," ") ;
       Options_t* options = Options_Create(NULL) ;
-      DataSet_t* jdd = DataSet_Create(cellname,options) ;
+      DataSet_t* dataset = DataSet_Create(cellname,options) ;
             
-      InitializeMicrostructureDataSet(jdd) ;
+      InitializeMicrostructureDataSet(dataset) ;
       
-      /* Store jdd in mat */
+      /* Store options in mat */
       {
-        GenericData_t* gdat = GenericData_Create(1,jdd,DataSet_t,"DataSet") ;
+        GenericData_t* gdat = GenericData_Create(1,options,Options_t,"Options") ;
+      
+        Material_AppendGenericData(mat,gdat) ;
+      }
+      
+      /* Store dataset in mat */
+      {
+        GenericData_t* gdat = GenericData_Create(1,dataset,DataSet_t,"DataSet") ;
       
         Material_AppendGenericData(mat,gdat) ;
       }
@@ -257,12 +264,11 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       
       /* The solver */
       {
-        Mesh_t* mesh = DataSet_GetMesh(jdd) ;
-        Solver_t* solver = Solver_Create(mesh,options,6) ;
-        GenericData_t* gdat = GenericData_Create(1,solver,Solver_t,"Solver") ;
+        Mesh_t* mesh = DataSet_GetMesh(dataset) ;
+        Solvers_t* solvers = Solvers_Create(mesh,options,6) ;
+        GenericData_t* gdat = GenericData_Create(1,solvers,Solvers_t,"Solvers") ;
       
         Material_AppendGenericData(mat,gdat) ;
-        
       }
     }
   }
@@ -329,8 +335,8 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
       ElementSol_t* elementsol = Element_GetElementSol(el) ;
 
       if(elementsol) {
-        DataSet_t* jdd = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
-        Mesh_t* mesh = DataSet_GetMesh(jdd) ;
+        DataSet_t* dataset = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
+        Mesh_t* mesh = DataSet_GetMesh(dataset) ;
         const int nsol_micro = 2 ;
         
         do {
@@ -343,6 +349,8 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
               Solutions_t* solsi = Solutions_Create(mesh,nsol_micro) ;
               
               sols[i] = solsi[0] ;
+              free(solsi) ;
+              
               /* Merging explicit terms (not essential!) */
               Solutions_MergeExplicitTerms(sols + i) ;
             }
@@ -408,8 +416,8 @@ int ComputeInitialState(Element_t* el,double t)
   GetProperties(el) ;
     
   {
-    DataSet_t* jdd = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
-    DataFile_t* df = DataSet_GetDataFile(jdd) ;
+    DataSet_t* dataset = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
+    DataFile_t* df = DataSet_GetDataFile(dataset) ;
     DataFile_t* datafile = Element_GetDataFile(el) ;
     
     if(DataFile_ContextIsPartialInitialization(datafile)) {
@@ -468,8 +476,8 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
   GetProperties(el) ;
     
   {
-    DataSet_t* jdd = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
-    DataFile_t* df = DataSet_GetDataFile(jdd) ;
+    DataSet_t* dataset = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
+    DataFile_t* df = DataSet_GetDataFile(dataset) ;
     
     DataFile_ContextSetToPartialInitialization(df) ;
   }
@@ -706,11 +714,12 @@ int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
 **  Tangent matrix (c), return the shift (dec).
 */
 {
-  DataSet_t* jdd = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
-  DataFile_t* df = DataSet_GetDataFile(jdd) ;
-  Solver_t* solver = (Solver_t*) Element_FindMaterialData(el,Solver_t,"Solver") ;
+  DataSet_t* dataset = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
+  DataFile_t* df = DataSet_GetDataFile(dataset) ;
+  Solvers_t* solvers = (Solvers_t*) Element_FindMaterialData(el,Solvers_t,"Solvers") ;
+  Solver_t* solver = Solvers_GetSolver(solvers) ;
   Solutions_t* sols   = Element_GetCurrentSolutions(el) ;
-  Mesh_t* mesh = DataSet_GetMesh(jdd) ;
+  Mesh_t* mesh = DataSet_GetMesh(dataset) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
   int    dec = 81 ;
@@ -720,7 +729,7 @@ int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
     
     for(p = 0 ; p < np ; p++) {
       double* c0 = c + p*dec ;
-    
+
       Mesh_InitializeSolutionPointers(mesh,sols + p) ;
       
       {
@@ -737,24 +746,24 @@ int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
       }
       
 #if 0
-    {
-      int i ;
+      {
+        int i ;
       
-      printf("\n") ;
-      printf("4th rank stiffness tensor:\n") ;
-      
-      for(i = 0 ; i < 9 ; i++) {
-        int j = i - (i/3)*3 ;
-        
-        printf("C%d%d--:",i/3 + 1,j + 1) ;
-        
-        for (j = 0 ; j < 9 ; j++) {
-          printf(" % e",c0[i*9 + j]) ;
-        }
-        
         printf("\n") ;
+        printf("4th rank stiffness tensor:\n") ;
+      
+        for(i = 0 ; i < 9 ; i++) {
+          int j = i - (i/3)*3 ;
+        
+          printf("C%d%d--:",i/3 + 1,j + 1) ;
+        
+          for (j = 0 ; j < 9 ; j++) {
+            printf(" % e",c0[i*9 + j]) ;
+          }
+        
+          printf("\n") ;
+        }
       }
-    }
 #endif
     }
   }
@@ -770,8 +779,9 @@ int ComputeMicrostructureMatrix(Mesh_t* mesh,Solver_t* solver,double t,double dt
 #define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
   int dim = Mesh_GetDimension(mesh) ;
   Matrix_t* a = Solver_GetMatrix(solver) ;
-  double*   b = Solver_GetRHS(solver) ;
-  double*   u = Solver_GetSolution(solver) ;
+  Residu_t* residu = Solver_GetResidu(solver) ;
+  double*   b = Residu_GetRHS(residu) ;
+  double*   u = Residu_GetSolution(residu) ;
   int ncol = Solver_GetNbOfColumns(solver) ;
   double*  pb[9] = {b,b+ncol,b+2*ncol,b+ncol,b+3*ncol,b+4*ncol,b+2*ncol,b+4*ncol,b+5*ncol} ;
   double*  pu[9] = {u,u+ncol,u+2*ncol,u+ncol,u+3*ncol,u+4*ncol,u+2*ncol,u+4*ncol,u+5*ncol} ;
@@ -787,16 +797,9 @@ int ComputeMicrostructureMatrix(Mesh_t* mesh,Solver_t* solver,double t,double dt
   
     
   Matrix_SetValuesToZero(a) ;
-    
-  {
-    int i ;
-      
-    for(i = 0 ; i < 6*ncol ; i++) {
-      b[i] = 0. ;
-    }
-  }
+  Residu_SetValuesToZero(residu) ;
   
-  
+
   /* The matrix and the r.h.s. */
   {
     int n_el = Mesh_GetNbOfElements(mesh) ;
@@ -845,16 +848,18 @@ int ComputeMicrostructureMatrix(Mesh_t* mesh,Solver_t* solver,double t,double dt
                   int row_i = Node_GetMatrixRowIndex(node_n)[jj_row] ;
                   int j ;
           
-                  for(j = 0 ; j < dim ; j++) {
-                    int mj = m*neq + j ;
-                    int ij = ni * ndof + mj ;
-                    int k ;
+                  if(row_i >= 0) {
+                    for(j = 0 ; j < dim ; j++) {
+                      int mj = m*neq + j ;
+                      int ij = ni * ndof + mj ;
+                      int k ;
                       
-                    for(k = j ; k < dim ; k++) {
-                      int      jk = 3 * j + k ;
-                      double* bjk = pb[jk] ;
+                      for(k = j ; k < dim ; k++) {
+                        int      jk = 3 * j + k ;
+                        double* bjk = pb[jk] ;
 
-                      bjk[row_i] -= ke[ij] * E[jk] * x_m[k] ;
+                        bjk[row_i] -= ke[ij] * E[jk] * x_m[k] ;
+                      }
                     }
                   }
                 }
@@ -942,7 +947,7 @@ int ComputeMicrostructureMatrix(Mesh_t* mesh,Solver_t* solver,double t,double dt
       }
     }
   }
-  
+
   {
     double vol = FEM_ComputeVolume(mesh) ;
     int j ;
@@ -1062,9 +1067,10 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x,Solut
       
       /* Compute here the microstructure */
       {
-        DataSet_t* jdd = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
-        Solver_t* solver = (Solver_t*) Element_FindMaterialData(el,Solver_t,"Solver") ;
-        DataFile_t* df = DataSet_GetDataFile(jdd) ;
+        DataSet_t* dataset = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
+        Solvers_t* solvers = (Solvers_t*) Element_FindMaterialData(el,Solvers_t,"Solvers") ;
+        Solver_t* solver = Solvers_GetSolver(solvers) ;
+        DataFile_t* df = DataSet_GetDataFile(dataset) ;
 
         
         Session_Open() ;
@@ -1074,7 +1080,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x,Solut
         Message_Direct("Start a calculation of microstructure: %s",DataFile_GetFileName(df)) ;
         Message_Direct("\n") ;
         
-        ComputeMicrostructure(jdd,solver,t,dt,sols_n,sols,deps,sig) ;
+        ComputeMicrostructure(dataset,solver,t,dt,sols_n,sols,deps,sig) ;
         
         Session_Close() ;
       }
@@ -1100,13 +1106,13 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x,Solut
 
 
 
-void ComputeMicrostructure(DataSet_t* jdd,Solver_t* solver,double t,double dt,Solutions_t* sols_n,Solutions_t* sols,double* macrograd,double* sig)
+void ComputeMicrostructure(DataSet_t* dataset,Solver_t* solver,double t,double dt,Solutions_t* sols_n,Solutions_t* sols,double* macrograd,double* sig)
 {
   /* Set input data of the microstructure */
   {
     /* Update the time function */
     {
-      Functions_t* fcts = DataSet_GetFunctions(jdd) ;
+      Functions_t* fcts = DataSet_GetFunctions(dataset) ;
       int nfcts = 9 ;
       int j ;
       
@@ -1125,10 +1131,10 @@ void ComputeMicrostructure(DataSet_t* jdd,Solver_t* solver,double t,double dt,So
     
   /* Compute the microstructure */
   {
-    Module_t* module_i = DataSet_GetModule(jdd) ;
-    Dates_t*   dates  = DataSet_GetDates(jdd) ;
+    Module_t* module = DataSet_GetModule(dataset) ;
+    Dates_t*   dates  = DataSet_GetDates(dataset) ;
     Date_t*    date   = Dates_GetDate(dates) ;
-    TimeStep_t*  timestep  = DataSet_GetTimeStep(jdd) ;
+    TimeStep_t*  timestep  = DataSet_GetTimeStep(dataset) ;
     double dtini = TimeStep_GetInitialTimeStep(timestep) ;
     double t_n = Solutions_GetTime(sols_n) ;
     
@@ -1153,7 +1159,14 @@ void ComputeMicrostructure(DataSet_t* jdd,Solver_t* solver,double t,double dt,So
       {
         int i ;
         
-        i = Module_SolveProblem(module_i,jdd,sols,solver,NULL) ;
+        #if 1
+        i = Module_SolveProblem(module,dataset,sols,solver,NULL) ;
+        #else
+        {
+          Module_InitializeProblem(module,dataset,sols) ;
+          i = Module_Increment(module,dataset,sols,solver,NULL,t_n,t) ;
+        }
+        #endif
         
         if(i < 0) {
           Message_FatalError("ComputeMicrostructure: something went wrong") ;
@@ -1165,7 +1178,7 @@ void ComputeMicrostructure(DataSet_t* jdd,Solver_t* solver,double t,double dt,So
 
   /* Backup stresses as averaged stresses */
   {
-    Mesh_t* mesh = DataSet_GetMesh(jdd) ;
+    Mesh_t* mesh = DataSet_GetMesh(dataset) ;
     
     Mesh_InitializeSolutionPointers(mesh,sols) ;
     FEM_AverageStresses(mesh,sig) ;
@@ -1177,13 +1190,13 @@ void ComputeMicrostructure(DataSet_t* jdd,Solver_t* solver,double t,double dt,So
 
 
 
-void InitializeMicrostructureDataSet(DataSet_t* jdd)
+void InitializeMicrostructureDataSet(DataSet_t* dataset)
 {
   /* Set input data of the microstructure */
   {
     /* Update the macro-gradient and the macro-fctindex */
     {
-      Materials_t* mats = DataSet_GetMaterials(jdd) ;
+      Materials_t* mats = DataSet_GetMaterials(dataset) ;
       int nmats = Materials_GetNbOfMaterials(mats) ;
       int j ;
     
@@ -1212,7 +1225,7 @@ void InitializeMicrostructureDataSet(DataSet_t* jdd)
     
     /* Check and update the function of time */
     {
-      Functions_t* fcts = DataSet_GetFunctions(jdd) ;
+      Functions_t* fcts = DataSet_GetFunctions(dataset) ;
       int nfcts = Functions_GetNbOfFunctions(fcts) ;
       int j ;
       
@@ -1245,7 +1258,7 @@ void InitializeMicrostructureDataSet(DataSet_t* jdd)
     /* The dates */
     {
       {
-        Dates_t* dates = DataSet_GetDates(jdd) ;
+        Dates_t* dates = DataSet_GetDates(dataset) ;
         int     nbofdates  = Dates_GetNbOfDates(dates) ;
           
         if(nbofdates < 2) {

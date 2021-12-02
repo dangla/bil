@@ -7,11 +7,8 @@
 #include "Mry.h"
 
 
-static void LocalVariableVector_Free(void*) ;
 
-
-
-LocalVariableVector_t* LocalVariableVector_Create(int n)
+LocalVariableVector_t* (LocalVariableVector_Create)(int n)
 {
   LocalVariableVector_t* lvv = (LocalVariableVector_t*) Mry_New(LocalVariableVector_t) ;
   
@@ -47,26 +44,7 @@ LocalVariableVector_t* LocalVariableVector_Create(int n)
 
 
 
-void LocalVariableVector_Delete(void* self,const int nvec)
-{
-  LocalVariableVector_t** plvv = (LocalVariableVector_t**) self ;
-  LocalVariableVector_t*   lvv =  *plvv ;
-  
-  {
-    int i ;
-    
-    for(i = 0 ; i < nvec ; i++) {
-      LocalVariableVector_Free(lvv + i) ;
-    }
-  }
-  
-  free(lvv) ;
-  *plvv = NULL ;
-}
-
-
-
-void LocalVariableVector_Free(void* self)
+void (LocalVariableVector_Delete)(void* self)
 {
   LocalVariableVector_t* lvv = (LocalVariableVector_t*) self ;
   

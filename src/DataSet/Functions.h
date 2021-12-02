@@ -13,6 +13,7 @@ struct Functions_s    ; typedef struct Functions_s    Functions_t ;
 
 extern Functions_t* (Functions_New)     (const int) ;
 extern Functions_t* (Functions_Create)  (DataFile_t*) ;
+extern void         (Functions_Delete)  (void*) ;
 
 
 #define Functions_GetNbOfFunctions(FCTS)      ((FCTS)->n_fn)

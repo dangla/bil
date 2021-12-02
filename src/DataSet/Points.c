@@ -11,7 +11,7 @@
 
 
 
-Points_t*  Points_New(const int n_points)
+Points_t*  (Points_New)(const int n_points)
 {
   Points_t* points = (Points_t*) Mry_New(Points_t) ;
 
@@ -31,6 +31,7 @@ Points_t*  Points_New(const int n_points)
       Point_t* pt = Point_New() ;
     
       point[i] = pt[0] ;
+      free(pt) ;
     }
     
     Points_GetPoint(points) = point ;
@@ -41,8 +42,23 @@ Points_t*  Points_New(const int n_points)
 
 
 
+void  (Points_Delete)(void* self)
+{
+  Points_t* points = (Points_t*) self ;
+  
+  {
+    int n_points = Points_GetNbOfPoints(points) ;
+    Point_t* point = Points_GetPoint(points) ;
+    
+    Mry_Delete(point,n_points,Point_Delete) ;
+    free(point) ;
+  }
+}
+
+
+
 #if 0
-Points_t*  Points_Create(DataFile_t* datafile,Mesh_t* mesh)
+Points_t*  (Points_Create)(DataFile_t* datafile,Mesh_t* mesh)
 {
   Points_t* points = (Points_t*) malloc(sizeof(Points_t)) ;
   int dim = Mesh_GetDimension(mesh) ;
@@ -126,7 +142,7 @@ Points_t*  Points_Create(DataFile_t* datafile,Mesh_t* mesh)
 
 
 #if 1
-Points_t*  Points_Create(DataFile_t* datafile,Mesh_t* mesh)
+Points_t*  (Points_Create)(DataFile_t* datafile,Mesh_t* mesh)
 {
   char* filecontent = DataFile_GetFileContent(datafile) ;
   char* c  = String_FindToken(filecontent,"POIN,Points",",") ;

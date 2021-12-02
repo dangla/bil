@@ -61,16 +61,39 @@ TextFile_t*   (TextFile_Create)(const char* filename)
 
 void (TextFile_Delete)(void* self)
 {
-  TextFile_t** ptextfile = (TextFile_t**) self ;
-  TextFile_t*   textfile = *ptextfile ;
+  TextFile_t* textfile = (TextFile_t*) self ;
   
   TextFile_CloseFile(textfile) ;
   
-  free(TextFile_GetFileName(textfile)) ;
-  free(TextFile_GetFilePosition(textfile)) ;
-  free(TextFile_GetFileContent(textfile)) ;
-  free(textfile) ;
-  //*ptextfile = NULL ;
+  {
+    char* name = TextFile_GetFileName(textfile) ;
+    
+    if(name) {
+      free(name) ;
+    }
+    
+    TextFile_GetFileName(textfile) = NULL ;
+  }
+  
+  {
+    fpos_t* pos = TextFile_GetFilePosition(textfile) ;
+    
+    if(pos) {
+      free(pos) ;
+    }
+    
+    TextFile_GetFilePosition(textfile) = NULL ;
+  }
+  
+  {
+    char* c = TextFile_GetFileContent(textfile) ;
+    
+    if(c) {
+      free(c) ;
+    }
+    
+    TextFile_GetFileContent(textfile) = NULL ;
+  }
 }
 
 

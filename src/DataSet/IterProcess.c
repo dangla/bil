@@ -16,7 +16,7 @@
 
 
 
-IterProcess_t*  IterProcess_New(void)
+IterProcess_t*  (IterProcess_New)(void)
 {
   IterProcess_t* iterprocess = (IterProcess_t*) Mry_New(IterProcess_t) ;
   
@@ -43,7 +43,7 @@ IterProcess_t*  IterProcess_New(void)
 
 
 
-IterProcess_t*  IterProcess_Create(DataFile_t* datafile,ObVals_t* obvals)
+IterProcess_t*  (IterProcess_Create)(DataFile_t* datafile,ObVals_t* obvals)
 {
   IterProcess_t* iterprocess = IterProcess_New() ;
   char* filecontent = DataFile_GetFileContent(datafile) ;
@@ -110,7 +110,14 @@ IterProcess_t*  IterProcess_Create(DataFile_t* datafile,ObVals_t* obvals)
 
 
 
-int IterProcess_SetCurrentError(IterProcess_t* iterprocess,Nodes_t* nodes,Solver_t* solver)
+void  (IterProcess_Delete)(void* self)
+{
+  IterProcess_t* iterprocess = (IterProcess_t*) self ;
+}
+
+
+
+int (IterProcess_SetCurrentError)(IterProcess_t* iterprocess,Nodes_t* nodes,Solver_t* solver)
 {
   unsigned int imatrix = Solver_GetMatrixIndex(solver) ;
   double*   x     = Solver_GetSolution(solver) ;
@@ -173,13 +180,17 @@ int IterProcess_SetCurrentError(IterProcess_t* iterprocess,Nodes_t* nodes,Solver
 
 
 
-void IterProcess_PrintCurrentError(IterProcess_t* iterprocess)
+void (IterProcess_PrintCurrentError)(IterProcess_t* iterprocess)
 {
   char*  name = IterProcess_GetNameOfTheCurrentError(iterprocess) ;
   double err  = IterProcess_GetCurrentError(iterprocess) ;
   int    iter = IterProcess_GetIterationIndex(iterprocess) ;
   int    inode = IterProcess_GetNodeIndexOfCurrentError(iterprocess) ;
 
-  Message_Direct("  (%s[%d])Error = %4.2e (%d iters)\n",name,inode,err,iter) ;
-  //Message_Direct("  (%s)Error = %4.2e (%d iters)\n",name,err,iter) ;
+  if(inode >= 0) {
+    Message_Direct("  (%s[%d])Error = %4.2e (%d iters)\n",name,inode,err,iter) ;
+    //Message_Direct("  (%s)Error = %4.2e (%d iters)\n",name,err,iter) ;
+  } else {
+    Message_Direct("  (none[-])Error = %4.2e (%d iters)\n",err,iter) ;
+  }
 }
