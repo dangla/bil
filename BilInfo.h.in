@@ -1,0 +1,14 @@
+#ifndef BILINFO_H
+#define BILINFO_H
+
+#define BIL_PROGNAME      "${BIL_PROGNAME}"
+#define BIL_COPYRIGHT     "${BIL_COPYRIGHT}"
+#define BIL_DATE          "${BIL_DATE}"
+#define BIL_HOST          "${BIL_HOST}"
+#define BIL_PACKAGER      "${BIL_PACKAGER}"
+#define BIL_OS            "${BIL_OS}"
+#define BIL_SHORT_LICENSE "${BIL_SHORT_LICENSE}"
+#define BIL_URL           "${BIL_URL}"
+#define BIL_EMAIL         "${BIL_EMAIL}"
+
+#endif

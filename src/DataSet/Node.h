@@ -11,8 +11,8 @@ struct Node_s         ; typedef struct Node_s         Node_t ;
 #include "Utils.h"
 
 
-extern Node_t*  (Node_Create)(const int) ;
-extern void     (Node_Delete)(void*) ;
+//extern Node_t*  (Node_Create)(const int) ;
+//extern void     (Node_Delete)(void*) ;
 extern int      (Node_FindUnknownPositionIndex)(const Node_t*,const char*) ;
 extern int      (Node_FindEquationPositionIndex)(const Node_t*,const char*) ;
 extern void     (Node_EliminateMatrixColumnIndexForOverlappingNodes)(const Node_t*,const char*) ;

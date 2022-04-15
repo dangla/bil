@@ -1,6 +1,6 @@
 #include "FEM.h"
 #include "Message.h"
-#include "Tools/Math.h"
+#include "Math_.h"
 #include "Geometry.h"
 #include "Elements.h"
 #include "ShapeFcts.h"
@@ -205,7 +205,13 @@ double*  (FEM_ComputeStiffnessMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,co
           int i,j,k,l ;
 
           if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-            arret("FEM_ComputeStiffnessMatrix: To be improved") ;
+            double radius = zero ;
+        
+            for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+        
+            a *= 2*M_PI*radius ;
+        
+            if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
           }
       
           /* */
@@ -262,11 +268,12 @@ double*  (FEM_ComputeStiffnessMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,co
       double a   = weight[p]*d ;
       double* caj = FEM_ComputeInverseJacobianMatrix(el,dh,nf,dim_h) ;
       double jcj[3][3][3][3],jc[3][3],cj[3][3] ;
-      double radius = zero ;
+      double radius ;
       int    i,j,k,l,r,s ;
     
       /* The radius in axisymmetrical or spherical case */
       if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
+        radius = zero ;
         
         for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
         
@@ -429,7 +436,13 @@ double*  (FEM_ComputeBiotMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const i
           int i,j,l ;
 
           if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-            arret("FEM_ComputeBiotMatrix: To be improved") ;
+            double radius = zero ;
+            
+            for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+            
+            a *= 2*M_PI*radius ;
+            
+            if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
           }
       
           /* 
@@ -457,6 +470,9 @@ double*  (FEM_ComputeBiotMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const i
                 double k_jil = a * h[j] * R(i) * h[l] ;
                 int ll = Element_OverlappingNode(el,l) ;
                 
+                /* The continity of pressure is assumed so that p(l) = p(ll).
+                 * For generality we consider that p = 0.5 * (p(l) + p(ll))
+                 * along the element. */
                 KC(j*dim  + i,l ) +=   0.5 * k_jil ;
                 KC(jj*dim + i,l ) += - 0.5 * k_jil ;
                 KC(j*dim  + i,ll) +=   0.5 * k_jil ;
@@ -484,15 +500,15 @@ double*  (FEM_ComputeBiotMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const i
       double a   = weight[p]*d ;
       double* caj = FEM_ComputeInverseJacobianMatrix(el,dh,nf,dim_h) ;
       double jc[3][3] ;
-      double rayon ;
+      double radius ;
       int    i,j,k,l ;
     
       /* cas axisymetrique ou spherique */
       if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-        rayon = zero ;
-        for(i = 0 ; i < nf ; i++) rayon += h[i]*x[i][0] ;
-        a *= 2*M_PI*rayon ;
-        if(Symmetry_IsSpherical(sym)) a *= 2*rayon ;
+        radius = zero ;
+        for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+        a *= 2*M_PI*radius ;
+        if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
       }
     
       /* JC(k,i) = J(k,j)*C(j,i) */
@@ -508,13 +524,13 @@ double*  (FEM_ComputeBiotMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const i
       if(Symmetry_IsCylindrical(sym)) {
         /* KC(j,0,l) = H(j)/r*C(theta,theta)*H(l) */
         for(j = 0 ; j < nf ; j++) for(l = 0 ; l < nf ; l++) {
-          KC(j*dim,l) += a*h[j]/rayon*C(2,2)*h[l] ;
+          KC(j*dim,l) += a*h[j]/radius*C(2,2)*h[l] ;
         }
       /* cas spherique: (r,theta,phi) */
       } else if(Symmetry_IsSpherical(sym)) {
         /* KC(j,0,l) = H(j)/r*(C(theta,theta)+C(phi,phi))*H(l) */
         for(j = 0 ; j < nf ; j++) for(l = 0 ; l < nf ; l++) {
-          KC(j*dim,l) += a*h[j]/rayon*(C(1,1)+C(2,2))*h[l] ;
+          KC(j*dim,l) += a*h[j]/radius*(C(1,1)+C(2,2))*h[l] ;
         }
       }
     }
@@ -588,13 +604,12 @@ double* (FEM_ComputeMassMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const in
     
           /* axisymetrical or spherical cases */
           if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-            double rayon = 0 ;
-            
-            arret("FEM_ComputeMassMatrix: To be improved") ;
+            double radius = 0 ;
         
-            for(i = 0 ; i < nf ; i++) rayon += h[i]*x[i][0] ;
-            a *= 2*M_PI*rayon ;
-            if(Symmetry_IsSpherical(sym)) a *= 2*rayon ;
+            for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+            
+            a *= 2*M_PI*radius ;
+            if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
           }
     
           for(i = 0 ; i < nf ; i++) {
@@ -604,6 +619,11 @@ double* (FEM_ComputeMassMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const in
             for(j = 0 ; j < nf ; j++) {
               int jj = Element_OverlappingNode(el,j) ;
               double kij = a * h[i] * h[j] ;
+                
+              /* The continity of pressure is assumed so that p(i) = p(ii)
+               * (and p(j) = p(jj)).
+               * For generality we consider that p = 0.5 * (p(i) + p(ii))
+               * along the element. */
               
               KM(i ,j ) += 0.25 * kij ;
               KM(ii,j ) += 0.25 * kij ;
@@ -622,10 +642,15 @@ double* (FEM_ComputeMassMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const in
   /* 0D */
   if(dim_h == 0) {
     if(nn == 1) {
+      double radius = x[0][0] ;
+      
       KM(0,0) = c[0] ;
-      if(Symmetry_IsCylindrical(sym)) KM(0,0) *= 2*M_PI*x[0][0] ;
-      else if(Symmetry_IsSpherical(sym)) KM(0,0) *= 4*M_PI*x[0][0]*x[0][0] ;
-    } else arret("FEM_ComputeMassMatrix: impossible") ;
+      
+      if(Symmetry_IsCylindrical(sym)) KM(0,0) *= 2*M_PI*radius ;
+      else if(Symmetry_IsSpherical(sym)) KM(0,0) *= 4*M_PI*radius*radius ;
+    } else {
+      arret("FEM_ComputeMassMatrix: impossible") ;
+    }
     return(km) ;
   }
 
@@ -642,11 +667,12 @@ double* (FEM_ComputeMassMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const in
     
       /* axisymetrical or spherical cases */
       if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-        double rayon = 0 ;
+        double radius = 0 ;
         
-        for(i = 0 ; i < nf ; i++) rayon += h[i]*x[i][0] ;
-        a *= 2*M_PI*rayon ;
-        if(Symmetry_IsSpherical(sym)) a *= 2*rayon ;
+        for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+        
+        a *= 2*M_PI*radius ;
+        if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
       }
     
       for(i = 0 ; i < nf ; i++) {
@@ -731,13 +757,13 @@ double*  (FEM_ComputeConductionMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,c
     
           /* axisymetrical or spherical cases */
           if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-            double rayon = 0 ;
-            
-            arret("FEM_ComputeConductionMatrix: To be improved") ;
+            double radius = 0 ;
         
-            for(i = 0 ; i < nf ; i++) rayon += h[i]*x[i][0] ;
-            a *= 2*M_PI*rayon ;
-            if(Symmetry_IsSpherical(sym)) a *= 2*rayon ;
+            for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+            
+            a *= 2*M_PI*radius ;
+            
+            if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
           }
     
           /* jcj = J(i,k)*C(k,l)*J(j,l) */
@@ -787,11 +813,12 @@ double*  (FEM_ComputeConductionMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,c
     
       /* axisymetrical or spherical cases */
       if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-        double rayon = 0 ;
+        double radius = 0 ;
         
-        for(i = 0 ; i < nf ; i++) rayon += h[i]*x[i][0] ;
-        a *= 2*M_PI*rayon ;
-        if(Symmetry_IsSpherical(sym)) a *= 2*rayon ;
+        for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+        
+        a *= 2*M_PI*radius ;
+        if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
       }
     
       /* jcj = J(i,k)*C(k,l)*J(j,l) */
@@ -1103,13 +1130,13 @@ double*   (FEM_ComputeBodyForceResidu)(FEM_t* fem,IntFct_t* intfct,const double*
     
           /* cas axisymetrique ou shperique */
           if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-            double rayon = zero ;
-            
-            arret("FEM_ComputeBodyForceResidu: to be improved") ;
+            double radius = zero ;
       
-            for(i = 0 ; i < nf ; i++) rayon += h[i]*x[i][0] ;
-            a *= 2*M_PI*rayon ;
-            if(Symmetry_IsSpherical(sym)) a *= 2*rayon ;
+            for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+            
+            a *= 2*M_PI*radius ;
+            
+            if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
           }
     
           /* R(i) = F*H(i) */
@@ -1158,11 +1185,12 @@ double*   (FEM_ComputeBodyForceResidu)(FEM_t* fem,IntFct_t* intfct,const double*
     
       /* cas axisymetrique ou shperique */
       if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-        double rayon = zero ;
+        double radius = zero ;
       
-        for(i = 0 ; i < nf ; i++) rayon += h[i]*x[i][0] ;
-        a *= 2*M_PI*rayon ;
-        if(Symmetry_IsSpherical(sym)) a *= 2*rayon ;
+        for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+        
+        a *= 2*M_PI*radius ;
+        if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
       }
     
       /* R(i) = F*H(i) */
@@ -1235,7 +1263,13 @@ double*   (FEM_ComputeStrainWorkResidu)(FEM_t* fem,IntFct_t* intfct,const double
           int i,j ;
 
           if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-            arret("FEM_ComputeStrainWorkResidu: to be improved") ;
+            double radius = 0. ;
+        
+            for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+        
+            a *= 2*M_PI*radius ;
+        
+            if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
           }
 
           /* Compute the vector stress: SIG.N 
@@ -1276,17 +1310,18 @@ double*   (FEM_ComputeStrainWorkResidu)(FEM_t* fem,IntFct_t* intfct,const double
       double d   = FEM_ComputeJacobianDeterminant(el,dh,nf,dim_h) ;
       double a   = weight[p]*d ;
       double* caj = FEM_ComputeInverseJacobianMatrix(el,dh,nf,dim_h) ;
-      double rayon = 0. ;
+      double radius ;
       int i,j ;
     
       /* The radius in axisymmetrical or spherical case */
       if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
+        radius = 0. ;
         
-        for(i = 0 ; i < nf ; i++) rayon += h[i]*x[i][0] ;
+        for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
         
-        a *= 2*M_PI*rayon ;
+        a *= 2*M_PI*radius ;
         
-        if(Symmetry_IsSpherical(sym)) a *= 2*rayon ;
+        if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
       }
     
       /* R(i,j) = DH(i,k) * J(k,l) * S(l,j) */
@@ -1302,12 +1337,12 @@ double*   (FEM_ComputeStrainWorkResidu)(FEM_t* fem,IntFct_t* intfct,const double
       if(Symmetry_IsCylindrical(sym)) {
         /* R(i,0) = H(i)/r * S(theta,theta) */
         for(i = 0 ; i < nf ; i++) {
-          R(i,0) += a * h[i]/rayon * SIG(2,2) ;
+          R(i,0) += a * h[i]/radius * SIG(2,2) ;
         }
       } else if(Symmetry_IsSpherical(sym)) {
         /* R(i,0) = H(i)/r * (SIG(theta,theta) + SIG(phi,phi)) */
         for(i = 0 ; i < nf ; i++) {
-          R(i,0) += a * h[i]/rayon * (SIG(1,1) + SIG(2,2)) ;
+          R(i,0) += a * h[i]/radius * (SIG(1,1) + SIG(2,2)) ;
         }
       }
     }
@@ -1374,15 +1409,16 @@ double*   (FEM_ComputeFluxResidu)(FEM_t* fem,IntFct_t* intfct,const double* f,co
           double d   = FEM_ComputeJacobianDeterminant(el,dh,nf,dim_h) ;
           double a   = weight[p]*d ;
           double* caj = FEM_ComputeInverseJacobianMatrix(el,dh,nf,dim_h) ;
-          double rayon = 0. ;
           int i ;
     
           /* cas axisymetrique ou shperique */
           if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-            arret("FEM_ComputeFluxResidu: to be improved") ;
-            for(i = 0 ; i < nf ; i++) rayon += h[i]*x[i][0] ;
-            a *= 2*M_PI*rayon ;
-            if(Symmetry_IsSpherical(sym)) a *= 2*rayon ;
+            double radius = 0. ;
+            
+            for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+            
+            a *= 2*M_PI*radius ;
+            if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
           }
     
           /* R(i) = DH(i,k)*J(k,j)*F(j) */
@@ -1392,6 +1428,10 @@ double*   (FEM_ComputeFluxResidu)(FEM_t* fem,IntFct_t* intfct,const double* f,co
       
             for(j = 0 ; j < dim ; j++) for(k = 0 ; k < dim_h ; k++) {
               double ri = a * DH(i,k) * CAJ(k,j) * f[j] ;
+                
+              /* The continity of pressure is assumed so that p(i) = p(ii).
+               * For generality we consider that p = 0.5 * (p(i) + p(ii))
+               * along the element. */
               
               r[i]  += 0.5 * ri ;
               r[ii] += 0.5 * ri ;
@@ -1414,14 +1454,16 @@ double*   (FEM_ComputeFluxResidu)(FEM_t* fem,IntFct_t* intfct,const double* f,co
       double d   = FEM_ComputeJacobianDeterminant(el,dh,nf,dim_h) ;
       double a   = weight[p]*d ;
       double* caj = FEM_ComputeInverseJacobianMatrix(el,dh,nf,dim_h) ;
-      double rayon = 0. ;
       int i ;
     
       /* cas axisymetrique ou shperique */
       if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-        for(i = 0 ; i < nf ; i++) rayon += h[i]*x[i][0] ;
-        a *= 2*M_PI*rayon ;
-        if(Symmetry_IsSpherical(sym)) a *= 2*rayon ;
+        double radius = 0. ;
+        
+        for(i = 0 ; i < nf ; i++) radius += h[i]*x[i][0] ;
+        
+        a *= 2*M_PI*radius ;
+        if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
       }
     
       /* R(i) = DH(i,k)*J(k,j)*F(j) */
@@ -1530,7 +1572,9 @@ double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,
     
     if(dim == 1 && nn == 1) {
       double radius = x[0][0] ;
+      
       r[ieq] = ft*Field_ComputeValueAtPoint(field,x[0],dim) ;
+      
       if(Symmetry_IsCylindrical(sym)) r[ieq] *= 2*M_PI*radius ;
       else if(Symmetry_IsSpherical(sym)) r[ieq] *= 4*M_PI*radius*radius ;
       return(r) ;
@@ -1571,7 +1615,9 @@ double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,
     
     if(dim == 1 && nn == 1) {
       double radius = x[0][0] ;
+      
       r[ieq] = ft*Field_ComputeValueAtPoint(field,x[0],dim) ;
+      
       if(Symmetry_IsCylindrical(sym)) r[ieq] *= 2*M_PI*radius ;
       else if(Symmetry_IsSpherical(sym)) r[ieq] *= 4*M_PI*radius*radius ;
       return(r) ;
@@ -2110,20 +2156,23 @@ double* (FEM_ComputeLinearStrainTensor)(FEM_t* fem,double** u,IntFct_t* intfct,i
   
       /* symmetric cases: axisymmetrical or spherical */
       if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-        double rayon = 0. ;
-        double u_r   = 0. ;
         
         if(Element_HasZeroThickness(el)) {
-          arret("FEM_ComputeLinearStrainTensor: not available yet") ;
+          /* No additif terms */
         } else {
+          double radius = 0. ;
+          double u_r   = 0. ;
+          
           for(i = 0 ; i < nn ; i++) {
             double* x = Element_GetNodeCoordinate(el,i) ;
           
-            rayon += h[i]*x[0] ;
+            radius += h[i]*x[0] ;
             u_r   += h[i]*U(i,0) ;
           }
-          EPS(2,2) += u_r/rayon ;
-          if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/rayon ;
+          
+          EPS(2,2) += u_r/radius ;
+          
+          if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/radius ;
         }
       }
     }
@@ -2337,15 +2386,19 @@ double* (FEM_ComputeCurrentLinearStrainTensor)(FEM_t* fem,double* h,double* dh,i
   
   /* symmetric cases: axisymmetrical or spherical */
   if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-    double rayon = 0. ;
+    double radius = 0. ;
     double u_r   = 0. ;
+    
     for(i = 0 ; i < nn ; i++) {
       double* x = Element_GetNodeCoordinate(el,i) ;
-      rayon += h[i]*x[0] ;
+      
+      radius += h[i]*x[0] ;
       u_r   += h[i]*U(i,0) ;
     }
-    EPS(2,2) += u_r/rayon ;
-    if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/rayon ;
+    
+    EPS(2,2) += u_r/radius ;
+    
+    if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/radius ;
   }
   
   return(eps) ;
@@ -2398,15 +2451,18 @@ double* (FEM_ComputeIncrementalLinearStrainTensor)(FEM_t* fem,double* h,double* 
   
   /* symmetric cases: axisymmetrical or spherical */
   if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-    double rayon = 0. ;
+    double radius = 0. ;
     double u_r   = 0. ;
+    
     for(i = 0 ; i < nn ; i++) {
       double* x = Element_GetNodeCoordinate(el,i) ;
-      rayon += h[i]*x[0] ;
+      
+      radius += h[i]*x[0] ;
       u_r   += h[i]*DU(i,0) ;
     }
-    EPS(2,2) += u_r/rayon ;
-    if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/rayon ;
+    
+    EPS(2,2) += u_r/radius ;
+    if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/radius ;
   }
   
   return(eps) ;
@@ -2458,15 +2514,18 @@ double* (FEM_ComputePreviousLinearStrainTensor)(FEM_t* fem,double* h,double* dh,
   
   /* symmetric cases: axisymmetrical or spherical */
   if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-    double rayon = 0. ;
+    double radius = 0. ;
     double u_r   = 0. ;
+    
     for(i = 0 ; i < nn ; i++) {
       double* x = Element_GetNodeCoordinate(el,i) ;
-      rayon += h[i]*x[0] ;
+      
+      radius += h[i]*x[0] ;
       u_r   += h[i]*U(i,0) ;
     }
-    EPS(2,2) += u_r/rayon ;
-    if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/rayon ;
+    
+    EPS(2,2) += u_r/radius ;
+    if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/radius ;
   }
   
   return(eps) ;
@@ -2526,11 +2585,12 @@ double   (FEM_IntegrateOverElement)(FEM_t* fem,IntFct_t* intfct,double* f,int sh
       /* Axisymmetrical or spherical case */
       if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
         double* h  = IntFct_GetFunctionAtPoint(intfct,p) ;
-        double rayon = 0 ;
+        double radius = 0 ;
       
-        for(i = 0 ; i < nn ; i++) rayon += h[i]*x[i][0] ;
-        a *= 2*M_PI*rayon ;
-        if(Symmetry_IsSpherical(sym)) a *= 2*rayon ;
+        for(i = 0 ; i < nn ; i++) radius += h[i]*x[i][0] ;
+        
+        a *= 2*M_PI*radius ;
+        if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
       }
     
       sum += a*f[p*shift] ;
@@ -3139,17 +3199,18 @@ double* (FEM_ComputeLinearStrainTensors)(FEM_t* fem,IntFct_t* intfct,double** u,
   
         /* symmetric cases: axisymmetrical or spherical */
         if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
-          double rayon = 0. ;
+          double radius = 0. ;
           double u_r   = 0. ;
         
           for(i = 0 ; i < nn ; i++) {
             double* x = Element_GetNodeCoordinate(el,i) ;
           
-            rayon += h[i]*x[0] ;
+            radius += h[i]*x[0] ;
             u_r   += h[i]*U(i,0) ;
           }
-          EPS(2,2) += u_r/rayon ;
-          if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/rayon ;
+          
+          EPS(2,2) += u_r/radius ;
+          if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/radius ;
         }
       }
       

@@ -302,6 +302,8 @@ githelp:
 	@( echo "  Such a personal access token can be generated" )
 	@( echo "  in the github account by clicking:" )
 	@( echo "  Settings, Developer settings, Personal access tokens.")
+	@( echo "  Select the scope \"repo\".")
+	@( echo "  Use this personal access token as a password.")
 	@( echo "" )
 	@( echo "Tagging" )
 	@( echo "  listing the available tags: git tag" )

@@ -829,13 +829,30 @@ int SetModelProp(Model_t* model)
 #endif
 #ifdef E_Mech
   for(i = 0 ; i < dim ; i++) {
-    Model_CopyNameOfUnknown(model,U_Mech + i,name_unk[i]) ;
+    Model_CopyNameOfUnknown(model,E_Mech + i,name_unk[i]) ;
   }
 #endif
   
   
   Model_GetComputePropertyIndex(model) = pm ;
   Model_GetNbOfVariables(model) = NbOfVariables ;
+  
+  Model_GetSequentialIndexOfUnknown(model)[E_Sulfur] = 0 ;
+  Model_GetSequentialIndexOfUnknown(model)[E_Calcium] = 0 ;
+  Model_GetSequentialIndexOfUnknown(model)[E_Potassium] = 0 ;
+  Model_GetSequentialIndexOfUnknown(model)[E_Aluminium] = 0 ;
+  Model_GetSequentialIndexOfUnknown(model)[E_charge] = 0 ;
+#ifdef E_eneutral
+  Model_GetSequentialIndexOfUnknown(model)[E_eneutral] = 0 ;
+#endif
+#ifdef E_kinetics
+  Model_GetSequentialIndexOfUnknown(model)[E_kinetics] = 0 ;
+#endif
+#ifdef E_Mech
+  for(i = 0 ; i < dim ; i++) {
+    Model_GetSequentialIndexOfUnknown(model)[E_Mech+i] = 1 ;
+  }
+#endif
   
   return(0) ;
 }

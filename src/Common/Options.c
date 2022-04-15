@@ -22,7 +22,7 @@ Options_t*  (Options_Create)(Context_t* ctx)
 
   {
     int   max_mot_debug = Options_MaxLengthOfKeyWord ;
-    char* c = (char *) Mry_New(char[4*max_mot_debug]) ;
+    char* c = (char*) Mry_New(char[4*max_mot_debug]) ;
 
     Options_GetPrintedInfos(options)      = c ;
     Options_GetResolutionMethod(options)  = (c += max_mot_debug) ;
@@ -82,11 +82,17 @@ void Options_Initialize(Options_t* options)
   Context_t* ctx = Options_GetContext(options) ;
   
   if(Context_GetSolver(ctx)) {
-    Options_GetResolutionMethod(options) = ((char**) Context_GetSolver(ctx))[1] ;
+    char* mth = ((char**) Context_GetSolver(ctx))[1] ;
+    
+    //Options_GetResolutionMethod(options) = ((char**) Context_GetSolver(ctx))[1] ;
+    strcpy(Options_GetResolutionMethod(options),mth) ;
   }
   
   if(Context_GetDebug(ctx)) {
-    Options_GetPrintedInfos(options) = ((char**) Context_GetDebug(ctx))[1] ;
+    char* dbg = ((char**) Context_GetDebug(ctx))[1] ;
+    
+    //Options_GetPrintedInfos(options) = ((char**) Context_GetDebug(ctx))[1] ;
+    strcpy(Options_GetPrintedInfos(options),dbg) ;
   }
   
   if(Context_GetGraph(ctx)) {
@@ -102,11 +108,17 @@ void Options_Initialize(Options_t* options)
   }
   
   if(Context_GetPrintLevel(ctx)) {
-    Options_GetPrintLevel(options) = ((char**) Context_GetPrintLevel(ctx))[1] ;
+    char* level = ((char**) Context_GetPrintLevel(ctx))[1] ;
+    
+    //Options_GetPrintLevel(options) = ((char**) Context_GetPrintLevel(ctx))[1] ;
+    strcpy(Options_GetPrintLevel(options),level) ;
   }
   
   if(Context_GetUseModule(ctx)) {
-    Options_GetModule(options) = ((char**) Context_GetUseModule(ctx))[1] ;
+    char* module = ((char**) Context_GetUseModule(ctx))[1] ;
+    
+    //Options_GetModule(options) = ((char**) Context_GetUseModule(ctx))[1] ;
+    strcpy(Options_GetModule(options),module) ;
   }
   
   if(Context_GetPostProcessing(ctx)) {

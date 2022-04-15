@@ -1,1 +1,1 @@
-SELECTEDMODULES = Monolithic SNIA
+  SELECTEDMODULES   =   Monolithic   SNIA  

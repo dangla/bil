@@ -4,11 +4,11 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "String.h"
+#include "String_.h"
 #include "Mry.h"
 #include "Node.h"
 #include "Element.h"
-#include "Tools/Math.h"
+#include "Math_.h"
 #include "Message.h"
 
 

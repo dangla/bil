@@ -44,15 +44,24 @@ extern void LDUSKLFormat_PrintMatrix(LDUSKLFormat_t*,unsigned int,const char*) ;
         ((i > 0) ? (LDUSKLFormat_GetPointerToLowerRow(a)[i] - \
                     LDUSKLFormat_GetPointerToLowerRow(a)[i - 1]) : 0)
 
-/*
-#define LDUSKLFormat_UpperValue(a,i,j)     (LDUSKLFormat_GetUpperColumn(a,j)[i])
-#define LDUSKLFormat_LowerValue(a,i,j)     (LDUSKLFormat_GetLowerRow(a,i)[j])
-#define LDUSKLFormat_DiagonalValue(a,i)    (LDUSKLFormat_GetDiagonal(a)[i])
-#define LDUSKLFormat_Value(a,i,j)          ((i < j) ? LDUSKLFormat_UpperValue(a,i,j) : \
-                                           ((i > j) ? LDUSKLFormat_LowerValue(a,i,j) : \
-                                                      LDUSKLFormat_DiagonalValue(a)[i]))
-*/
 
+/* Components of the matrix */
+#define LDUSKLFormat_UpperValue(a,i,j) \
+        ((i >= LDUSKLFormat_RowIndexStartingColumn(a,j) ? LDUSKLFormat_GetUpperColumn(a,j)[i] : 0)
+       
+#define LDUSKLFormat_LowerValue(a,i,j) \
+        ((j >= LDUSKLFormat_ColumnIndexStartingRow(a,i)) ? LDUSKLFormat_GetLowerRow(a,i)[j] : 0)
+        
+#define LDUSKLFormat_DiagonalValue(a,i) \
+        (LDUSKLFormat_GetDiagonal(a)[i])
+         
+#define LDUSKLFormat_Value(a,i,j) \
+        ((i < j) ? LDUSKLFormat_UpperValue(a,i,j) : \
+        ((i > j) ? LDUSKLFormat_LowerValue(a,i,j) : \
+        LDUSKLFormat_DiagonalValue(a,i)))
+
+
+/* Starting indexes */
 #define LDUSKLFormat_ColumnIndexStartingRow(a,i) \
         ((i > 0) ? (i) - LDUSKLFormat_LengthOfLowerRow(a,i) : 0)
 

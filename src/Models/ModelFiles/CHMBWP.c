@@ -72,8 +72,8 @@
 
 #define Dm_s        (vim   + 21)[0]     // Quantity of crystal salt dissolved
 
-#define SIG_M       (vim   + 22)[0]
-#define SIG_M_n     (vim_n + 22)[0]
+#define EFFSIG_M    (vim   + 22)[0]
+#define EFFSIG_M_n  (vim_n + 22)[0]
 
 #define SIG_D       (vim   + 23)
 #define SIG_D_n     (vim_n + 23)
@@ -141,6 +141,9 @@
         
 #define BiotCoefficientMoriTanaka(Ks,Gs,n) \
         (1 - (1 - (n))*4*(Gs)/(3*(n)*(Ks) + 4*(Gs)))
+        
+#define BiotModulusMoriTanaka(Ks,Gs,n) \
+        ((3*(n)*(Ks) + 4*(Gs))/(3*(n)*(1-(n))))
 
 /* Permeability */
 #define IntrinsicPermeability(n) \
@@ -269,7 +272,7 @@ I_EPS8 = I_EPS + 8,
 I_SIG,
 I_SIG8 = I_SIG + 8,
 
-I_SIG_M,
+I_EFFSIG_M,
 
 I_SIG_D,
 I_SIG_D8 = I_SIG_D + 8,
@@ -544,19 +547,25 @@ int  ComputeLoads(Element_t *el,double t,double dt,Load_t *cg,double *r)
   int ndof = nn*NEQ ;
   FEM_t *fem = FEM_GetInstance(el) ;
   int    i ;
+  
   {
     double *r1 = FEM_ComputeSurfaceLoadResidu(fem,fi,cg,t,dt) ;
+    
     /* hydraulic */
     if(Element_FindEquationPositionIndex(el,Load_GetNameOfEquation(cg)) == E_Mass) {
+      
       for(i = 0 ; i < ndof ; i++) r[i] = -r1[i] ;
-  }   
+
     /* Salt */
-    if(Element_FindEquationPositionIndex(el,Load_GetNameOfEquation(cg)) == E_Salt) {
+    } else if(Element_FindEquationPositionIndex(el,Load_GetNameOfEquation(cg)) == E_Salt) {
+      
       for(i = 0 ; i < ndof ; i++) r[i] = -r1[i] ;
-  }
+
     // other //  
-     else {
+    } else {
+      
       for(i = 0 ; i < ndof ; i++) r[i] = r1[i] ;
+      
     }
   }
   return(0) ;
@@ -600,13 +609,16 @@ int ComputeInitialState(Element_t* el)
       SIG[8] = sig0_33 ;
       
       Phi_c = phi_c_i ;
+      Phi_l = phi_l_i ;
+      Poro_E = phi_l_i ;
       
       {
         double K_s = young/(3 - 6*poisson) ;
         double G_s = young/(2 + 2*poisson) ;
         double n   = phi_l_i ;
-        double biot = BiotCoefficientMoriTanaka(K_s,G_s,n) ;
+        //double biot = BiotCoefficientMoriTanaka(K_s,G_s,n) ;
         double sigm = (SIG[0]+SIG[4]+SIG[8])/3 ;
+        double biot_v = 1 ;
       
         for(i = 0 ; i < 9 ; i++) SIG_D[i] = SIG[i] ;
         
@@ -614,7 +626,8 @@ int ComputeInitialState(Element_t* el)
         SIG_D[4] -= sigm ;
         SIG_D[8] -= sigm ; 
       
-        SIG_M = sigm - biot*(p - p_i) ;
+        //EFFSIG_M = sigm - biot*(p - p_i) ;
+        EFFSIG_M = sigm + biot_v * p ;
       }
     }
   
@@ -665,7 +678,7 @@ int ComputeInitialState(Element_t* el)
       for(i = 0 ; i < 9 ; i++) SIG[i] = x[I_SIG + i] ;
       for(i = 0 ; i < 9 ; i++) SIG_D[i] = x[I_SIG_D + i] ;
       
-      SIG_M = x[I_SIG_M] ;
+      EFFSIG_M = x[I_EFFSIG_M] ;
     
       Phi_l = x[I_PHI_L] ;
       Phi_c = x[I_PHI_C] ;
@@ -782,7 +795,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
     
       for(i = 0 ; i < 9 ; i++) SIG[i] = x[I_SIG + i] ;
       for(i = 0 ; i < 9 ; i++) SIG_D[i] = x[I_SIG_D + i] ;
-      SIG_M = x[I_SIG_M] ;
+      EFFSIG_M = x[I_EFFSIG_M] ;
     
       Phi_l = x[I_PHI_L] ;
       Phi_c = x[I_PHI_C] ;
@@ -1477,7 +1490,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
         x_n[I_SIG_D + i] = SIG_D_n[i] ;
       }
       
-      x_n[I_SIG_M] = SIG_M_n ;
+      x_n[I_EFFSIG_M] = EFFSIG_M_n ;
       
       FEM_FreeBufferFrom(fem,eps_n) ;
     
@@ -1495,6 +1508,9 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
     
       /* Eulerian porosity at previous time step */
       x_n[I_Poro_E] = Poro_En ;
+      
+      /* Lagrangian porosity at previous time step */
+      x_n[I_PHI_L] = Phi_ln ;
     }
     
     /* Explicit terms (Transfer coefficients) */
@@ -1548,15 +1564,18 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
     double G_s = young/(2 + 2*poisson) ;
     double n_n = x_n[I_Poro_E] ;
     double biot = BiotCoefficientMoriTanaka(K_s,G_s,n_n) ;
+    double Nbiot = BiotModulusMoriTanaka(K_s,G_s,n_n) ;
     /** Strain */
     double tre   = eps[0] + eps[4] + eps[8] ;
-    double dphi_l_epsi = biot*tre ;
+    double tre_n   = eps_n[0] + eps_n[4] + eps_n[8] ;
     /** crystal salt dissolution */
     double phi_c_n = x_n[I_PHI_C] ;
     double phi_c = CrystalVolumeFraction(phi_c_n,w_s,dt) ;
-    double dphi_l_salt = phi_c_i - phi_c ;
     /** Porosity evolution */
-    double phi_l = phi_l_i + dphi_l_epsi + dphi_l_salt ;
+    double phi_l_n = x_n[I_PHI_L] ;
+    double dphi_l_epsi = biot*(tre - tre_n) + (p - p_n)/Nbiot ;
+    double dphi_l_salt = phi_c_n - phi_c ;
+    double phi_l = phi_l_n + dphi_l_epsi + dphi_l_salt ;
     double n   = phi_l / (1 + tre) ;
     
     if (phi_l < 0) {
@@ -1631,6 +1650,22 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
     
     double  deps[9] ;
     int    i ;
+    
+    #if 0
+    {
+      double Nbiot = BiotModulusMoriTanaka(K_s,G_s,n) ;
+      double Mbiot = 1/(1/Nbiot + phi_l_i*compressibility_w) ;
+      double Skempton = Mbiot*biot/(K + Mbiot*biot*biot) ;
+      printf("phi_l_i = %e\n",phi_l_i) ;
+      printf("biot = %e\n",biot) ;
+      printf("Nbiot = %e\n",Nbiot) ;
+      printf("Mbiot = %e\n",Mbiot) ;
+      printf("K = %e\n",K) ;
+      printf("Skempton = %e\n",Skempton) ;
+      printf("eta_v_mt = %e\n",eta_v_mt) ;
+      printf("eta_d_mt = %e\n",eta_d_mt) ;
+    }
+    #endif
       
     /* Incremental deformations */
     for(i = 0 ; i < 9 ; i++) {
@@ -1657,17 +1692,26 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
         }
       }
   
-      /* Mean effective stress */
+      /* Constitutive law 
+       * d(eps_e)/dt = (d(sig_m)/dt + biot * d(p)/dt) / K
+       * d(eps_v)/dt = (sig_m + biot_v * p) / eta_v
+       * */
       {
-        double sig_m_n = x_n[I_SIG_M] ;
-        double sig_m   = (sig_m_n + K*trde)/(1 + (K*dt)/eta_v_mt) ;
+      /* Mean effective stress = sig_m + biot_v * p */
+        double effsig_m_n = x_n[I_EFFSIG_M] ;
+        double dp = p - p_n ;
+        //double sig_m   = (sig_m_n + K*trde)/(1 + (K*dt)/eta_v_mt) ;
+        double biot_v  = 1 ;
+        double effsig_m   = (effsig_m_n + K*trde + (biot_v - biot)*dp)/(1 + (K*dt)/eta_v_mt) ;
       
-        x[I_SIG_M] = sig_m ;
+        x[I_EFFSIG_M] = effsig_m ;
       }
   
       /* Total stresses */
       {
-        double sig_m = x[I_SIG_M] - biot*(p - p_i) ;
+        double biot_v  = 1 ;
+        //double sig_m = x[I_EFFSIG_M] - biot*(p - p_i) ;
+        double sig_m = x[I_EFFSIG_M] - biot_v * p ;
         
         for(i = 0 ; i < 9 ; i++) sig[i] = sig_d[i] ;
 

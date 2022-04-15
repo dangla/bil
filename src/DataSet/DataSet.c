@@ -16,7 +16,7 @@
 #include "Modules.h"
 #include "DataSet.h"
 #include "Units.h"
-#include "String.h"
+#include "String_.h"
 #include "Parser.h"
 
 
@@ -44,7 +44,7 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     if(DataFile_DoesNotExist(datafile)) {
       Help_WriteData(filename) ;
       Message_Info("To start the computation, type bil %s\n",filename) ;
-      exit(EXIT_SUCCESS) ;
+      Message_Exit ;
     }
   }
   if(!strcmp(debug,"data")) DataSet_PrintData(dataset,debug) ;
@@ -91,13 +91,25 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   if(!strcmp(debug,"func")) DataSet_PrintData(dataset,debug) ;
   
   
+  /* Models */
+  {
+    DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
+    Geometry_t*    geometry = DataSet_GetGeometry(dataset) ;
+    Models_t*      models   = Models_Create(datafile,geometry) ;
+  
+    DataSet_GetModels(dataset) = models ;
+  }
+  if(!strcmp(debug,"model")) DataSet_PrintData(dataset,debug) ;
+  
+  
   /* Materials */
   {
     DataFile_t*    datafile = DataSet_GetDataFile(dataset) ;
     Geometry_t*    geometry = DataSet_GetGeometry(dataset) ;
     Fields_t*      fields = DataSet_GetFields(dataset) ;
     Functions_t*   functions = DataSet_GetFunctions(dataset) ;
-    Materials_t*   materials = Materials_Create(datafile,geometry,fields,functions) ;
+    Models_t*      models = DataSet_GetModels(dataset) ;
+    Materials_t*   materials = Materials_Create(datafile,geometry,fields,functions,models) ;
   
     DataSet_GetMaterials(dataset) = materials ;
   }
@@ -465,7 +477,7 @@ DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
     if(DataFile_DoesNotExist(datafile)) {
       Help_WriteData(filename) ;
       Message_Info("To start the computation, type bil %s\n",filename) ;
-      exit(EXIT_SUCCESS) ;
+      Message_Exit ;
     }
   }
   
@@ -489,6 +501,7 @@ DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
 #define DATAFILE      DataSet_GetDataFile(DATASET)
 #define GEOMETRY      DataSet_GetGeometry(DATASET)
 #define MESH          DataSet_GetMesh(DATASET)
+#define MODELS        DataSet_GetModels(DATASET)
 #define MATERIALS     DataSet_GetMaterials(DATASET)
 #define FIELDS        DataSet_GetFields(DATASET)
 #define ICONDS        DataSet_GetIConds(DATASET)
@@ -519,6 +532,9 @@ DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
 
 #define N_NO          Mesh_GetNbOfNodes(MESH)
 #define NO            Mesh_GetNode(MESH)
+
+#define N_MODELS      Models_GetNbOfModels(MODELS)
+#define MODEL         Models_GetModel(MODELS)
 
 #define N_MAT         Materials_GetNbOfMaterials(MATERIALS)
 #define MAT           Materials_GetMaterial(MATERIALS)
@@ -671,6 +687,40 @@ void DataSet_PrintData(DataSet_t* dataset,char* mot)
       
       
       PRINT("\n") ;
+    }
+  }
+
+  /* Models
+   * --------- */
+  if(DataSet_GetModels(dataset) && (!strncmp(mot,"model",5) || !strncmp(mot,"all",3))) {
+    int c2 = 40 ;
+    int i ;
+    
+    PRINT("\n") ;
+    
+    for(i = 0 ; i < (int) N_MODELS ; i++) {
+      int nb_eqn = Model_GetNbOfEquations(MODEL + i) ;
+      char* codename = Model_GetCodeNameOfModel(MODEL + i) ;
+      char** name_eqn = Model_GetNameOfEquation(MODEL + i) ;
+      char** name_unk = Model_GetNameOfUnknown(MODEL + i) ;
+      int j ;
+      
+      PRINT("Model(%d) = %s\n",i,codename) ;
+      
+      PRINT("\n") ;
+      
+      PRINT("\t Equations:\n") ;
+      PRINT("\t Nb of equations = %d\n",nb_eqn) ;
+      
+      for(j = 0 ; j < nb_eqn ; j++) {
+        int n = PRINT("\t equation(%d): (%s)",j + 1,name_eqn[j]) ;
+      
+        while(n < c2) n += PRINT(" ") ;
+        
+        n += PRINT("unknown(%d): (%s)",j + 1,name_unk[j]) ;
+        
+        PRINT("\n") ;
+      }
     }
   }
 
@@ -1141,13 +1191,18 @@ void DataSet_PrintData(DataSet_t* dataset,char* mot)
       double z = (DIM > 2) ? coor[2] : 0. ;
       Element_t* elt = Point_GetEnclosingElement(point + i) ;
       int reg_el = (elt) ? Element_GetRegionIndex(elt) : -1 ;
+      int index  = (elt) ? Element_GetElementIndex(elt) : -1 ;
       
       PRINT("\t Point(%d): ",i) ;
       
-      PRINT("(%e,%e,%e) ",x,y,z) ;
+      PRINT("(%e,%e,%e)",x,y,z) ;
       
       if(reg_el > 0) {
-        PRINT("in region %d",reg_el) ;
+        PRINT(" in region %d",reg_el) ;
+      }
+      
+      if(index >= 0) {
+        PRINT(" in element %d",index) ;
       }
       
       PRINT("\n") ;

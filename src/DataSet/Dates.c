@@ -5,7 +5,7 @@
 #include "Message.h"
 #include "DataFile.h"
 #include "Mry.h"
-#include "String.h"
+#include "String_.h"
 #include "Dates.h"
 
 
@@ -48,7 +48,7 @@ Dates_t*  (Dates_Create)(DataFile_t* datafile)
     
     c = String_SkipLine(c) ;
     
-    String_ReadArray(c,n_dates," %lf",t) ;
+    String_ScanArray(c,n_dates," %lf",t) ;
       
     {
       Date_t* date = Dates_GetDate(dates) ;

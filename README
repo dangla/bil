@@ -17,9 +17,14 @@ Building Bil from source requires:
   Make (http://www.gnu.org/software/make)
   C and C++ compilers (http://gcc.gnu.org)
   Fortran compiler (http://gcc.gnu.org/fortran)
+  
+Building Bil on system other than Linux-based OS requires in addition
+  CMake (http://www.cmake.org)
 
 Building the documentation from source requires:
   Texinfo (http://www.gnu.org/software/texinfo)
+  
+and optionally
   Doxygen (http://www.stack.nl/~dimitri/doxygen)
 
 
@@ -28,6 +33,7 @@ List of folders
 
 	./base      reference solution and data bases
 	./bin       binaries
+	./cmake     macros and functions for cmake
 	./doc       documentations
 	./examples  examples of input data files
 	./src       sources
@@ -38,6 +44,13 @@ List of folders
 Building and Installation
 -------------------------
 
+There are two methods to build Bil from the command line: 
+        1. from make (native method suited for linux-based OS)
+        2. from cmake (suited for any OS like Windows or MacOS)
+
+
+1. Build Bil from make (native method)
+--------------------------------------
 To build Bil and/or the documentation, use the following commands:
 
 	make      (build the binary file bil and the documentation)
@@ -46,11 +59,11 @@ To build Bil and/or the documentation, use the following commands:
 
 The binary file is created in the folder ./bin, the documentation (files info, ps, pdf, txt, html) is created in ./doc.
 
-To install Bil, use the following commands (this may require root permissions):
+To install Bil, use the following commands (requires root permission):
 
-	make install      (install the binary and the documentation)
-	make install-bin  (install the binary only)
-	make install-doc  (install the documentation only)
+	sudo make install      (install the binary and the documentation)
+	sudo make install-bin  (install the binary only)
+	sudo make install-doc  (install the documentation only)
 
 By default the files are installed in PREFIX = /usr/local
 
@@ -65,6 +78,73 @@ Once installation is completed, running
 	make clean
 
 will delete all the local files previously created.
+
+
+2. Build Bil from cmake (command line)
+--------------------------------------
+
+* Create a build directory, for example as a subdirectory of Bil's
+  source directory:
+
+    mkdir build
+
+* Run cmake from within the build directory, pointing to Bil's
+  source directory:
+
+    cd build
+    cmake ..
+
+* To build Bil then simply type:
+
+    make
+    
+  the executable is copied in ../bin and the shared library in ../lib.
+
+* To install Bil type (this may require root permission):
+
+    make install
+
+* To change build options you can specify options directly on the command line, 
+  for example
+
+    cd build
+    cmake -DCMAKE_INSTALL_PREFIX=/opt ..
+
+  to change the installation directory (by default it is /usr/local on linux).
+
+* You can configure a debug build with
+
+    cd build
+    cmake -DCMAKE_BUILD_TYPE=Debug .. 
+    make
+    make install
+    
+    Note that the CMAKE_BUILD_TYPE variable is saved in the cache 
+    (CMakeCache.txt). On subsequent calls to cmake CMAKE_BUILD_TYPE is set 
+    to its cache value or to "RelWithDebInfo" the first time cmake is called.
+
+* You can keep multiple builds with different build options at the
+  same time. For example, you could configure a release build
+  in a "build-release" subdirectory with
+
+    cd build-release
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+    make
+    make install
+
+* To see a detailed compilation log use
+
+    make VERBOSE=1
+
+* To see the available targets use
+    
+    make help
+    
+* To build and install the documentation type
+
+    make doc
+    make install
+
 
 
 External libraries
@@ -104,4 +184,4 @@ Bugs/Contact
 ------------
 Please mail all bug reports and suggestions to me. I will try to give satisfaction.
 
-email: patrick.dangla@ifsttar.fr
+email: patrick.dangla@univ-eiffel.fr

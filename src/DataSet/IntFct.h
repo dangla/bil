@@ -11,7 +11,7 @@ struct IntFct_s       ; typedef struct IntFct_s       IntFct_t ;
 extern IntFct_t*  (IntFct_New)(void) ;
 extern IntFct_t*  (IntFct_Create)(int,int,const char*) ;
 extern void       (IntFct_Delete)(void*) ;
-extern void       (IntFct_ComputeIsoShapeFctInActualSpace)(int,int,double**,double*,int,double*,double*) ;
+//extern void       (IntFct_ComputeIsoShapeFctInActualSpace)(int,int,double**,double*,int,double*,double*) ;
 extern int        (IntFct_ComputeFunctionIndexAtPointOfReferenceFrame)(IntFct_t*,double*) ;
 extern double     (IntFct_InterpolateAtPoint)(IntFct_t*,double*,int,int) ;
 
@@ -80,6 +80,6 @@ struct IntFct_s {             /* Interpolation function */
 /* Old notations which should be eliminated */
 #define inte_t    IntFct_t
 #define MAX_PGAUSS                    IntFct_MaxNbOfIntPoints
-#define fint_abs                      IntFct_ComputeIsoShapeFctInActualSpace
+//#define fint_abs                      IntFct_ComputeIsoShapeFctInActualSpace
 
 #endif

@@ -284,7 +284,7 @@ PeriodicityItems :
 PeriodicityItem :
     tMasterRegion tAFFECT FExpr tEND 
     {
-      printf("%s = { %d }\n",$1,$3);
+      printf("%s = { %e }\n",$1,$3);
     }
   | tSlaveRegion  tAFFECT FExpr tEND 
   | tPeriodVector tAFFECT VExpr tEND 

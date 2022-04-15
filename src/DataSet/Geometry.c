@@ -8,7 +8,7 @@
 #include "Message.h"
 #include "Periodicities.h"
 #include "Mry.h"
-#include "String.h"
+#include "String_.h"
 
 
 /* Global functions */
@@ -65,7 +65,7 @@ Geometry_t*  (Geometry_Create)(DataFile_t* datafile)
   
     Geometry_GetDimension(geom) = dim ;
     
-    if(line) line = String_SkipAnyChar(line,"0123456789 ") ;
+    if(line) line = String_SkipAnyChars(line,"0123456789 ") ;
   
     /* The symmetry */
 

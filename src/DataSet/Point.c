@@ -52,7 +52,7 @@ void (Point_Scan)(Point_t* point,char* line)
       double* coor = Point_GetCoordinate(point) ;
       char* c = String_GetAdvancedPosition ;
     
-      String_ReadArray(c,3," %lf",coor) ;
+      String_ScanArray(c,3," %lf",coor) ;
     } else {
       arret("Point_Scan: no coordinates") ;
     }

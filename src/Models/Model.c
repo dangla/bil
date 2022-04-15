@@ -230,6 +230,63 @@ Model_t* (Model_Initialize)(Model_t* model,const char* codename,Geometry_t* geom
 
 
 
+void (Model_Scan)(Model_t* model,DataFile_t* datafile,Geometry_t* geom)
+{
+  char* line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
+  
+  /* Code name of the model */
+  {
+    char   codename[Model_MaxLengthOfKeyWord] ;
+    int n = String_FindAndScanExp(line,"Name",","," = %s",codename) ;
+    
+    if(n) {
+      Model_Initialize(model,codename,geom,datafile) ;
+    } else {
+      arret("Model_Scan") ;
+    }
+  }
+      
+  /* Name of equations */
+  {
+    int n = String_FindAndScanExp(line,"Equations",","," = ") ;
+        
+    if(n) {
+      int neq = Model_GetNbOfEquations(model) ;
+      char* pline = String_GetAdvancedPosition ;
+      int i ;
+          
+      for(i = 0 ; i < neq ; i++) {
+        char  name[Model_MaxLengthOfKeyWord] ;
+        
+        pline += String_Scan(pline,"%s",name) ;
+        
+        Model_CopyNameOfEquation(model,i,name) ;
+      }
+    }
+  }
+      
+  /* Name of unknowns */
+  {
+    int n = String_FindAndScanExp(line,"Unknowns",","," = ") ;
+        
+    if(n) {
+      int neq = Model_GetNbOfEquations(model) ;
+      char* pline = String_GetAdvancedPosition ;
+      int i ;
+          
+      for(i = 0 ; i < neq ; i++) {
+        char  name[Model_MaxLengthOfKeyWord] ;
+        
+        pline += String_Scan(pline,"%s",name) ;
+        
+        Model_CopyNameOfUnknown(model,i,name) ;
+      }
+    }
+  }
+}
+
+
+
 
 double* (Model_ComputeVariableDerivatives)(Element_t* el,double t,double dt,double dxi,int i,int n)
 {

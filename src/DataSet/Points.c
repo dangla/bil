@@ -6,7 +6,7 @@
 #include "DataFile.h"
 #include "Mesh.h"
 #include "Mry.h"
-#include "String.h"
+#include "String_.h"
 #include "Points.h"
 
 
@@ -168,7 +168,7 @@ Points_t*  (Points_Create)(DataFile_t* datafile,Mesh_t* mesh)
       int dim = Mesh_GetDimension(mesh) ;
       double* x = (double*) Mry_New(double[3*n_points]) ;
     
-      String_ReadArray(c,dim*n_points," %lf",x) ;
+      String_ScanArray(c,dim*n_points," %lf",x) ;
       
       /* The coordinates */
       {

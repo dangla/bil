@@ -48,7 +48,7 @@ extern char*           (TextFile_StoreFileContent)(TextFile_t*) ;
         (!TextFile_Exists(TF))
 
 
-#include "String.h"
+#include "String_.h"
 
 #define TextFile_Scan(TF, ...) \
         String_Scan(TextFile_GetCurrentPositionInFileContent(TF),__VA_ARGS__)
@@ -62,7 +62,7 @@ extern char*           (TextFile_StoreFileContent)(TextFile_t*) ;
 #define TextFile_ReadArrayFromCurrentFilePosition(TF,N,FMT,V) \
         do { \
           char* TextFile_c = TextFile_GetCurrentPositionInFileContent(TF) ; \
-          String_ReadArray(TextFile_c,N,FMT,V) ; \
+          String_ScanArray(TextFile_c,N,FMT,V) ; \
         } while(0)
 
 

@@ -10,5 +10,5 @@ int main(int argc,char** argv)
   
   Bil_Delete(bil) ;
   
-  exit(EXIT_SUCCESS) ;
+  return(0) ;
 }

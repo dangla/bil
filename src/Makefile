@@ -304,6 +304,22 @@ listdirectories:
 
 
 
+
+#=======================================================================
+# Target rules for some operations
+
+rename:
+	for file in ${SRCALL} ${HEADERSALL}; do (\
+	sed 's/^#include "..\/Tools\/Math.h/#include "Math_.h/g' $$file > $$file.bak && \
+	mv $$file.bak $$file \
+	); done
+
+
+
+
+#=======================================================================
+# Tests
+
 DIRS = ${shell ls -d */ */*/}
 LISTDIRS = ${shell ls -d ${1}/}
 LISTN = ${foreach a,${1},${call LISTN,${a}}}

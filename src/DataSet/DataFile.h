@@ -56,7 +56,7 @@ extern int*         (DataFile_ReadInversePermutationOfNodes)(DataFile_t*,int) ;
 
 
 
-#include "String.h"
+#include "String_.h"
 
 /* Tokens in file content */
 #define DataFile_FindToken(DF, ...) \
@@ -66,7 +66,11 @@ extern int*         (DataFile_ReadInversePermutationOfNodes)(DataFile_t*,int) ;
         String_FindNthToken(DataFile_GetFileContent(DF),__VA_ARGS__)
         
 #define DataFile_CountTokens(DF, ...) \
-        String_CountTokens(DataFile_GetFileContent(DF),__VA_ARGS__)
+        String_CountTokensAloneInOneLine(DataFile_GetFileContent(DF),__VA_ARGS__)
+        //String_CountTokens(DataFile_GetFileContent(DF),__VA_ARGS__)
+        
+#define DataFile_CountMainTokens(DF, ...) \
+        String_CountTokensAloneInOneLine(DataFile_GetFileContent(DF),__VA_ARGS__)
         
 #define DataFile_CountNbOfKeyWords(DF, ...) \
         String_CountTokens(DataFile_GetFileContent(DF),__VA_ARGS__)
