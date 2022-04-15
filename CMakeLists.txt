@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-# To disable in-source builds
+# disable in-source builds
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR “In-source build detected!”)
 endif()
@@ -16,15 +16,15 @@ endif()
 
 
 # set the project name
-project(Bil C CXX Fortran)
+project(bil C CXX Fortran)
 
 
 # Add the CMake directory for custon CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 
-# Bil path
-# --------
+# Bil full path
+# -------------
 set(BIL_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 
@@ -42,28 +42,12 @@ set(BIL_SRCDIR ${BIL_PATH}/src)
 
 # Installation directories
 # ------------------------
-if(WIN32)
-set(BIL_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX})
-set(BIL_INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX})
-set(BIL_INSTALL_MANDIR ${CMAKE_INSTALL_PREFIX})
-set(BIL_INSTALL_DOCDIR ${CMAKE_INSTALL_PREFIX})
-set(BIL_INSTALL_INFODIR ${CMAKE_INSTALL_PREFIX})
-elseif(APPLE)
-  # set these so that the files get installed nicely in the MacOSX
-  # .app bundle (FIXME: this screws up a standard "make install" on
-  # MacOS)
-set(BIL_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX})
-set(BIL_INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX}/../MacOS)
-set(BIL_INSTALL_MANDIR ${CMAKE_INSTALL_PREFIX}/../../..)
-set(BIL_INSTALL_DOCDIR ${CMAKE_INSTALL_PREFIX}/../../..)
-set(BIL_INSTALL_INFODIR ${CMAKE_INSTALL_PREFIX})
-else()
-set(BIL_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
-set(BIL_INSTALL_BINDIR ${CMAKE_INSTALL_PREFIX}/bin)
-set(BIL_INSTALL_MANDIR ${CMAKE_INSTALL_PREFIX}/share/man/man1)
-set(BIL_INSTALL_DOCDIR ${CMAKE_INSTALL_PREFIX}/share/doc/bil)
-set(BIL_INSTALL_INFODIR ${CMAKE_INSTALL_PREFIX}/info)
-endif()
+include(GNUInstallDirs)
+set(BIL_INSTALL_FULL_LIBDIR  ${CMAKE_INSTALL_FULL_LIBDIR})
+set(BIL_INSTALL_FULL_BINDIR  ${CMAKE_INSTALL_FULL_BINDIR})
+set(BIL_INSTALL_FULL_MAN1DIR ${CMAKE_INSTALL_FULL_MANDIR}/man1)
+set(BIL_INSTALL_FULL_DOCDIR  ${CMAKE_INSTALL_FULL_DOCDIR})
+set(BIL_INSTALL_FULL_INFODIR ${CMAKE_INSTALL_FULL_INFODIR})
 
 
 # Library of Bil

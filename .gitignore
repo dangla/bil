@@ -20,9 +20,14 @@
 *.hold
 
 # Specific headers
+BilInfo.h
+BilLib.h
+BilPath.h
+BilVersion.h
 
 # Database
 
 # Specific folders
+build
 
 # Specific files
