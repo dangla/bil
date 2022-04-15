@@ -127,6 +127,7 @@ will delete all the local files previously created.
   same time. For example, you could configure a release build
   in a "build-release" subdirectory with
 
+    mkdir build-release
     cd build-release
     cmake -DCMAKE_BUILD_TYPE=Release ..
     make
