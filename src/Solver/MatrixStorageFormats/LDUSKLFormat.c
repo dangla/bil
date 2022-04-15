@@ -301,8 +301,21 @@ void (LDUSKLFormat_Delete)(void* self)
 {
   LDUSKLFormat_t* a = (LDUSKLFormat_t*) self ;
   
-  free(LDUSKLFormat_GetNonZeroValue(a)) ;
-  free(LDUSKLFormat_GetPointerToLowerRow(a)) ;
+  {
+    double* z = LDUSKLFormat_GetNonZeroValue(a) ;
+    
+    if(z) {
+      free(z) ;
+    }
+  }
+      
+  {
+    double** p = LDUSKLFormat_GetPointerToLowerRow(a) ;
+    
+    if(p) {
+      free(p) ;
+    }
+  }
 }
 
 

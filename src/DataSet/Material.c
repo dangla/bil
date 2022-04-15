@@ -9,7 +9,7 @@
 #include "Material.h"
 #include "Curves.h"
 #include "Mry.h"
-#include "String.h"
+#include "String_.h"
 
 
 /* Extern functions */
@@ -118,15 +118,19 @@ void (Material_Scan)(Material_t* mat,DataFile_t* datafile,Geometry_t* geom)
 {
   
     {
-      /* Which model ? */
+      char* line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
+        
+      /* Read and store the code name of the model */
       {
-        char*  line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
         char   codename[Material_MaxLengthOfKeyWord] ;
         char*  code = codename + 1 ;
         //int n = String_FindAndScanExp(line,"Model =,",","," %s",codename+1) ;
       
         if(String_Is(line,"Model",5)) {
-          String_Scan(line,"%*s = %s",codename + 1) ;
+          char* c = String_FindAndSkipToken(line,"=") ;
+          
+          String_ScanStringUntil(c,codename + 1,"("String_SpaceChars) ;
+          //String_Scan(line,"%*s = %s",codename + 1) ;
         } else {
           String_Scan(line,"%s",codename + 1) ;
         }
@@ -150,6 +154,59 @@ void (Material_Scan)(Material_t* mat,DataFile_t* datafile,Geometry_t* geom)
         
         Material_GetModel(mat) = matmodel ;
         Material_GetModelIndex(mat) = modind ;
+      }
+      
+      
+      /* Read and store the user-defined name of unknowns */
+      {
+        char* c = String_FindChar(line,'(') ;
+        
+        if(c) {
+          Model_t* matmodel = Material_GetModel(mat) ;
+          int neq = Model_GetNbOfEquations(matmodel) ;
+          int i ;
+          
+          c[0] = ' ' ;
+          for(i = 0 ; i < neq ; i++) {
+            char name[Material_MaxLengthOfKeyWord] ;
+            char* c1 = String_FindAnyChar(c,",)\n") ;
+            
+            if(c1) {
+              c1[0] = ' ' ;
+              String_Scan(c,"%s",name) ;
+              Model_CopyNameOfUnknown(matmodel,i,name) ;
+              c = c1 ;
+            } else {
+              Message_FatalError("Material_Scan") ;
+            }
+          }
+        }
+      }
+      /* Read and store the user-defined name of equations */
+      {
+        char* c = String_FindChar(line,'(') ;
+        c = String_FindChar(c,'(') ;
+        
+        if(c) {
+          Model_t* matmodel = Material_GetModel(mat) ;
+          int neq = Model_GetNbOfEquations(matmodel) ;
+          int i ;
+          
+          c[0] = ' ' ;
+          for(i = 0 ; i < neq ; i++) {
+            char name[Material_MaxLengthOfKeyWord] ;
+            char* c1 = String_FindAnyChar(c,",)\n") ;
+            
+            if(c1) {
+              c1[0] = ' ' ;
+              String_Scan(c,"%s",name) ;
+              Model_CopyNameOfEquation(matmodel,i,name) ;
+              c = c1 ;
+            } else {
+              Message_FatalError("Material_Scan") ;
+            }
+          }
+        }
       }
 
 
@@ -347,7 +404,7 @@ void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(co
       
     /* Reading the material properties and storing through pm */
     } else if(pm) {
-      char   *p = String_FindChar(line,'=') ;
+      char* p = String_FindChar(line,'=') ;
 
       /* We assume that this is a property as long as "=" is found */
       if(p) {

@@ -66,7 +66,7 @@ struct Message_s {            /* message */
 
 
 /* Old notations which should be eliminated */
-#define arret          Message_RuntimeError
+#define arret          Message_FatalError
                           
 
 #endif

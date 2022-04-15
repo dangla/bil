@@ -4,7 +4,7 @@
 #include "Message.h"
 #include "DataFile.h"
 #include "Mry.h"
-#include "String.h"
+#include "String_.h"
 #include "Field.h"
 
 /*
@@ -280,7 +280,7 @@ FieldGrid_t* (FieldGrid_Create)(char* filename)
       if(n > 1) {
         double* x = FieldGrid_GetCoordinateAlongX(grid) ;
       
-        String_ReadArray(line,n," %lf",x) ;
+        String_ScanArray(line,n," %lf",x) ;
       
         line = String_GetAdvancedPosition ;
       }
@@ -291,7 +291,7 @@ FieldGrid_t* (FieldGrid_Create)(char* filename)
       int n = n_x*n_y*n_z ;
       double* v = FieldGrid_GetValue(grid) ;
       
-      String_ReadArray(line,n," %lf",v) ;
+      String_ScanArray(line,n," %lf",v) ;
     }
   
     DataFile_Delete(dfile) ;

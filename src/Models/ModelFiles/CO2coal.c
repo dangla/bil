@@ -285,16 +285,16 @@ I_N_CO2_m,
 I_P_CO2,
 
 I_EPS,
-I_EPS8       = I_EPS        + 8,
+I_EPS8   = I_EPS  + 8,
 
 I_SIG,
-I_SIG8       = I_SIG        + 8,
+I_SIG8   = I_SIG  + 8,
 
 I_W_CO2,
-I_W_CO22  = I_W_CO2      + 2,
+I_W_CO22  = I_W_CO2 + 2,
 
 I_GRD_U_CO2,
-I_GRD_U_CO22      = I_GRD_U_CO2  + 2,
+I_GRD_U_CO22  = I_GRD_U_CO2  + 2,
 
 I_K_CO2,
 I_PHI_M,
@@ -450,7 +450,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         Material_GetProperty(mat)[pm("axis_3")]    = dim ;
       /* Transversely isotropic stiffness tensor */
       } else {
-        Elasticity_SetToTransverselyIsotropy(elasty) ;
+        Elasticity_SetToTransverseIsotropy(elasty) ;
         Elasticity_SetParameters(elasty,young,poisson,young_3,poisson_3,shear_3,axis_3) ;
       }
       
@@ -949,13 +949,13 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       
     i = 0 ;
     Result_Store(r + i++,x + I_P_CO2,"pressure_co2",1) ;
-    Result_Store(r + i++,x + I_DIS,"displacements",3) ;
+    Result_Store(r + i++,x + I_DIS,"Displacements",3) ;
     Result_Store(r + i++,&c_co2,"adsorbed_concentration",1) ;
     Result_Store(r + i++,&p_ads,"adsorption-induced_pressure",1) ;
     Result_Store(r + i++,&rho_co2,"molar_density_co2",1) ;
     Result_Store(r + i++,&c_simu,"coeff",1) ;
     Result_Store(r + i++,&phi,"Macroporosity",1) ;
-    Result_Store(r + i++,sig,"Stress_tensor",9) ;
+    Result_Store(r + i++,sig,"Stresses",9) ;
     Result_Store(r + i++,w_co2,"flux",3) ;
     Result_Store(r + i++,&kk0,"permeability",1) ;
     Result_Store(r + i++,&n_co2,"total_molar_content",1) ;

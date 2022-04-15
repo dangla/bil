@@ -34,7 +34,7 @@ class Element:
 
 
     def surfacenodeordering(self,node_mapping):
-        # Return the nodes of a surface element. The latter should oriented correctly
+        # Return the nodes of a surface element. The latter should be oriented correctly
         # and so the nodes should be given in the right order.
         # These nodes are the keys of node_mapping and their ordering depend on the nodes 
         # of the element they overlap. The orientation of the surface element must be

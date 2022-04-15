@@ -902,7 +902,7 @@ char *yytext;
 #include <stdlib.h>
 #include <string.h>
 #include "../Common/Message.h"
-#include "../Tools/Math.h"
+#include "../Tools/Math_.h"
 #include "../DataSet/DataSet.h"
 #include "Parser.tab.h"
 
@@ -911,20 +911,20 @@ char*  strsave(char* ptr);
 void   skipcomments(void);
 void   skipline(void);
 
-#define YY_INPUT(buf,result,max_size)					\
-     {									\
-       int c = '*', n;							\
-       for ( n = 0; n < max_size &&					\
-	       (c = getc( yyin )) != EOF && c != '\n'; ++n )		\
-	 buf[n] = (char) c;						\
-       if ( c == '\n' ){						\
-	 buf[n++] = (char) c;						\
-	 yylineno++;							\
-       }								\
-       if ( c == EOF && ferror( yyin ) )				\
-	 Message_FatalError("Input in flex scanner failed");	        \
-       result = n;							\
-     }	
+#define YY_INPUT(buf,result,max_size)         \
+     {                  \
+       int c = '*', n;              \
+       for ( n = 0; n < max_size &&         \
+         (c = getc( yyin )) != EOF && c != '\n'; ++n )    \
+   buf[n] = (char) c;           \
+       if ( c == '\n' ){            \
+   buf[n++] = (char) c;           \
+   yylineno++;              \
+       }                \
+       if ( c == EOF && ferror( yyin ) )        \
+   Message_FatalError("Input in flex scanner failed");          \
+       result = n;              \
+     }  
 
 
 #define SAVEYYTEXT    \
@@ -2628,7 +2628,7 @@ void skipcomments(void)
   while (1) {
     while ((c = yyinput()) != '*'){
       if(feof(yyin)){
-	Message_FatalError("End of file in commented region");
+  Message_FatalError("End of file in commented region");
         return;
       }
     }
@@ -2709,8 +2709,8 @@ void skip_until(const char* skip, const char* until)
     while (1){
       chars[0] = yyinput();
       if(feof(yyin)){
-	Message_FatalError("Unexpected end of file");
-	return;
+  Message_FatalError("Unexpected end of file");
+  return;
       }
       if(chars[0] == until[0]) break;
       if(skip && chars[0] == skip[0]) break;
@@ -2724,17 +2724,17 @@ void skip_until(const char* skip, const char* until)
     for(i=1; i<l; i++){
       chars[i] = yyinput();
       if(feof(yyin)){
-	l = i;
-	break;
+  l = i;
+  break;
       }
     }
 
     if(!strncmp(chars,until,l_until)){
       if(!nb_skip){
-	return;
+  return;
       }
       else{
-	nb_skip--;
+  nb_skip--;
       }
     }
     else if(skip && !strncmp(chars,skip,l_skip)){
@@ -2742,7 +2742,7 @@ void skip_until(const char* skip, const char* until)
     }
     else{
       for(i=1;i<l-1;i++){
-	unput(chars[l-i]);
+  unput(chars[l-i]);
       }
     }
 

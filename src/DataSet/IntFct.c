@@ -3,7 +3,7 @@
 #include <math.h>
 #include "Mry.h"
 #include "Message.h"
-#include "Tools/Math.h"
+#include "Math_.h"
 #include "ShapeFct.h"
 #include "IntFct.h"
 
@@ -15,7 +15,6 @@ static void   gauss_tetraedre(int,double*,double*) ;
 static void   (IntFct_ComputeIsoShapeFct)(int,int,double*,double*,double*) ;
 static void   IntFct_ComputeAtMidSurfacePoints(IntFct_t*,int,int) ;
 static void   midpoints(double*,double) ;
-static void   normale(int,int,double**,double*,double*) ;
 
 
 /* Extern functions */
@@ -680,6 +679,53 @@ void midpoints(double* a,double dim)
 }
 
 
+#if 0
+static void   normale(int,int,double**,double*,double*) ;
+
+
+void normale(int dim,int nn,double** x,double* dh,double* norm)
+/* Normale unitaire a un sous-espace de dimension dim-1 */
+{
+#define DH(n,i) (dh[(n)*3 + (i)])
+//#define DH(n,i) (dh[(n)*dim_h + (i)])
+  int    dim_h = dim - 1 ;
+  int    i,j,k ;
+  double c[3][3],v ;
+
+  /* le jacobien */
+  for(i=0;i<dim;i++) for(j=0;j<dim_h;j++) {
+    c[i][j] = 0. ;
+    for(k=0;k<nn;k++) c[i][j] += x[k][i]*DH(k,j) ; 
+  }
+  
+  /* 1. Surface : norm = c1^c2 */
+  if(dim_h == 2) {
+    c[0][2] = c[1][0]*c[2][1] - c[2][0]*c[1][1] ;
+    c[1][2] = c[2][0]*c[0][1] - c[0][0]*c[2][1] ;
+    c[2][2] = c[0][0]*c[1][1] - c[1][0]*c[0][1] ;
+    v = sqrt(c[0][2]*c[0][2] + c[1][2]*c[1][2] + c[2][2]*c[2][2]) ;
+    norm[0] = c[0][2]/v ;
+    norm[1] = c[1][2]/v ;
+    norm[2] = c[2][2]/v ;
+    return ;
+
+  /* 2. Ligne : norm = c1^e_z */
+  } else if(dim_h == 1) {
+    v = sqrt(c[0][0]*c[0][0] + c[1][0]*c[1][0]) ;
+    norm[0] =  c[1][0]/v ;
+    norm[1] = -c[0][0]/v ;
+    return ;
+
+  /* 3. Point : norm = 1 */
+  } else if(dim_h == 0) {
+    norm[0] = 1. ;
+    return ;
+  }
+
+  arret("normale") ;
+#undef DH
+}
+
 
 void  IntFct_ComputeIsoShapeFctInActualSpace(int dim,int nn,double** x_e,double* x,int dim_e,double* h,double* dh)
 /* fonction d'interpolation (h) et ses derivees (dh) en x */
@@ -760,50 +806,5 @@ void  IntFct_ComputeIsoShapeFctInActualSpace(int dim,int nn,double** x_e,double*
   if(err > tol) arret("IntFct_ComputeIsoShapeFctInActualSpace (2)") ;
 #undef DH
 }
-
-
-
-
-void normale(int dim,int nn,double** x,double* dh,double* norm)
-/* Normale unitaire a un sous-espace de dimension dim-1 */
-{
-#define DH(n,i) (dh[(n)*3 + (i)])
-//#define DH(n,i) (dh[(n)*dim_h + (i)])
-  int    dim_h = dim - 1 ;
-  int    i,j,k ;
-  double c[3][3],v ;
-
-  /* le jacobien */
-  for(i=0;i<dim;i++) for(j=0;j<dim_h;j++) {
-    c[i][j] = 0. ;
-    for(k=0;k<nn;k++) c[i][j] += x[k][i]*DH(k,j) ; 
-  }
-  
-  /* 1. Surface : norm = c1^c2 */
-  if(dim_h == 2) {
-    c[0][2] = c[1][0]*c[2][1] - c[2][0]*c[1][1] ;
-    c[1][2] = c[2][0]*c[0][1] - c[0][0]*c[2][1] ;
-    c[2][2] = c[0][0]*c[1][1] - c[1][0]*c[0][1] ;
-    v = sqrt(c[0][2]*c[0][2] + c[1][2]*c[1][2] + c[2][2]*c[2][2]) ;
-    norm[0] = c[0][2]/v ;
-    norm[1] = c[1][2]/v ;
-    norm[2] = c[2][2]/v ;
-    return ;
-
-  /* 2. Ligne : norm = c1^e_z */
-  } else if(dim_h == 1) {
-    v = sqrt(c[0][0]*c[0][0] + c[1][0]*c[1][0]) ;
-    norm[0] =  c[1][0]/v ;
-    norm[1] = -c[0][0]/v ;
-    return ;
-
-  /* 3. Point : norm = 1 */
-  } else if(dim_h == 0) {
-    norm[0] = 1. ;
-    return ;
-  }
-
-  arret("normale") ;
-#undef DH
-}
+#endif
 

@@ -3,7 +3,7 @@
 #include <string.h>
 #include "Message.h"
 #include "Mry.h"
-#include "String.h"
+#include "String_.h"
 #include "DataFile.h"
 #include "Curves.h"
 #include "Function.h"

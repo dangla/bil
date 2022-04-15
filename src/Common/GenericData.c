@@ -6,7 +6,7 @@
 #include "TypeId.h"
 #include "GenericData.h"
 //#include "GenericObject.h"
-#include "Tools/Math.h"
+#include "Math_.h"
 #include "Mry.h"
 
 
@@ -220,7 +220,7 @@ void (GenericData_InsertBefore)(GenericData_t* a,GenericData_t* b)
 {
   
   if(!a) {
-    exit(0) ;
+    Message_Exit ;
     return ;
   }
   
@@ -243,7 +243,7 @@ void (GenericData_InsertAfter)(GenericData_t* a,GenericData_t* b)
 {
   
   if(!a) {
-    exit(0) ;
+    Message_Exit ;
     return ;
   }
     

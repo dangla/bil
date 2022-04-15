@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <ctype.h>
-#include "String.h"
-#include "Math.h"
+#include "String_.h"
+#include "Math_.h"
 #include "Message.h"
 #include "Mry.h"
 #include "Model.h"
@@ -27,7 +27,6 @@ Node_t*  Node_Create(const int dim)
   
   return(node) ;
 }
-#endif
 
 
 
@@ -42,65 +41,8 @@ void (Node_Delete)(void* self)
       free(x) ;
     }
   }
-  
-  {
-    Element_t** pel = Node_GetPointerToElement(node) ;
-    
-    if(pel) {
-      free(pel) ;
-    }
-  }
-    
-  {
-    char** uname = Node_GetNameOfUnknown(node) ;
-      
-    if(uname) {
-      free(uname) ;
-    }
-  }
-    
-  {
-    int* seq = Node_GetSequentialIndexOfUnknown(node) ;
-      
-    if(seq) {
-      free(seq) ;
-    }
-  }
-    
-  {
-    int* colind = Node_GetMatrixColumnIndex(node) ;
-      
-    if(colind) {
-      free(colind) ;
-    }
-  }
-    
-  {
-    int* rowind = Node_GetMatrixRowIndex(node) ;
-      
-    if(rowind) {
-      free(rowind) ;
-    }
-  }
-    
-  {
-    unsigned short int* index = Node_GetObValIndex(node) ;
-      
-    if(index) {
-      free(index) ;
-    }
-  }
-    
-  {
-    Buffer_t* buf = Node_GetBuffer(node) ;
-      
-    if(buf) {
-      Buffer_Delete(buf) ;
-      free(buf) ;
-      Node_GetBuffer(node) = NULL ;
-    }
-  }
 }
+#endif
 
 
 

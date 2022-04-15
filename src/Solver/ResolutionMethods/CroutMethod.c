@@ -35,6 +35,7 @@ int   CroutMethod_Solve(Solver_t* solver)
     if(i < 0) return(i) ;
   }
   
+  
   lubksb(askl,x,b,n) ;
   
   return(0) ;
@@ -70,7 +71,7 @@ int ludcmp(LDUSKLFormat_t* a,int n)
   int    j ;
   
   
-  /* Loop on columns (Crout's algorithm) */
+  /* Loop over columns (Crout's algorithm) */
   for(j = 0 ; j < n ; j++) {
     double* colj = UpperColumn(j) ;
     /* i1 is the row index which starts the column j */
@@ -226,12 +227,12 @@ avec          i1 = (j - U[j] + U[j-1])  et  j1 = (i - L[i] + L[i-1]).
       /* 1.a pour i<j */
       i1 = j - (u[j] - u[j-1]) ;   /* 1ere ligne non nulle de la colonne j */
       for(i=i1+1;i<j;i++) {          /* a(i1,j) inchange */
-	j1 = i - (l[i] - l[i-1]) ; /* 1ere colonne non nulle de la ligne i */
-	k1 = (i1 > j1) ? i1 : j1 ;
-	p  = PU(i,j) ;  /* pointe sur a(i,j) i<j */
-	pl = PL(i,k1) ; /* pointe sur a(i,k1) i>k1 */
-	pu = PU(k1,j) ; /* pointe sur a(k1,j) k1<j */
-	for(k=k1;k<i;k++) *p -= (*pl++)*(*pu++) ;
+  j1 = i - (l[i] - l[i-1]) ; /* 1ere colonne non nulle de la ligne i */
+  k1 = (i1 > j1) ? i1 : j1 ;
+  p  = PU(i,j) ;  /* pointe sur a(i,j) i<j */
+  pl = PL(i,k1) ; /* pointe sur a(i,k1) i>k1 */
+  pu = PU(k1,j) ; /* pointe sur a(k1,j) k1<j */
+  for(k=k1;k<i;k++) *p -= (*pl++)*(*pu++) ;
       }
       /* 1.b pour i=j */
       j1 = j - (l[j] - l[j-1]) ; /* 1ere colonne non nulle de la ligne j */

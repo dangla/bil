@@ -37,7 +37,7 @@ extern void        (DataSet_PrintData) (DataSet_t*,char*) ;
 #define DataSet_GetFields(DS)         ((DS)->fields)
 /* #define DataSet_GetIntFcts(DS)        ((DS)->intfcts) */
 #define DataSet_GetObVals(DS)         ((DS)->obvals)
-//#define DataSet_GetModels(DS)         ((DS)->models)
+#define DataSet_GetModels(DS)         ((DS)->models)
 #define DataSet_GetTimeStep(DS)       ((DS)->timestep)
 #define DataSet_GetIterProcess(DS)    ((DS)->iterprocess)
 #define DataSet_GetOptions(DS)        ((DS)->options)
@@ -75,6 +75,7 @@ extern void        (DataSet_PrintData) (DataSet_t*,char*) ;
 #include "TimeStep.h"
 #include "IterProcess.h"
 #include "Modules.h"
+#include "Models.h"
 
 
 
@@ -95,7 +96,7 @@ struct DataSet_s {               /* set of data for the problem to work out */
   Fields_t*      fields ;        /* Fields */
   /* IntFcts_t*     intfcts ; */       /* Interpolation Functions */
   ObVals_t*      obvals ;        /* Objective Values */
-  //Models_t*      models ;        /* Models */
+  Models_t*      models ;        /* Models */
   TimeStep_t*    timestep ;      /* time step managing */
   IterProcess_t* iterprocess ;   /* iterative process */
   Options_t*     options ;       /* options */

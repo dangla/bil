@@ -8,10 +8,10 @@
 
 #include "Message.h"
 #include "Mry.h"
-#include "Tools/Math.h"
+#include "Math_.h"
 #include "Buffer.h"
 #include "Curves.h"
-#include "String.h"
+#include "String_.h"
 #include "CurvesFile.h"
 #include "InternationalSystemOfUnits.h"
 
@@ -61,6 +61,8 @@ static GenericFunction_t TortuosityToLiquid_OhJang ;
 static GenericFunction_t TortuosityToLiquid_BazantNajjar ;
 static GenericFunction_t LinLee ;
 static GenericFunction_t IdealWaterActivity ;
+static GenericFunction_t PartialFugacityOfCO2CH4Mixture ;
+static GenericFunction_t MolarVolumeOfCO2CH4Mixture ;
 
 
 static double (vangenuchten)(double,double) ;
@@ -68,6 +70,9 @@ static double (fraction_Silica)(double*,double*,int,double) ;
 static double (MolarDensityOfCO2_RedlichKwong)(double,double) ;
 static double (ViscosityOfCO2_Fenghour)(double,double) ;
 static double (langmuir)(double,double,double,double) ;
+static double (MolarVolumeOfCO2CH4Mixture_RedlichKwong)(double,double,double) ;
+static double (PartialFugacityOfCO2CH4Mixture_RedlichKwong)(double,double,double,const char*) ;
+static double (RedlichKwong)(double,double,double,double) ;
 
 
 
@@ -610,6 +615,23 @@ int   (CurvesFile_WriteCurves)(CurvesFile_t* curvesfile)
       sscanf(line,"{ %*s = %lf }",&temperature) ;
       
       PasteColumn(MolarDensityOfCO2,temperature) ;
+      
+    } else if(String_Is(YMODEL,"MolarVolumeOfCO2CH4Mixture")) {
+      double pressure ;
+      double temperature ;
+      
+      sscanf(line,"{ %*s = %lf , %*s = %lf }",&pressure,&temperature) ;
+      
+      PasteColumn(MolarVolumeOfCO2CH4Mixture,pressure,temperature) ;
+      
+    } else if(String_Is(YMODEL,"PartialFugacityOfCO2CH4Mixture")) {
+      double pressure ;
+      double temperature ;
+      char gas[4] ;
+      
+      sscanf(line,"{ %*s = %lf , %*s = %lf , %*s = %s }",&pressure,&temperature,gas) ;
+      
+      PasteColumn(PartialFugacityOfCO2CH4Mixture,pressure,temperature,gas) ;
       
     } else if(String_Is(YMODEL,"MolarDensityOfPerfectGas")) {
       double temperature ;
@@ -1182,8 +1204,9 @@ double (MonlouisBonnaire)(double s,va_list args)
 double (RedlichKwongCO2)(double Pa,va_list args)
 {
   double T = va_arg(args,double) ;
+  double rho = MolarDensityOfCO2_RedlichKwong(Pa,T) ;
 
-  return(MolarDensityOfCO2_RedlichKwong(Pa,T)) ;
+  return(1.e-3*rho) ;
 }
 
 
@@ -1192,7 +1215,28 @@ double (MolarDensityOfCO2)(double Pa,va_list args)
   double T = va_arg(args,double) ;
   double rho = MolarDensityOfCO2_RedlichKwong(Pa,T) ;
 
-  return(1.e3*rho) ;
+  return(rho) ;
+}
+
+
+double (MolarVolumeOfCO2CH4Mixture)(double y_co2,va_list args)
+{
+  double P = va_arg(args,double) ;
+  double T = va_arg(args,double) ;
+  double V = MolarVolumeOfCO2CH4Mixture_RedlichKwong(P,T,y_co2) ;
+
+  return(V) ;
+}
+
+
+double (PartialFugacityOfCO2CH4Mixture)(double y_co2,va_list args)
+{
+  double P = va_arg(args,double) ;
+  double T = va_arg(args,double) ;
+  char* gas = va_arg(args,char*) ;
+  double f = PartialFugacityOfCO2CH4Mixture_RedlichKwong(P,T,y_co2,gas) ;
+
+  return(f) ;
 }
 
 
@@ -1474,63 +1518,135 @@ double (fraction_Silica)(double *a,double *y,int n,double q0)
   return(q) ;
 }
 
-double (MolarDensityOfCO2_RedlichKwong)(double Pa,double T)
-/** Redlich Kwong EOS for scCO2 */
-/* Implemented by J. Shen 
- * From Redlich-Kwong model of EOS for scCO2 (Spycher2003)
- * P = RT/(V - b) + a/(sqrt(T)*V*(V + b))
- * Input units: Pressure in Pascal, T in Kelvin 
- * Output units: mol/L */
+
+
+double (MolarDensityOfCO2_RedlichKwong)(double P,double T)
+/** Redlich Kwong EOS for CO2 */
+/* From Redlich-Kwong model of EOS
+ * Redlich O., Kwong J.N.S 
+ * On the thermodynamics of solutions. V. 
+ * An equation of state. Fugacities of gaseous solutions.
+ * Chemical Reviews, 44(1), 233-244, 1949.
+ * P = RT/(V - b) - a/(sqrt(T)*V*(V + b))
+ * Input units:
+ *   P in Pascal, 
+ *   T in Kelvin, 
+ * Output units: 
+ *   V in mol/m3 
+ */
 {
-  double R         = 83.14472 ;   /* cm3*bar/(K*mol) */
+  double R         = 8.31451 ;
+  double two3      = pow(2,1./3) ;
+  double Zc        = 1./3 ;
+  double Pc_CO2    = 7.35e6 ;
+  double Tc_CO2    = 304.14 ;
+  double Vc_CO2    = Zc*R*Tc_CO2/Pc_CO2 ;
+  double B_CO2     = Vc_CO2*(two3 - 1) ;
+  double A_CO2     = R*pow(Tc_CO2,1.5)*(Vc_CO2/(Vc_CO2-B_CO2)-Zc)*(Vc_CO2+B_CO2) ;
+  
+  double V         = RedlichKwong(P,T,A_CO2,B_CO2) ;
+  
+  return(1/V) ;
+}
+
+
+
+double (MolarVolumeOfCO2CH4Mixture_RedlichKwong)(double P,double T,double y_co2)
+/** Redlich Kwong EOS for the mixture of CO2 and CH4 */
+/* From Redlich-Kwong model of EOS
+ * Redlich O., Kwong J.N.S 
+ * On the thermodynamics of solutions. V. 
+ * An equation of state. Fugacities of gaseous solutions.
+ * Chemical Reviews, 44(1), 233-244, 1949.
+ * P = RT/(V - b) - a/(sqrt(T)*V*(V + b))
+ * Input units:
+ *   P in Pascal, 
+ *   T in Kelvin, 
+ * Output units: 
+ *   V in mol/m3 
+ */
+{
+  double R         = 8.31451 ;
+  double two3      = pow(2,1./3) ;
+  double Zc        = 1./3 ;
+  double Pc_CO2    = 7.35e6 ;
+  double Tc_CO2    = 304.14 ;
+  double Vc_CO2    = Zc*R*Tc_CO2/Pc_CO2 ;
+  double Pc_CH4    = 4.6e6 ;
+  double Tc_CH4    = 190 ;
+  double Vc_CH4    = Zc*R*Tc_CH4/Pc_CH4 ;
+  double B_CO2     = Vc_CO2*(two3 - 1) ;
+  double A_CO2     = R*pow(Tc_CO2,1.5)*(Vc_CO2/(Vc_CO2-B_CO2)-Zc)*(Vc_CO2+B_CO2) ;
+  double B_CH4     = Vc_CH4*(two3 - 1) ;
+  double A_CH4     = R*pow(Tc_CH4,1.5)*(Vc_CH4/(Vc_CH4-B_CH4)-Zc)*(Vc_CH4+B_CH4) ;
+  double y_ch4     = 1 - y_co2 ;
+  double B         = B_CO2*y_co2 + B_CH4*y_ch4 ;
+  double A05       = sqrt(A_CO2)*y_co2 + sqrt(A_CH4)*y_ch4 ;
+  double A         = A05*A05 ;
+  
+  double V         = RedlichKwong(P,T,A,B) ;
+  
+  return(V) ;
+}
+
+
+
+double (PartialFugacityOfCO2CH4Mixture_RedlichKwong)(double P,double T,double y_co2,const char* gas)
+/** Redlich Kwong EOS for the mixture of CO2 and CH4 */
+/* From Redlich-Kwong model of EOS
+ * Redlich O., Kwong J.N.S 
+ * On the thermodynamics of solutions. V. 
+ * An equation of state. Fugacities of gaseous solutions.
+ * Chemical Reviews, 44(1), 233-244, 1949.
+ * P = RT/(V - b) - a/(sqrt(T)*V*(V + b))
+ * Input units:
+ *   P in Pascal, 
+ *   T in Kelvin, 
+ * Output units: 
+ *   V in mol/m3 
+ */
+{
+  double R         = 8.31451 ;
+  double two3      = pow(2,1./3) ;
+  double Zc        = 1./3 ;
+  double Pc_CO2    = 7.35e6 ;
+  double Tc_CO2    = 304.14 ;
+  double Vc_CO2    = Zc*R*Tc_CO2/Pc_CO2 ;
+  double Pc_CH4    = 4.6e6 ;
+  double Tc_CH4    = 190 ;
+  double Vc_CH4    = Zc*R*Tc_CH4/Pc_CH4 ;
+  double B_CO2     = Vc_CO2*(two3 - 1) ;
+  double A_CO2     = R*pow(Tc_CO2,1.5)*(Vc_CO2/(Vc_CO2-B_CO2)-Zc)*(Vc_CO2+B_CO2) ;
+  double B_CH4     = Vc_CH4*(two3 - 1) ;
+  double A_CH4     = R*pow(Tc_CH4,1.5)*(Vc_CH4/(Vc_CH4-B_CH4)-Zc)*(Vc_CH4+B_CH4) ;
+  double y_ch4     = 1 - y_co2 ;
+  double B         = B_CO2*y_co2 + B_CH4*y_ch4 ;
+  double A05       = sqrt(A_CO2)*y_co2 + sqrt(A_CH4)*y_ch4 ;
+  double A         = A05*A05 ;
+  
+  double V         = RedlichKwong(P,T,A,B) ;
   double RT        = R*T ;
-  double T05       = sqrt(T) ;
-  double A_CO2     = 7.54e7 - 4.13e4*T ; /* bar*cm6*K0.5/mol2 */
-  double B_CO2     = 27.80 ; /* cm3/mol */
-  double AB_CO2    = A_CO2*B_CO2 ;
-  double B2_CO2    = B_CO2*B_CO2 ;
-  double P         = Pa/1.e5 ; /* unit of bar */
-  double P0        = 1. ;
+  double Z         = P*V/RT ;
+  double T15       = T*sqrt(T) ;
+  double C         = A/(B*R*T15) ;
+  double ln1       = log(Z-B*P/RT) ;
+  double ln2       = log(1+B*P/(Z*RT)) ;
   
-  double gc_co2 ;
-  
-  if(P > P0) {
-    double RToP      = RT/P ;
-    double PT05      = P*T05 ;
-    double a         = 1. ;
-    double b         = - RToP ;
-    double c         = - (B_CO2*RToP - A_CO2/(PT05) + B2_CO2) ;
-    double d         = - (AB_CO2/(PT05));
-    double x[4]      ;
+  if(!strcasecmp(gas,"co2")) {
+    double lnc_co2 = (Z - 1)*B_CO2/B - ln1 - C*(2*sqrt(A_CO2)/A05 - B_CO2/B)*ln2 ;
     
-    x[0]  = a  ; x[1]  = b  ; x[2]  = c  ; x[3]  = d  ;
-    Math_ComputePolynomialEquationRoots(x,3) ;
+    return(exp(lnc_co2)*y_co2*P) ;
     
-    {
-      double V = x[0] ;    /* cm3/mol */
-      gc_co2 = 1.e3/V ;    /* mol/dm3 */
-    }
+  } else if(!strcasecmp(gas,"ch4")) {
+    double lnc_ch4 = (Z - 1)*B_CH4/B - ln1 - C*(2*sqrt(A_CH4)/A05 - B_CH4/B)*ln2 ;
     
-  } else {
-    double RToP0     = RT/P0 ;
-    double P0T05     = P0*T05 ;
-    double a0        = 1. ;
-    double b0        = - (RToP0) ;
-    double c0        = - (B_CO2*RToP0 - A_CO2/(P0T05) + B2_CO2) ;
-    double d0        = - (AB_CO2/(P0T05)) ;
-    double x0[4]     ;
-    
-    x0[0] = a0 ; x0[1] = b0 ; x0[2] = c0 ; x0[3] = d0 ;
-    Math_ComputePolynomialEquationRoots(x0,3) ;
-    
-    {
-      double V0 = x0[0] ;       /* cm3/mol */
-      gc_co2 = P/P0*1.e3/V0  ;  /* mol/dm3 */
-    }
+    return(exp(lnc_ch4)*y_ch4*P) ;
   }
   
-  return(gc_co2) ;
+  arret("CO2 or CH4 only") ;
+  return(0) ;
 }
+
 
 
 double (ViscosityOfCO2_Fenghour)(double Pa,double T)  
@@ -1545,8 +1661,9 @@ double (ViscosityOfCO2_Fenghour)(double Pa,double T)
 */
 {
   double P        = MAX(Pa,1.e5) ; /* mu_co2 cst for P < 1e5 Pa */
-  double gc_co2   = MolarDensityOfCO2_RedlichKwong(P,T) ;    /*mol/L */
-  double rho      = 44.* gc_co2 ;       /*kg/m3*/
+  double gc_co2   = MolarDensityOfCO2_RedlichKwong(P,T) ;
+  double M_CO2    = 44.e-3 ;
+  double rho      = M_CO2*gc_co2 ;
   double d11      = 0.4071119e-2 ;
   double d21      = 0.7198037e-4 ;
   double d64      = 0.2411697e-16 ;
@@ -1763,4 +1880,136 @@ double IdealWaterActivity(double c_s,va_list args)
   
   return(lna_w) ;
 }
+
+
+
+double (RedlichKwong)(double P,double T,double A,double B)
+/** Solve Redlich-Kwong EOS for the molar volume */
+/* From Redlich-Kwong model of EOS
+ * Redlich O., Kwong J.N.S 
+ * On the thermodynamics of solutions. V. 
+ * An equation of state. Fugacities of gaseous solutions.
+ * Chemical Reviews, 44(1), 233-244, 1949.
+ * P = RT/(V - B) - A/(sqrt(T)*V*(V + B))
+ * Input units:
+ *   P in Pascal, 
+ *   T in Kelvin, 
+ *   B in m3/mol, 
+ *   A/sqrt(T) in Pascal*m6/mol2
+ * Output units: 
+ *   V in mol/m3 
+ **/
+{
+  double R         = 8.31451 ;
+  double RT        = R*T ;
+  double T05       = sqrt(T) ;
+  double AB        = A*B ;
+  double B2        = B*B ;
+  double P0        = 1.e5 ;
+  
+  if(P > P0) {
+    double RToP      = RT/P ;
+    double PT05      = P*T05 ;
+    double a         = 1. ;
+    double b         = - RToP ;
+    double c         = - (B*RToP - A/(PT05) + B2) ;
+    double d         = - (AB/(PT05));
+    double x[4]      ;
+    
+    x[0]  = a  ; x[1]  = b  ; x[2]  = c  ; x[3]  = d  ;
+    Math_ComputePolynomialEquationRoots(x,3) ;
+    
+    {
+      double V = x[0] ; /* the volume of gas phase is the largest root */
+      return(V) ;
+    }
+    
+  } else {
+    double RToP0     = RT/P0 ;
+    double P0T05     = P0*T05 ;
+    double a0        = 1. ;
+    double b0        = - (RToP0) ;
+    double c0        = - (B*RToP0 - A/(P0T05) + B2) ;
+    double d0        = - (AB/(P0T05)) ;
+    double x0[4]     ;
+    
+    x0[0] = a0 ; x0[1] = b0 ; x0[2] = c0 ; x0[3] = d0 ;
+    Math_ComputePolynomialEquationRoots(x0,3) ;
+    
+    {
+      double V0 = x0[0] ;
+      return(V0*P0/P) ;
+    }
+  }
+}
+
+
+
+#if 0
+double (MolarDensityOfCO2_RedlichKwong)(double Pa,double T)
+/** Redlich Kwong EOS for CO2 */
+/* From Redlich-Kwong model of EOS
+ * Redlich O., Kwong J.N.S 
+ * On the thermodynamics of solutions. V. 
+ * An equation of state. Fugacities of gaseous solutions.
+ * Chemical Reviews, 44(1), 233-244, 1949.
+ * P = RT/(V - b) - a/(sqrt(T)*V*(V + b))
+ * Input units:
+ *   P in Pascal, 
+ *   T in Kelvin, 
+ * Output units: 
+ *   V in mol/L 
+ */
+{
+  double R         = 83.14472 ;   /* cm3*bar/(K*mol) */
+  double RT        = R*T ;
+  double T05       = sqrt(T) ;
+  double A_CO2     = 7.54e7 - 4.13e4*T ; /* bar*cm6*K0.5/mol2 */
+  double B_CO2     = 27.80 ; /* cm3/mol */
+  double AB_CO2    = A_CO2*B_CO2 ;
+  double B2_CO2    = B_CO2*B_CO2 ;
+  double P         = Pa/1.e5 ; /* unit of bar */
+  double P0        = 1. ;
+
+  
+  double gc_co2 ;
+  
+  if(P > P0) {
+    double RToP      = RT/P ;
+    double PT05      = P*T05 ;
+    double a         = 1. ;
+    double b         = - RToP ;
+    double c         = - (B_CO2*RToP - A_CO2/(PT05) + B2_CO2) ;
+    double d         = - (AB_CO2/(PT05));
+    double x[4]      ;
+    
+    x[0]  = a  ; x[1]  = b  ; x[2]  = c  ; x[3]  = d  ;
+    Math_ComputePolynomialEquationRoots(x,3) ;
+    
+    {
+      double V = x[0] ;    /* cm3/mol */
+      gc_co2 = 1.e3/V ;    /* mol/dm3 */
+    }
+    
+  } else {
+    double RToP0     = RT/P0 ;
+    double P0T05     = P0*T05 ;
+    double a0        = 1. ;
+    double b0        = - (RToP0) ;
+    double c0        = - (B_CO2*RToP0 - A_CO2/(P0T05) + B2_CO2) ;
+    double d0        = - (AB_CO2/(P0T05)) ;
+    double x0[4]     ;
+    
+    x0[0] = a0 ; x0[1] = b0 ; x0[2] = c0 ; x0[3] = d0 ;
+    Math_ComputePolynomialEquationRoots(x0,3) ;
+    
+    {
+      double V0 = x0[0] ;       /* cm3/mol */
+      gc_co2 = P/P0*1.e3/V0  ;  /* mol/dm3 */
+    }
+  }
+  
+  return(gc_co2) ;
+}
+#endif
 

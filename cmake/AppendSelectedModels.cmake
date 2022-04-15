@@ -1,0 +1,11 @@
+# Append selected models found in a file
+macro(append_selected_models file selectedmodelfiles)
+  #message("Entry in append_selected_models")
+  file(STRINGS ${file} ${selectedmodelfiles})
+  string(REGEX REPLACE "^[ ]*[A-Z]+[ ]+=[ ]+|[ ]+$" "" ${selectedmodelfiles} "${${selectedmodelfiles}}")
+  string(REGEX REPLACE "[ ]+" ";" ${selectedmodelfiles} "${${selectedmodelfiles}}")
+  #message("Before TRANSFORM ${${selectedmodelfiles}}")
+  list(TRANSFORM ${selectedmodelfiles} APPEND ".c")
+  #message("After TRANSFORM ${${selectedmodelfiles}}")
+  #message("selectedmodelfiles = ${${selectedmodelfiles}}")
+endmacro()

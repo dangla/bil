@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "Message.h"
 #include "DataFile.h"
-#include "String.h"
+#include "String_.h"
 #include "Mry.h"
 #include "Model.h"
 #include "Element.h"
@@ -291,7 +291,7 @@ int  Nodes_UpdateTheNbOfUnknownsAndEquationsPerNode(Nodes_t* nodes)
  *  - the total number of degrees of freedom.
  *  without using informations from the nodes themselves, i.e., 
  *  using only informations from the elements connected to the nodes.
- *  This can operate before allocating memory space for the nodes.
+ *  This can be done before allocating memory space for the nodes.
  *  Return the total number of degrees of freedom.
  */
 {
@@ -382,6 +382,27 @@ int  Nodes_UpdateTheNbOfUnknownsAndEquationsPerNode(Nodes_t* nodes)
       
       if(Node_GetNbOfUnknowns(node_i) != Node_GetNbOfEquations(node_i)) {
         int ind = Node_GetNodeIndex(node_i) ;
+        
+        {
+          int n_unk = Node_GetNbOfUnknowns(node_i) ;
+          int i ;
+          
+          printf("\n") ;
+          printf("name of unknowns:") ;
+          for(i = 0 ; i < n_unk ; i++) {
+            printf(" %s",node_name_unk[i]) ;
+          }
+        }
+        {
+          int n_equ = Node_GetNbOfEquations(node_i) ;
+          int i ;
+          
+          printf("\n") ;
+          printf("name of equations:") ;
+          for(i = 0 ; i < n_equ ; i++) {
+            printf(" %s",node_name_eqn[i]) ;
+          }
+        }
         
         arret("Nodes_UpdateTheNbOfUnknownsAndEquationsPerNode: nb of unknowns and equations not equal at node %d",ind) ;
       }

@@ -7,12 +7,12 @@
 
 #include "Message.h"
 #include "Mry.h"
-#include "Tools/Math.h"
+#include "Math_.h"
 #include "Elasticity.h"
 
 
-static double* Elasticity_ComputeIsotropicStiffnessTensor(Elasticity_t*,double*) ;
-static double* Elasticity_ComputeTransverselyIsotropicStiffnessTensor(Elasticity_t*,double*) ;
+static double* (Elasticity_ComputeIsotropicStiffnessTensor)(Elasticity_t*,double*) ;
+static double* (Elasticity_ComputeTransverselyIsotropicStiffnessTensor)(Elasticity_t*,double*) ;
 
 
 
@@ -68,7 +68,7 @@ void  (Elasticity_Delete)(void* self)
 
 
 
-void Elasticity_SetParameter(Elasticity_t* elasty,const char* str,double v)
+void (Elasticity_SetParameter)(Elasticity_t* elasty,const char* str,double v)
 {
   
   if(Elasticity_IsIsotropic(elasty)) {
@@ -107,7 +107,7 @@ void Elasticity_SetParameter(Elasticity_t* elasty,const char* str,double v)
 
 
 
-void Elasticity_SetParameters(Elasticity_t* elasty,...)
+void (Elasticity_SetParameters)(Elasticity_t* elasty,...)
 {
   va_list args ;
   
@@ -142,7 +142,7 @@ void Elasticity_SetParameters(Elasticity_t* elasty,...)
 
 
 
-double* Elasticity_ComputeStiffnessTensor(Elasticity_t* elasty,double* c)
+double* (Elasticity_ComputeStiffnessTensor)(Elasticity_t* elasty,double* c)
 {
   //double* c = Elasticity_GetStiffnessTensor(elasty) ;
   
@@ -161,7 +161,7 @@ double* Elasticity_ComputeStiffnessTensor(Elasticity_t* elasty,double* c)
 
 
 
-void Elasticity_CopyStiffnessTensor(Elasticity_t* elasty,double* c)
+void (Elasticity_CopyStiffnessTensor)(Elasticity_t* elasty,double* c)
 /** Copy the 4th rank stiffness tensor in c. */
 {
   double* cel = Elasticity_GetStiffnessTensor(elasty) ;
@@ -178,7 +178,7 @@ void Elasticity_CopyStiffnessTensor(Elasticity_t* elasty,double* c)
 
 
 
-void Elasticity_PrintStiffnessTensor(Elasticity_t* elasty)
+void (Elasticity_PrintStiffnessTensor)(Elasticity_t* elasty)
 /** Print the 4th rank elastic tensor.
  **/
 {
@@ -194,7 +194,7 @@ void Elasticity_PrintStiffnessTensor(Elasticity_t* elasty)
 
 
 /* Local functions */
-double* Elasticity_ComputeIsotropicStiffnessTensor(Elasticity_t* elasty,double* c)
+double* (Elasticity_ComputeIsotropicStiffnessTensor)(Elasticity_t* elasty,double* c)
 /** Compute the 4th rank isotropic elastic tensor in c.
  *  Return c  */
 {
@@ -234,7 +234,7 @@ double* Elasticity_ComputeIsotropicStiffnessTensor(Elasticity_t* elasty,double* 
 
 
 
-double* Elasticity_ComputeTransverselyIsotropicStiffnessTensor(Elasticity_t* elasty,double* c)
+double* (Elasticity_ComputeTransverselyIsotropicStiffnessTensor)(Elasticity_t* elasty,double* c)
 /** Compute the 4th rank transversely isotropic elastic tensor in c.
  *  Inputs are:
  *  axis_3 = direction of orthotropy: 0,1 or 2
@@ -304,9 +304,61 @@ double* Elasticity_ComputeTransverselyIsotropicStiffnessTensor(Elasticity_t* ela
 
 
 
+double* (Elasticity_StiffnessMatrixInVoigtNotation)(Elasticity_t* elasty,double* cv)
+/** Compute the stiffness matrix in Voigt's notation from the
+ *  4th-order stiffness tensor. This stiffness matrix relates 
+ *  the stresses in Voigt's notation: Sij = (S11,S22,S33,S12,S23,S31) to
+ *  the strains in Voigt's notation:  Eij = (E11,E22,E33,2E12,2E23,2E31)
+ *  On inputs:
+ *  - elasty should contain the initial 4th-order stiffness tensor,
+ *  - cv should point to an allocated space of 36 doubles.
+ *  On output:
+ *  - cv will contain the stiffness matrix in Voigt's notation
+ **/
+{
+#define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
+#define CV(i,j)     (cv[(i)*6+(j)])
+/*
+ *                  |0 3 5|
+ * VI(i,j) maps to  |3 1 4|
+ *                  |5 4 2|
+ */
+#define VI(i,j)     (voigtindex[(i)*3 + (j)])
+  double* c = Elasticity_GetStiffnessTensor(elasty) ;
+  int voigtindex[9] = {0,3,5,3,1,4,5,4,2} ;
+  
+  {
+    int    i ;
+
+    for(i = 0 ; i < 3 ; i++) {
+      int j  = (i + 1) % 3 ;
+      int ij = VI(i,j) ;
+      int k ;
+      
+      for(k = 0 ; k < 3 ; k++) {
+        int l  = (k + 1) % 3 ;
+        int kl = VI(k,l) ;
+        
+        CV(i,k)   = C(i,i,k,k) ;
+        CV(i,kl)  = 0.5  * (C(i,i,k,l) + C(i,i,l,k)) ;
+        CV(kl,i)  = 0.5  * (C(k,l,i,i) + C(l,k,i,i)) ;
+        CV(ij,kl) = 0.25 * (C(i,j,k,l) + C(j,i,k,l) + C(i,j,l,k) + C(j,i,l,k)) ;
+      }
+    }
+  }
+  
+  return(cv) ;
+  
+#undef VI
+#undef CV
+#undef C
+}
 
 
-double Elasticity_ComputeElasticEnergy(Elasticity_t* elasty,const double* strain)
+
+
+
+double (Elasticity_ComputeElasticEnergy)(Elasticity_t* elasty,const double* strain)
 /** Return the elastic energy associated to the strain tensor.
  **/
 {
@@ -339,7 +391,7 @@ double Elasticity_ComputeElasticEnergy(Elasticity_t* elasty,const double* strain
 
 
 
-double* Elasticity_ComputeStressTensor(Elasticity_t* elasty,const double* strain,double* stress0)
+double* (Elasticity_ComputeStressTensor)(Elasticity_t* elasty,const double* strain,double* stress0)
 /** Return the elastic stress tensor associated to the strain tensor.
  **/
 {

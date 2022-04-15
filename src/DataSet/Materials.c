@@ -14,7 +14,7 @@
 
 /* Extern functions */
 
-Materials_t* (Materials_New)(const int n_mats)
+Materials_t* (Materials_New)(const int n_mats,Models_t* models)
 {
   Materials_t* materials   = (Materials_t*) Mry_New(Materials_t) ;
 
@@ -41,7 +41,7 @@ Materials_t* (Materials_New)(const int n_mats)
   {
     /* We create the space for n_mats models max */
     int n_models = n_mats ;
-    Models_t* usedmodels = Models_New(n_models) ;
+    Models_t* usedmodels = (models) ? models : Models_New(n_models) ;
     
     Materials_GetUsedModels(materials) = usedmodels ;
   }
@@ -65,11 +65,98 @@ Materials_t* (Materials_New)(const int n_mats)
 
 
 
+
+#if 1
+Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* fields,Functions_t* functions,Models_t* models)
+{
+  int n_mats = DataFile_CountTokens(datafile,"MATE,Material",",") ;
+  Materials_t* materials = Materials_New(n_mats,models) ;
+  
+  
+  Message_Direct("Enter in %s","Materials") ;
+  Message_Direct("\n") ;
+  
+
+  
+  /* Open for Material_ScanProperties1/2 */
+  DataFile_OpenFile(datafile,"r") ;
+
+  /* Scan the datafile */
+  {
+    int i ;
+    
+    for(i = 0 ; i < n_mats ; i++) {
+      Material_t* mat = Materials_GetMaterial(materials) + i ;
+      char* c = DataFile_FindNthToken(datafile,"MATE,Material",",",i + 1) ;
+      
+      c = String_SkipLine(c) ;
+      
+      /* This for Material_ScanProperties1/2 */
+      {
+        DataFile_SetFilePositionAfterKey(datafile,"MATE,Material",",",i + 1) ;
+        {
+          char* c1 = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
+        }
+      }
+      
+      DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+  
+      Message_Direct("Enter in %s %d","Material",i+1) ;
+      Message_Direct("\n") ;
+      
+      Material_GetFields(mat) = fields ;
+      Material_GetFunctions(mat) = functions ;
+      
+      Material_Scan(mat,datafile,geom) ;
+    }
+  }
+  
+  DataFile_CloseFile(datafile) ;
+  
+  return(materials) ;
+}
+#endif
+
+
+
+void (Materials_Delete)(void* self)
+{
+  Materials_t* materials = (Materials_t*) self ;
+  
+  {
+    int n_mats = Materials_GetNbOfMaterials(materials) ;
+    Material_t* material = Materials_GetMaterial(materials) ;
+    
+    if(material) {
+      int i ;
+      
+      for(i = 0 ; i < n_mats ; i++) {
+        Material_Delete(material+i) ;
+      }
+      //Mry_Delete(material,n_mats,Material_Delete) ;
+      free(material) ;
+      Materials_GetMaterial(materials) = NULL ;
+    }
+  }
+  
+  {
+    Models_t* usedmodels = Materials_GetUsedModels(materials) ;
+    
+    if(usedmodels) {
+      Models_Delete(usedmodels) ;
+      free(usedmodels) ;
+      Materials_GetUsedModels(materials) = NULL ;
+    }
+  }
+}
+
+
+
 #if 0
-Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* fields,Functions_t* functions)
+Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* fields,Functions_t* functions,Models_t* models)
 {
   int n_mats = DataFile_CountNbOfKeyWords(datafile,"MATE,Material",",") ;
-  Materials_t* materials = Materials_New(n_mats) ;
+  Materials_t* materials = Materials_New(n_mats,models) ;
   
   
   /* Fields and functions */
@@ -164,90 +251,3 @@ Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* 
   return(materials) ;
 }
 #endif
-
-
-
-
-#if 1
-Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* fields,Functions_t* functions)
-{
-  int n_mats = DataFile_CountTokens(datafile,"MATE,Material",",") ;
-  Materials_t* materials = Materials_New(n_mats) ;
-  
-  
-  Message_Direct("Enter in %s","Materials") ;
-  Message_Direct("\n") ;
-  
-
-  
-  /* Open for Material_ScanProperties1/2 */
-  DataFile_OpenFile(datafile,"r") ;
-
-  /* Scan the datafile */
-  {
-    int i ;
-    
-    for(i = 0 ; i < n_mats ; i++) {
-      Material_t* mat = Materials_GetMaterial(materials) + i ;
-      char* c = DataFile_FindNthToken(datafile,"MATE,Material",",",i + 1) ;
-      
-      c = String_SkipLine(c) ;
-      
-      /* This for Material_ScanProperties1/2 */
-      {
-        DataFile_SetFilePositionAfterKey(datafile,"MATE,Material",",",i + 1) ;
-        {
-          char* c1 = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
-        }
-      }
-      
-      DataFile_SetCurrentPositionInFileContent(datafile,c) ;
-  
-      Message_Direct("Enter in %s %d","Material",i+1) ;
-      Message_Direct("\n") ;
-      
-      Material_GetFields(mat) = fields ;
-      Material_GetFunctions(mat) = functions ;
-      
-      Material_Scan(mat,datafile,geom) ;
-    }
-  }
-  
-  DataFile_CloseFile(datafile) ;
-  
-  return(materials) ;
-}
-#endif
-
-
-
-void (Materials_Delete)(void* self)
-{
-  Materials_t* materials = (Materials_t*) self ;
-  
-  {
-    int n_mats = Materials_GetNbOfMaterials(materials) ;
-    Material_t* material = Materials_GetMaterial(materials) ;
-    
-    if(material) {
-      int i ;
-      
-      for(i = 0 ; i < n_mats ; i++) {
-        Material_Delete(material+i) ;
-      }
-      //Mry_Delete(material,n_mats,Material_Delete) ;
-      free(material) ;
-      Materials_GetMaterial(materials) = NULL ;
-    }
-  }
-  
-  {
-    Models_t* usedmodels = Materials_GetUsedModels(materials) ;
-    
-    if(usedmodels) {
-      Models_Delete(usedmodels) ;
-      free(usedmodels) ;
-      Materials_GetUsedModels(materials) = NULL ;
-    }
-  }
-}

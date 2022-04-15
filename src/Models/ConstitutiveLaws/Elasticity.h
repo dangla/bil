@@ -18,6 +18,7 @@ extern void           (Elasticity_CopyStiffnessTensor)     (Elasticity_t*,double
 extern void           (Elasticity_PrintStiffnessTensor)    (Elasticity_t*) ;
 extern double         (Elasticity_ComputeElasticEnergy)    (Elasticity_t*,const double*) ;
 extern double*        (Elasticity_ComputeStressTensor)     (Elasticity_t*,const double*,double*);
+extern double*        (Elasticity_StiffnessMatrixInVoigtNotation)(Elasticity_t*,double*) ;
 
 
 /* Accessors */
@@ -31,7 +32,7 @@ extern double*        (Elasticity_ComputeStressTensor)     (Elasticity_t*,const 
 #define Elasticity_MaxNbOfParameters      (8)
 
 
-#include "Tools/Math.h"
+#include "Math_.h"
 
 
 /* Isotropy */
@@ -58,7 +59,7 @@ extern double*        (Elasticity_ComputeStressTensor)     (Elasticity_t*,const 
 #define Elasticity_IsTransverselyIsotropic(EL) \
         (!strcmp(Elasticity_GetType(EL),"transiso"))
         
-#define Elasticity_SetToTransverselyIsotropy(EL) \
+#define Elasticity_SetToTransverseIsotropy(EL) \
         Elasticity_CopyType(EL,"transiso")
         
 #define Elasticity_GetYoungModulus3(EL) \

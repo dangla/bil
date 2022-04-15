@@ -53,7 +53,7 @@ extern void           (Damage_CopyStiffnessTensor)         (Damage_t*,double*) ;
 
 #include "Elasticity.h"
 #include "GenericData.h"
-#include "Tools/Math.h"
+#include "Math_.h"
 
 
 

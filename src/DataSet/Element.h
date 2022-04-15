@@ -319,7 +319,7 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
         
 
 /* Method */
-#include "String.h"
+#include "String_.h"
 
 #define Element_MethodIs(ELT,MTH) \
         String_Is(Material_GetMethod(Element_GetMaterial(ELT)),MTH)

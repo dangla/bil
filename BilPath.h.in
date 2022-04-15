@@ -1,0 +1,6 @@
+#ifndef BILPATH_H
+#define BILPATH_H
+
+#define BIL_PATH       "${BIL_PATH}"
+
+#endif

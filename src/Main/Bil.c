@@ -11,6 +11,7 @@
 #include "Help.h"
 #include "Modules.h"
 #include "OutputFiles.h"
+#include "PosFilesForGMSH.h"
 #include "Models.h"
 #include "Bil.h"
 #include "Exception.h"
@@ -225,27 +226,32 @@ void Bil_CLI(Bil_t* bil)
     char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
     Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* dataset =  DataSet_Create(filename,options) ;
-    int n_dates = Dates_GetNbOfDates(DataSet_GetDates(dataset)) ;
-    int n_points = Points_GetNbOfPoints(DataSet_GetPoints(dataset)) ;
-    OutputFiles_t* outputfiles = OutputFiles_Create(filename,n_dates,n_points) ;
     char* method = Options_GetPostProcessingMethod(options) ;
       
     Message_Direct("Post-processing\n") ;
     
-    /* GMSH Parsed file format */
-    if(strncmp(method,"GmshParsedFileFormat",strlen(method)) == 0) {
-      OutputFiles_PostProcessForGmshParsedFileFormat(outputfiles,dataset) ;
+    /* GMSH file formats */
+    if(strncmp(method,"Gmsh",4) == 0) {
+      PosFilesForGMSH_t* pf4gmsh = PosFilesForGMSH_Create(dataset) ;
+      char* fmt = method + 4 ;
       
-    /* GMSH ASCII file format */
-    } else if(strncmp(method,"GmshASCIIFileFormat",strlen(method)) == 0) {
-      OutputFiles_PostProcessForGmshASCIIFileFormat(outputfiles,dataset) ;
+      /* GMSH Parsed file format */
+      if(strncmp(fmt,"ParsedFileFormat",strlen(fmt)) == 0) {
+        PosFilesForGMSH_ParsedFileFormat(pf4gmsh) ;
+      /* GMSH ASCII file format */
+      } else if(strncmp(fmt,"ASCIIFileFormat",strlen(fmt)) == 0) {
+        PosFilesForGMSH_ASCIIFileFormat(pf4gmsh) ;
+      } else {
+        Message_FatalError("Format not available") ;
+      }
+      
+      PosFilesForGMSH_Delete(pf4gmsh) ;
+      free(pf4gmsh) ;
       
     } else {
       Message_FatalError("Format not available") ;
     }
 
-    OutputFiles_Delete(outputfiles) ;
-    free(outputfiles) ;
     DataSet_Delete(dataset) ;
     free(dataset) ;
     return ;

@@ -20,21 +20,9 @@
 *.hold
 
 # Specific headers
-BilInfo.h
-BilLib.h
-BilPath.h
-BilVersion.h
 
 # Database
-*.db
 
 # Specific folders
-doc/edition-1.6/
-doc/bil-en.html/
-doc/oxygen/html/
 
 # Specific files
-doc/oxygen/Doxyfile
-doc/bil-en.pdf
-doc/bil-en.ps
-doc/bil-en.txt

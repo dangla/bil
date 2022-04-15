@@ -8,7 +8,7 @@
 
 #include "Message.h"
 #include "Mry.h"
-#include "Tools/Math.h"
+#include "Math_.h"
 #include "Buffer.h"
 #include "CurvesFile.h"
 #include "Curves.h"

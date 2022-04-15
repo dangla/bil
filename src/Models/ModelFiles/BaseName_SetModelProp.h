@@ -7,6 +7,10 @@
 #define BASENAME_SETMODELPROP(base)   (Utils_CAT(base,_SetModelProp))
 
 /* The macro BASENAME is sent from the compiler */
-#define BaseName_SetModelProp         BASENAME_SETMODELPROP(BASENAME)
+#ifdef  BASENAME
+  #define BaseName_SetModelProp         BASENAME_SETMODELPROP(BASENAME)
+#else
+  #error "The macro BASENAME is not defined!"
+#endif
 
 #endif

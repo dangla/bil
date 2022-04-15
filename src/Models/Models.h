@@ -29,6 +29,7 @@ struct Models_s       ; typedef struct Models_s       Models_t ;
 
 
 extern Models_t* (Models_New)(const int) ;
+extern Models_t* (Models_Create)(DataFile_t*,Geometry_t*) ;
 extern void      (Models_Delete)(void*) ;
 extern void      (Models_Print)(char*,FILE *) ;
 extern Model_t*  (Models_FindModel)(Models_t*,const char*) ;
@@ -46,7 +47,6 @@ extern Model_t*  (Models_FindOrAppendModel)(Models_t*,const char*,Geometry_t*,Da
 #define Models_GetMaxNbOfModels(MODS) ((MODS)->maxn_model)
 #define Models_GetNbOfModels(MODS)    ((MODS)->n_model)
 #define Models_GetModel(MODS)         ((MODS)->model)
-
 
 
 

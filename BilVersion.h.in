@@ -1,0 +1,6 @@
+#ifndef BILVERSION_H
+#define BILVERSION_H
+
+#define BIL_VERSION       "${BIL_VERSION}"
+
+#endif

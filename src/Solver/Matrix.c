@@ -44,7 +44,7 @@ Matrix_t*   (Matrix_Create)(Mesh_t* mesh,Options_t* options,const int imatrix)
   {
     char* method = Options_GetResolutionMethod(options) ;
     
-    if(!strcmp(method,"crout")) {
+    if(!strncmp(method,"crout",5)) {
       Matrix_GetMatrixStorageFormat(a) = MatrixStorageFormat_Type(LDUSKL) ;
     
     } else if(!strcmp(method,"slu")) {
@@ -54,7 +54,7 @@ Matrix_t*   (Matrix_Create)(Mesh_t* mesh,Options_t* options,const int imatrix)
       Matrix_GetMatrixStorageFormat(a) = MatrixStorageFormat_Type(Coordinate) ;
     
     } else {
-      arret("Matrix_Create(1): unknown method") ;
+      arret("Matrix_Create: unknown method") ;
     }
   }
 
@@ -105,7 +105,7 @@ Matrix_t*   (Matrix_Create)(Mesh_t* mesh,Options_t* options,const int imatrix)
       }
 
     } else {
-      arret("Matrix_Create(2): unknown format") ;
+      arret("Matrix_Create: unknown format") ;
     }
   }
 

@@ -12,10 +12,11 @@ struct Materials_s    ; typedef struct Materials_s    Materials_t ;
 #include "Geometry.h"
 #include "Fields.h"
 #include "Functions.h"
+#include "Models.h"
 
 
-extern Materials_t* (Materials_Create)(DataFile_t*,Geometry_t*,Fields_t*,Functions_t*) ;
-extern Materials_t* (Materials_New)   (const int) ;
+extern Materials_t* (Materials_Create)(DataFile_t*,Geometry_t*,Fields_t*,Functions_t*,Models_t*) ;
+extern Materials_t* (Materials_New)   (const int,Models_t*) ;
 extern void         (Materials_Delete)(void*) ;
 
 
@@ -32,7 +33,6 @@ extern void         (Materials_Delete)(void*) ;
 
 
 
-#include "Models.h"
 #include "Material.h"
 
 
