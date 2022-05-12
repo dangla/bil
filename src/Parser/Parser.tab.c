@@ -1896,7 +1896,7 @@ yyreduce:
   case 39:
 #line 286 "Parser.y"
     {
-      printf("%s = { %d }\n",(yyvsp[-3].c),(yyvsp[-1].d));
+      printf("%s = { %e }\n",(yyvsp[-3].c),(yyvsp[-1].d));
     }
 #line 1902 "Parser.tab.c"
     break;

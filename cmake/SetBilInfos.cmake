@@ -10,7 +10,6 @@ file(STRINGS ${BIL_PATH}/VERSION BIL_VERSION)
 # General informations
 # --------------------
 set(BIL_SHORT_LICENSE "GNU General Public License")
-#set(BIL_INFO_FILE := BilInfo.h)
 string(TIMESTAMP BIL_DATE)
 string(TIMESTAMP BIL_YEAR %Y)
 cmake_host_system_information(RESULT BIL_HOST QUERY HOSTNAME)

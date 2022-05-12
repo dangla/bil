@@ -3,7 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
-#include "BilLib.h"
+#include "BilExtraLibs.h"
 #include "Options.h"
 #include "Mesh.h"
 #include "Message.h"

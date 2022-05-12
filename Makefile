@@ -10,12 +10,12 @@ LIBDIR     := ${PREFIX}/lib
 
 
 # Bil path
-BIL_PATH_FILE := BilPath.h
+BILPATH_H := BilPath.h
 BIL_PATH := ${shell pwd}
 
 
 # Bil version
-BIL_VERSION_FILE  := BilVersion.h
+BILVERSION_H  := BilVersion.h
 # BIL_VERSION       := ${word 2,${subst /bil-, ,${BIL_PATH}}}
 BIL_VERSION       := ${shell cat ${BIL_PATH}/VERSION}
 BIL_MAJOR_VERSION := ${word 1,${subst ., ,${BIL_VERSION}}}
@@ -32,7 +32,7 @@ BIL_EXE := bil-${BIL_VERSION}${EXEEXT}
 
 
 # General informations
-BIL_INFO_FILE := BilInfo.h
+BILINFO_H     := BilInfo.h
 BIL_SHORT_LICENSE := "GNU General Public License"
 BIL_DATE      := ${shell date}
 BIL_YEAR      := ${shell date +%Y}
@@ -71,7 +71,7 @@ BIL_LIBS := -lbil-${BIL_VERSION}
 
 
 # Directive file for the loading of extra-libraries
-BIL_LIB_FILE  := BilLib.h
+BILEXTRALIBS_H  := BilExtraLibs.h
 
 
 # Do we use extra-libraries?
@@ -160,10 +160,10 @@ clean:
 clean-all: clean
 	rm -f ${BIL_BINDIR}/${BIL_EXE}
 	rm -f ${BIL_BINDIR}/*
-	rm -f ${BIL_VERSION_FILE} 
-	rm -f ${BIL_INFO_FILE} 
-	rm -f ${BIL_LIB_FILE}
-	rm -f ${BIL_PATH_FILE}
+	rm -f ${BILVERSION_H} 
+	rm -f ${BILINFO_H} 
+	rm -f ${BILEXTRALIBS_H}
+	rm -f ${BILPATH_H}
 	cd doc && ${MAKE} clean-all
 
 
@@ -171,11 +171,15 @@ clean-all: clean
 # Target rules for building path file
 
 path:
-	rm -f ${BIL_PATH_FILE}
-	echo "#define BIL_PATH \"${BIL_PATH}\"" >  ${BIL_PATH_FILE}
+	rm -f ${BILPATH_H}
+	touch ${BILPATH_H}
+	echo "#ifndef BILPATH_H"    >>  ${BILPATH_H}
+	echo "#define BILPATH_H"    >>  ${BILPATH_H}
+	echo "#define BIL_PATH \"${BIL_PATH}\"" >>  ${BILPATH_H}
+	echo "#endif"    >>  ${BILPATH_H}
 
 path_init:
-	@if [ ! -r ${BIL_PATH_FILE} ]; then ${MAKE} path ; fi
+	@if [ ! -r ${BILPATH_H} ]; then ${MAKE} path ; fi
 
 
 #=======================================================================
@@ -183,33 +187,41 @@ path_init:
 
 .PHONY: version
 version:
-	rm -f ${BIL_VERSION_FILE}
-	echo "#define BIL_MAJOR_VERSION ${BIL_MAJOR_VERSION}" >  ${BIL_VERSION_FILE}
-	echo "#define BIL_MINOR_VERSION ${BIL_MINOR_VERSION}" >> ${BIL_VERSION_FILE}
-	echo "#define BIL_PATCH_VERSION ${BIL_PATCH_VERSION}" >> ${BIL_VERSION_FILE}
-	echo "#define BIL_VERSION   \"${BIL_VERSION}\""       >> ${BIL_VERSION_FILE}
+	rm -f ${BILVERSION_H}
+	touch ${BILVERSION_H}
+	echo "#ifndef BILVERSION_H"    >>  ${BILVERSION_H}
+	echo "#define BILVERSION_H"    >>  ${BILVERSION_H}
+	echo "#define BIL_MAJOR_VERSION ${BIL_MAJOR_VERSION}" >> ${BILVERSION_H}
+	echo "#define BIL_MINOR_VERSION ${BIL_MINOR_VERSION}" >> ${BILVERSION_H}
+	echo "#define BIL_PATCH_VERSION ${BIL_PATCH_VERSION}" >> ${BILVERSION_H}
+	echo "#define BIL_VERSION   \"${BIL_VERSION}\""       >> ${BILVERSION_H}
+	echo "#endif"    >>  ${BILVERSION_H}
 
 version_init:
-	@if [ ! -r ${BIL_VERSION_FILE} ]; then ${MAKE} version ; fi
+	@if [ ! -r ${BILVERSION_H} ]; then ${MAKE} version ; fi
 
 
 #=======================================================================
 # Target rules for building info file
 
 info:
-	rm -f ${BIL_INFO_FILE}
-	echo "#define BIL_PROGNAME  \"${BIL_PROGNAME}\""   > ${BIL_INFO_FILE}
-	echo "#define BIL_COPYRIGHT \"${BIL_COPYRIGHT}\"" >> ${BIL_INFO_FILE}
-	echo "#define BIL_DATE      \"${BIL_DATE}\""      >> ${BIL_INFO_FILE}
-	echo "#define BIL_HOST      \"${BIL_HOST}\""      >> ${BIL_INFO_FILE}
-	echo "#define BIL_PACKAGER  \"${BIL_PACKAGER}\""  >> ${BIL_INFO_FILE}
-	echo "#define BIL_OS        \"${BIL_OS}\""        >> ${BIL_INFO_FILE}
-	echo "#define BIL_SHORT_LICENSE \"${BIL_SHORT_LICENSE}\"" >> ${BIL_INFO_FILE}
-	echo "#define BIL_URL       \"${BIL_URL}\""       >> ${BIL_INFO_FILE}
-	echo "#define BIL_EMAIL     \"${BIL_EMAIL}\""     >> ${BIL_INFO_FILE}
+	rm -f ${BILINFO_H}
+	touch ${BILINFO_H}
+	echo "#ifndef BILINFO_H"    >>  ${BILINFO_H}
+	echo "#define BILINFO_H"    >>  ${BILINFO_H}
+	echo "#define BIL_PROGNAME  \"${BIL_PROGNAME}\""  >> ${BILINFO_H}
+	echo "#define BIL_COPYRIGHT \"${BIL_COPYRIGHT}\"" >> ${BILINFO_H}
+	echo "#define BIL_DATE      \"${BIL_DATE}\""      >> ${BILINFO_H}
+	echo "#define BIL_HOST      \"${BIL_HOST}\""      >> ${BILINFO_H}
+	echo "#define BIL_PACKAGER  \"${BIL_PACKAGER}\""  >> ${BILINFO_H}
+	echo "#define BIL_OS        \"${BIL_OS}\""        >> ${BILINFO_H}
+	echo "#define BIL_SHORT_LICENSE \"${BIL_SHORT_LICENSE}\"" >> ${BILINFO_H}
+	echo "#define BIL_URL       \"${BIL_URL}\""       >> ${BILINFO_H}
+	echo "#define BIL_EMAIL     \"${BIL_EMAIL}\""     >> ${BILINFO_H}
+	echo "#endif"    >>  ${BILINFO_H}
 
 info_init:
-	@if [ ! -r ${BIL_INFO_FILE} ]; then ${MAKE} info ; fi
+	@if [ ! -r ${BILINFO_H} ]; then ${MAKE} info ; fi
 
 
 #=======================================================================
@@ -217,17 +229,20 @@ info_init:
 
 .PHONY: lib
 lib:
-	rm -f ${BIL_LIB_FILE}
-	touch ${BIL_LIB_FILE} ;
-	@if [ ${SLU_USE} = "YES" ] ; then \
-		echo "#define SUPERLULIB  ${SLU_DIR}"    >>  ${BIL_LIB_FILE} ; \
+	rm -f ${BILEXTRALIBS_H}
+	touch ${BILEXTRALIBS_H}
+	echo "#ifndef BILEXTRALIBS_H"    >>  ${BILEXTRALIBS_H}
+	echo "#define BILEXTRALIBS_H"    >>  ${BILEXTRALIBS_H}
+	@if [ -n "${SUPERLU_DIR}" ]; then \
+	  echo "#define SUPERLULIB  ${SUPERLU_DIR}" >> ${BILEXTRALIBS_H} ; \
 	fi
-	@if [ ${BLAS_USE} = "YES" ] ; then \
-		echo "#define BLASLIB     ${BLAS_DIR}"   >> ${BIL_LIB_FILE} ; \
+	@if [ -n "${BLAS_DIR}" ] ; then \
+	  echo "#define BLASLIB     ${BLAS_DIR}"    >> ${BILEXTRALIBS_H} ; \
 	fi
-	@if [ ${LAPACK_USE} = "YES" ] ; then \
-		echo "#define LAPACKLIB   ${LAPACK_DIR}" >> ${BIL_LIB_FILE} ; \
+	@if [ -n "${LAPACK_DIR}" ] ; then \
+	  echo "#define LAPACKLIB   ${LAPACK_DIR}"  >> ${BILEXTRALIBS_H} ; \
 	fi
+	echo "#endif"    >>  ${BILEXTRALIBS_H}
 
 
 #=======================================================================
@@ -262,53 +277,7 @@ zip:
 # Target rules for githelp
 
 githelp:
-	@( echo "States of files: tracked or untracked" )
-	@( echo "  tracked files: can be unmodified, modified or staged" )
-	@( echo "  untracked files: anything else" )
-	@( echo "" )
-	@( echo "Checking" )
-	@( echo "  checking the status of files: git status" )
-	@( echo "  ...for a more compact output: git status -s" )
-	@( echo "" )
-	@( echo "Tracking" )
-	@( echo "  tracking new files: git add <pathtonewfile.c>" )
-	@( echo "" )
-	@( echo "Staging" )
-	@( echo "  staging modified files: git add <pathtofile.c>" )
-	@( echo "  viewing staged and unstaged changes: git diff" )
-	@( echo "  viewing what was staged that will go into the next commit: git diff --staged" )
-	@( echo "" )
-	@( echo "Committing" )
-	@( echo "  committing the changes: git commit -m <message>" )
-	@( echo "  skipping the staging:   git commit -a -m <message>" )
-	@( echo "" )
-	@( echo "Viewing" )
-	@( echo "  viewing the commit history: git log" )
-	@( echo "  showing the difference introduced in each commit: git log -p" )
-	@( echo "  prints on a single line: git log --pretty=oneline" )
-	@( echo "" )
-	@( echo "Working with remotes" )
-	@( echo "  showing your remotes: git remote" )
-	@( echo "  with the URLs that Git has stored for the shortname to be used: git remote -v" )
-	@( echo "  adding a remote: git remote add <shortname> <url>" )
-	@( echo "" )
-	@( echo "Pushing" )
-	@( echo "  pushing to remote ifsttar: git push ifsttar master" )
-	@( echo "  pushing to remote dangla: git push dangla master" )
-	@( echo "  adding a remote: git remote add <shortname> <url>" )
-	@( echo "  Note: Github will no longer accept account passwords" )
-	@( echo "  for authenticating Git operations and will require " )
-	@( echo "  a personal access token." )
-	@( echo "  Such a personal access token can be generated" )
-	@( echo "  in the github account by clicking:" )
-	@( echo "  Settings, Developer settings, Personal access tokens.")
-	@( echo "  Select the scope \"repo\".")
-	@( echo "  Use this personal access token as a password.")
-	@( echo "" )
-	@( echo "Tagging" )
-	@( echo "  listing the available tags: git tag" )
-	@( echo "  creating annotated tags: git tag -a <version> -m <message>" )
-	@( echo "  tagging later: git tag -a <version> <checksum>" )
+	@( cat .githelp )
 	
 
 #=======================================================================
@@ -320,6 +289,10 @@ test:
 	@( echo "Last part of BIL_PATH = ${notdir ${BIL_PATH}}" )
 	@( echo "BIL_COPYRIGHT = ${BIL_COPYRIGHT}" )
 	@( echo "BIL_LIBS = ${BIL_LIBS}" )
+	@( echo "SUPERLU_DIR = ${SUPERLU_DIR}" )
+	@( echo "BLAS_DIR = ${BLAS_DIR}" )
+	@( echo "LAPACK_DIR = ${LAPACK_DIR}" )
+	@( echo "UEL_DIR = ${UEL_DIR}" )
 	
 
 #=======================================================================

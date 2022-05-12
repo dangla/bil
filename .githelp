@@ -1,0 +1,54 @@
+States of files: tracked or untracked
+  tracked files: can be unmodified, modified or staged
+  untracked files: anything else
+
+Checking
+  checking the status of files: git status
+  ...for a more compact output: git status -s
+
+Tracking
+  tracking new files: git add <pathtonewfile.c>
+
+Staging
+  staging modified files: git add <pathtofile.c>
+  viewing staged and unstaged changes: git diff
+  viewing what was staged that will go into the next commit: git diff --staged
+
+Committing
+  committing the changes: git commit -m <message>
+  skipping the staging:   git commit -a -m <message>
+
+Viewing
+  viewing the commit history: git log
+  showing the difference introduced in each commit: git log -p
+  prints on a single line: git log --pretty=oneline
+
+Working with remotes
+  showing your remotes: git remote
+  with the URLs that Git has stored for the shortname to be used: git remote -v
+  adding a remote: git remote add <shortname> <url>
+
+Pushing
+  pushing to remote ifsttar: git push ifsttar master
+  pushing to remote dangla: git push dangla master
+  adding a remote: git remote add <shortname> <url>
+  Note: Github will no longer accept account passwords
+  for authenticating Git operations and will require 
+  a personal access token.
+  Such a personal access token can be generated
+  in the github account by clicking:
+  Settings, Developer settings, Personal access tokens.
+  Select the scope "repo".
+  Use this personal access token as a password.
+
+Tagging
+  listing the available tags: git tag
+  creating annotated tags: git tag -a <version> -m <message>
+  tagging later: git tag -a <version> <checksum>
+
+Publishing a new release in github
+  click on "Releases" and "Draft a new release", 
+  click on "Choose a tag" and enter a new tag such as "vX.Y.Z"
+  click on "Create new tag"
+  click on "Publish release"
+  

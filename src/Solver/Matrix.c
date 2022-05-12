@@ -6,7 +6,7 @@
 #include "Options.h"
 #include "Mesh.h"
 #include "Message.h"
-#include "BilLib.h"
+#include "BilExtraLibs.h"
 #include "Mry.h"
 #include "Matrix.h"
 #include "MatrixStorageFormat.h"

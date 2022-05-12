@@ -6,7 +6,7 @@
 #include "Options.h"
 #include "Mesh.h"
 #include "Message.h"
-#include "BilLib.h"
+#include "BilExtraLibs.h"
 #include "Mry.h"
 #include "CoordinateFormat.h"
 
@@ -29,8 +29,8 @@ CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t* mesh,Options_t* options,co
     {
       int nnz = CoordinateFormat_GetNbOfNonZeroValues(cfmt) ;
       /* The length required by ma38 must not be lower than 2*nnz */
-      int ff = Options_GetFillFactor(options) ;
-      int lv  = ff*(2*nnz) ;
+      double ff = Options_GetFillFactor(options) ;
+      int lv  = floor(ff*(2*nnz)) ;
       double* v = (double*) Mry_New(double[lv]) ;
       
       CoordinateFormat_GetLengthOfArrayValue(cfmt) = lv ;
@@ -44,8 +44,8 @@ CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t* mesh,Options_t* options,co
       int nnz = CoordinateFormat_GetNbOfNonZeroValues(cfmt) ;
       int n = Mesh_GetNbOfMatrixColumns(mesh)[imatrix] ;
       /* The length required by ma38 must not be lower than 3*nnz+2*n+1 */
-      int ff = Options_GetFillFactor(options) ;
-      int lindex = ff*(3*nnz + 2*n + 1) ;
+      double ff = Options_GetFillFactor(options) ;
+      int lindex = floor(ff*(3*nnz + 2*n + 1)) ;
       int* index = (int*) Mry_New(int[lindex]) ;
       
       CoordinateFormat_GetLengthOfArrayIndex(cfmt) = lindex ;
@@ -78,8 +78,8 @@ CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t* mesh,Options_t* options)
     {
       int nnz = CoordinateFormat_GetNbOfNonZeroValues(cfmt) ;
       /* The length required by ma38 must not be lower than 2*nnz */
-      int ff = Options_GetFillFactor(options) ;
-      int lv  = ff*(2*nnz) ;
+      double ff = Options_GetFillFactor(options) ;
+      int lv  = floor(ff*(2*nnz)) ;
       double* v = (double*) Mry_New(double[lv]) ;
       
       CoordinateFormat_GetLengthOfArrayValue(cfmt) = lv ;
@@ -93,8 +93,8 @@ CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t* mesh,Options_t* options)
       int nnz = CoordinateFormat_GetNbOfNonZeroValues(cfmt) ;
       int n = Mesh_GetNbOfMatrixColumns(mesh)[0] ;
       /* The length required by ma38 must not be lower than 3*nnz+2*n+1 */
-      int ff = Options_GetFillFactor(options) ;
-      int lindex = ff*(3*nnz + 2*n + 1) ;
+      double ff = Options_GetFillFactor(options) ;
+      int lindex = floor(ff*(3*nnz + 2*n + 1)) ;
       int* index = (int*) Mry_New(int[lindex]) ;
       
       CoordinateFormat_GetLengthOfArrayIndex(cfmt) = lindex ;

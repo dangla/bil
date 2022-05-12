@@ -1,5 +1,4 @@
 
-
 include(DirsAndSourcesOfBil)
 dirs_and_sources_of_bil(BIL_DIRSALL BIL_SRCALL)
 #message(STATUS "directories:")
@@ -35,6 +34,16 @@ set_target_properties(${BIL_LIB}
 install(TARGETS ${BIL_LIB}
   DESTINATION ${BIL_INSTALL_FULL_LIBDIR}
   LIBRARY OPTIONAL)
+
+
+
+#[[
+  Install the headers
+ ]]
+
+include(AppendBilFiles)
+append_bil_files("${BIL_DIRSALL}" "h" BIL_HDRALL)
+install(FILES ${BIL_HDRALL} DESTINATION ${BIL_INSTALL_FULL_INCLUDEDIR})
 
 
 

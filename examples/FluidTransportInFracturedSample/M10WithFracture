@@ -1,0 +1,107 @@
+Geometry
+2 plane
+
+
+
+Mesh
+cracked_halfCrack.msh
+
+
+
+Material
+Model = M10
+gravite = 0
+phi = 0.38
+rho_l = 1
+k_int = 1.e-18
+mu_l = 1.e-3
+p_g = 0
+Curves = unsat   p_c = Range{x1 = 0,x2 = 1.e9,n = 401} s_l = Van-Genuchten(1){p0 = 37547939.5,m = 0.461169} k_rl = Mualem_liq(2){m = 0.461169}
+
+
+
+Material
+Model = M10
+gravite = 0
+phi = 0.38
+rho_l = 1
+k_int = 1.e-18
+mu_l = 1.e-3
+p_g = 0
+Curves = unsat   p_c = Range{x1 = 0,x2 = 1.e9,n = 401} s_l = Van-Genuchten(1){p0 = 37547939.5,m = 0.461169} k_rl = Mualem_liq(2){m = 0.461169}
+
+
+
+
+Material
+Model = M10
+gravite = 0
+phi = 0.38
+rho_l = 1
+k_int = 1.e-14
+mu_l = 1.e-3
+p_g = 0
+Curves = unsat   p_c = Range{x1 = 0,x2 = 1.e9,n = 401} s_l = Van-Genuchten(1){p0 = 37547939.5,m = 0.461169} k_rl = Mualem_liq(2){m = 0.461169}
+
+
+
+
+Fields
+1
+Value = -1.e8   Gradient = 0 0 0   Point = 10 0 0
+
+
+
+Initialization
+2
+Region = 100    Unknown = p_l   Field = 1   Function = 0
+Region = 200    Unknown = p_l   Field = 1   Function = 0
+
+
+
+Functions
+1
+N = 2   F(0) = 1   F(86400) = 0
+
+
+
+Boundary Conditions
+2
+Region = 50    Unknown = p_l   Field = 1   Function = 1
+Region = 60    Unknown = p_l   Field = 1   Function = 1
+#Region = 20    Unknown = p_l   Field = 1   Function = 0
+#Region = 30    Unknown = p_l   Field = 1   Function = 0
+
+
+
+Loads
+0
+
+
+
+Points
+0
+
+
+
+Dates
+7
+0  21600  43200  86400  172800  345600  691200
+
+
+
+Objective Variations
+p_l = 1.e6
+
+
+
+Iterative Process
+Iter = 20
+Tol = 1.e-6
+Recom = 0
+
+
+
+Time Steps
+Dtini = 100 
+Dtmax = 1.e6

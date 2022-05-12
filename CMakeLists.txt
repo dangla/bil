@@ -43,11 +43,12 @@ set(BIL_SRCDIR ${BIL_PATH}/src)
 # Installation directories
 # ------------------------
 include(GNUInstallDirs)
-set(BIL_INSTALL_FULL_LIBDIR  ${CMAKE_INSTALL_FULL_LIBDIR})
-set(BIL_INSTALL_FULL_BINDIR  ${CMAKE_INSTALL_FULL_BINDIR})
-set(BIL_INSTALL_FULL_MAN1DIR ${CMAKE_INSTALL_FULL_MANDIR}/man1)
-set(BIL_INSTALL_FULL_DOCDIR  ${CMAKE_INSTALL_FULL_DOCDIR})
-set(BIL_INSTALL_FULL_INFODIR ${CMAKE_INSTALL_FULL_INFODIR})
+set(BIL_INSTALL_FULL_LIBDIR     ${CMAKE_INSTALL_FULL_LIBDIR})
+set(BIL_INSTALL_FULL_BINDIR     ${CMAKE_INSTALL_FULL_BINDIR})
+set(BIL_INSTALL_FULL_MAN1DIR    ${CMAKE_INSTALL_FULL_MANDIR}/man1)
+set(BIL_INSTALL_FULL_DOCDIR     ${CMAKE_INSTALL_FULL_DOCDIR})
+set(BIL_INSTALL_FULL_INFODIR    ${CMAKE_INSTALL_FULL_INFODIR})
+set(BIL_INSTALL_FULL_INCLUDEDIR ${CMAKE_INSTALL_FULL_INCLUDEDIR}/bil)
 
 
 # Library of Bil
@@ -62,7 +63,7 @@ set(BIL_EXE ${BIL_LIB}.exe)
 
 # Extra-libraries
 # ---------------
-set(BIL_EXTRALIBS_FILE BilLib.h)
+set(BILEXTRALIBS_H BilExtraLibs.h)
 set(BIL_EXTRALIBS)
 include(Extralibs)
 
@@ -97,65 +98,12 @@ add_subdirectory(doc)
 # --------------
 
 
-add_custom_target(githelp
-    COMMAND echo "States of files: tracked or untracked"
-    COMMAND echo "  tracked files: can be unmodified, modified or staged"
-    COMMAND echo "  untracked files: anything else"
-    COMMAND echo ""
-    COMMAND echo "Checking"
-    COMMAND echo "  checking the status of files: git status"
-    COMMAND echo "  ...for a more compact output: git status -s"
-    COMMAND echo ""
-    COMMAND echo "Tracking"
-    COMMAND echo "  tracking new files: git add [pathtonewfile.c]"
-    COMMAND echo ""
-    COMMAND echo "Staging"
-    COMMAND echo "  staging modified files: git add [pathtofile.c]"
-    COMMAND echo "  viewing staged and unstaged changes: git diff"
-    COMMAND echo "  viewing what was staged that will go into the next commit: git diff --staged"
-    COMMAND echo ""
-    COMMAND echo "Committing"
-    COMMAND echo "  committing the changes: git commit -m [message]"
-    COMMAND echo "  skipping the staging:   git commit -a -m [message]"
-    COMMAND echo ""
-    COMMAND echo "Viewing"
-    COMMAND echo "  viewing the commit history: git log"
-    COMMAND echo "  showing the difference introduced in each commit: git log -p"
-    COMMAND echo "  prints on a single line: git log --pretty=oneline"
-    COMMAND echo ""
-    COMMAND echo "Working with remotes"
-    COMMAND echo "  showing your remotes: git remote"
-    COMMAND echo "  with the URLs that Git has stored for the shortname to be used: git remote -v"
-    COMMAND echo "  adding a remote: git remote add [shortname] [url]"
-    COMMAND echo ""
-    COMMAND echo "Pushing"
-    COMMAND echo "  pushing to remote ifsttar: git push ifsttar master"
-    COMMAND echo "  pushing to remote dangla: git push dangla master"
-    COMMAND echo "  adding a remote: git remote add [shortname] [url]"
-    COMMAND echo "  Note: Github will no longer accept account passwords"
-    COMMAND echo "  for authenticating Git operations and will require "
-    COMMAND echo "  a personal access token."
-    COMMAND echo "  Such a personal access token can be generated"
-    COMMAND echo "  in the github account by clicking:"
-    COMMAND echo "  Settings, Developer settings, Personal access tokens."
-    COMMAND echo "  Select the scope \"repo\"."
-    COMMAND echo "  Use this personal access token as a password."
-    COMMAND echo ""
-    COMMAND echo "Tagging"
-    COMMAND echo "  listing the available tags: git tag"
-    COMMAND echo "  creating annotated tags: git tag -a [version] -m [message]"
-    COMMAND echo "  tagging later: git tag -a [version] [checksum]"
-    COMMENT "Reminders of git basic commands"
-)
-
-
-
 # Target rules for memcheck through valgrind.
 # To pass the variable "foo" to make, use the command-line: make memcheck arg="foo"
 find_program(VALGRIND valgrind)
 if(VALGRIND)
   add_custom_target(memcheck
-    COMMAND ${VALGRIND} --tool=memcheck --leak-check=full ${BIL_EXE} ${arg}
+    COMMAND ${VALGRIND} --tool=memcheck --leak-check=full --read-var-info=yes ${BIL_EXE} ${arg}
   )
 endif()
 
@@ -173,6 +121,9 @@ message("C++ compiler flags:  ${CMAKE_CXX_FLAGS}")
 message("Fortran compiler flags:  ${CMAKE_Fortran_FLAGS}")
 if(CMAKE_BUILD_TYPE)
   message("Build type:  ${CMAKE_BUILD_TYPE}")
+endif()
+if(CMAKE_BUILD_PARALLEL_LEVEL)
+  message("Build parallel level:  ${CMAKE_BUILD_PARALLEL_LEVEL}")
 endif()
 message("Install prefix:  ${CMAKE_INSTALL_PREFIX}")
 message("")

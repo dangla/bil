@@ -1,45 +1,53 @@
 #
 SHELL = /bin/sh
 
-# Do you use these libraries: BLAS, LAPACK, SuperLU or others (YES/NO) ?
-BLAS_USE   := NO
-LAPACK_USE := NO
-SLU_USE    := NO
-
-# if YES, where are these libraries ?
-# Change if needed  (${HOME} is root when sudo so I removed it)
-#SLU_DIR    := ${HOME}/Documents/Softwares/superLU/SuperLU_3.0
-#SLU_DIR    := /home/dangla/Documents/Softwares/superLU/SuperLU_3.0
-SLU_DIR    := /usr/lib/x86_64-linux-gnu
-SLU_LIB    := ${SLU_DIR}/libsuperlu.so.5
-BLAS_DIR   := /usr/lib
-BLAS_LIB   := ${BLAS_DIR}/libblas.so.3
-LAPACK_DIR := /usr/lib
-LAPACK_LIB := ${LAPACK_DIR}/liblapack.so.3
 
 BIL_EXTRALIBS := 
 
-ifeq (${SLU_USE},YES)
-  BIL_EXTRALIBS += ${SLU_LIB}
+
+# The file "EXTRALIBS" may set the full paths to the libraries:
+# BLAS, LAPACK, SUPERLU, UEL (see  EXTRALIBS).
+# If the path is not set the library will not be included.
+sinclude EXTRALIBS
+
+
+# Do you use the library BLAS?
+# ----------------------------
+ifdef BLAS
+  ifeq (${shell test -f ${BLAS} && echo -n yes},yes)
+    BLAS_DIR = ${shell dirname ${BLAS}}
+    BIL_EXTRALIBS += ${BLAS}
+  endif
 endif
 
-ifeq (${BLAS_USE},YES)
-  BIL_EXTRALIBS += ${BLAS_LIB}
+
+# Do you use the library LAPACK?
+# ------------------------------
+ifdef LAPACK
+  ifeq (${shell test -f ${LAPACK} && echo -n yes},yes)
+    LAPACK_DIR = ${shell dirname ${LAPACK}}
+    BIL_EXTRALIBS += ${LAPACK}
+  endif
 endif
 
-ifeq (${LAPACK_USE},YES)
-  BIL_EXTRALIBS += ${LAPACK_LIB}
+
+# Do you use the library SUPERLU?
+# -------------------------------
+ifdef SUPERLU
+  ifeq (${shell test -f ${SUPERLU} && echo -n yes},yes)
+    SUPERLU_DIR = ${shell dirname ${SUPERLU}}
+    BIL_EXTRALIBS += ${SUPERLU}
+  endif
 endif
 
 
-# Library UEL
-# -----------
-UEL_USE := NO
-UEL_DIR := /home/dangla/Documents/Softwares/bil/Projects/IoannisStefanou
-UEL_LIB := ${UEL_DIR}/libUEL_64.so
-
-ifeq (${UEL_USE},YES)
-  BIL_EXTRALIBS += ${UEL_LIB}
+# Do you use the library UEL?
+# ---------------------------
+ifdef UEL
+  ifeq (${shell test -f ${UEL} && echo -n yes},yes)
+    UEL_DIR = ${shell dirname ${UEL}}
+    BIL_EXTRALIBS += ${UEL}
+  endif
 endif
 
 

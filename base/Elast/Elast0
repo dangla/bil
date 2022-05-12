@@ -1,14 +1,16 @@
-DIME
+Geometry
 1 axis
 
-MESH
+
+Mesh
 4
 0.1 0.1 0.2 0.2
 1.e-2
 1 10 1
 1 1 1
 
-MATE # Layer 1 (stiff)
+
+Material # Layer 1 (stiff)
 Model = Elast
 gravity = 0           # gravity
 rho_s = 0             # masse density
@@ -18,41 +20,51 @@ sig0_33 = -1e6        # initial stress 33
 young =  10.e+09       # Young's modulus
 poisson = 0.26        # Poisson's ratio
 
-FLDS
+
+Fields
 1
 Value = -1e6   Gradient = 0 0 0 Point = 0 0 0
 
-INIT
+
+Initialization
 0
 
-FUNC
+
+Functions
 1
 N = 3  F(0) = -1  F(1) = -10 F(2) = -0.1
 
-COND
+
+Boundary Conditions
 0
 
-LOAD
+
+Loads
 2
 Region = 1 Equation = meca_1 Type = force Field = 1 Function = 1
 Region = 3 Equation = meca_1 Type = force Field = 1 Function = 0
 
-POIN
+
+Points
 0
 
-DATE
+
+Dates
 3
 0 1 2
 
-OBJE
+
+Objective Variations
 u_1   = 1.e-4
 
-ITER
+
+Iterative Process
 Iterations  = 3
 Tolerance   = 0.0001 
 Repetitions = 0 
 
-TIME
+
+Time Steps
 Dtini = 1
 Dtmax = 100000
 

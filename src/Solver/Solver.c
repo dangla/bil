@@ -7,7 +7,7 @@
 #include "Mry.h"
 #include "Solver.h"
 #include "Message.h"
-#include "BilLib.h"
+#include "BilExtraLibs.h"
 #include "ResolutionMethod.h"
 #include "CroutMethod.h"
 #ifdef SUPERLULIB

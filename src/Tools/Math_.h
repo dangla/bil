@@ -47,7 +47,7 @@ extern double*  (Math_SolveByGaussEliminationJIK)(double*,double*,int,int*) ;
         Math_SolveByGaussEliminationKIJ
 
 
-#include "BilLib.h"
+#include "BilExtraLibs.h"
 
 #ifdef LAPACKLIB
 #if defined(__cplusplus)

@@ -1,0 +1,4 @@
+BLAS = /usr/lib/x86_64-linux-gnu/blas/libblas.so
+LAPACK = /usr/lib/x86_64-linux-gnu/lapack/liblapack.so
+SUPERLU = /usr/lib/x86_64-linux-gnu/libsuperlu.so
+#UEL = /home/dangla/Documents/Softwares/bil/Projects/IoannisStefanou/libUEL_64.so

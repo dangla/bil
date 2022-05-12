@@ -1,0 +1,81 @@
+Geometry
+2 plan
+
+
+Mesh
+cracked_halfCrack.msh     # gmshcrack -f halfCrack.msh -c 70 -t 7 -s 200,50
+
+
+Material # Bulk
+Modele = Plast
+gravity = 0       # gravity
+rho_s = 2350      # mass density of solid skeleton
+young = 5.8e+07   # Young's modulus
+poisson = 0.3     # Poisson's ratio
+cohesion = 1.e5      # cohesion
+friction = 0     # friction angle
+dilatancy = 0    # dilatancy angle
+
+
+Material # Interface
+Modele = Plast
+gravity = 0       # gravity
+rho_s = 2350      # mass density of solid skeleton
+young = 0.e+07   # Young's modulus
+poisson = 0.3     # Poisson's ratio
+cohesion = 1.e5      # cohesion
+friction = 0     # friction angle
+dilatancy = 0    # dilatancy angle
+
+
+
+Fields
+1
+Value = 1   Gradient = 0 0 0 Point = 0 0 0
+
+
+Initialization
+0
+
+
+Functions
+1
+N = 2  F(0) = 0  F(10) = -2.e5
+
+
+Boundary Conditions
+3
+Region = 7  Unknown = u_1   Field = 0 Function = 0
+Region = 7  Unknown = u_2   Field = 0 Function = 0
+Region = 3  Unknown = u_2   Field = 0 Function = 0
+
+
+Loads
+2
+Region = 10 Equation = meca_1 Type = pressure Field = 1 Function = 1
+Region = 40 Equation = meca_1 Type = pressure Field = 1 Function = 1
+
+
+Points
+0
+
+Dates
+3
+0 1 2
+
+
+Objective Variations
+u_1   = 1.e-4
+u_2   = 1.e-4
+
+
+Iterative Process
+Iterations  = 100
+Tolerance   = 1.e-4 
+Repetitions = 0 
+
+
+Time Steps
+Dtini = 1.e-4
+Dtmax = 10
+

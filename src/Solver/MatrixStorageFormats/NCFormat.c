@@ -6,7 +6,7 @@
 #include "Options.h"
 #include "Mesh.h"
 #include "Message.h"
-#include "BilLib.h"
+#include "BilExtraLibs.h"
 #include "Mry.h"
 #include "NCFormat.h"
 
@@ -29,7 +29,8 @@ NCFormat_t* (NCFormat_Create)(Mesh_t* mesh,const int imatrix)
   }
 
 
-  /* Initialize colptr0 */
+  /* We compute in colptr0 an over-estimated nb of terms 
+   * in each column of the matrix */
   {
     int n_el = Mesh_GetNbOfElements(mesh) ;
     Element_t* el = Mesh_GetElement(mesh) ;
@@ -38,7 +39,7 @@ NCFormat_t* (NCFormat_Create)(Mesh_t* mesh,const int imatrix)
     
     for(i = 0 ; i < n_col + 1 ; i++) colptr0[i] = 0 ;
 
-    /* nb max de termes par colonne */
+    /* Max nb of terms per column */
     for(ie = 0 ; ie < n_el ; ie++) {
       int neq = Element_GetNbOfEquations(el + ie) ;
     
@@ -62,9 +63,11 @@ NCFormat_t* (NCFormat_Create)(Mesh_t* mesh,const int imatrix)
       }
     }
 
-    colptr0[0] = 0 ; /* deja nul ! */
+    colptr0[0] = 0 ; /* imposed to 0 ! */
     
-    /* on calcul ou commence chaque colonne */
+    /* This is the cumulative nb of terms i.e. this is where to start
+     * the column in stored non-zero terms of the matrix. So an
+     * over-estimated nb of terms for the matrix is colptr0[n_col] */
     for(i = 0 ; i < n_col ; i++) colptr0[i+1] += colptr0[i] ;
   }
 
@@ -128,7 +131,7 @@ NCFormat_t* (NCFormat_Create)(Mesh_t* mesh,const int imatrix)
               if(jj < 0) continue ;
             
               //jcol = Node_GetMatrixColumnIndex(node_j)[jj] ;
-              jcol = Node_GetSelectedMatrixColumnIndexOf(node_j,ii,imatrix) ;
+              jcol = Node_GetSelectedMatrixColumnIndexOf(node_j,jj,imatrix) ;
               if(jcol < 0) continue ;
             
               /* on verifie que irow n'est pas deja enregistre */
@@ -153,7 +156,7 @@ NCFormat_t* (NCFormat_Create)(Mesh_t* mesh,const int imatrix)
   }
 
 
-  /* compression de rowind */
+  /* compression of rowind */
   {
     int* colptr = NCFormat_GetFirstNonZeroValueIndexOfColumn(ncformat) ;
     int* rowind = NCFormat_GetRowIndexOfNonZeroValue(ncformat) ;
@@ -187,7 +190,7 @@ NCFormat_t* (NCFormat_Create)(Mesh_t* mesh,const int imatrix)
   }
 
 
-  /* reallocation de la memoire */
+  /* reallocate the memory space */
   {
     int* rowind = NCFormat_GetRowIndexOfNonZeroValue(ncformat) ;
     int nnz = NCFormat_GetNbOfNonZeroValues(ncformat) ;
@@ -200,7 +203,7 @@ NCFormat_t* (NCFormat_Create)(Mesh_t* mesh,const int imatrix)
   }
   
 
-  /*  1. allocation de l'espace memoire pour la matice */
+  /* Allocation of space for the matrix */
   {
     int nnz = NCFormat_GetNbOfNonZeroValues(ncformat) ;
     double* nzval = (double*) Mry_New(double[nnz]) ;

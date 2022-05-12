@@ -138,6 +138,20 @@ work_10:
 	); done
 
 
+work_11:
+	for file in ${ALLFILES}; do (\
+	cp $$file $$file.bak && \
+	sed 's/^#include "PredefinedMethods.h/#include "PredefinedModelMethods.h/g' $$file.bak > $$file \
+	); done
+
+
+work_test:
+	for file in M52b.c; do (\
+	cp $$file $$file.bak && \
+	sed 's/^#include "PredefinedMethods.h/#include "PredefinedModelMethods.h/g' $$file.bak > $$file \
+	); done
+
+
 printfilenames:
 	@echo '----------------------------------------------'
 	@echo 'All files C and C++ included here:'

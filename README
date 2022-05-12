@@ -51,7 +51,8 @@ There are two methods to build Bil from the command line:
 
 1. Build Bil from make (native method)
 --------------------------------------
-To build Bil and/or the documentation, use the following commands:
+To build Bil and/or the documentation, use the following commands from
+the Bil's source directory:
 
 	make      (build the binary file bil and the documentation)
 	make bin  (build the binary file only)
@@ -73,7 +74,7 @@ By default the files are installed in PREFIX = /usr/local
 
 PREFIX is defined in "Makefile". Unless essential it is not recommended to change the location PREFIX. If however you want another location, change the variable PREFIX in "Makefile" and  run "make" again. If you don't have root permissions use an alias instead (i.e. enter anywhere: alias bil='absolutepathtobilfolder/bin/bil-I.J').
 
-Once installation is completed, running 
+Once the installation is completed, running 
 
 	make clean
 
@@ -123,13 +124,18 @@ will delete all the local files previously created.
     (CMakeCache.txt). On subsequent calls to cmake CMAKE_BUILD_TYPE is set 
     to its cache value or to "RelWithDebInfo" the first time cmake is called.
 
-* You can keep multiple builds with different build options at the
-  same time. For example, you could configure a release build
-  in a "build-release" subdirectory with
+* You can keep multiple builds with different build options at the same time.
+  Below the directory "build" you can place as many target directories 
+  for out-of-source build modes as you want. For example
+  
+    build/debug
+    build/release
+    
+  and you could configure a release build in a "release" subdirectory with
 
-    mkdir build-release
-    cd build-release
-    cmake -DCMAKE_BUILD_TYPE=Release ..
+    mkdir build/release
+    cd build/release
+    cmake -DCMAKE_BUILD_TYPE=Release ../../
     make
     make install
 
@@ -164,7 +170,7 @@ LAPACK   -  You can obtain the latest LAPACK from http://www.netlib.org/lapack
 SUPERLU  -  You can obtain the relevant C functions by visiting the following
             URL: https://github.com/xiaoyeli/superlu
 
-These librairies are not included in this package. You need to explicitly specify their location in the file "make.extralibs". You can also choose to disable the use of these libraries and the associated functionalities.
+These librairies are not included in this package. You need to explicitly specify their location in the file "EXTRALIBS". You can also choose to disable the use of these libraries and the associated functionalities by deleting or commenting the locations.
 
 
 External software

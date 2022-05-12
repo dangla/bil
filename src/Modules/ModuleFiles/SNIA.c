@@ -13,7 +13,7 @@
 #define AUTHORS  "Dangla"
 #define TITLE    "Sequential non-iterative approach"
 
-#include "PredefinedMethods.h"
+#include "PredefinedModuleMethods.h"
 
 static Module_ComputeProblem_t   calcul ;
 static Module_SolveProblem_t     Algorithm ;

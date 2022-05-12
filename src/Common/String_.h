@@ -170,6 +170,9 @@ extern char*       (String_RemoveComments)       (char*,char*) ;
 #define String_SpaceChars \
         " \f\n\r\t\v"
 
+#define String_BlankChars \
+        " \t "
+
 
 #define String_SkipAnyChars(STR,Cs) \
         ((STR) ? (STR) + strspn(STR,Cs) : NULL)
@@ -180,11 +183,11 @@ extern char*       (String_RemoveComments)       (char*,char*) ;
         
 
 #define String_SkipBlankChars(STR) \
-        String_SkipAnyChars(STR," ")
+        String_SkipAnyChars(STR,String_BlankChars)
         
 
 #define String_SkipNonBlankChars(STR) \
-        String_SkipAnyOtherChars(STR," ")
+        String_SkipAnyOtherChars(STR,String_BlankChars)
         
 
 #define String_SkipSpaceChars(STR) \
@@ -193,10 +196,6 @@ extern char*       (String_RemoveComments)       (char*,char*) ;
 
 #define String_SkipNonSpaceChars(STR) \
         String_SkipAnyOtherChars(STR,String_SpaceChars)
-        
-
-#define String_SkipEmptyLines(STR) \
-        String_SkipAnyChars(STR," \n")
         
 
 #define String_SkipLine(STR) \

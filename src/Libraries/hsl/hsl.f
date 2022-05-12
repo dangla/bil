@@ -1,3 +1,5 @@
+#include "../../../BilExtraLibs.h"
+
 #ifdef BLASLIB
 
 INCLUDE "./fd15-1.0.0/src/fd15d.f"
