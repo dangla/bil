@@ -2,6 +2,8 @@
 #define TYPEID_H
 
 
+
+
 /* Type identifiers */
 enum TypeId_e {
   /* From C */
@@ -37,6 +39,7 @@ enum TypeId_e {
   TypeId_ElementsSol_t,
   TypeId_Exception_t,
   TypeId_FEM_t,
+  TypeId_FEM2_t,
   TypeId_Field_t,
   TypeId_Fields_t,
   TypeId_Function_t,
@@ -95,17 +98,21 @@ enum TypeId_e {
   TypeId_last
 } ;
 
-typedef enum TypeId_e     TypeId_t ;
+typedef enum TypeId_e     TypeId_e ;
+struct TypeId_s ; typedef struct TypeId_s    TypeId_t ;
 
 
-//typedef void (TypeId_Delete_t)(void*) ;
+#define TypeId_Create(T) \
+        TypeId_Create_(TypeId_IdNumber(T),sizeof(T))
+        
+        
+extern TypeId_t* (TypeId_Create_)(const int,const size_t) ;
+extern void      (TypeId_Delete)(void*) ;
 
 
-extern void  (TypeId_Delete)(TypeId_t,void*) ;
 
-
-
-#define TypeId_GetSize(ID)          ((ID)->size)
+#define TypeId_GetIdNumber(TID)      ((TID)->id)
+#define TypeId_GetSize(TID)          ((TID)->size)
 
         
 
@@ -116,37 +123,41 @@ extern void  (TypeId_Delete)(TypeId_t,void*) ;
 
 
 /* T  stands for a real type */
-/* ID stands for a TypeId */
+/* TID stands for a TypeId */
 
 
-/* Create a TypeId */
-#define TypeId_Create(T) \
-        Tuple_SEQ(TypeId_Create_(T))
+/* id number */
+#define TypeId_IdNumber(T) \
+        Tuple_SEQ(TypeId_IdNumber_(T))
 
 
 /* Test the type */
-#define TypeId_Is(ID,T) \
-        (ID == TypeId_Create(T))
+#if 0
+#define TypeId_Is(TID,T) \
+        (TypeId_GetIdNumber(TID) == TypeId_IdNumber(T))
         
-#define TypeId_SetTo(ID,T) \
-        do {ID = TypeId_Create(T) ;} while(0)
+#define TypeId_SetTo(TID,T) \
+        do {TypeId_GetIdNumber(TID) = TypeId_IdNumber(T) ;} while(0)
+#endif
         
         
 /* Code */
+#if 0
 #define TypeId_Code(T) \
-        Utils_CAT(TypeId_Create(T),_c)
+        Utils_CAT(TypeId_IdNumber(T),_c)
         
 
 /* Return a type from its CODE */
 #define TypeId_Type(CODE) \
         Tuple_ELEM(Arith_INCR(CODE),Tuple_TUPLE(TypeId_List))
+#endif
         
         
 
 
 /* Implementation */
 
-#define TypeId_Create_(...) \
+#define TypeId_IdNumber_(...) \
         (Utils_CAT(TypeId_,__VA_ARGS__))
         
 #define TypeId_long \
@@ -168,18 +179,25 @@ extern void  (TypeId_Delete)(TypeId_t,void*) ;
         Utils_CAT(TypeId_unsigned_,__VA_ARGS__))
 
 
+
+
+
+
+
+
+
 #define TypeId_List \
         undefined, \
-        unsigned_char, \
+        unsigned char, \
         char, \
-        unsigned_int, \
-        short_int, \
+        unsigned int, \
+        short int, \
         int, \
-        unsigned_long, \
-        long_int, \
+        unsigned long, \
+        long int, \
         float, \
         double, \
-        long_double, \
+        long double, \
         BCond_t, \
         BConds_t, \
         Buffer_t, \
@@ -248,6 +266,7 @@ extern void  (TypeId_Delete)(TypeId_t,void*) ;
         Solution_t, \
         Solutions_t, \
         Solver_t, \
+        Solvers_t, \
         TextFile_t, \
         TimeStep_t, \
         Unit_t, \
@@ -292,6 +311,7 @@ extern void  (TypeId_Delete)(TypeId_t,void*) ;
 #define  TypeId_ElementsSol_t_c                  28
 #define  TypeId_Exception_t_c                    29
 #define  TypeId_FEM_t_c                          30
+#define  TypeId_FEM2_t_c
 #define  TypeId_Field_t_c                        31
 #define  TypeId_Fields_t_c                       32
 #define  TypeId_Function_t_c                     33
@@ -340,17 +360,19 @@ extern void  (TypeId_Delete)(TypeId_t,void*) ;
 #define  TypeId_Solution_t_c                     76
 #define  TypeId_Solutions_t_c                    77
 #define  TypeId_Solver_t_c                       78
-#define  TypeId_TextFile_t_c                     79
-#define  TypeId_TimeStep_t_c                     80
-#define  TypeId_Unit_t_c                         81
-#define  TypeId_Units_t_c                        82
-#define  TypeId_View_t_c                         83
-#define  TypeId_Views_t_c                        84
+#define  TypeId_Solvers_t_c                      79
+#define  TypeId_TextFile_t_c                     80
+#define  TypeId_TimeStep_t_c                     81
+#define  TypeId_Unit_t_c                         82
+#define  TypeId_Units_t_c                        83
+#define  TypeId_View_t_c                         84
+#define  TypeId_Views_t_c                        85
         
 
 
 struct TypeId_s {
-  size_t size ;
+  TypeId_e id ;           /* Id number of the data */
+  size_t size ;           /* Size of elementary data */
 } ;
 
 

@@ -222,6 +222,9 @@ Model_t* (Model_Initialize)(Model_t* model,const char* codename,Geometry_t* geom
     Model_SetModelProp(model) ; /* Call to SetModelProp */
     
     return(model) ;
+  } else {
+    
+    Message_Warning("No model named %s",codename) ;
   }
   
   //return(NULL) ;

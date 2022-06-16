@@ -14,10 +14,10 @@ set(OFLAGS
 )
 
 set(CMAKE_C_FLAGS  "-pedantic -fno-common ${WFLAGS}")
-set(CMAKE_C_FLAGS_DEBUG          "-g -DDEBUG")
-set(CMAKE_C_FLAGS_RELEASE        "-O3 -DNDEBUG" )
-set(CMAKE_C_FLAGS_MINSIZEREL     "${CMAKE_C_FLAGS_RELEASE}" )
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g -gdwarf-3" )
+set(CMAKE_C_FLAGS_DEBUG          "-g3 -DDEBUG")
+set(CMAKE_C_FLAGS_RELEASE        "-O3 -DNDEBUG")
+set(CMAKE_C_FLAGS_MINSIZEREL     "${CMAKE_C_FLAGS_RELEASE}")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g3 -gdwarf-3")
 set(CMAKE_Fortran_FLAGS "-cpp")
 
 

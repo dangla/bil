@@ -8,10 +8,6 @@
 struct Module_s        ; typedef struct Module_s        Module_t ;
 
 
-#include "DataSet.h"
-#include "OutputFiles.h"
-#include "Solutions.h"
-#include "Solvers.h"
 
 /* Declaration of Macros, Methods and Structures */
 
@@ -66,25 +62,35 @@ extern Module_t*  (Module_Initialize)(Module_t*,const char*) ;
 
 /* Short hands */
 #define Module_SetModuleProp(MOD) \
-        Module_GetSetModuleProp(MOD)(MOD)
+        (Module_GetSetModuleProp(MOD)) ? \
+        Module_GetSetModuleProp(MOD)(MOD) : -1
 
 #define Module_ComputeProblem(MOD,...) \
-        Module_GetComputeProblem(MOD)(__VA_ARGS__)
+        (Module_GetComputeProblem(MOD)) ? \
+        Module_GetComputeProblem(MOD)(__VA_ARGS__) : -1
 
 #define Module_SolveProblem(MOD,...) \
-        Module_GetSolveProblem(MOD)(__VA_ARGS__)
+        (Module_GetSolveProblem(MOD)) ? \
+        Module_GetSolveProblem(MOD)(__VA_ARGS__) : -1
 
 #define Module_Increment(MOD,...) \
-        Module_GetIncrement(MOD)(__VA_ARGS__)
+        (Module_GetIncrement(MOD)) ? \
+        Module_GetIncrement(MOD)(__VA_ARGS__) : -1
 
 #define Module_StepForward(MOD,...) \
-        Module_GetStepForward(MOD)(__VA_ARGS__)
+        (Module_GetStepForward(MOD)) ? \
+        Module_GetStepForward(MOD)(__VA_ARGS__) : -1
 
 #define Module_InitializeProblem(MOD,...) \
-        Module_GetInitializeProblem(MOD)(__VA_ARGS__)
+        (Module_GetInitializeProblem(MOD)) ? \
+        Module_GetInitializeProblem(MOD)(__VA_ARGS__) : -1
 
 
 /*  Typedef names of Methods */
+#include "DataSet.h"
+#include "OutputFiles.h"
+#include "Solutions.h"
+#include "Solver.h"
 
 typedef int   Module_SetModuleProp_t(Module_t*) ;
 typedef int   Module_ComputeProblem_t(DataSet_t*) ;

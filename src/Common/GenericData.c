@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
 #include "Message.h"
 #include "TypeId.h"
 #include "GenericData.h"
@@ -9,6 +10,18 @@
 #include "Math_.h"
 #include "Mry.h"
 
+#include "BCond.h"
+#include "Damage.h"
+#include "Elasticity.h"
+#include "Plasticity.h"
+#include "ElementsSol.h"
+#include "FEM.h"
+#include "FVM.h"
+#include "Exception.h"
+#include "InternationalSystemOfUnits.h"
+
+
+static void      (GenericData_DeleteData)(TypeId_t*,void*) ;
 
 
 /* Global functions */
@@ -25,13 +38,12 @@ GenericData_t* (GenericData_New)(void)
   }
   
   {
-    GenericData_GetTypeId(gdat) = TypeId_Create(undefined) ;
+    GenericData_GetTypeId(gdat) = TypeId_Create(char) ;
     strcpy(GenericData_GetName(gdat),"\0") ;
     GenericData_GetNbOfData(gdat) = 0 ;
     GenericData_GetData(gdat) = NULL ;
     GenericData_GetNextGenericData(gdat) = NULL ;
     GenericData_GetPreviousGenericData(gdat) = NULL ;
-    GenericData_GetSize(gdat) = 0 ;
   }
   
   GenericData_GetDelete(gdat) = GenericData_Delete ;
@@ -42,11 +54,11 @@ GenericData_t* (GenericData_New)(void)
 
 
 
-GenericData_t* (GenericData_Create_)(int n,void* data,TypeId_t typ,size_t size,const char* name)
+GenericData_t* (GenericData_Create_)(int n,void* data,TypeId_t* typ,const char* name)
 {
   GenericData_t* gdat = GenericData_New() ;
   
-  GenericData_Initialize_(gdat,n,data,typ,size,name) ;
+  GenericData_Initialize_(gdat,n,data,typ,name) ;
   
   return(gdat) ;
 }
@@ -71,10 +83,9 @@ void (GenericData_Delete)(void* self)
       void* data = GenericData_GetData(gdat) ;
     
       if(data) {
-        TypeId_t typ = GenericData_GetTypeId(gdat) ;
+        TypeId_t* typ = GenericData_GetTypeId(gdat) ;
         int n = GenericData_GetNbOfData(gdat) ;
 
-        //TypeId_Delete(typ,data) ;
         {
           size_t sz = GenericData_GetSize(gdat) ;
           int i ;
@@ -82,7 +93,7 @@ void (GenericData_Delete)(void* self)
           for(i = 0 ; i < n ; i++) {
             void* data_i = ((char*) data) + i*sz ;
             
-            TypeId_Delete(typ,data_i) ;
+            GenericData_DeleteData(typ,data_i) ;
           }
         }
       
@@ -118,12 +129,51 @@ void (GenericData_Delete)(void* self)
 
 
 
-void (GenericData_Initialize_)(GenericData_t* gdat,int n,void* data,TypeId_t typ,size_t size,const char* name)
+void  (GenericData_DeleteData)(TypeId_t* typ,void* self)
+{
+  switch(TypeId_GetIdNumber(typ)) {
+    case TypeId_IdNumber(unsigned char)   : return ;
+    case TypeId_IdNumber(char)            : return ;
+    case TypeId_IdNumber(double)          : return ;
+    case TypeId_IdNumber(long double)     : return ;
+    case TypeId_IdNumber(float)           : return ;
+    case TypeId_IdNumber(unsigned int)    : return ;
+    case TypeId_IdNumber(short int)       : return ;
+    case TypeId_IdNumber(int)             : return ;
+    case TypeId_IdNumber(unsigned long)   : return ;
+    case TypeId_IdNumber(long int)        : return ;
+    case TypeId_IdNumber(Damage_t)        : Damage_Delete(self); return ;
+    case TypeId_IdNumber(DataSet_t)       : DataSet_Delete(self); return ;
+    case TypeId_IdNumber(Elasticity_t)    : Elasticity_Delete(self); return ;
+    case TypeId_IdNumber(ElementsSol_t)   : ElementsSol_Delete(self); return ;
+    case TypeId_IdNumber(Exception_t)     : Exception_Delete(self); return ;
+    case TypeId_IdNumber(FEM_t)           : FEM_Delete(self); return ;
+    case TypeId_IdNumber(FEM2_t)          : FEM2_Delete(self); return ;
+    case TypeId_IdNumber(FVM_t)           : FVM_Delete(self); return ;
+    case TypeId_IdNumber(GenericData_t)   : GenericData_Delete(self); return ;
+    case TypeId_IdNumber(InternationalSystemOfUnits_t) : InternationalSystemOfUnits_Delete(self); return ;
+    case TypeId_IdNumber(Math_t)          : Math_Delete(self); return ;
+    case TypeId_IdNumber(Message_t)       : Message_Delete(self); return ;
+    case TypeId_IdNumber(Options_t)       : Options_Delete(self); return ;
+    case TypeId_IdNumber(Plasticity_t)    : Plasticity_Delete(self); return ;
+    case TypeId_IdNumber(Solutions_t)     : Solutions_Delete(self); return ;
+    case TypeId_IdNumber(Solver_t)        : Solver_Delete(self); return ;
+    case TypeId_IdNumber(Solvers_t)       : Solvers_Delete(self); return ;
+    default                               : break ;
+  }
+  
+  Message_FatalError("GenericData_DeleteData: unknown type") ;
+  
+  return ;
+}
+
+
+
+void (GenericData_Initialize_)(GenericData_t* gdat,int n,void* data,TypeId_t* typ,const char* name)
 {
   GenericData_GetTypeId(gdat) = typ ;
   GenericData_GetNbOfData(gdat) = n ;
   GenericData_GetData(gdat) = data ;
-  GenericData_GetSize(gdat) = size ;
     
   {
     int len = MIN(strlen(name),GenericData_MaxLengthOfKeyWord) ;
@@ -188,14 +238,14 @@ GenericData_t* (GenericData_First)(GenericData_t* gdat)
 
 
 
-GenericData_t* (GenericData_Find_)(GenericData_t* gdat,TypeId_t typ,const char* name)
+GenericData_t* (GenericData_Find_)(GenericData_t* gdat,const int id,const char* name)
 /** Return the generic data named as "name" or NULL pointer. */
 {
   {
     GenericData_t* next = gdat ;
     
     while(next) {
-      if(GenericData_Is(next,typ,name)) return(next) ;
+      if(GenericData_Is(next,id,name)) return(next) ;
       next = GenericData_GetNextGenericData(next) ;
     }
   }
@@ -204,7 +254,7 @@ GenericData_t* (GenericData_Find_)(GenericData_t* gdat,TypeId_t typ,const char* 
     GenericData_t* prev = gdat ;
     
     while(prev) {
-      if(GenericData_Is(prev,typ,name)) return(prev) ;
+      if(GenericData_Is(prev,id,name)) return(prev) ;
       prev = GenericData_GetPreviousGenericData(prev) ;
     }
   }

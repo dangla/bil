@@ -18,17 +18,37 @@ enum MatrixStorageFormat_e {        /* format of the matrix to be stored */
 /* class-like structure "MatrixStorageFormat_t" and attributes */
 
 /* vacuous declarations and typedef names */
-typedef enum MatrixStorageFormat_e MatrixStorageFormat_t ;
+typedef enum MatrixStorageFormat_e MatrixStorageFormat_e ;
+struct MatrixStorageFormat_s   ; typedef struct MatrixStorageFormat_s  MatrixStorageFormat_t ;
 
+
+
+#include "Options.h"
+
+extern MatrixStorageFormat_t* (MatrixStorageFormat_Create)(Options_t*) ;
+extern void                   (MatrixStorageFormat_Delete)(void*) ;
+
+
+/** The getters */
+#define MatrixStorageFormat_GetType(MSF)              ((MSF)->type)
+#define MatrixStorageFormat_GetOptions(MSF)           ((MSF)->options)
 
 
 #include "Utils.h"
 
 #define MatrixStorageFormat_Is(MSF,KEY) \
-        (MSF == Utils_CAT(MatrixStorageFormat_,KEY))
+        (MatrixStorageFormat_GetType(MSF) == Utils_CAT(MatrixStorageFormat_,KEY))
 
 #define MatrixStorageFormat_Type(KEY) \
-        ((MatrixStorageFormat_t) Utils_CAT(MatrixStorageFormat_,KEY))
-        
-        
+        ((MatrixStorageFormat_e) Utils_CAT(MatrixStorageFormat_,KEY))
+
+
+
+/* complete the structure types by using the typedef */
+
+struct MatrixStorageFormat_s {
+  MatrixStorageFormat_e type ;
+  Options_t* options ;
+} ;
+
 #endif

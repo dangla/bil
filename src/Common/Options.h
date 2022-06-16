@@ -32,6 +32,7 @@ extern void        (Options_Delete)(void*) ;
         
 
 #include <string.h>
+#include "String_.h"
         
 #define Options_IsToPrintOutAtEachIteration(OPT) \
         (!strcmp(Options_GetPrintLevel(OPT),"2"))
@@ -46,10 +47,10 @@ extern void        (Options_Delete)(void*) ;
 
 
 /* Superlu method */
-#define Options_ResolutionMethodIsSuperlu(OPT) \
+#define Options_ResolutionMethodIsSuperLU(OPT) \
         Options_ResolutionMethodIs(OPT,"slu")
         
-#define Options_SetResolutionMethodToSuperlu(OPT) \
+#define Options_SetResolutionMethodToSuperLU(OPT) \
         Options_SetResolutionMethodTo(OPT,"slu")
 
 
@@ -63,16 +64,17 @@ extern void        (Options_Delete)(void*) ;
 
 #define Options_GetFillFactor(OPT) \
         (((!strcmp(((char**) Context_GetSolver(Options_GetContext(OPT)))[2],"-ff")) && atof(((char**) Context_GetSolver(Options_GetContext(OPT)))[3])) ? \
-        atof(((char**) Context_GetSolver(Options_GetContext(OPT)))[3]) : Options_DefaultFillFactor)
+        atof(((char**) Context_GetSolver(Options_GetContext(OPT)))[3]) : Options_DefaultFillFactor(OPT))
         
 
-#define Options_DefaultFillFactor (2)
+#define Options_DefaultFillFactor(OPT) \
+        (Options_ResolutionMethodIsMA38(OPT) ? 2 : 0)
 
 
 /* Implementations */
 
 #define Options_ResolutionMethodIs(OPT,M) \
-        (!strcmp(Options_GetResolutionMethod(OPT),M))
+        String_Is(Options_GetResolutionMethod(OPT),M)
         
 #define Options_SetResolutionMethodTo(OPT,M) \
         (strncpy(Options_GetResolutionMethod(OPT),M,Options_MaxLengthOfKeyWord))

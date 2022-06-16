@@ -8,8 +8,10 @@
 struct Element_s      ; typedef struct Element_s      Element_t ;
 
 
+#include "Mesh.h"
 #include "Node.h"
 
+extern void     (Element_AllocateSolutions)(Element_t*,Mesh_t*,const int) ;
 extern double** (Element_ComputePointerToCurrentNodalUnknowns)  (Element_t*) ;
 extern double** (Element_ComputePointerToPreviousNodalUnknowns) (Element_t*) ;
 extern double*  (Element_ComputeCurrentNodalUnknowns)           (Element_t*) ;

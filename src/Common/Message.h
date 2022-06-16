@@ -10,6 +10,7 @@ struct Message_s      ; typedef struct Message_s      Message_t ;
 extern void   (Message_Delete)(void*) ;
 extern void   (Message_RuntimeError0)(const char*,...) ;
 extern void   (Message_FatalError0)(const char*,...) ;
+extern void   (Message_InputError)(const char*,const int) ;
 extern void   (Message_Warning)(const char*,...) ;
 extern void   (Message_Info)(const char*,...) ;
 extern int    (Message_Direct)(const char*,...) ;

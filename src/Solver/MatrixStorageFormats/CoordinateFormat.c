@@ -53,60 +53,8 @@ CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t* mesh,Options_t* options,co
     }
   }
   
-  CoordinateFormat_GetOptions(cfmt) = options ;
-  
   return(cfmt) ;
 }
-
-
-
-#if 0
-CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t* mesh,Options_t* options)
-/** Create a matrix in CoordinateFormat format with duplicate entries */
-{
-  CoordinateFormat_t* cfmt = (CoordinateFormat_t*) Mry_New(CoordinateFormat_t) ;
-  
-  {
-    /* Nb of entries */
-    {
-      int nnz = Mesh_ComputeNbOfMatrixEntries(mesh) ;
-      
-      CoordinateFormat_GetNbOfNonZeroValues(cfmt) = nnz ;
-    }
-    
-    /* Allocate memory space for the values */
-    {
-      int nnz = CoordinateFormat_GetNbOfNonZeroValues(cfmt) ;
-      /* The length required by ma38 must not be lower than 2*nnz */
-      double ff = Options_GetFillFactor(options) ;
-      int lv  = floor(ff*(2*nnz)) ;
-      double* v = (double*) Mry_New(double[lv]) ;
-      
-      CoordinateFormat_GetLengthOfArrayValue(cfmt) = lv ;
-      CoordinateFormat_GetNonZeroValue(cfmt) = v ;
-    }
-    
-    /* Allocate memory space for the indices, namely:
-     * the row and column indices;
-     * some other informations provided by ma38 */
-    {
-      int nnz = CoordinateFormat_GetNbOfNonZeroValues(cfmt) ;
-      int n = Mesh_GetNbOfMatrixColumns(mesh)[0] ;
-      /* The length required by ma38 must not be lower than 3*nnz+2*n+1 */
-      double ff = Options_GetFillFactor(options) ;
-      int lindex = floor(ff*(3*nnz + 2*n + 1)) ;
-      int* index = (int*) Mry_New(int[lindex]) ;
-      
-      CoordinateFormat_GetLengthOfArrayIndex(cfmt) = lindex ;
-      CoordinateFormat_GetIndex(cfmt)              = index ;
-    }
-  }
-  
-  CoordinateFormat_GetOptions(cfmt) = options ;
-  
-  return(cfmt) ;
-}
-#endif
 
 
 

@@ -217,6 +217,10 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     DataSet_GetIterProcess(dataset) = iterprocess ;
   }
   if(!strcmp(debug,"iter")) DataSet_PrintData(dataset,debug) ;
+
+
+  Message_Direct("End of reading %s\n",filename) ;
+  Message_Direct("\n") ;
   
   
   /* Module */
@@ -241,13 +245,6 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     BConds_t*      bconds = DataSet_GetBConds(dataset) ;
     Mesh_t*        mesh = DataSet_GetMesh(dataset) ;
     
-    /* Set indexes to arbitrary >= 0 value */
-    //Mesh_InitializeMatrixRowColumnIndexes(mesh) ;
-
-    /* Accounting for BC 
-     * (set indexes to arbitray < 0 value) */
-    //BConds_EliminateMatrixRowColumnIndexes(bconds,mesh) ;
-    
     Mesh_GetNbOfMatrices(mesh) = Options_GetNbOfSequences(opt) ;
   
     Mesh_SetMatrixRowColumnIndexes(mesh,bconds) ;
@@ -259,10 +256,6 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
   //if(!strcmp(debug,"numbering")) DataSet_PrintData(dataset,debug) ;
   //if(!strcmp(debug,"inter")) DataSet_PrintData(dataset,debug) ;
   if(!strcmp(debug,"all")) DataSet_PrintData(dataset,debug) ;
-
-
-  Message_Direct("End of reading %s\n",filename) ;
-  Message_Direct("\n") ;
   
   return(dataset) ;
 }

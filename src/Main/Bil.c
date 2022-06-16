@@ -280,12 +280,6 @@ void Bil_CLI(Bil_t* bil)
   }
   
   if(Context_IsTest(ctx)) {
-    #if 1
-    TypeId_t id = TypeId_Create(double) ;
-    char s[] = Utils_STR(TypeId_Type(TypeId_Code(double))) ;
-    printf("typeid = %d\n",id) ;
-    printf("type = %s\n",s) ;
-    #endif
     #if 0
     {
       LogActivityOfWaterInBrine_t* law = LogActivityOfWaterInBrine_Create() ;

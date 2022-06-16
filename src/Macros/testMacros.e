@@ -146,5 +146,15 @@ Test TypeId:
 
 
 
-"TypeId_Create(unsigned int)" = TypeId_Create(unsigned int)
+
+"TypeId_Type(TypeId_undefined_c) " = TypeId_Type(TypeId_undefined_c)
+"TypeId_Type(TypeId_char_c) " = TypeId_Type(TypeId_char_c)
+"TypeId_Type(TypeId_long_double_c) " = TypeId_Type(TypeId_long_double_c)
+"TypeId_Type(TypeId_Model_t_c) " = TypeId_Type(TypeId_Model_t_c)
+"TypeId_Type(TypeId_ObVal_t_c) " = TypeId_Type(TypeId_ObVal_t_c)
+"TypeId_Type(TypeId_Options_t_c) " = TypeId_Type(TypeId_Options_t_c)
+"TypeId_Type(TypeId_OutputFile_t_c) " = TypeId_Type(TypeId_OutputFile_t_c)
+"TypeId_Type(TypeId_OutputFiles_t_c) " = TypeId_Type(TypeId_OutputFiles_t_c)
+"TypeId_Type(TypeId_Views_t_c) " = TypeId_Type(TypeId_Views_t_c)
+"TypeId_Type(83) " = TypeId_Type(83)
 #endif

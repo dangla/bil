@@ -22,6 +22,7 @@ extern void       (Solver_Print)(Solver_t*,char*) ;
 #define Solver_GetMatrix(SV)            ((SV)->a)
 #define Solver_GetResidu(SV)            ((SV)->residu)
 #define Solver_GetSolve(SV)             ((SV)->solve)
+#define Solver_GetGenericWorkSpace(SV)  ((SV)->genericwork)
 //#define Solver_GetRHS(SV)               ((SV)->b)
 //#define Solver_GetSolution(SV)          ((SV)->x)
 
@@ -46,6 +47,18 @@ extern void       (Solver_Print)(Solver_t*,char*) ;
 
 
 
+#define Solver_GetResolutionMethodType(SV) \
+        ResolutionMethod_GetType(Solver_GetResolutionMethod(SV))
+
+#define Solver_ResolutionMethodIs(SV,KEY) \
+        ResolutionMethod_Is(Solver_GetResolutionMethod(SV),KEY)
+        
+
+#define Solver_AppendGenericWorkSpace(SV,GD) \
+        Solver_GetGenericWorkSpace(SV) = GenericData_Append(Solver_GetGenericWorkSpace(SV),GD)
+
+
+
 /*  Typedef names of Methods */
 typedef int  Solver_Solve_t(Solver_t*) ;
 
@@ -54,14 +67,16 @@ typedef int  Solver_Solve_t(Solver_t*) ;
 #include "ResolutionMethod.h"
 #include "Matrix.h"
 #include "Residu.h"
+#include "GenericData.h"
 
 /* complete the structure types by using the typedef */
 struct Solver_s {             /* System solver */
   Solver_Solve_t* solve ;
-  ResolutionMethod_t mth ;    /* Method */
+  ResolutionMethod_t* mth ;   /* Method */
   unsigned int    n ;         /* Nb of rows/columns */
   Matrix_t* a ;               /* Matrix */
   Residu_t* residu ;          /* Residu */
+  GenericData_t* genericwork ; /* Working space */
   //double* b ;                 /* RHS */
   //double* x ;                 /* Solution */
 } ;

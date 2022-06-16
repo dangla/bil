@@ -56,7 +56,7 @@ int   MA38Method_Solve(Solver_t* solver)
    * 3: + terse diagnostics 
    */
   {
-    Options_t* options = CoordinateFormat_GetOptions(ac) ;
+    Options_t* options = Matrix_GetOptions(a) ;
     
     icntl[2] = 1 ;
     //icntl[2] = 5 ;
@@ -102,7 +102,8 @@ int   MA38Method_Solve(Solver_t* solver)
   {
     double* b = Solver_GetRHS(solver) ;
     double* x = Solver_GetSolution(solver) ;
-    double* w = (double*) Matrix_GetWorkSpace(a) ;
+    GenericData_t* gw = Solver_GetGenericWorkSpace(solver) ;
+    double* w = GenericData_FindData(gw,double,"work") ;
     int job = 0 ;
     bool transc = false ;
     

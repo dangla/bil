@@ -30,7 +30,7 @@ extern void                (CoordinateFormat_PrintMatrix)(CoordinateFormat_t*,co
 #define CoordinateFormat_GetLengthOfArrayIndex(F)              ((F)->lindex)
 #define CoordinateFormat_GetNonZeroValue(F)                    ((F)->value)
 #define CoordinateFormat_GetIndex(F)                           ((F)->index)
-#define CoordinateFormat_GetOptions(F)                         ((F)->options)
+//#define CoordinateFormat_GetOptions(F)                         ((F)->options)
                                                       
                                                       
                                                       
@@ -55,7 +55,7 @@ struct CoordinateFormat_s {
   int*    index ;     /* Indices */
   int*    colind ;    /* Column indices of the non zeros */
   int*    rowind ;    /* Row indices of the non zeros */
-  Options_t* options ;
+  //Options_t* options ;
 } ;
 
 #endif

@@ -13,10 +13,10 @@
 
 
 
-#if 0
-Element_AllocateGenericData(Element_t* el,int n,void* gdat,TypeId_t typeid)
+void (Element_AllocateSolutions)(Element_t* el,Mesh_t* mesh,const int nsol)
 {
-  
+  IntFct_t* intfct = Element_GetIntFct(el) ;
+  int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
 
   /** The solutions from the microstructures */
   {
@@ -27,25 +27,21 @@ Element_AllocateGenericData(Element_t* el,int n,void* gdat,TypeId_t typeid)
       if(elementsol) {
         do {
           Solutions_t* sols = (Solutions_t*) Mry_New(Solutions_t[NbOfIntPoints]) ;
-    
+          
           {
-            int nsol_micro = 2 ;
-            Mesh_t* mesh = DataSet_GetMesh(dataset) ;
             int i ;
     
             for(i = 0 ; i < NbOfIntPoints ; i++) {
-              Solutions_t* solsi = Solutions_Create(mesh,nsol_micro) ;
-        
+              Solutions_t* solsi = Solutions_Create(mesh,nsol) ;
+              
               sols[i] = solsi[0] ;
-              /* Not essential */
-              Solutions_MergeExplicitTerms(sols + i) ;
+              free(solsi) ;
             }
           }
           
           {
-            //GenericData_t* gdat0 = ElementSol_GetImplicitGenericData(elementsol) ;
-            GenericData_t* gdat  = GenericData_Create(NbOfIntPoints,sols,Solutions_t,"solutions") ;
-
+            GenericData_t* gdat  = GenericData_Create(NbOfIntPoints,sols,Solutions_t,"Solutions") ;
+          
             ElementSol_AddImplicitGenericData(elementsol,gdat) ;
           }
         
@@ -55,7 +51,6 @@ Element_AllocateGenericData(Element_t* el,int n,void* gdat,TypeId_t typeid)
     }
   }
 }
-#endif
 
 
 

@@ -5,8 +5,10 @@
 #include <math.h>
 #include "Context.h"
 #include "CommonModel.h"
+#include "FEM2.h"
 #include "FEM.h"
 #include "DataSet.h"
+#include "Solvers.h"
 #include "Modules.h"
 
 #define TITLE "Mechanics from a microstructure (2017)"
@@ -17,16 +19,19 @@
 
 /* Nb of equations */
 #define NEQ     (dim)
+
+/* Equation index */
+#define E_Mech   (0)
+
+/* Unknown index */
+#define U_dis     E_Mech
+
+
+
 /* Nb of (im/ex)plicit terms and constant terms */
 #define NVI     (12)
 #define NVE     (0)
 #define NV0     (9)
-
-/* Equation index */
-#define E_mec   (0)
-
-/* Unknown index */
-#define U_u     (0)
 
 /* We define some names for implicit terms */
 #define SIG           (vim + 0)
@@ -45,14 +50,11 @@ static Model_ComputePropertyIndex_t  pm ;
 static void   GetProperties(Element_t*) ;
 
 static int    ComputeTangentCoefficients(Element_t*,double,double,double*) ;
-static int    ComputeMicrostructureMatrix(Mesh_t*,Solver_t*,double,double,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double**,double*,Solutions_t*,double,double,int) ;
-static void    ComputeSecondaryVariables(Element_t*,double,double,double*,Solutions_t*,Solutions_t*) ;
+static void    ComputeSecondaryVariables(Element_t*,double,double,double*,double*,Solutions_t*,Solutions_t*) ;
 //static double* ComputeVariableDerivatives(Element_t*,double,double,double*,Solutions_t*,Solutions_t*,double,int) ;
 
-static void  ComputeMicrostructure(DataSet_t*,Solver_t*,double,double,Solutions_t*,Solutions_t*,double*,double*) ;
-static void  InitializeMicrostructureDataSet(DataSet_t*) ;
 
 
 static double* MacroGradient(Element_t*,double) ;
@@ -70,20 +72,27 @@ static double  macrostrain[9] ;
 #define ItIsPeriodic  (Geometry_IsPeriodic(Element_GetGeometry(el)))
 
 
-#define NbOfVariables     (42)
-//static double  Variable0[NbOfVariables] ;
-//static double dVariable[NbOfVariables] ;
-//static double  Variable2[NbOfVariables] ;
-//static double*  Variable ;
 
-#define I_U            (0)
+/* We define some indices for the local variables */
+enum {
+I_DIS = 0,
+I_DIS2 =  I_DIS + 2,
 
-#define I_EPS          (3)
+I_EPS,
+I_EPS8   = I_EPS  + 8,
 
-#define I_SIG          (12)
-#define I_EPS_n        (21)
-#define I_Fmass        (30)
-#define I_SIG_n        (33)
+I_SIG,
+I_SIG8   = I_SIG  + 8,
+
+I_F_MASS,
+I_F_MASS2 = I_F_MASS + 2,
+I_Last
+} ;
+
+#define NbOfVariables     (I_Last)
+static double  Variable[NbOfVariables] ;
+static double  Variable_n[NbOfVariables] ;
+static double dVariable[NbOfVariables] ;
 
 
 
@@ -182,7 +191,7 @@ int SetModelProp(Model_t* model)
 /** Set the model properties */
 {
   int dim = Model_GetDimension(model) ;
-  int i ;
+  char i ;
   
   /** Number of equations to be solved */
   Model_GetNbOfEquations(model) = NEQ ;
@@ -190,15 +199,15 @@ int SetModelProp(Model_t* model)
   /** Names of these equations */
   for(i = 0 ; i < dim ; i++) {
     char name_eqn[7] ;
-    sprintf(name_eqn,"meca_%d",i + 1) ;
-    Model_CopyNameOfEquation(model,E_mec + i,name_eqn) ;
+    sprintf(name_eqn,"meca_%u",i + 1) ;
+    Model_CopyNameOfEquation(model,E_Mech + i,name_eqn) ;
   }
   
   /** Names of the main unknowns */
   for(i = 0 ; i < dim ; i++) {
     char name_unk[4] ;
-    sprintf(name_unk,"u_%d",i + 1) ;
-    Model_CopyNameOfUnknown(model,U_u + i,name_unk) ;
+    sprintf(name_unk,"u_%u",i + 1) ;
+    Model_CopyNameOfUnknown(model,U_dis + i,name_unk) ;
   }
   
   Model_GetComputePropertyIndex(model) = pm ;
@@ -244,8 +253,8 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       char* cellname = p + strspn(p," ") ;
       Options_t* options = Options_Create(NULL) ;
       DataSet_t* dataset = DataSet_Create(cellname,options) ;
-            
-      InitializeMicrostructureDataSet(dataset) ;
+      Mesh_t* mesh = DataSet_GetMesh(dataset) ;
+      Solvers_t* solvers = Solvers_Create(mesh,options,6) ;
       
       /* Store options in mat */
       {
@@ -262,13 +271,18 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       }
 
       
-      /* The solver */
+      /* Store solvers in mat */
       {
-        Mesh_t* mesh = DataSet_GetMesh(dataset) ;
-        Solvers_t* solvers = Solvers_Create(mesh,options,6) ;
         GenericData_t* gdat = GenericData_Create(1,solvers,Solvers_t,"Solvers") ;
       
         Material_AppendGenericData(mat,gdat) ;
+      }
+
+      /* Initialize the dataset */
+      {
+        FEM2_t* fem2 = FEM2_GetInstance(dataset,NULL,NULL,NULL) ;
+        
+        FEM2_InitializeMicrostructureDataSet(fem2) ;
       }
     }
   }
@@ -312,8 +326,19 @@ int PrintModelProp(Model_t* model,FILE *ficd)
 
 #define Element_GetPreviousSolutions(EL) \
         ((Solutions_t*) Element_FindPreviousImplicitData(EL,Solutions_t,"Solutions"))
-        
-        
+
+
+/* The dataset */
+#define Element_GetDataSet(EL) \
+        ((DataSet_t*) Element_FindMaterialData(EL,DataSet_t,"DataSet"))
+
+
+/* The solvers */
+#define Element_GetSolvers(EL) \
+        ((Solvers_t*) Element_FindMaterialData(EL,Solvers_t,"Solvers"))
+
+
+
 
 int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
 /** Define some properties attached to each element 
@@ -330,42 +355,40 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
 
   /** The solutions from the microstructures */
   {
+    DataSet_t* dataset = Element_GetDataSet(el) ;
+    Mesh_t* mesh = DataSet_GetMesh(dataset) ;
+    const int nsol_micro = 2 ;
+    
     /* Store "sols" for the whole history */
+    
+    Element_AllocateSolutions(el,mesh,nsol_micro) ;
+  }
+  
+
+  /** The solutions from the microstructures */
+  {
+    /* Merging explicit terms (not essential!) */
+    #if 0
     {
       ElementSol_t* elementsol = Element_GetElementSol(el) ;
 
       if(elementsol) {
-        DataSet_t* dataset = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
-        Mesh_t* mesh = DataSet_GetMesh(dataset) ;
-        const int nsol_micro = 2 ;
-        
         do {
-          Solutions_t* sols = (Solutions_t*) Mry_New(Solutions_t[NbOfIntPoints]) ;
+          Solutions_t* sols = ElementSol_FindImplicitData(elementsol,Solutions_t,"Solutions") ;
           
           {
             int i ;
     
             for(i = 0 ; i < NbOfIntPoints ; i++) {
-              Solutions_t* solsi = Solutions_Create(mesh,nsol_micro) ;
-              
-              sols[i] = solsi[0] ;
-              free(solsi) ;
-              
-              /* Merging explicit terms (not essential!) */
               Solutions_MergeExplicitTerms(sols + i) ;
             }
-          }
-          
-          {
-            GenericData_t* gdat  = GenericData_Create(NbOfIntPoints,sols,Solutions_t,"Solutions") ;
-          
-            ElementSol_AddImplicitGenericData(elementsol,gdat) ;
           }
         
           elementsol = ElementSol_GetPreviousElementSol(elementsol) ;
         } while(elementsol != Element_GetElementSol(el)) ;
       }
     }
+    #endif
   }
   
   return(0) ;
@@ -416,7 +439,7 @@ int ComputeInitialState(Element_t* el,double t)
   GetProperties(el) ;
     
   {
-    DataSet_t* dataset = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
+    DataSet_t* dataset = Element_GetDataSet(el) ;
     DataFile_t* df = DataSet_GetDataFile(dataset) ;
     DataFile_t* datafile = Element_GetDataFile(el) ;
     
@@ -439,7 +462,7 @@ int ComputeInitialState(Element_t* el,double t)
     
       for(i = 0 ; i < 9 ; i++) SIG[i] = x[I_SIG + i] ;
       
-      for(i = 0 ; i < 3 ; i++) F_MASS[i] = x[I_Fmass + i] ;
+      for(i = 0 ; i < 3 ; i++) F_MASS[i] = x[I_F_MASS + i] ;
     
     }
   }
@@ -476,7 +499,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
   GetProperties(el) ;
     
   {
-    DataSet_t* dataset = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
+    DataSet_t* dataset = Element_GetDataSet(el) ;
     DataFile_t* df = DataSet_GetDataFile(dataset) ;
     
     DataFile_ContextSetToPartialInitialization(df) ;
@@ -495,7 +518,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
     
       for(i = 0 ; i < 9 ; i++) SIG[i] = x[I_SIG + i] ;
       
-      for(i = 0 ; i < 3 ; i++) F_MASS[i] = x[I_Fmass + i] ;
+      for(i = 0 ; i < 3 ; i++) F_MASS[i] = x[I_F_MASS + i] ;
     
     }
   }
@@ -587,7 +610,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     for(i = 0 ; i < nn ; i++) {
       int j ;
       
-      for(j = 0 ; j < dim ; j++) R(i,E_mec + j) -= rw[i*dim + j] ;
+      for(j = 0 ; j < dim ; j++) R(i,E_Mech + j) -= rw[i*dim + j] ;
     }
     
   }
@@ -597,7 +620,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     double* rbf = FEM_ComputeBodyForceResidu(fem,intfct,F_MASS + dim - 1,NVI) ;
     
     for(i = 0 ; i < nn ; i++) {
-      R(i,E_mec + dim - 1) -= -rbf[i] ;
+      R(i,E_Mech + dim - 1) -= -rbf[i] ;
     }
     
   }
@@ -652,7 +675,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       int    i ;
     
       for(i = 0 ; i < dim ; i++) {
-        pdis[i] = FEM_ComputeUnknown(fem,u,intfct,p,U_u + i) ;
+        pdis[i] = FEM_ComputeUnknown(fem,u,intfct,p,U_dis + i) ;
         dis[i] = pdis[i] ;
       }
 
@@ -673,7 +696,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     {
       int    i ;
       
-      eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_u) ;
+      eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_dis) ;
       
       if(ItIsPeriodic) {
       
@@ -714,12 +737,10 @@ int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
 **  Tangent matrix (c), return the shift (dec).
 */
 {
-  DataSet_t* dataset = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
+  DataSet_t* dataset = Element_GetDataSet(el) ;
   DataFile_t* df = DataSet_GetDataFile(dataset) ;
-  Solvers_t* solvers = (Solvers_t*) Element_FindMaterialData(el,Solvers_t,"Solvers") ;
-  Solver_t* solver = Solvers_GetSolver(solvers) ;
+  Solvers_t* solvers = Element_GetSolvers(el) ;
   Solutions_t* sols   = Element_GetCurrentSolutions(el) ;
-  Mesh_t* mesh = DataSet_GetMesh(dataset) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
   int    dec = 81 ;
@@ -729,8 +750,6 @@ int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
     
     for(p = 0 ; p < np ; p++) {
       double* c0 = c + p*dec ;
-
-      Mesh_InitializeSolutionPointers(mesh,sols + p) ;
       
       {
         Session_Open() ;
@@ -740,7 +759,14 @@ int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
         Message_Direct("Start a calculation of microstructure matrix: %s",DataFile_GetFileName(df)) ;
         Message_Direct("\n") ;
         
-        ComputeMicrostructureMatrix(mesh,solver,t,dt,c0) ;
+        {
+          FEM2_t* fem2 = FEM2_GetInstance(dataset,solvers,NULL,sols+p) ;
+          int i = FEM2_HomogenizeTangentStiffnessTensor(fem2,t,dt,c0) ;
+        
+          if(i < 0) {
+            Message_FatalError("ComputeTangentCoefficients: something went wrong") ;
+          }
+        }
         
         Session_Close() ;
       }
@@ -773,202 +799,15 @@ int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
 
 
 
-
-int ComputeMicrostructureMatrix(Mesh_t* mesh,Solver_t* solver,double t,double dt,double* c)
-{
-#define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
-  int dim = Mesh_GetDimension(mesh) ;
-  Matrix_t* a = Solver_GetMatrix(solver) ;
-  Residu_t* residu = Solver_GetResidu(solver) ;
-  double*   b = Residu_GetRHS(residu) ;
-  double*   u = Residu_GetSolution(residu) ;
-  int ncol = Solver_GetNbOfColumns(solver) ;
-  double*  pb[9] = {b,b+ncol,b+2*ncol,b+ncol,b+3*ncol,b+4*ncol,b+2*ncol,b+4*ncol,b+5*ncol} ;
-  double*  pu[9] = {u,u+ncol,u+2*ncol,u+ncol,u+3*ncol,u+4*ncol,u+2*ncol,u+4*ncol,u+5*ncol} ;
-  double    E[9] = {1,0.5,0.5,0.5,1,0.5,0.5,0.5,1} ;
-
-
-  /* Initializations */
-  {
-    int j ;
-    
-    for(j = 0 ; j < 81 ; j++) c[j] = 0 ;
-  }
-  
-    
-  Matrix_SetValuesToZero(a) ;
-  Residu_SetValuesToZero(residu) ;
-  
-
-  /* The matrix and the r.h.s. */
-  {
-    int n_el = Mesh_GetNbOfElements(mesh) ;
-    Element_t* el = Mesh_GetElement(mesh) ;
-#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
-    double ke[NE*NE] ;
-#undef NE
-    int ie ;
-    
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
-      
-        Element_FreeBuffer(el + ie) ;
-        {
-          int i = Element_ComputeMatrix(el + ie,t,dt,ke) ;
-        
-          if(i != 0) return(i) ;
-        }
-      
-        Matrix_AssembleElementMatrix(a,el+ie,ke) ;
-      
-        {
-          int  nn = Element_GetNbOfNodes(el + ie) ;
-          int neq = Element_GetNbOfEquations(el + ie) ;
-          int ndof = nn*neq ;
-          int n ;
-                
-          for(n = 0 ; n < nn ; n++) {
-            Node_t* node_n = Element_GetNode(el + ie,n) ;
-            double* x_n = Node_GetCoordinate(node_n) ;
-            int m ;
-                
-            for(m = 0 ; m < nn ; m++) {
-              Node_t* node_m = Element_GetNode(el + ie,m) ;
-              double* x_m = Node_GetCoordinate(node_m) ;
-              int i ;
-        
-              for(i = 0 ; i < dim ; i++) {
-                int ni = n*neq + i ;
-                int jj_row = Element_GetEquationPosition(el + ie)[ni] ;
-                
-                /*  The r.h.s. stored in pb */
-                if(jj_row >= 0) {
-                  int row_i = Node_GetMatrixRowIndex(node_n)[jj_row] ;
-                  int j ;
-          
-                  if(row_i >= 0) {
-                    for(j = 0 ; j < dim ; j++) {
-                      int mj = m*neq + j ;
-                      int ij = ni * ndof + mj ;
-                      int k ;
-                      
-                      for(k = j ; k < dim ; k++) {
-                        int      jk = 3 * j + k ;
-                        double* bjk = pb[jk] ;
-
-                        bjk[row_i] -= ke[ij] * E[jk] * x_m[k] ;
-                      }
-                    }
-                  }
-                }
-                
-                /*  First part of C */
-                {
-                  int j ;
-          
-                  for(j = 0 ; j < dim ; j++) {
-                    int mj = m*neq + j ;
-                    int ij = ni * ndof + mj ;
-                    int k ;
-                      
-                    for(k = 0 ; k < dim ; k++) {
-                      int l ;
-          
-                      for(l = 0 ; l < dim ; l++) {
-                        C(k,i,l,j) += x_n[k] * ke[ij] * x_m[l] ;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-
-  /* The solutions */
-  {
-    int k ;
-
-    for(k = 0 ; k < dim ; k++) {
-      int l ;
-          
-      for(l = k ; l < dim ; l++) {
-        Solver_GetRHS(solver) = pb[3 * k + l] ;
-        Solver_GetSolution(solver) = pu[3 * k + l] ;
-        Solver_Solve(solver) ;
-      }
-    }
-    
-    Solver_GetRHS(solver) = b ;
-    Solver_GetSolution(solver) = u ;
-  }
-
-
-  /* The macroscopic tangent stiffness matrix */
-  {
-    int i ;
-        
-    for(i = 0 ; i < dim ; i++) {
-      int j ;
-      
-      for(j = 0 ; j < dim ; j++) {
-        int k ;
-          
-        for(k = 0 ; k < dim ; k++) {
-          int l ;
-          
-          for(l = 0 ; l < dim ; l++) {
-            double  ub = 0. ;
-            
-            {
-              double* uik = pu[3 * i + k] ;
-              double* blj = pb[3 * l + j] ;
-              int p ;
-              
-              for(p = 0 ; p < ncol ; p++) {
-                ub += uik[p] * blj[p] ;
-              }
-            }
-            
-            {
-              double  Eik =  E[3 * i + k] ;
-              double  Elj =  E[3 * l + j] ;
-
-              C(k,i,j,l) -= ub / (Eik * Elj) ;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  {
-    double vol = FEM_ComputeVolume(mesh) ;
-    int j ;
-    
-    for(j = 0 ; j < 81 ; j++) c[j] /= vol ;
-  }
-  
-  return(0) ;
-#undef C
-}
-
-
-
 double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,Solutions_t* sols_n,double t,double dt,int p)
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   FEM_t*    fem    = FEM_GetInstance(el) ;
   Model_t*  model  = Element_GetModel(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
-  double*   x      = Model_GetVariable(model,p) ;
-  //double*   x      = Variable ;
+  //double*   x      = Model_GetVariable(model,p) ;
+  double*   x      = Variable ;
+  double*   x_n    = Variable_n ;
   
     
   /* Primary Variables */
@@ -977,17 +816,17 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,Solut
     
     /* Displacements */
     for(i = 0 ; i < dim ; i++) {
-      x[I_U + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_u + i) ;
+      x[I_DIS + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_dis + i) ;
     }
     
     for(i = dim ; i < 3 ; i++) {
-      x[I_U + i] = 0 ;
+      x[I_DIS + i] = 0 ;
     }
   }
     
   /* Strains */
   {
-    double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_u) ;
+    double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_dis) ;
     int    i ;
       
     if(ItIsPeriodic) {
@@ -1011,7 +850,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,Solut
     
     /* Stresses, strains at previous time step */
     {
-      double* eps_n =  FEM_ComputeLinearStrainTensor(fem,u_n,intfct,p,U_u) ;
+      double* eps_n =  FEM_ComputeLinearStrainTensor(fem,u_n,intfct,p,U_dis) ;
       double* vim_n = f_n + p*NVI ;
       
       if(ItIsPeriodic) {
@@ -1022,8 +861,8 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,Solut
       }
     
       for(i = 0 ; i < 9 ; i++) {
-        x[I_EPS_n   + i] = eps_n[i] ;
-        x[I_SIG_n   + i] = SIG_n[i] ;
+        x_n[I_EPS   + i] = eps_n[i] ;
+        x_n[I_SIG   + i] = SIG_n[i] ;
       }
       
       FEM_FreeBufferFrom(fem,eps_n) ;
@@ -1033,7 +872,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,Solut
   {
     Solutions_t* sols = Element_GetCurrentSolutions(el) ;
     
-    ComputeSecondaryVariables(el,t,dt,x,sols_n + p,sols + p) ;
+    ComputeSecondaryVariables(el,t,dt,x_n,x,sols_n + p,sols + p) ;
   }
   
   return(x) ;
@@ -1041,18 +880,18 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,Solut
 
 
 
-void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x,Solutions_t* sols_n,Solutions_t* sols)
+void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,double* x,Solutions_t* sols_n,Solutions_t* sols)
 {
   /* Strains */
-  double* eps   =  x + I_EPS ;
-  double* eps_n =  x + I_EPS_n ;
+  double* eps   =  x   + I_EPS ;
+  double* eps_n =  x_n + I_EPS ;
     
 
 
   /* Backup stresses, plastic strains */
   {
-    double* sig   = x + I_SIG ;
-    double* sig_n = x + I_SIG_n ;
+    double* sig   = x   + I_SIG ;
+    double* sig_n = x_n + I_SIG ;
     
     
     {
@@ -1067,9 +906,8 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x,Solut
       
       /* Compute here the microstructure */
       {
-        DataSet_t* dataset = (DataSet_t*) Element_FindMaterialData(el,DataSet_t,"DataSet") ;
-        Solvers_t* solvers = (Solvers_t*) Element_FindMaterialData(el,Solvers_t,"Solvers") ;
-        Solver_t* solver = Solvers_GetSolver(solvers) ;
+        DataSet_t* dataset = Element_GetDataSet(el) ;
+        Solvers_t* solvers = Element_GetSolvers(el) ;
         DataFile_t* df = DataSet_GetDataFile(dataset) ;
 
         
@@ -1080,7 +918,14 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x,Solut
         Message_Direct("Start a calculation of microstructure: %s",DataFile_GetFileName(df)) ;
         Message_Direct("\n") ;
         
-        ComputeMicrostructure(dataset,solver,t,dt,sols_n,sols,deps,sig) ;
+        {
+          FEM2_t* fem2 = FEM2_GetInstance(dataset,solvers,sols_n,sols) ;
+          int j = FEM2_ComputeHomogenizedStressTensor(fem2,t,dt,deps,sig) ;
+        
+          if(j < 0) {
+            Message_FatalError("ComputeSecondaryVariables: something went wrong") ;
+          }
+        }
         
         Session_Close() ;
       }
@@ -1095,7 +940,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x,Solut
       double gravity = GetProperty("gravity") ;
       double rho_s   = GetProperty("rho_s") ;
       int dim = Element_GetDimensionOfSpace(el) ;
-      double* f_mass = x + I_Fmass ;
+      double* f_mass = x + I_F_MASS ;
       int i ;
       
       for(i = 0 ; i < 3 ; i++) f_mass[i] = 0 ;
@@ -1103,233 +948,6 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x,Solut
     }
   }
 }
-
-
-
-void ComputeMicrostructure(DataSet_t* dataset,Solver_t* solver,double t,double dt,Solutions_t* sols_n,Solutions_t* sols,double* macrograd,double* sig)
-{
-  /* Set input data of the microstructure */
-  {
-    /* Update the time function */
-    {
-      Functions_t* fcts = DataSet_GetFunctions(dataset) ;
-      int nfcts = 9 ;
-      int j ;
-      
-      for(j = 0 ; j < nfcts ; j++) {
-        Function_t* func = Functions_GetFunction(fcts) + j ;
-        double* x = Function_GetXValue(func) ;
-        double* f = Function_GetFValue(func) ;
-
-        x[0] = t - dt ;
-        x[1] = t ;
-        f[0] = 0 ;
-        f[1] = macrograd[j] ;
-      }
-    }
-  }
-    
-  /* Compute the microstructure */
-  {
-    Module_t* module = DataSet_GetModule(dataset) ;
-    Dates_t*   dates  = DataSet_GetDates(dataset) ;
-    Date_t*    date   = Dates_GetDate(dates) ;
-    TimeStep_t*  timestep  = DataSet_GetTimeStep(dataset) ;
-    double dtini = TimeStep_GetInitialTimeStep(timestep) ;
-    double t_n = Solutions_GetTime(sols_n) ;
-    
-    {
-      /* t should be equal to t_n + dt. */
-      if(fabs(t - dt - t_n) > 1.e-4*dtini) {
-        printf("coucou") ;
-        Message_FatalError("ComputeMicrostructure: t_n = %e ; t - dt = %e",t_n,t-dt) ;
-      }
-      
-      /* There are 2 dates */
-      Date_GetTime(date) = t_n ;
-      Date_GetTime(date + 1) = t ;
-    
-      {
-        Solution_t* sol   = Solutions_GetSolution(sols) ;
-        Solution_t* sol_n = Solutions_GetSolution(sols_n) ;
-        
-        Solution_Copy(sol,sol_n) ;
-      }
-      
-      {
-        int i ;
-        
-        #if 1
-        i = Module_SolveProblem(module,dataset,sols,solver,NULL) ;
-        #else
-        {
-          Module_InitializeProblem(module,dataset,sols) ;
-          i = Module_Increment(module,dataset,sols,solver,NULL,t_n,t) ;
-        }
-        #endif
-        
-        if(i < 0) {
-          Message_FatalError("ComputeMicrostructure: something went wrong") ;
-          //Exception_Interrupt ;
-        }
-      }
-    }
-  }
-
-  /* Backup stresses as averaged stresses */
-  {
-    Mesh_t* mesh = DataSet_GetMesh(dataset) ;
-    
-    Mesh_InitializeSolutionPointers(mesh,sols) ;
-    FEM_AverageStresses(mesh,sig) ;
-  }
-}
-
-
-
-
-
-
-void InitializeMicrostructureDataSet(DataSet_t* dataset)
-{
-  /* Set input data of the microstructure */
-  {
-    /* Update the macro-gradient and the macro-fctindex */
-    {
-      Materials_t* mats = DataSet_GetMaterials(dataset) ;
-      int nmats = Materials_GetNbOfMaterials(mats) ;
-      int j ;
-    
-      for(j = 0 ; j < nmats ; j++) {
-        Material_t* mat = Materials_GetMaterial(mats) + j ;
-        Model_t* model = Material_GetModel(mat) ;
-        Model_ComputePropertyIndex_t* pidx = Model_GetComputePropertyIndex(model) ;
-        
-        if(!pidx) {
-          arret("InitializeMicrostructureDataSet(1): Model_GetComputePropertyIndex(model) undefined") ;
-        }
-        
-        {
-          double* grd = Material_GetProperty(mat) + pidx("macro-gradient") ;
-          double* fid = Material_GetProperty(mat) + pidx("macro-fctindex") ;
-          int i ;
-    
-          for(i = 0 ; i < 9 ; i++) {
-            grd[i] = 1 ;
-            fid[i] = i + 1 ;
-          }
-        }
-      }
-    }
-    
-    
-    /* Check and update the function of time */
-    {
-      Functions_t* fcts = DataSet_GetFunctions(dataset) ;
-      int nfcts = Functions_GetNbOfFunctions(fcts) ;
-      int j ;
-      
-      if(nfcts < 9) {
-        arret("InitializeMicrostructureDataSet(1): 9 functions are needed") ;
-      }
-      
-      nfcts = 9 ;
-      for(j = 0 ; j < nfcts ; j++) {
-        Function_t* func = Functions_GetFunction(fcts) + j ;
-        int npts = Function_GetNbOfPoints(func) ;
-          
-        if(npts < 2) {
-          arret("InitializeMicrostructureDataSet(2): 2 points are needed") ;
-        }
-          
-        {
-          double* t = Function_GetXValue(func) ;
-          double* f = Function_GetFValue(func) ;
-            
-          Function_GetNbOfPoints(func) = 2 ;
-          t[0] = 0 ;
-          t[1] = 1 ;
-          f[0] = 0 ;
-          f[1] = 1 ;
-        }
-      }
-    }
-    
-    /* The dates */
-    {
-      {
-        Dates_t* dates = DataSet_GetDates(dataset) ;
-        int     nbofdates  = Dates_GetNbOfDates(dates) ;
-          
-        if(nbofdates < 2) {
-          arret("InitializeMicrostructureDataSet(3): 2 dates are needed") ;
-        }
-      
-        Dates_GetNbOfDates(dates) = 2 ;
-      }
-    }
-  }
-}
-
-
-
-#if 0
-double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,Solutions_t* sols_n,Solutions_t* sols,double dxi,int i)
-{
-  double* dx = dVariable ;
-  double* x2 = Variable2 ;
-  
-  /* Primary Variables */
-  {
-    int j ;
-    
-    for(j = 0 ; j < NbOfVariables ; j++) {
-      dx[j] = x[j] ;
-      x2[j] = x[j] ;
-    }
-  }
-  
-  /* We increment the variable as (x + dx) */
-  dx[i] += dxi ;
-  x2[i] -= dxi ;
-  
-  
-  if(i >= I_EPS && i < I_EPS + 9) {
-    /* Find indexes k and l: kl = 3*k + l */
-    int kl = i - I_EPS ;
-    int k = kl%3 ;
-    int l = (kl - k)/3 ;
-    int lk = 3*l + k ;
-    int j = lk + I_EPS ;
-    
-    dx[j] += dxi ;
-    x2[j] -= dxi ;
-  }
-  
-  ComputeSecondaryVariables(el,t,dt,dx,sols_n,sols) ;
-  ComputeSecondaryVariables(el,t,dt,x2,sols_n,sols) ;
-  
-  /* The numerical derivative as (f(x + dx) - f(x - dx))/(2dx) */
-  {
-    int j ;
-    
-    for(j = 0 ; j < NbOfVariables ; j++) {
-      dx[j] -= x2[j] ;
-      dx[j] /= (2*dxi) ;
-    }
-  }
-  
-  if(i >= I_EPS && i < I_EPS + 9) {
-    int j ;
-    
-    for(j = 0 ; j < NbOfVariables ; j++) {
-      dx[j] *= 0.5 ;
-    }
-  }
-
-  return(dx) ;
-}
-#endif
 
 
 

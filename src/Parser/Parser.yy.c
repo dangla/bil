@@ -911,25 +911,25 @@ char*  strsave(char* ptr);
 void   skipcomments(void);
 void   skipline(void);
 
-#define YY_INPUT(buf,result,max_size)         \
-     {                  \
-       int c = '*', n;              \
-       for ( n = 0; n < max_size &&         \
-         (c = getc( yyin )) != EOF && c != '\n'; ++n )    \
-   buf[n] = (char) c;           \
-       if ( c == '\n' ){            \
-   buf[n++] = (char) c;           \
-   yylineno++;              \
-       }                \
-       if ( c == EOF && ferror( yyin ) )        \
-   Message_FatalError("Input in flex scanner failed");          \
-       result = n;              \
-     }  
+#define YY_INPUT(buf,result,max_size) \
+        { \
+          int c = '*', n; \
+          for(n = 0 ; n < max_size && \
+            (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
+            buf[n] = (char) c; \
+          if ( c == '\n' ){ \
+            buf[n++] = (char) c; \
+            yylineno++; \
+          } \
+          if ( c == EOF && ferror( yyin ) ) \
+          Message_FatalError("Input in flex scanner failed"); \
+          result = n; \
+        }
 
 
-#define SAVEYYTEXT    \
+#define SAVEYYTEXT \
         do { \
-          Parser_yylval.c = strsave((char*)yytext) ;  \
+          Parser_yylval.c = strsave((char*)yytext) ; \
           PRINTYYTEXT; \
           if(!Parser_yylval.c) { \
             Message_FatalError("impossible to save \"%s\"",yytext) ; \
@@ -2628,7 +2628,7 @@ void skipcomments(void)
   while (1) {
     while ((c = yyinput()) != '*'){
       if(feof(yyin)){
-  Message_FatalError("End of file in commented region");
+        Message_FatalError("End of file in commented region");
         return;
       }
     }
@@ -2652,15 +2652,14 @@ void parsestring(char endchar)
     if(feof(yyin)){
       Message_FatalError("End of file in string");
       break;
-    }
-    else if(i >= (int)sizeof(tmp)-1){
+    } else if(i >= (int)sizeof(tmp)-1){
       Message_FatalError("String too long");
       break;
-    }
-    else{
+    } else{
       tmp[i++] = (char)c;
     }
   }
+  
   tmp[i] = '\0';
   Parser_yylval.c = strsave(tmp);
 }

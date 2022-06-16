@@ -72,7 +72,7 @@ extern void            (Exception_Delete)(void*) ;
         (Exception_ExceptionType == 3)
 
 
-#include <GenericObject.h>
+#include "GenericObject.h"
 
 struct Exception_s {        /* Exception handler */
   jmp_buf env ;             /* Environment */

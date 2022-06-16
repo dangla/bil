@@ -19,7 +19,7 @@ extern double*  (Curve_CreateSamplingOfX)(Curve_t*) ;
 extern double   (Curve_ComputeValue)(Curve_t*,double) ;
 extern double   (Curve_ComputeDerivative)(Curve_t*,double) ;
 extern double   (Curve_ComputeIntegral)(Curve_t*,double) ;
-extern char*    (Curve_PrintInFile)(Curve_t*) ;
+//extern char*    (Curve_PrintInFile)(Curve_t*) ;
 
 
 #define Curve_MaxLengthOfKeyWord        (30)

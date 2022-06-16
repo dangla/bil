@@ -7,7 +7,6 @@
 #include "IntFcts.h"
 #include "Nodes.h"
 #include "Models.h"
-#include "Buffer.h"
 #include "Session.h"
 #include "GenericData.h"
 #include "Mry.h"

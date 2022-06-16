@@ -17,14 +17,14 @@ struct GenericData_s     ; typedef struct GenericData_s     GenericData_t ;
 
 extern GenericData_t* (GenericData_New)          (void) ;
 extern void           (GenericData_Delete)       (void*) ;
-extern GenericData_t* (GenericData_Create_)      (int,void*,TypeId_t,size_t,const char*) ;
-extern void           (GenericData_Initialize_)  (GenericData_t*,int,void*,TypeId_t,size_t,const char*) ;
+extern GenericData_t* (GenericData_Create_)      (int,void*,TypeId_t*,const char*) ;
+extern void           (GenericData_Initialize_)  (GenericData_t*,int,void*,TypeId_t*,const char*) ;
 //extern void           (GenericData_InsertBefore) (GenericData_t*,GenericData_t*) ;
 //extern void           (GenericData_InsertAfter)  (GenericData_t*,GenericData_t*) ;
 extern GenericData_t* (GenericData_Append)       (GenericData_t*,GenericData_t*) ;
 extern GenericData_t* (GenericData_First)        (GenericData_t*) ;
 extern GenericData_t* (GenericData_Last)         (GenericData_t*) ;
-extern GenericData_t* (GenericData_Find_)        (GenericData_t*,TypeId_t,const char*) ;
+extern GenericData_t* (GenericData_Find_)        (GenericData_t*,const int,const char*) ;
 
 
 
@@ -40,23 +40,29 @@ extern GenericData_t* (GenericData_Find_)        (GenericData_t*,TypeId_t,const 
 #define GenericData_GetNextGenericData(GD)       ((GD)->next)
 #define GenericData_GetPreviousGenericData(GD)   ((GD)->prev)
 #define GenericData_GetDelete(GD)                ((GD)->Delete)
-#define GenericData_GetSize(GD)                  ((GD)->size)
+
+
+#define GenericData_GetSize(GD) \
+        TypeId_GetSize(GenericData_GetTypeId(GD))
+
+#define GenericData_GetIdNumber(GD) \
+        TypeId_GetIdNumber(GenericData_GetTypeId(GD))
 
 
 
         
 #define GenericData_Create(N,DATA,T,NAME) \
-        GenericData_Create_(N,DATA,TypeId_Create(T),sizeof(T),NAME)
+        GenericData_Create_(N,DATA,TypeId_Create(T),NAME)
         
 #define GenericData_Initialize(GD,N,DATA,T,NAME) \
-        GenericData_Initialize_(GD,N,DATA,TypeId_Create(T),sizeof(T),NAME)
+        GenericData_Initialize_(GD,N,DATA,TypeId_Create(T),NAME)
         
 #define GenericData_Find(GD,T,NAME) \
-        GenericData_Find_(GD,TypeId_Create(T),NAME)
+        GenericData_Find_(GD,TypeId_IdNumber(T),NAME)
         
         
 #define GenericData_Is(GD,ID,NAME) \
-        ((GenericData_GetTypeId(GD) == ID) && !strcmp(GenericData_GetName(GD),NAME))
+        ((GenericData_GetIdNumber(GD) == ID) && !strcmp(GenericData_GetName(GD),NAME))
         
         
 #define GenericData_FindData(GD,T,NAME) \
@@ -73,14 +79,13 @@ extern GenericData_t* (GenericData_Find_)        (GenericData_t*,TypeId_t,const 
 
 
 
-#include <GenericObject.h>
+#include "GenericObject.h"
 
 /* Generic data */
 struct GenericData_s {
-  TypeId_t typ ;                /* The type id of data */
+  TypeId_t* typ ;               /* The type id of data */
   char*    name ;               /* Name of the data */
   int n ;                       /* Nb of data */
-  size_t size  ;                /* Size of elementary data */
   void* data ;                  /* The data */
   GenericData_t* prev ;         /* Previous generic data */
   GenericData_t* next ;         /* Next generic data */

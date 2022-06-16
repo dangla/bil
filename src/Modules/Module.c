@@ -88,6 +88,9 @@ Module_t* (Module_Initialize)(Module_t* module,const char* codename)
     Module_SetModuleProp(module) ; /* Call to SetModuleProp */
     
     return(module) ;
+  } else {
+    
+    Message_Warning("No module named %s\n",codename) ;
   }
   
   return(module) ;

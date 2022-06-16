@@ -176,7 +176,7 @@ extern void (InternationalSystemOfUnits_UseAsMass)(const char*) ;
         InternationalSystemOfUnits_GetKatal(InternationalSystemOfUnits_GetInstance())
 
 
-#include <GenericObject.h>
+#include "GenericObject.h"
 
 struct InternationalSystemOfUnits_s {
   /* Base units */

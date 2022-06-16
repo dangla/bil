@@ -24,7 +24,7 @@ extern int             (TextFile_CountTheMaxNbOfCharactersPerLine)(TextFile_t*) 
 extern int             (TextFile_Exists)(TextFile_t*) ;
 extern void            (TextFile_CleanTheStream)(TextFile_t*) ;
 extern FILE*           (TextFile_FileStreamCopy)(TextFile_t*) ;
-extern char*           (TextFile_FileCopy)(TextFile_t*) ;
+//extern char*           (TextFile_FileCopy)(TextFile_t*) ;
 extern char*           (TextFile_StoreFileContent)(TextFile_t*) ;
 
 

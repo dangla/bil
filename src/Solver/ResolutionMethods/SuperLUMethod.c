@@ -18,7 +18,7 @@
 #include "superlu.h"
 
 
-
+#if 0
 int   SuperLUMethod_Solve(Solver_t* solver)
 /** Resolution of a.x = b by SuperLU's method */
 {
@@ -36,8 +36,8 @@ int   SuperLUMethod_Solve(Solver_t* solver)
   superlu_options_t options ;
   SuperLUStat_t stat ;
   int   info ;
-  static int*   perm_r ;
-  static int*   perm_c ;
+  int*  perm_r = Matrix_GetRowPermutation(a) ;
+  int*  perm_c = Matrix_GetColumnPermutation(a) ;
   /* for dgssvx */
   static int    iresol = 0 ;
   SuperLUFormat_t X ;
@@ -45,15 +45,15 @@ int   SuperLUMethod_Solve(Solver_t* solver)
   
   /* Allocate memory space for the permutations of rows and columns */
   if(!iresol) {
-    perm_r = (int*) malloc(n*sizeof(int)) ;
+    //perm_r = (int*) malloc(n*sizeof(int)) ;
     //perm_r = (int*) a.work ;
     
-    assert(perm_r) ;
+    //assert(perm_r) ;
     
-    perm_c = (int*) malloc(n*sizeof(int)) ;
+    //perm_c = (int*) malloc(n*sizeof(int)) ;
     //perm_c = (int*) a.work + n ;
     
-    assert(perm_c) ;
+    //assert(perm_c) ;
   }
   
   
@@ -75,9 +75,13 @@ int   SuperLUMethod_Solve(Solver_t* solver)
   //options.ColPerm = NATURAL ;
   //options.DiagPivotThresh = 0. ;
   //options.IterRefine = EXTRA ;
-  if(iresol) {
+  
+  if(Matrix_HasSameSparsityPattern(a)) {
     options.Fact = SamePattern ;
   }
+  //if(iresol) {
+  //  options.Fact = SamePattern ;
+  //}
   
   
 
@@ -96,11 +100,6 @@ int   SuperLUMethod_Solve(Solver_t* solver)
     Bstore.lda = n ;
     Bstore.nzval = (double*) b ;
   }
-#if 0
-  if(!iresol) {
-    dCreate_Dense_Matrix(&B,n,1,b,n,SLU_DN,SLU_D,SLU_GE) ;
-  }
-#endif
   
 
   /* The solution */
@@ -114,14 +113,13 @@ int   SuperLUMethod_Solve(Solver_t* solver)
     Xstore.lda = n ;
     Xstore.nzval = (double*) x ;
   }
+  
 #if 0
   if(!iresol) {
+    dCreate_Dense_Matrix(&B,n,1,b,n,SLU_DN,SLU_D,SLU_GE) ;
     dCreate_Dense_Matrix(&X,n,1,x,n,SLU_DN,SLU_D,SLU_GE) ;
   }
-#endif
-
-
-#if 0
+  
   {
     dgssv(&options,A,perm_c,perm_r,&L,&U,&B,&stat,&info) ;
     
@@ -151,11 +149,10 @@ int   SuperLUMethod_Solve(Solver_t* solver)
     static double* C ;
     static void*   work ;
     /* The FILL factor */
-    int            ff = 0 ;
+    int            fill = 0 ;
     /* lwork = 0 allocate space internally by system malloc */
-    int     lwork = ff * Matrix_GetNbOfNonZeroValues(a) ;
-  
-    /* Allocate memory space for the static variables */
+    int     lwork = fill * Matrix_GetNbOfNonZeroValues(a) ;
+    
     if(!iresol) {
       etree = (int*) malloc(n*sizeof(int)) ;
       
@@ -186,11 +183,157 @@ int   SuperLUMethod_Solve(Solver_t* solver)
   if(options.PrintStat) StatPrint(&stat) ;
   
   StatFree(&stat);
+  
+  if(Matrix_HasNotSameSparsityPattern(a)) {
+    Matrix_SetSameSparsityPattern(a) ;
+  }
 
   iresol++ ;
   
   return(0) ;
 }
+#endif
+
+
+
+#if 1
+int   SuperLUMethod_Solve(Solver_t* solver)
+/** Resolution of a.x = b by SuperLU's method */
+{
+  Matrix_t* a = Solver_GetMatrix(solver) ;
+  double*   b = Solver_GetRHS(solver) ;
+  double*   x = Solver_GetSolution(solver) ;
+  int       n = Solver_GetNbOfColumns(solver) ;
+  
+  /* for dgssv */
+  SuperLUFormat_t* A = (SuperLUFormat_t*) Matrix_GetStorage(a) ;
+  SuperLUFormat_t  L ;
+  SuperLUFormat_t  U ;
+  SuperLUFormat_t  B ;
+  DNformat         Bstore ;
+  SuperLUFormat_t  X ;
+  DNformat         Xstore ;
+  superlu_options_t slu_options ;
+  SuperLUStat_t stat ;
+  int   info ;
+  int*  perm_r = Matrix_GetRowPermutation(a) ;
+  int*  perm_c = Matrix_GetColumnPermutation(a) ;
+  
+  
+  /* Options */
+  /* Set the default input slu_options:
+     slu_options->Fact = DOFACT;
+     slu_options->Equil = YES;
+     slu_options->ColPerm = COLAMD;
+     slu_options->DiagPivotThresh = 1.0;
+     slu_options->Trans = NOTRANS;
+     slu_options->IterRefine = NOREFINE;
+     slu_options->SymmetricMode = NO;
+     slu_options->PivotGrowth = NO;
+     slu_options->ConditionNumber = NO;
+     slu_options->PrintStat = YES;
+  */
+  set_default_options(&slu_options) ;
+  slu_options.PrintStat = NO ;
+  //slu_options.ColPerm = NATURAL ;
+  //slu_options.DiagPivotThresh = 0. ;
+  //slu_options.IterRefine = EXTRA ;
+  
+  
+  /* Factorization */
+  slu_options.Fact = DOFACT ;
+  if(Matrix_IsFactorized(a)) {
+    slu_options.Fact = FACTORED ;
+  } else if(Matrix_HasSameSparsityPattern(a)) {
+    /* Same sparsity pattern and different numerical entries */
+    slu_options.Fact = SamePattern ;
+    /* Same sparsity pattern and similar numerical */
+    //slu_options.Fact = SamePattern_SameRowPerm ;
+  }
+
+
+  /* Initialize the statistics variables */
+  StatInit(&stat) ;
+
+
+  /* The rhs */
+  {
+    B.Stype = SLU_DN ;
+    B.Dtype = SLU_D ;
+    B.Mtype = SLU_GE ;
+    B.nrow  = n ;
+    B.ncol  = 1 ;
+    B.Store = (DNformat *) &Bstore ;
+    Bstore.lda = n ;
+    Bstore.nzval = (double*) b ;
+  }
+
+  /* The solution */
+  {
+    X.Stype = SLU_DN ;
+    X.Dtype = SLU_D ;
+    X.Mtype = SLU_GE ;
+    X.nrow  = n ;
+    X.ncol  = 1 ;
+    X.Store = (DNformat *) &Xstore ;
+    Xstore.lda = n ;
+    Xstore.nzval = (double*) x ;
+  }
+  
+#if 0
+  {
+    dgssv(&slu_options,A,perm_c,perm_r,&L,&U,&B,&stat,&info) ;
+    
+    {
+      int i ;
+      
+      for(i = 0 ; i < n ; i++) {
+        x[i] = b[i] ;
+      }
+    }
+  }
+#endif
+
+
+#if 1
+  {
+    double         rpg ;
+    double         rcond ;
+    mem_usage_t    mem_usage ;
+    GlobalLU_t     Glu ;
+    char           equed[1] ;
+    
+    {
+      GenericData_t* gw = Solver_GetGenericWorkSpace(solver) ;
+      double* ferr  = GenericData_FindData(gw,double,"err") ;
+      double* berr  = ferr + 1 ;
+      int*    etree = GenericData_FindData(gw,int,"etree") ;
+      double* R     = GenericData_FindData(gw,double,"R") ;
+      double* C     = GenericData_FindData(gw,double,"C") ;
+      GenericData_t* gwork  = GenericData_Find(gw,double,"work") ;
+      void* work   = (gwork) ? GenericData_GetData(gwork) : NULL ;
+      size_t lwork = (gwork) ? GenericData_GetSize(gwork)*GenericData_GetNbOfData(gwork) : 0 ;
+      
+      if(Matrix_IsFactorized(a)) {
+        equed[0] = 'B' ;
+      }
+      
+      dgssvx(&slu_options,A,perm_c,perm_r,etree,equed,R,C,&L,&U,work,lwork,&B,&X,&rpg,&rcond,ferr,berr,&Glu,&mem_usage,&stat,&info) ;
+      
+      Matrix_SetToFactorizedState(a) ;
+      Matrix_SetSameSparsityPattern(a) ;
+    }
+  }
+#endif
+
+
+  if(slu_options.PrintStat) StatPrint(&stat) ;
+  
+  StatFree(&stat);
+  
+  return(0) ;
+}
+#endif
 
 #endif
 

@@ -7,7 +7,7 @@
 #include "FEM.h"
 
 #define TITLE   "Chemo-hydro-mechanics of bituminized waste products"
-#define AUTHORS "G.MELOT"
+#define AUTHORS "MELOT-CHEN"
 
 #include "PredefinedMethods.h"
 
@@ -117,6 +117,7 @@
 
 /* Physical constant */
 #define RT        (2436.)   /* product of R=8.3143 and T=293 (Pa.m3/mol) */ 
+#define M_w       (18.e-3)  // molar mass of water (kg/mol)
 
 
 /* Fluid properties

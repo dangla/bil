@@ -13,9 +13,10 @@ struct OutputFiles_s ; typedef struct OutputFiles_s OutputFiles_t ;
 
 #include "DataSet.h"
 #include "Views.h"
+#include "Models.h"
 
 extern OutputFiles_t*   (OutputFiles_Create)(char*,int,int) ;
-extern void     (OutputFiles_Delete)(void*) ;
+extern void             (OutputFiles_Delete)(void*) ;
 //extern void     (OutputFiles_PostProcessForGmshParsedFileFormat)(OutputFiles_t*,DataSet_t*) ;
 //extern void     (OutputFiles_PostProcessForGmshASCIIFileFormat)(OutputFiles_t*,DataSet_t*) ;
 extern void     (OutputFiles_BackupSolutionAtTime_)(OutputFiles_t*,DataSet_t*,double,int) ;

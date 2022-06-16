@@ -368,7 +368,7 @@ int TextFile_CountTheMaxNbOfCharactersPerLine(TextFile_t* textfile)
 
 
 
-
+#if 0 // Suppress because it is not used and warning about tmpnam
 char* (TextFile_FileCopy)(TextFile_t* textfile)
 /** Copy the file in a temporary file
  *  Return its name. */
@@ -395,6 +395,8 @@ char* (TextFile_FileCopy)(TextFile_t* textfile)
   
   return(targetfile) ;
 }
+#endif
+
 
 
 FILE* (TextFile_FileStreamCopy)(TextFile_t* textfile)

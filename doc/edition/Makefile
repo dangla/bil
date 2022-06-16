@@ -28,7 +28,7 @@ html1: edition_init
 	perl texi2html -prefix ${BIL_DOC}-full -init_file ${BIL_DOC}-full.t2h ${BIL_DOC}.texi
 
 html2: edition_init
-	makeinfo --html -o ${BIL_DOC}.html ${BIL_DOC}.texi
+	makeinfo --html --no-split -o ${BIL_DOC}.html ${BIL_DOC}.texi
 
 info: edition_init
 	makeinfo --enable-encoding -o ${BIL_DOC}.info ${BIL_DOC}.texi

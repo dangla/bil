@@ -17,7 +17,7 @@ struct Stack_s     ; typedef struct Stack_s     Stack_t ;
 
 extern Stack_t*       (Stack_New)          (void) ;
 extern void           (Stack_Delete)       (void*) ;
-extern Stack_t*       (Stack_Push_)        (Stack_t*,int,void*,TypeId_t) ;
+extern Stack_t*       (Stack_Push_)        (Stack_t*,int,void*,TypeId_t*) ;
 extern Stack_t*       (Stack_Pop)          (Stack_t*) ;
 
 
@@ -42,7 +42,7 @@ extern Stack_t*       (Stack_Pop)          (Stack_t*) ;
 
 /* Stack */
 struct Stack_s {
-  TypeId_t typ ; 
+  TypeId_t* typ ; 
   int n ;
   void* data ;
   Stack_t* below ;

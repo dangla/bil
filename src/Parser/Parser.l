@@ -14,25 +14,25 @@ char*  strsave(char* ptr);
 void   skipcomments(void);
 void   skipline(void);
 
-#define YY_INPUT(buf,result,max_size)         \
-     {                  \
-       int c = '*', n;              \
-       for ( n = 0; n < max_size &&         \
-         (c = getc( yyin )) != EOF && c != '\n'; ++n )    \
-   buf[n] = (char) c;           \
-       if ( c == '\n' ){            \
-   buf[n++] = (char) c;           \
-   yylineno++;              \
-       }                \
-       if ( c == EOF && ferror( yyin ) )        \
-   Message_FatalError("Input in flex scanner failed");          \
-       result = n;              \
-     }  
+#define YY_INPUT(buf,result,max_size) \
+        { \
+          int c = '*', n; \
+          for(n = 0 ; n < max_size && \
+            (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
+            buf[n] = (char) c; \
+          if ( c == '\n' ){ \
+            buf[n++] = (char) c; \
+            yylineno++; \
+          } \
+          if ( c == EOF && ferror( yyin ) ) \
+          Message_FatalError("Input in flex scanner failed"); \
+          result = n; \
+        }
 
 
-#define SAVEYYTEXT    \
+#define SAVEYYTEXT \
         do { \
-          Parser_yylval.c = strsave((char*)yytext) ;  \
+          Parser_yylval.c = strsave((char*)yytext) ; \
           PRINTYYTEXT; \
           if(!Parser_yylval.c) { \
             Message_FatalError("impossible to save \"%s\"",yytext) ; \
@@ -66,11 +66,11 @@ void   skipline(void);
 %}
 
 blank      [\ \t\n\r\f]
-alpha    [a-zA-Z\_]
+alpha      [a-zA-Z\_]
 special    [\.\-]
-digit    [0-9]
+digit      [0-9]
 integer    [-+]?{digit}+
-exp    [Ee]{integer}
+exp        [Ee]{integer}
 real       [-+]?({digit}+|{digit}+"."{digit}*|{digit}*"."{digit}+)({exp})?
 string     {alpha}({alpha}|{digit}|{special})*
 
@@ -78,12 +78,12 @@ string     {alpha}({alpha}|{digit}|{special})*
 %%
 
 
-{blank}             /* none */;
+{blank}                   /* none */;
 ";"                       { SAVEYYTEXT; return tEND; }
-"/*"        skipcomments();
+"/*"                      skipcomments();
 "//"|"#"                  skipline();
-"\""        { parsestring('\"'); return tBIGSTR; }
-"\'"        { parsestring('\''); return tBIGSTR; }
+"\""                      { parsestring('\"'); return tBIGSTR; }
+"\'"                      { parsestring('\''); return tBIGSTR; }
 "="                       { SAVEYYTEXT; return tAFFECT; }
 "+="                      { SAVEYYTEXT; return tAFFECTPLUS; }
 "-="                      { SAVEYYTEXT; return tAFFECTMINUS; }
@@ -164,7 +164,7 @@ Tan                     return tTan;
 
 {real}                    { YYTEXTTOD; return tDOUBLE; }
 
-{string}      { SAVEYYTEXT; return tSTRING; }
+{string}                  { SAVEYYTEXT; return tSTRING; }
 
 .                         { SAVEYYTEXT; return yytext[0]; }
 
@@ -185,7 +185,7 @@ void skipcomments(void)
   while (1) {
     while ((c = yyinput()) != '*'){
       if(feof(yyin)){
-  Message_FatalError("End of file in commented region");
+        Message_FatalError("End of file in commented region");
         return;
       }
     }
@@ -209,15 +209,14 @@ void parsestring(char endchar)
     if(feof(yyin)){
       Message_FatalError("End of file in string");
       break;
-    }
-    else if(i >= (int)sizeof(tmp)-1){
+    } else if(i >= (int)sizeof(tmp)-1){
       Message_FatalError("String too long");
       break;
-    }
-    else{
+    } else{
       tmp[i++] = (char)c;
     }
   }
+  
   tmp[i] = '\0';
   Parser_yylval.c = strsave(tmp);
 }

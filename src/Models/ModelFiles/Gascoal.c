@@ -324,6 +324,7 @@ I_PHI_M,
 I_TRE,
 I_PHI_eul,
 I_F_MASS,
+I_F_MASS2 = I_F_MASS + 2,
 I_Last
 } ;
 
@@ -482,7 +483,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       /* Transversely isotropic stiffness tensor */
       } else {
         Elasticity_SetToTransverseIsotropy(elasty) ;
-        Elasticity_SetParameters(elasty,young,poisson,young_3,poisson_3,shear_3,axis_3) ;
+        Elasticity_SetParameters(elasty,young,poisson,young_3,poisson_3,shear_3,(double) axis_3) ;
       }
       
       {

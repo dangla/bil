@@ -18,6 +18,7 @@ extern void        (Residu_AssembleElementResidu)(Residu_t*,Element_t*,double*) 
 #define Residu_GetResiduIndex(RS)               ((RS)->index)
 #define Residu_GetLengthOfRHS(RS)               ((RS)->n)
 #define Residu_GetNbOfRHS(RS)                   ((RS)->n_rhs)
+#define Residu_GetNbOfSolutions(RS)             ((RS)->n_rhs)
 #define Residu_GetRHS(RS)                       ((RS)->rhs)
 #define Residu_GetSolution(RS)                  ((RS)->sol)
 

@@ -1,3 +1,3 @@
 #!/bin/sh
 
-find ${BIL} -name "*.[c,h,cpp,hpp,f]" | xargs wc -l
+find ${BIL}/src -maxdepth 3 -name "*.[c,h,cpp,hpp,f]" | xargs wc -l

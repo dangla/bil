@@ -24,60 +24,14 @@
   Extern functions
 */
 
-#if 0
-Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n)
-{
-  int NbOfMatrices = Mesh_GetNbOfMatrices(mesh) ;
-  Solver_t* solver = (Solver_t*) Mry_New(Solver_t[NbOfMatrices]) ;
-  
-  {
-    int i ;
-    
-    for(i = 0 ; i < NbOfMatrices ; i++) {
-      Solver_t* solver_i = Solver_CreateSelectedMatrix(mesh,options,n,i) ;
-      
-      solver[i] = solver_i[0] ;
-      free(solver_i) ;
-    }
-  }
-  
-  return(solver) ;
-}
-#endif
-
-
-
-Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n,const int imatrix)
+Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const int imatrix)
 {
   Solver_t* solver = (Solver_t*) Mry_New(Solver_t) ;
   
   
-  /*  Method */
+  /* Resolution method */
   {
-    char* method = Options_GetResolutionMethod(options) ;
-    
-    if(!strcmp(method,"crout")) {
-    
-      Solver_GetResolutionMethod(solver) = ResolutionMethod_Type(CROUT) ;
-      Solver_GetSolve(solver) = CroutMethod_Solve ;
-    
-    #ifdef SUPERLULIB
-    } else if(!strcmp(method,"slu")) {
-    
-      Solver_GetResolutionMethod(solver) = ResolutionMethod_Type(SLU) ;
-      Solver_GetSolve(solver) = SuperLUMethod_Solve ;
-    #endif
-
-    #ifdef BLASLIB
-    } else if(!strcmp(method,"ma38")) {
-    
-      Solver_GetResolutionMethod(solver) = ResolutionMethod_Type(MA38) ;
-      Solver_GetSolve(solver) = MA38Method_Solve ;
-    #endif
-      
-    } else {
-      arret("Solver_Create(1): unknown method") ;
-    }
+    Solver_GetResolutionMethod(solver) = ResolutionMethod_Create(options) ;
   }
   
   
@@ -92,7 +46,7 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n,const int
   /* Allocation of space for the residu */
   {
     int n_col = Solver_GetNbOfColumns(solver) ;
-    Residu_t* residu = Residu_Create(n_col,n) ;
+    Residu_t* residu = Residu_Create(n_col,n_res) ;
     
     Residu_GetResiduIndex(residu) = imatrix ;
     
@@ -105,6 +59,68 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n,const int
     Matrix_t* matrix = Matrix_Create(mesh,options,imatrix) ;
     
     Solver_GetMatrix(solver) = matrix ;
+  }
+  
+  
+  /* The solver */
+  {
+    if(Solver_ResolutionMethodIs(solver,CROUT)) {
+      Solver_GetSolve(solver) = CroutMethod_Solve ;
+      
+    #ifdef SUPERLULIB
+    } else if(Solver_ResolutionMethodIs(solver,SuperLU)) {
+      Solver_GetSolve(solver) = SuperLUMethod_Solve ;
+      
+      /* Allocate work spaces for dgssvx */
+      {
+        int n = Solver_GetNbOfColumns(solver) ;
+        void* etree  = Mry_New(int[n]) ;
+        void* R      = Mry_New(double[n]) ;
+        void* C      = Mry_New(double[n]) ;
+        void* err    = Mry_New(double[2]) ;
+        GenericData_t* getree = GenericData_Create(n,etree,int,"etree") ;
+        GenericData_t* gR     = GenericData_Create(n,R,double,"R") ;
+        GenericData_t* gC     = GenericData_Create(n,C,double,"C") ;
+        GenericData_t* gerr   = GenericData_Create(2,err,double,"err") ;
+        /* The FILL factor: FILL = 30 set by sp_ienv of superlu. */
+        /* If lwork = 0 allocate space internally by system malloc */
+        double fill = Options_GetFillFactor(options) ;
+        Matrix_t* matrix = Solver_GetMatrix(solver) ;
+        int nnz = Matrix_GetNbOfNonZeroValues(matrix) ;
+        int lwork = floor(fill*nnz) ;
+
+        Solver_AppendGenericWorkSpace(solver,getree) ;
+        Solver_AppendGenericWorkSpace(solver,gR) ;
+        Solver_AppendGenericWorkSpace(solver,gC) ;
+        Solver_AppendGenericWorkSpace(solver,gerr) ;
+      
+        if(lwork) {
+          void* work = Mry_New(double[lwork]) ;
+          GenericData_t* gwork = GenericData_Create(lwork,work,double,"work") ;
+        
+          Solver_AppendGenericWorkSpace(solver,gwork) ;
+        }
+      }
+    #endif
+    
+    #ifdef BLASLIB
+    } else if(Solver_ResolutionMethodIs(solver,MA38)) {
+      Solver_GetSolve(solver) = MA38Method_Solve ;
+
+      /*  Allocate work space for ma38cd */
+      {
+        int n_col = Solver_GetNbOfColumns(solver) ;
+        int lwork = 4 * n_col ;
+        void* work = Mry_New(double[lwork]) ;
+        GenericData_t* gwork = GenericData_Create(lwork,work,double,"work") ;
+      
+        Solver_AppendGenericWorkSpace(solver,gwork) ;
+      }
+    #endif
+    
+    } else {
+      arret("Solver_Create: method not available") ;
+    }
   }
   
   return(solver) ;
@@ -133,6 +149,26 @@ void  (Solver_Delete)(void* self)
       Residu_Delete(rs) ;
       free(rs) ;
       Solver_GetResidu(solver) = NULL ;
+    }
+  }
+  
+  {
+    ResolutionMethod_t* rm = Solver_GetResolutionMethod(solver) ;
+    
+    if(rm) {
+      ResolutionMethod_Delete(rm) ;
+      free(rm) ;
+      Solver_GetResolutionMethod(solver) = NULL ;
+    }
+  }
+  
+  {
+    GenericData_t* genericwork = Solver_GetGenericWorkSpace(solver) ;
+    
+    if(genericwork) {
+      GenericData_Delete(genericwork) ;
+      free(genericwork) ;
+      Solver_GetGenericWorkSpace(solver) = NULL ;
     }
   }
 }

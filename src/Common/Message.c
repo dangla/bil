@@ -151,6 +151,31 @@ void (Message_RuntimeError0)(const char* fmt, ...)
 
 
 
+void (Message_InputError)(const char* name,const int i)
+{
+  Message_t* msg = Message_GetInstance() ;
+  
+  if(!msg || Message_GetVerbosity(msg) < 1) {
+    exit(EXIT_SUCCESS) ;
+    return ;
+  }
+  
+  fflush(stdout) ;
+  
+  fprintf(stderr,"\nBil input error...\n") ;
+  
+  {
+    fprintf(stderr,"** On entry to %s, parameter number %d had an illegal value",name,i);
+  }
+  
+  fprintf(stderr,"\n...stop\n") ;
+  fflush(stderr) ;
+  
+  exit(EXIT_SUCCESS) ;
+}
+
+
+
 void (Message_Warning)(const char* fmt, ...)
 {
   Message_t* msg = Message_GetInstance() ;

@@ -27,10 +27,10 @@ int   CroutMethod_Solve(Solver_t* solver)
   int n = Solver_GetNbOfColumns(solver) ;
   LDUSKLFormat_t* askl = (LDUSKLFormat_t*) Matrix_GetStorage(a) ;
 
-  if(Matrix_WasNotModified(a)) {
+  if(Matrix_IsNotFactorized(a)) {
     int i = ludcmp(askl,n) ;
     
-    Matrix_SetToModifiedState(a) ;
+    Matrix_SetToFactorizedState(a) ;
     
     if(i < 0) return(i) ;
   }

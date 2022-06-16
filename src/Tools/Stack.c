@@ -19,7 +19,7 @@ Stack_t* (Stack_New)(void)
   }
   
   {
-    Stack_GetTypeId(stack) = TypeId_Create(undefined) ;
+    Stack_GetTypeId(stack) = TypeId_Create(char) ;
     Stack_GetNbOfData(stack) = 0 ;
     Stack_GetData(stack)  = NULL ;
     Stack_GetBelow(stack) = NULL ;
@@ -45,7 +45,7 @@ void (Stack_Delete)(void* self)
 
 
 
-Stack_t* (Stack_Push_)(Stack_t* head,int n,void* data,TypeId_t typ)
+Stack_t* (Stack_Push_)(Stack_t* head,int n,void* data,TypeId_t* typ)
 {
   Stack_t* stack = Stack_New() ;
   

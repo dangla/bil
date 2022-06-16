@@ -74,7 +74,7 @@ extern double*    FVM_ComputeTheNodalFluxVector(FVM_t*,double*) ;
 
 
 #include "Buffer.h"
-#include <GenericObject.h>
+#include "GenericObject.h"
 
 struct FVM_s {                /* Finite Volume Method */
   Element_t* el ;             /* Element */

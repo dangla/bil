@@ -61,7 +61,9 @@ FFLAGS = -fPIC
 
 # Optimization flags
 #------------------
-OPTIM  = -gdwarf-2 -g3 #-O2
+OPTIM  = -gdwarf-2 -g3     # Debug
+#OPTIM  = -O3 -DNDEBUG      # Release
+#OPTIM  = -O3 -g -gdwarf-3  # RelWithDebInfo
 
 
 

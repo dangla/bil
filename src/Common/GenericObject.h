@@ -1,6 +1,7 @@
 #ifndef GENERICOBJECT_H
 #define GENERICOBJECT_H
 
+
 /* 
  * After:
  * A. Schreiner, Object oriented programming with ANSI-C, 2011.
@@ -17,6 +18,8 @@
 typedef void (GenericObject_Delete_t)(void*) ;
 
 
+#endif
+#if 0
 
 /* GenericObject_t
  * ---------------*/
@@ -30,8 +33,6 @@ typedef void (GenericObject_Delete_t)(void*) ;
 
 
 
-#endif
-#if 0
 
 template <typename T> extern void* GenericObject_New_(const int = 1) ;
 template <typename T> inline void* GenericObject_New_(const int n)
@@ -46,8 +47,6 @@ template <typename T> inline void* GenericObject_New_(const int n)
         GenericObject_New_<T>(__VA_ARGS__)
 
 
-#endif
-#if 0
 
 #include "Utils.h"
 #include "TypeId.h"

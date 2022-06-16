@@ -106,7 +106,7 @@ extern double   FEM_ComputeVolume(Mesh_t*) ;
 
 
 #include "Buffer.h"
-#include <GenericObject.h>
+#include "GenericObject.h"
 
 struct FEM_s {                /* Finite Element Method */
   Element_t* el ;             /* Element */

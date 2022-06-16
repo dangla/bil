@@ -299,6 +299,7 @@ double Curve_ComputeIntegral(Curve_t* cb,double a)
 
 
 
+#if 0 // Suppress because it is not used and warning about tmpnam
 char* Curve_PrintInFile(Curve_t* curve)
 {
   int     n = Curve_GetNbOfPoints(curve) ;
@@ -320,6 +321,7 @@ char* Curve_PrintInFile(Curve_t* curve)
   
   return(targetfile) ;
 }
+#endif
 
 
 

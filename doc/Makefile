@@ -7,11 +7,12 @@ MANDIR     = ${PREFIX}/man
 INFODIR    = ${PREFIX}/info
 
 # Langage (fr or en)
-LANG = en
+# LANG = en
 
 # Documentation
-BIL_EDITION_DIR = ${shell ls -d edition-*}
-BIL_DOC = bil-${LANG}
+#BIL_EDITION_DIR = ${shell ls -d edition-*}
+BIL_EDITION_DIR = edition
+BIL_DOC = bil
 
 export BIL_DOC
 
@@ -67,8 +68,8 @@ clean-all: clean
 install-doc:
 	mkdir -p ${MANDIR}/man1
 	cp -f ${BIL_DOC}.1 ${MANDIR}/man1
-	ln -sf ${MANDIR}/man1/${BIL_DOC}.1 ${MANDIR}/man1/bil.1
+	#ln -sf ${MANDIR}/man1/${BIL_DOC}.1 ${MANDIR}/man1/bil.1
 	mkdir -p ${INFODIR}
 	cp ${BIL_EDITION_DIR}/${BIL_DOC}.info ${INFODIR}
-	ln -sf ${INFODIR}/${BIL_DOC}.info ${INFODIR}/bil.info
+	#ln -sf ${INFODIR}/${BIL_DOC}.info ${INFODIR}/bil.info
 	cd ${BIL_EDITION_DIR} && ginstall-info --info-file=${BIL_DOC}.info --info-dir=${INFODIR}
