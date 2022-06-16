@@ -23,4 +23,5 @@ clean:
 	rm -f *~
 
 clean-all: clean
+	rm -rf ${BIL_DOC}.doxy
 	rm -rf html
