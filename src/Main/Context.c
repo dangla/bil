@@ -162,6 +162,18 @@ void (Context_Initialize)(Context_t* ctx)
         Message_FatalError("Missing module") ;
       }
       
+      /* If the module is "Monolithic" we skip the next entry
+       * which should be the nb of solutions requested. */
+      {
+        if(String_Is(argv[i],"Monolithic")) {
+          if(i + 1 < argc) {
+            i += 1 ;
+          } else {
+            Message_FatalError("Missing nb of solutions") ;
+          }
+        }
+      }
+      
       /* If the module is "SNIA" we skip the next entry
        * which should be the nb of sequences requested. */
       {
@@ -182,6 +194,9 @@ void (Context_Initialize)(Context_t* ctx)
 
     } else if(String_Is(argv[i],"-readonly",strlen(argv[i]))) {
       Context_GetReadOnly(ctx) = (char**) argv + i ;
+
+    } else if(String_Is(argv[i],"-create",strlen(argv[i]))) {
+      Context_GetCreateInputFile(ctx) = (char**) argv + i ;
 
     } else if(String_Is(argv[i],"-graph",strlen(argv[i]))) {
       Context_GetGraph(ctx) = (char**) argv + i ;

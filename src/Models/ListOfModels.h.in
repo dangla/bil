@@ -1,0 +1,8 @@
+#ifndef LISTOFMODELS_H
+#define LISTOFMODELS_H
+
+#define ListOfModels_Nb          ${NBOFSELECTEDMODELS}
+#define ListOfModels_Methods(m)  ${SELECTEDMODELMETHODS}
+#define ListOfModels_Names       ${SELECTEDMODELNAMES}
+
+#endif

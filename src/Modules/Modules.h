@@ -19,8 +19,8 @@ extern Module_t*  (Modules_FindModule)(Modules_t*,const char*) ;
 
 #include "ListOfModules.h"
 
-#define Modules_NbOfModules               (ListOfModules_NbOfModules)
-#define Modules_ListOfNames               ListOfModules_ModuleNames
+#define Modules_NbOfModules               (ListOfModules_Nb)
+#define Modules_ListOfNames               ListOfModules_Names
 #define Modules_ListOfSetModuleProp       ListOfModules_Methods(_SetModuleProp)
 
 

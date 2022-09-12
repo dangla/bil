@@ -32,7 +32,6 @@
 /* We define some names for implicit terms */
 #define M_L           (vim   + 0)[0]
 #define M_L_n         (vim_n + 0)[0]
-
 #define W_L           (vim   + 1)
 
 #define SIG           (vim   + 4)
@@ -80,14 +79,14 @@ static double dpiesdpl(double,double,Curve_t*) ;
 
 
 /* Material properties */
-#define SATURATION_CURVE        (Element_GetCurve(el))
+#define SATURATION_CURVE        (saturationcurve)
 #define SaturationDegree(pc)    (Curve_ComputeValue(SATURATION_CURVE,pc))
 #define dSaturationDegree(pc)   (Curve_ComputeDerivative(SATURATION_CURVE,pc))
 
-#define RELATIVEPERM_CURVE                (Element_GetCurve(el) + 1)
+#define RELATIVEPERM_CURVE                (relativepermcurve)
 #define RelativePermeabilityToLiquid(pc)  (Curve_ComputeValue(RELATIVEPERM_CURVE,pc))
 
-#define CAPIHARDENING_CURVE     (Element_GetCurve(el) + 2)
+#define CAPIHARDENING_CURVE     (capihardeningcurve)
 #define CapillaryHardening(pc)  (Curve_ComputeValue(CAPIHARDENING_CURVE,pc))
 
 #define EquivalentPressure(pl,pg)   (pie(pl,pg,SATURATION_CURVE))
@@ -112,26 +111,36 @@ static double  e0 ;
 static double  phi0 ;
 static Elasticity_t* elasty ;
 static Plasticity_t* plasty ;
+static Curve_t* saturationcurve ;
+static Curve_t* relativepermcurve ;
+static Curve_t* capihardeningcurve ;
 
 
 
 /* Variable indexes */
 enum {
-  I_U     = 0,
-  I_P_L   = I_U     + 3,
+  I_U  = 0,
+  I_U2 = I_U + 2,
+  I_P_L,
   I_EPS,
-  I_SIG   = I_EPS   + 9,
-  I_EPS_P = I_SIG   + 9,
-  I_Fmass = I_EPS_P + 9,
-  I_M_L   = I_Fmass + 3,
+  I_EPS8 = I_EPS + 8,
+  I_SIG,
+  I_SIG8 = I_SIG + 8,
+  I_EPS_P,
+  I_EPS_P8 = I_EPS_P + 8,
+  I_Fmass,
+  I_Fmass2 = I_Fmass + 2,
+  I_M_L,
   I_W_L,
-  I_HARDV = I_W_L   + 3,
+  I_W_L2 = I_W_L + 2,
+  I_HARDV,
   I_CRIT,
   I_RHO_L,
   I_PHI,
-  I_K_H,
+  I_K_L,
   I_GRD_P_L,
-  I_Last  = I_GRD_P_L + 3
+  I_GRD_P_L2 = I_GRD_P_L + 2,
+  I_Last
 } ;
 
 #define NbOfVariables     (I_Last)
@@ -196,6 +205,10 @@ void GetProperties(Element_t* el)
   
   plasty  = Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
   elasty  = Plasticity_GetElasticity(plasty) ;
+  
+  saturationcurve = Element_FindCurve(el,"sl") ;
+  relativepermcurve = Element_FindCurve(el,"kl") ;
+  capihardeningcurve = Element_FindCurve(el,"lc") ;
 }
 
 
@@ -444,7 +457,9 @@ int ComputeInitialState(Element_t* el)
     {
       double* vex  = vex0 + p*NVE ;
       double rho_l = x[I_RHO_L] ;
-      double k_h   = rho_l*k_int/mu_l ;
+      double p_l = x[I_P_L] ;
+      double pc = p_g - p_l ;
+      double k_h = rho_l*k_int/mu_l*RelativePermeabilityToLiquid(pc) ;
     
       K_L = k_h ;
     }
@@ -1118,7 +1133,7 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
       double* vex0 = Element_GetExplicitTerm(el) ;
       double* vex  = vex0 + p*NVE ;
       
-      x_n[I_K_H]  = K_L ;
+      x_n[I_K_L]  = K_L ;
     }
   }
     
@@ -1221,7 +1236,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
     /* Fluid mass flow */
     {
       /* Transfer coefficient */
-      double k_h = x[I_K_H] ;
+      double k_h = x[I_K_L] ;
     
       /* Pressure gradient */
       double* gpl = x + I_GRD_P_L ;

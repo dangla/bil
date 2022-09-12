@@ -24,7 +24,7 @@ initial_void_ratio = 0.33
 rho_l = 1000
 k_int = 1e-20
 mu_l = 0.001
-Curves = sterrebeek0 pc = Range{p1 = 10.e3 , p2 = 210.e3 , n = 101} sl = Expressions(1){p0 = 10.e3 ; a = -1/2.5 ; sl = (pc/p0)**(a) ;} kl = Expressions(1){p0 = 3.e6 ; a = 2 ; kl = (1 + (pc/p0)**(a))**(-0.5) ;} l = Expressions(1){p1 = 10.e3 ; p2 = 20.e3 ; p3 = 40.e3 ; p4 = 80.e3 ; p5 = 160.e3 ; l1 = 1 ; l2 = 2.22222 ; l3 = 3 ; l4 = 4.0555555 ; l5 = 6.666666 ; l = (pc < p1) ? l1 : ((pc < p2) ? ((pc - p1)*l2 + (p2 - pc)*l1)/(p2-p1) : ((pc < p3) ? ((pc - p2)*l3 + (p3 - pc)*l2)/(p3-p2) : ((pc < p4) ? ((pc - p3)*l4 + (p4 - pc)*l3)/(p4-p3) : ((pc < p5) ?((pc - p4)*l5 + (p5 - pc)*l4)/(p5-p4) : l5)))) ;}
+Curves = sterrebeek0 pc = Range{p1 = 10.e3 , p2 = 210.e3 , n = 101} sl = Expressions(1){p0 = 10.e3 ; a = -1/2.5 ; sl = (pc/p0)**(a) ;} kl = Expressions(1){p0 = 3.e6 ; a = 2 ; kl = (1 + (pc/p0)**(a))**(-0.5) ;} lc = Expressions(1){p1 = 10.e3 ; p2 = 20.e3 ; p3 = 40.e3 ; p4 = 80.e3 ; p5 = 160.e3 ; l1 = 1 ; l2 = 2.22222 ; l3 = 3 ; l4 = 4.0555555 ; l5 = 6.666666 ; lc = (pc < p1) ? l1 : ((pc < p2) ? ((pc - p1)*l2 + (p2 - pc)*l1)/(p2-p1) : ((pc < p3) ? ((pc - p2)*l3 + (p3 - pc)*l2)/(p3-p2) : ((pc < p4) ? ((pc - p3)*l4 + (p4 - pc)*l3)/(p4-p3) : ((pc < p5) ?((pc - p4)*l5 + (p5 - pc)*l4)/(p5-p4) : l5)))) ;}
 
 
 

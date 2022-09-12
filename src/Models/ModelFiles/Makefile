@@ -45,9 +45,9 @@ MODELNAMES  = ${subst ${SPACE},${COMMA},${SELECTEDMODELNAMES}}
 ../ListOfModels.h: ../ListOfModels.inc
 	echo "#ifndef LISTOFMODELS_H"  > ../ListOfModels.h
 	echo "#define LISTOFMODELS_H" >> ../ListOfModels.h
-	echo "#define ListOfModels_NbOfModels  "${NBMODELS}   >> ../ListOfModels.h
+	echo "#define ListOfModels_Nb          "${NBMODELS}   >> ../ListOfModels.h
 	echo "#define ListOfModels_Methods(m)  "${XMODELS}    >> ../ListOfModels.h
-	echo "#define ListOfModels_ModelNames  "${MODELNAMES} >> ../ListOfModels.h
+	echo "#define ListOfModels_Names       "${MODELNAMES} >> ../ListOfModels.h
 	echo "#endif" >> ../ListOfModels.h
 
 

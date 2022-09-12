@@ -10,7 +10,7 @@ set(BIL_OXYGEN_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/oxygen)
 
 
 
-file(WRITE ${BIL_EDITION_DIR}/versions.texi "@set BIL-VERSION   ${BIL_VERSION}")
+file(WRITE ${BIL_EDITION_DIR}/version.texi "@set BIL-VERSION   ${BIL_VERSION}")
 
 
 #=======================================================================
@@ -31,8 +31,8 @@ find_program(TEXI2PDF texi2pdf)
 if(TEXI2PDF)
   add_custom_command(OUTPUT  ${BIL_DOC}.pdf 
     DEPENDS ${BIL_EDITION_DIR}/${BIL_DOC}.texi
-    #COMMAND ${CMAKE_COMMAND} -E remove -f versions.texi
-    #COMMAND ${CMAKE_COMMAND} -E echo "@set BIL-VERSION   ${BIL_VERSION}" > versions.texi
+    #COMMAND ${CMAKE_COMMAND} -E remove -f version.texi
+    #COMMAND ${CMAKE_COMMAND} -E echo "@set BIL-VERSION   ${BIL_VERSION}" > version.texi
     COMMAND ${TEXI2PDF} ${BIL_DOC}.texi
     COMMAND ${CMAKE_COMMAND} -E copy ${BIL_DOC}.pdf ..
     WORKING_DIRECTORY ${BIL_EDITION_DIR})

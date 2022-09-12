@@ -45,9 +45,9 @@ MODULENAMES  = ${subst ${SPACE},${COMMA},${SELECTEDMODULENAMES}}
 ../ListOfModules.h : ../ListOfModules.inc
 	echo "#ifndef LISTOFMODULES_H"  > ../ListOfModules.h
 	echo "#define LISTOFMODULES_H" >> ../ListOfModules.h
-	echo "#define ListOfModules_NbOfModules  "${NBMODULES}   >> ../ListOfModules.h
+	echo "#define ListOfModules_Nb          "${NBMODULES}   >> ../ListOfModules.h
 	echo "#define ListOfModules_Methods(m)  "${XMODULES}    >> ../ListOfModules.h
-	echo "#define ListOfModules_ModuleNames  "${MODULENAMES} >> ../ListOfModules.h
+	echo "#define ListOfModules_Names       "${MODULENAMES} >> ../ListOfModules.h
 	echo "#endif" >> ../ListOfModules.h
 
 

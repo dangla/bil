@@ -38,6 +38,19 @@ extern void        (Options_Delete)(void*) ;
         (!strcmp(Options_GetPrintLevel(OPT),"2"))
 
 
+/* Resolution method */
+#define Options_ResolutionMethodIs(OPT,M) \
+        String_Is(Options_GetResolutionMethod(OPT),M)
+        
+#define Options_SetResolutionMethodTo(OPT,M) \
+        (strncpy(Options_GetResolutionMethod(OPT),M,Options_MaxLengthOfKeyWord))
+
+
+/* Module */
+#define Options_ModuleIs(OPT,M) \
+        String_Is(Options_GetModule(OPT),M)
+
+
 /* Crout method */
 #define Options_ResolutionMethodIsCrout(OPT) \
         Options_ResolutionMethodIs(OPT,"crout")
@@ -71,18 +84,17 @@ extern void        (Options_Delete)(void*) ;
         (Options_ResolutionMethodIsMA38(OPT) ? 2 : 0)
 
 
-/* Implementations */
 
-#define Options_ResolutionMethodIs(OPT,M) \
-        String_Is(Options_GetResolutionMethod(OPT),M)
-        
-#define Options_SetResolutionMethodTo(OPT,M) \
-        (strncpy(Options_GetResolutionMethod(OPT),M,Options_MaxLengthOfKeyWord))
+/* Number of solutions for the monolithic approach */
+#define Options_GetNbOfSolutions(OPT) \
+        ((Options_ModuleIs(OPT,"Monolithic") && Context_IsUseModule(Options_GetContext(OPT))) ? \
+        atoi(((char**) Context_GetUseModule(Options_GetContext(OPT)))[2]) : 2)
 
 
 /* Number of sequences for the sequential non iterative approach */
 #define Options_GetNbOfSequences(OPT) \
-        (String_Is(Options_GetModule(OPT),"SNIA") ? atoi(((char**) Context_GetUseModule(Options_GetContext(OPT)))[2]) : 1)
+        ((Options_ModuleIs(OPT,"SNIA") && Context_IsUseModule(Options_GetContext(OPT))) ? \
+        atoi(((char**) Context_GetUseModule(Options_GetContext(OPT)))[2]) : 1)
 
 
 struct Options_s {            /* options */

@@ -1528,6 +1528,7 @@ double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,
 /* Compute the residu force due to surface loads (r) */
 {
   Element_t* el = FEM_GetElement(fem) ;
+  double** u = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   Geometry_t* geom = Element_GetGeometry(el) ;
   int nn  = Element_GetNbOfNodes(el) ;
   unsigned short int dim = Geometry_GetDimension(geom) ;
@@ -1561,12 +1562,26 @@ double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,
   /* Position index of the equation */
   if(ieq < 0) arret("FEM_ComputeSurfaceLoadResidu (1): unknown equation") ;
 
-  /* flux */
-  if(strncmp(load_type,"flux",4) == 0) {
-    double ft = dt ;
+
+  /* flux or cumulative flux*/
+  if(strncmp(load_type,"flux",4) == 0 || strncmp(load_type,"cumulflux",4) == 0) {
+    double ft = 1 ;
     
-    if(function != NULL) {
-      ft = Function_ComputeValue(function,t) - Function_ComputeValue(function,t - dt) ;
+    
+    if(strncmp(load_type,"flux",4) == 0) {
+      ft = 1 ;
+      
+      if(function) {
+        ft = Function_ComputeValue(function,t) ;
+      }
+    }
+    
+    if(strncmp(load_type,"cumulflux",4) == 0) {
+      ft = dt ;
+    
+      if(function) {
+        ft = Function_ComputeValue(function,t) - Function_ComputeValue(function,t - dt) ;
+      }
     }
     
     if(dim == 1 && nn == 1) {
@@ -1592,6 +1607,51 @@ double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,
           for(j = 0 ; j < nf ; j++) y[i] += h[j]*x[j][i] ;
         }
         f[p] = ft*Field_ComputeValueAtPoint(field,y,dim) ;
+      }
+      
+      rb = FEM_ComputeBodyForceResidu(fem,intfct,f,1) ;
+      
+      for(i = 0 ; i < nn ; i++) r[i*neq+ieq] = rb[i] ;
+      
+      FEM_FreeBufferFrom(fem,rb) ;
+      return(r) ;
+    }
+  }
+
+
+  /* linear dependent flux: F = A*U */
+  if(strncmp(load_type,"linearflux",4) == 0) {
+    double ft = 1 ;
+    
+    if(function != NULL) {
+      ft = Function_ComputeValue(function,t) ;
+    }
+    
+    if(dim == 1 && nn == 1) {
+      double v = u[0][ieq] ;
+      double radius = x[0][0] ;
+      
+      r[ieq] = ft*Field_ComputeValueAtPoint(field,x[0],dim)*v ;
+      
+      if(Symmetry_IsCylindrical(sym)) r[ieq] *= 2*M_PI*radius ;
+      else if(Symmetry_IsSpherical(sym)) r[ieq] *= 4*M_PI*radius*radius ;
+      return(r) ;
+    }
+    
+    if(dim >= 2) {
+      double* rb ;
+      double f[3*IntFct_MaxNbOfIntPoints] ;
+      int p ;
+      
+      for(p = 0 ; p < np ; p++) {
+        double v = FEM_ComputeUnknown(fem,u,intfct,p,ieq) ;
+        double* h = IntFct_GetFunctionAtPoint(intfct,p) ;
+        double y[3] = {0.,0.,0.,} ;
+        for(i = 0 ; i < dim ; i++) {
+          int j ;
+          for(j = 0 ; j < nf ; j++) y[i] += h[j]*x[j][i] ;
+        }
+        f[p] = ft*Field_ComputeValueAtPoint(field,y,dim)*v ;
       }
       
       rb = FEM_ComputeBodyForceResidu(fem,intfct,f,1) ;

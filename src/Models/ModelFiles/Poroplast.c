@@ -82,6 +82,16 @@ static double  k_int,mu_l ;
 static double  beta ;
 static double* cijkl ;
 static Plasticity_t* plasty ;
+static int     plasticmodel ;
+
+#define  SetPlasticModel(I) \
+         do { \
+           if(plasticmodel < 0) { \
+             plasticmodel = I ; \
+           } else if(plasticmodel != I) { \
+             Message_FatalError("Incompatible model") ; \
+           } \
+         } while(0)
 
 
 #define GetProperty(a)      Element_GetPropertyValue(el,a)
@@ -140,29 +150,39 @@ int pm(const char *s)
   } else if(!strcmp(s,"harv0")) {
     return(22) ;
     
-    /* Drucker-Prager */
-  } else if(!strcmp(s,"initial cumulative plastic shear strain")) {
+    /* Model 1: Drucker-Prager */
+  } else if(!strcmp(s,"initial_cumulative_plastic_shear_strain")) {
+    SetPlasticModel(1) ;
     return(22) ;
   } else if(!strcmp(s,"cohesion"))   { 
+    SetPlasticModel(1) ;
     return (23) ;
   } else if(!strcmp(s,"friction"))   { 
+    SetPlasticModel(1) ;
     return (24) ;
   } else if(!strcmp(s,"dilatancy"))  { 
+    SetPlasticModel(1) ;
     return (25) ;
     
-    /* Cam-clay */
-  } else if(!strcmp(s,"initial plastic void ratio")) {
+    /* Model 2: Cam-clay */
+  } else if(!strcmp(s,"initial_pre-consolidation_pressure")) {
+    SetPlasticModel(2) ;
     return(22) ;
-  } else if(!strcmp(s,"slope of swelling line")) {
+  } else if(!strcmp(s,"slope_of_swelling_line")) {
+    SetPlasticModel(2) ;
     return(23) ;
-  } else if(!strcmp(s,"slope of virgin consolidation line")) {
+  } else if(!strcmp(s,"slope_of_virgin_consolidation_line")) {
+    SetPlasticModel(2) ;
     return(24) ;
-  } else if(!strcmp(s,"slope of critical state line"))  {
+  } else if(!strcmp(s,"slope_of_critical_state_line"))  {
+    SetPlasticModel(2) ;
     return(25) ;
-  } else if(!strcmp(s,"initial pre-consolidation pressure")) {
+  } else if(!strcmp(s,"initial_void_ratio")) {
+    SetPlasticModel(2) ;
     return(26) ;
-  } else if(!strcmp(s,"initial void ratio")) {
-    return(27) ;
+  } else if(!strcmp(s,"initial_plastic_void_ratio")) {
+    SetPlasticModel(2) ;
+    
   } else return(-1) ;
 }
 
@@ -236,6 +256,8 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
   /* Par defaut tout a 0 */
   for(i = 0 ; i < NbOfProp ; i++) Material_GetProperty(mat)[i] = 0. ;
   
+  plasticmodel = -1 ;
+  
   Material_ScanProperties(mat,datafile,pm) ;
   
   
@@ -267,28 +289,28 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       }
       
       /* Drucker-Prager */
-      {
+      if(plasticmodel == 1) {
         double cohesion = Material_GetPropertyValue(mat,"cohesion") ;
         double af       = Material_GetPropertyValue(mat,"friction")*M_PI/180. ;
         double ad       = Material_GetPropertyValue(mat,"dilatancy")*M_PI/180. ;
         
         Plasticity_SetToDruckerPrager(plasty) ;
         Plasticity_SetParameters(plasty,af,ad,cohesion) ;
-      }
       
       /* Cam-Clay */
-      /* 
-      {
-        double kappa  = Material_GetPropertyValue(mat,"slope of swelling line") ;
-        double lambda = Material_GetPropertyValue(mat,"slope of virgin consolidation line") ;
-        double M      = Material_GetPropertyValue(mat,"slope of critical state line") ;
-        double pc0    = Material_GetPropertyValue(mat,"initial pre-consolidation pressure") ;
-        double e0     = Material_GetPropertyValue(mat,"initial void ratio") ;
+      } else if(plasticmodel == 2) {
+        double kappa  = Material_GetPropertyValue(mat,"slope_of_swelling_line") ;
+        double lambda = Material_GetPropertyValue(mat,"slope_of_virgin_consolidation_line") ;
+        double M      = Material_GetPropertyValue(mat,"slope_of_critical_state_line") ;
+        double pc0    = Material_GetPropertyValue(mat,"initial_pre-consolidation_pressure") ;
+        double e0     = Material_GetPropertyValue(mat,"initial_void_ratio") ;
         
         Plasticity_SetToCamClay(plasty) ;
         Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0) ;
+        
+      } else {
+        Message_FatalError("Unknown model") ;
       }
-      */
     }
 
 #if 0
@@ -1295,474 +1317,5 @@ double* ComputeVariablesDerivatives(Element_t* el,double t,double dt,double* x,d
   }
 
   return(dx) ;
-}
-
-
-
-double UpdateElastoplasticTensor(double* dfsds,double* dgsds,double* fc,double* cg,double fcg0,double* c)
-/** Update the 4th rank elastoplastic tensor in c.
- *  Inputs are: 
- *  dfsds is the yield function gradient
- *  dgsds is the potential function gradient
- *  Outputs are:
- *  fc(k,l) = dfsds(j,i) * C(i,j,k,l)
- *  cg(i,j) = C(i,j,k,l) * dgsds(l,k)
- *  fcg is updated as fcg += dfsds(j,i) * C(i,j,k,l) * dgsds(l,k))
- *  Tensor c is then updated as C(i,j,k,l) += cg(i,j) * fc(k,l) / fcg
- *  Return the inverse of fcg: 1/fcg */
-{
-#define C(i,j)  ((c)[(i)*9+(j)])
-  double fcg = fcg0 ;
-  
-  /* Tangent elastoplastic tensor */
-  {
-      
-    /* Criterion */
-    {
-      int i ;
-        
-      for(i = 0 ; i < 9 ; i++) {
-        int j ;
-          
-        fc[i] = 0. ;
-        cg[i] = 0. ;
-          
-        for(j = 0 ; j < 9 ; j++) {
-              
-          fc[i] += dfsds[j]*C(j,i) ;
-          cg[i] += C(i,j)*dgsds[j] ;
-          fcg   += dfsds[i]*C(i,j)*dgsds[j] ;
-        }
-      }
-        
-      if(fcg > 0.) {
-        fcg = 1./fcg ;
-      } else {
-            
-        printf("\n") ;
-        printf("dfsds = ") ;
-        for(i = 0 ; i < 9 ; i++) {
-          printf(" %e",dfsds[i]) ;
-        }
-        printf("\n") ;
-        printf("dgsds = ") ;
-        for(i = 0 ; i < 9 ; i++) {
-          printf(" %e",dgsds[i]) ;
-        }
-        printf("\n") ;
-        printf("fcg = %e\n",fcg) ;
-        printf("\n") ;
-          
-        return(-1) ;
-      }
-        
-      for(i = 0 ; i < 9 ; i++) {
-        int j ;
-          
-        for(j = 0 ; j < 9 ; j++) {
-          C(i,j) -= cg[i]*fc[j]*fcg ;
-        }
-      }
-    }
-  }
-  
-  return(fcg) ;
-#undef C
-}
-
-
-
-double Criterion_DruckerPrager(const double* sig,const double gam_p,double* dfsds,double* dgsds,double* hm)
-/** Drucker-Prager criterion. Inputs are: 
- *  the friction angle (af), the dilatancy angle (ad) and the cohesion.
- *  Return the value of the yield function. */
-{
-  double id[9] = {1,0,0,0,1,0,0,0,1} ;
-  double p,q,dev[9] ;
-  double crit ;
-  double ff,dd,cc,cc0 ;
-  int    i ;
-  
-  /*
-    Input data
-  */
-  /*
-  ff      = 3.*sin(af)/sqrt(3.+sin(af)*sin(af)) ;
-  dd      = 3.*sin(ad)/sqrt(3.+sin(ad)*sin(ad)) ;
-  cc      = 3.*cos(af)/sqrt(3.+sin(af)*sin(af))*c ;
-  */
-  ff      = 6.*sin(af)/(3. - sin(af)) ;
-  dd      = 6.*sin(ad)/(3. - sin(ad)) ;
-  cc0     = 6.*cos(af)/(3. - sin(af))*cohesion ;
-  
-  /*
-    Cohesion
-  */
-  {
-    double c1 = (gam_p < gam_R) ? 1 - (1 - alpha)*gam_p/gam_R : alpha ;
-    
-    cc = cc0*c1*c1 ;
-  }
-  
-  /*
-    Criterion
-  */ 
-  p    = (sig[0] + sig[4] + sig[8])/3. ;
-  q    = sqrt(3*j2(sig)) ;
-  crit = q + ff*p - cc ;
-  
-  /*
-    Deviatoric stresses
-  */
-  for(i = 0 ; i < 9 ; i++) {
-    dev[i] = sig[i] - p*id[i] ;
-  }
-  
-  /*
-    Yield function gradient
-  */
-  if(q > 0.) {
-    
-    for(i = 0 ; i < 9 ; i++) {
-      dfsds[i] = 1.5*dev[i]/q + id[i]*ff/3. ;
-    }
-    
-  } else {
-    
-    for(i = 0 ; i < 9 ; i++) {
-      dfsds[i] = id[i]*ff/3. ;
-    }
-  }
-  
-  /*
-    Potential function gradient
-  */
-  
-  /* Elastic case */
-  if(crit <= 0.) {
-    if(q > 0.) {
-      
-      for(i = 0 ; i < 9 ; i++) {
-        dgsds[i] = 1.5*dev[i]/q + id[i]*dd/3. ;
-      }
-      
-    } else {
-      
-      for(i = 0 ; i < 9 ; i++) {
-        dgsds[i] = id[i]*dd/3. ;
-      }
-    }
-  }
-  
-  /* Plastic case */
-  if(crit > 0.) {
-    double k   = young/(1. - 2.*poisson)/3. ;
-    double dmu = young/(1.+poisson) ;
-    double mu  = 0.5*dmu ;
-    
-    /* Smooth flow regime */
-    if(q > crit*3*mu/(3*mu+k*ff*dd)) {
-      
-      for(i = 0 ; i < 9 ; i++) {
-        dgsds[i] = 1.5*dev[i]/q + id[i]*dd/3. ;
-      }
-      
-    /* Flow regime at the notch apex */
-    } else {
-      double dl = (ff*p - cc)/(k*ff*dd) ;
-      
-      for(i = 0 ; i < 9 ; i++) {
-        dgsds[i] = dev[i]/(dmu*dl) + id[i]*dd/3. ;
-      }
-    }
-  }
-  
-  /* Hardening modulus */
-  *hm = 0. ;
-  if(gam_p < gam_R) {
-    *hm = -2.*(1.-alpha)/gam_R*(1.-(1.-alpha)*gam_p/gam_R)*cc0 ;
-    *hm *= sqrt(2*j2(dgsds)) ;
-  }
-  
-  return(crit) ;
-}
-
-
-
-double ReturnMapping_DruckerPrager(double* sig,double* eps_p,double* gam_p)
-/** Drucker-Prager return mapping.
- *  Return the criterion. */
-{
-  double id[9] = {1,0,0,0,1,0,0,0,1} ;
-  double tol = 1.e-8 ;
-  double p_t,q_t,sdev_t[9] ;
-  double crit ;
-  double ff,dd,k,dmu,mu,cc0 ;
-  int    i ;
-  
-  /*
-    Data
-  */
-  dmu     = young/(1.+poisson) ;
-  mu      = dmu/2. ;
-  k       = young/(1. - 2.*poisson)/3. ;
-  /*
-  ff      = 3.*sin(af)/sqrt(3.+sin(af)*sin(af)) ;
-  dd      = 3.*sin(ad)/sqrt(3.+sin(ad)*sin(ad)) ;
-  cc0     = 3.*cos(af)/sqrt(3.+sin(af)*sin(af))*cohesion ;
-  */
-  ff      = 6.*sin(af)/(3. - sin(af)) ;
-  dd      = 6.*sin(ad)/(3. - sin(ad)) ;
-  cc0     = 6.*cos(af)/(3. - sin(af))*cohesion ;
-  
-  /*
-    Trial stresses
-  */ 
-  p_t  = (sig[0] + sig[4] + sig[8])/3. ;
-  q_t  = sqrt(3*j2(sig)) ;
-  for(i = 0 ; i < 9 ; i++) {
-    sdev_t[i] = sig[i] - p_t*id[i] ;
-  }
-  
-  /*
-    Criterion
-  */ 
-  {
-    double c1 = ((*gam_p) < gam_R) ? 1 - (1 - alpha)*(*gam_p)/gam_R : alpha ;
-    double cc = cc0*c1*c1 ;
-    
-    crit = q_t + ff*p_t - cc ;
-  }
-  
-  /*
-    Return mapping: update plastic strains and stresses
-  */
-  if(crit > 0.) {
-    double deps_p[9] = {0,0,0,0,0,0,0,0,0} ;
-    double p = p_t ;
-    double q = q_t ;
-    double gam_pn = *gam_p ;
-    double gam_p1 = *gam_p ;
-    
-    /* Smooth flow regime: assuming that q > 0 */
-    if(q > 0) {
-      double fcrit = crit ;
-      int    nf    = 0 ;
-      double dl    = 0 ;
-      
-      while(fabs(fcrit) > tol*cc0) {
-        double dqsdl ;
-        double dpsdl ;
-        double dccsdl ;
-        double c1 ;
-        double cc ;
-        
-        /* Plastic strain increments */
-        for(i = 0 ; i < 9 ; i++) {
-          deps_p[i] = dl*(1.5*sdev_t[i]/q_t + id[i]*dd/3.) ;
-        }
-        
-        /* Cumulative plastic shear strain */
-        gam_p1 = gam_pn + sqrt(2*j2(deps_p)) ;
-        
-        /* p, q, cc */
-        c1 = (gam_p1 < gam_R) ? 1 - (1 - alpha)*gam_p1/gam_R : alpha ;
-        cc = cc0*c1*c1 ;
-        q  = q_t - dl*3*mu ;
-        p  = p_t - dl*k*dd ;
-        
-        /* dqsdl, dpsdl, dccsdl */
-        dqsdl = -3*mu ;
-        dpsdl = -k*dd ;
-        dccsdl = 0. ;
-        if(gam_p1 < gam_R) {
-          dccsdl = -2*(1 - alpha)/gam_R*c1*cc0 ;
-          dccsdl *= 1.5*sqrt(2*j2(sdev_t))/q_t ;
-        }
-        
-        /* Criterion */
-        fcrit = q + ff*p - cc ;
-        
-        /* dl */
-        {
-          double df = dqsdl + ff*dpsdl - dccsdl ;
-          
-          dl   -= fcrit/df ;
-        }
-        
-        if(nf++ > 20) {
-          printf("No convergence (ReturnMapping_DruckerPrager)") ;
-          exit(0) ;
-        }
-      }
-      
-      /* Stresses */
-      for(i = 0 ; i < 9 ; i++) {
-        sig[i] = sdev_t[i]*q/q_t + p*id[i] ;
-      }
-    }
-    
-    /* Flow regime at the notch apex */
-    if(q <= 0.) {
-      double c1 ;
-      double cc ;
-      double dl ;
-      
-      /* Deviatoric plastic strain increments */
-      for(i = 0 ; i < 9 ; i++) deps_p[i]  = sdev_t[i]/dmu ;
-        
-      /* Cumulative plastic shear strain */
-      gam_p1 = gam_pn + sqrt(2*j2(deps_p)) ;
-      
-      /* p, q, cc */
-      c1 = (gam_p1 < gam_R) ? 1 - (1 - alpha)*gam_p1/gam_R : alpha ;
-      cc = cc0*c1*c1 ;
-      p  = cc/ff ;
-      q  = 0. ;
-      
-      /* dl */
-      dl   = (ff*p_t - cc)/(k*ff*dd) ;
-      
-      /* Plastic strain increments and stresses */
-      for(i = 0 ; i < 9 ; i++) {
-        deps_p[i] = sdev_t[i]/dmu + dl*id[i]*dd/3. ;
-        sig[i]    = p*id[i] ;
-      }
-    }
-    
-      
-    /* Total plastic strains */
-    for(i = 0 ; i < 9 ; i++) eps_p[i] += deps_p[i] ;
-    (*gam_p) = gam_p1 ;
-  }
-  
-  return(crit) ;
-}
-
-
-
-
-double Criterion_CamClay(double *sig,double pc,double *dfsds,double *dgsds,double *hm,Element_t *el)
-/* Critere de Cam-Clay */
-{
-  double id[9] = {1,0,0,0,1,0,0,0,1} ;
-  double p,q,crit,m2,v ;
-  int    i ;
-  /*
-    Donnees
-  */
-  kappa   = GetProperty("kappa") ;
-  lambda  = GetProperty("lambda") ;
-  m       = GetProperty("M") ;
-  phi0    = GetProperty("phi") ;
-  m2      = m*m ;
-  v       = 1./(lambda - kappa) ;
-  /* 
-     Le critere
-  */
-  p    = (sig[0] + sig[4] + sig[8])/3. ;
-  q    = sqrt(3*j2(sig)) ;
-  crit = q*q/m2 + p*(p + pc) ;
-  
-  /*
-    Les gradients
-  */
-  for(i = 0 ; i < 9 ; i++) {
-    double dev = sig[i] - p*id[i] ;
-    
-    dfsds[i] = (2*p + pc)*id[i]/3. + 3./m2*dev ;
-    dgsds[i] = dfsds[i] ;
-  }
-  
-  /* Le module d'ecrouissage */
-  *hm = v/(1 - phi0)*p*(2*p + pc)*pc ;
-  return(crit) ;
-}
-
-
-double ReturnMapping_CamClay(double *sig,double *sig_n,double *p_co,double *eps_p,Element_t *el)
-/* Critere de Cam-Clay : return mapping algorithm (sig,p_co,eps_p)
-   (d apres Borja & Lee 1990, modifie par Dangla)
-*/
-{
-  double id[9] = {1,0,0,0,1,0,0,0,1} ;
-  double tol = 1.e-8 ;
-  double p_t,q_t,p,q,pc,crit,m2,v,a ;
-  double dl ;
-  int    i ;
-  /*
-    Donnees
-  */
-  kappa   = GetProperty("kappa") ;
-  mu      = GetProperty("mu") ;
-  lambda  = GetProperty("lambda") ;
-  m       = GetProperty("M") ;
-  phi0    = GetProperty("phi") ;
-  m2      = m*m ;
-  v       = 1./(lambda - kappa) ;
-  
-  /* 
-     Le critere
-  */
-  p    = (sig[0] + sig[4] + sig[8])/3. ;
-  q    = sqrt(3*j2(sig)) ;
-  pc   = *p_co ;
-  crit = q*q/m2 + p*(p + pc) ;
-  
-  /*
-    Algorithme de projection (closest point projection)
-    Une seule boucle iterative pour le calcul de p, racine de
-    q*q/m2 + p*(p + pc) = 0
-    Les autres variables (pc,q,dl) sont donnees explicitement par p.
-  */
-  dl    = 0. ;
-  p_t   = p ;
-  q_t   = q ;
-  
-  if(crit > 0.) {
-    double pc_n  = pc ;
-    double fcrit = crit ;
-    int nf    = 0 ;
-    
-    while(fabs(fcrit) > tol*pc_n*pc_n) {
-      double dfsdp  = 2*p + pc ;
-      double dfsdq  = 2*q/m2 ;
-      double dfsdpc = p ;
-      double dpcsdp = -v*kappa*pc/p ;
-      double dlsdp  = ((1 - phi0)*kappa/p - dl*(2+dpcsdp))/dfsdp ;
-      double dqsdp  = -q*6*mu/(m2 + 6*mu*dl)*dlsdp ;
-      double df     = dfsdp + dfsdq*dqsdp + dfsdpc*dpcsdp ;
-      
-      p     -= fcrit/df ;
-      
-      /* Les variables (pc,dl,q) sont explicites en p */
-      pc     = pc_n*pow(p/p_t,-v*kappa) ;
-      dl     = (1 - phi0)*kappa*log(p/p_t)/(2*p + pc) ;
-      q      = q_t*m2/(m2 + 6*mu*dl) ;
-      fcrit  = q*q/m2 + p*(p + pc) ;
-      
-      if(nf++ > 20) {
-        printf("pas de convergence (ReturnMapping_CamClay)") ;
-        exit(0) ;
-      }
-    }
-  }
-  
-  /*
-    Les contraintes et deformations plastiques
-  */
-  a = 1./(1 + 6*mu/m2*dl) ;
-  
-  for(i = 0 ; i < 9 ; i++) {
-    double dev      = a*(sig[i] - p_t*id[i]) ;
-    double dfsds    = (2*p + pc)*id[i]/3. + 3./m2*dev ;
-    
-    sig[i]   = p*id[i] + dev ;
-    eps_p[i] = dl*dfsds ;
-  }
-  
-  /* La pression de consolidation */
-  *p_co = pc ;
-  return(crit) ;
 }
 #endif

@@ -99,6 +99,15 @@ void Load_Scan(Load_t* load,DataFile_t* datafile)
         arret("Load_Scan: name %s too long",name) ;
       }
       
+      if(String_CaseIgnoredIs(name,"flux")) {
+        Message_Warning("Load_Scan:\n"\
+        "since June 2022, the definition of the type \"flux\" has changed\n"\
+        "the old definition of this type is renamed  \"cumulflux\"\n"\
+        "so use the types:\n"\
+        "- \"flux\" for a real flux (e.g. kg/m2/s)\n"\
+        "- \"cumulflux\" for a cumulative flux (e.g. kg/m2)\n") ;
+      }
+      
     } else {
       arret("Load_Scan: no Type") ;
     }

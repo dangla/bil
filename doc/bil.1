@@ -103,10 +103,14 @@ use the solver defined by \fImethod\fR. Available methods are:
 .RE
 
 .TP 4
+.B \-ff \fIN\fR
+use the fill factor \fIN\fR for the multi-frontal methods SuperLU (default \fIN\fR=0 meaning that space is allocated internally by SuperLU) or MA38 (default \fIN\fR=2). This option must follow the option \fB-solver\fR \fImethod\fR.
+
+.TP 4
 .B \-with \fIinputs\fR
 use the module defined in \fIinputs\fR. Available inputs are:
 .RS
-\fBMonolithic\fR: Monolithic approach (default).
+\fBMonolithic\fR \fIN\fR: Monolithic approach, \fIN\fR = nb of the temporal discrete solutions kept in memory that can be referred to, for possible use in time discretization schemes. \fIN\fR includes the current time at which the solution is looked for (this is the default module with \fIN\fR=2).
 .RE
 .RS
 \fBSNIA\fR \fIN\fR: Sequential non iterative approach, \fIN\fR = nb of sequences.
@@ -133,6 +137,10 @@ generate the post-processing files \fIfile\fR\fB.pos\fR* in the format \fIfmt\fR
 .TP 4
 .B \-readonly
 parse \fIfile\fR, then exit. 
+
+.TP 4
+.B \-create
+if \fIfile\fR doesn't exist, open it in writing mode and create an input data file by asking the user for the data.
 
 .TP 4
 .B \-debug \fIinput\fR
@@ -213,7 +221,7 @@ display the available modules.
 
 
 .SH AUTHOR
-Patrick Dangla (patrick.dangla@ifsttar.fr).
+Patrick Dangla (patrick.dangla@univ-eiffel.fr).
 
 
 

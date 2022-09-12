@@ -6,12 +6,12 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 endif()
 
 # if CMAKE_BUILD_TYPE is specified use it; otherwise set the default
-# build type to "RelWithDebInfo" ("-O2 -g" with gcc) prior to calling
-# project()
+# build type to "Release" prior to calling project().
 if(DEFINED CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Choose build type")
 else()
-  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose build type")
+#  set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose build type")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose build type")
 endif()
 
 

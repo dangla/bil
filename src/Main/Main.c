@@ -6,7 +6,7 @@ int main(int argc,char** argv)
 {
   Bil_t* bil = Bil_Create(argc,argv) ;
   
-  Bil_Main(bil) ;
+  Bil_Execute(bil) ;
   
   Bil_Delete(bil) ;
   

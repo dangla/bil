@@ -7,7 +7,7 @@
 /* Choose the numerical method */
 #include "FEM.h"
 
-#define TITLE   "Arbitrary UEL model"
+#define TITLE   "Arbitrary Abaqus UEL model"
 #define AUTHORS "S.P.D."
 
 #include "PredefinedMethods.h"
@@ -308,10 +308,6 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     Material_t* mat = Element_GetMaterial(el) ;
     int     dim  = Element_GetDimensionOfSpace(el) ;
     
-    for(i = 0 ; i < Element_GetNbOfImplicitTerms(el) ; i++) {
-      vi[i] = vi_n[i] ;
-    }
-    
     double* RHS = NULL ;
     double* AMATRX = k ;
     double* SVARS = vi ;
@@ -349,7 +345,11 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     int     NJPROP = 1 ;
     double  PERIOD = 1 ;
     
-    uel_(RHS,AMATRX,SVARS,ENERGY,&NDOFEL,&NRHS,&NSVARS,PROPS,&NPROPS,COORDS,&MCRD,&NNODE,U,DU,V,A,&JTYPE,TIME,&DTIME,&KSTEP,&KINC,&JELEM,PARAMS,&NDLOAD,JDLTYP,ADLMAG,PREDEF,&NPREDF,LFLAGS,&MLVARX,DDLMAG,&MDLOAD,&PNEWDT,JPROPS,&NJPROP,&PERIOD) ;
+    for(i = 0 ; i < Element_GetNbOfImplicitTerms(el) ; i++) {
+      vi[i] = vi_n[i] ;
+    }
+    
+     uel_(RHS,AMATRX,SVARS,ENERGY,&NDOFEL,&NRHS,&NSVARS,PROPS,&NPROPS,COORDS,&MCRD,&NNODE,U,DU,V,A,&JTYPE,TIME,&DTIME,&KSTEP,&KINC,&JELEM,PARAMS,&NDLOAD,JDLTYP,ADLMAG,PREDEF,&NPREDF,LFLAGS,&MLVARX,DDLMAG,&MDLOAD,&PNEWDT,JPROPS,&NJPROP,&PERIOD) ;
   }
   
   return(0) ;
@@ -379,10 +379,6 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   {
     Material_t* mat = Element_GetMaterial(el) ;
     int     dim  = Element_GetDimensionOfSpace(el) ;
-    
-    for(i = 0 ; i < Element_GetNbOfImplicitTerms(el) ; i++) {
-      vi[i] = vi_n[i] ;
-    }
     
     double* RHS = r ;
     double* AMATRX = NULL ;
@@ -420,6 +416,10 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     int     JPROPS[1] = {0} ;
     int     NJPROP = 1 ;
     double  PERIOD = 1 ;
+    
+    for(i = 0 ; i < Element_GetNbOfImplicitTerms(el) ; i++) {
+      vi[i] = vi_n[i] ;
+    }
     
     uel_(RHS,AMATRX,SVARS,ENERGY,&NDOFEL,&NRHS,&NSVARS,PROPS,&NPROPS,COORDS,&MCRD,&NNODE,U,DU,V,A,&JTYPE,TIME,&DTIME,&KSTEP,&KINC,&JELEM,PARAMS,&NDLOAD,JDLTYP,ADLMAG,PREDEF,&NPREDF,LFLAGS,&MLVARX,DDLMAG,&MDLOAD,&PNEWDT,JPROPS,&NJPROP,&PERIOD) ;
   }

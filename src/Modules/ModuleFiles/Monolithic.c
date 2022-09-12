@@ -5,7 +5,6 @@
 #include <string.h>
 #include <ctype.h>
 #include "Monolithic.h"
-//#include "SNIA.h"
 #include "Context.h"
 #include "CommonModule.h"
 
@@ -475,32 +474,31 @@ int (Monolithic_Iterate)(DataSet_t* dataset,Solutions_t* sols,Solver_t* solver)
 int calcul(DataSet_t* dataset)
 {
   Mesh_t* mesh = DataSet_GetMesh(dataset) ;
-  const int n_sol = 2 ; /* Must be 2 at minimum but works with more */
+  Options_t* options = DataSet_GetOptions(dataset) ;
+  int n_sol = Options_GetNbOfSolutions(options) ;
+  //const int n_sol = 2 ; /* Must be 2 at minimum but works with more */
   Solutions_t* sols = Solutions_Create(mesh,n_sol) ;
+  
+  if(n_sol < 2) {
+    Message_RuntimeError("Nb of solutions should not be less than 2.") ;
+  }
 
   /* Execute this line to set only one allocation of space for explicit terms. */
   /* This is not mandatory except in some models where constant terms are saved as 
    * explicit terms and updated only once during initialization. 
    * It is then necessary to merge explicit terms. Otherwise it is not mandatory.
    * Should be eliminated in the future. */
-  Solutions_MergeExplicitTerms(sols) ;
+  //Solutions_MergeExplicitTerms(sols) ;
   /* This is done 11/05/2015 */
-  //Message_Warning("Explicit terms are not merged anymore in this version.") ;
+  Message_Warning("Explicit terms are not merged anymore in this version.") ;
   
   
   {
     DataFile_t* datafile = DataSet_GetDataFile(dataset) ;
     int i = 0 ;
-  
-  /* Set up the system of equations */
-    {
-      //BConds_t* bconds = DataSet_GetBConds(dataset) ;
-      
-      //Mesh_SetMatrixRowColumnIndexes(mesh,bconds) ;
-    }
+
   /* Print */
     {
-      Options_t* options = DataSet_GetOptions(dataset) ;
       char*   debug  = Options_GetPrintedInfos(options) ;
     
       if(!strcmp(debug,"numbering")) DataSet_PrintData(dataset,debug) ;
@@ -524,7 +522,6 @@ int calcul(DataSet_t* dataset)
       Points_t* points   = DataSet_GetPoints(dataset) ;
       int     n_points   = Points_GetNbOfPoints(points) ;
       OutputFiles_t* outputfiles = OutputFiles_Create(filename,nbofdates,n_points) ;
-      Options_t* options = DataSet_GetOptions(dataset) ;
       Solvers_t* solvers = Solvers_Create(mesh,options,1) ;
       Solver_t* solver = Solvers_GetSolver(solvers) ;
       

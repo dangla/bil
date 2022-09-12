@@ -22,11 +22,6 @@
 /* Nb of equations of the model */
 #define NEQ   (dim+2) /* Let's consider a mechanical eq. and 2 scalar eqs. */
 
-/* Nb of terms per point */
-#define NVI   (18)    /*  14 implicit terms per point */
-#define NVE   (2)     /*  2  explicit terms per point */
-#define NV0   (10)    /*  10 constant terms per point */
-
 
 /* Indices of equations */
 #define E_Mech     (0)
@@ -53,6 +48,11 @@
 
 
 
+/* Nb of terms per point */
+#define NVI   (40)    /*  40 implicit terms per point */
+#define NVE   (2)     /*  2  explicit terms per point */
+#define NV0   (10)    /*  10 constant terms per point */
+
 /* We define some names for implicit terms
  * (vi and vi_n must be used as pointer in the remaining file) */
 #define N_1           (vi      )[0] /* Mass or mole content for E_Name1 */
@@ -67,6 +67,12 @@
 #define SIGn          (vi_n + 8)    /* Idem at the previous time step */
 
 #define PHI           (vi   + 17)[0] /* Porosity */
+
+#define F_MASS        (vi   + 26)
+
+#define SCALAR        (vi   + 27)[0]
+#define VECTOR        (vi   + 30)
+#define TENSOR        (vi   + 39)
 
 
 /* We define some names for explicit terms 
@@ -85,10 +91,10 @@
 /* Shorthands of some units */
 #include "InternationalSystemOfUnits.h"
 
-#define m        (InternationalSystemOfUnits_OneMeter)
-#define m3       (m*m*m)
-#define dm       (0.1*m)
-#define cm       (0.01*m)
+#define meter    (InternationalSystemOfUnits_OneMeter)
+#define m3       (meter*meter*meter)
+#define dm       (0.1*meter)
+#define cm       (0.01*mmeter
 #define dm3      (dm*dm*dm)
 #define cm3      (cm*cm*cm)
 #define Pa       (InternationalSystemOfUnits_OnePascal)
@@ -112,8 +118,8 @@
 
 
 /* Intern Functions used below */
-static int     ComputeTangentCoefficients(FEM_t*,double,double,double*) ;
-static int     ComputeTransferCoefficients(FEM_t*,double,double*) ;
+static int     ComputeTangentCoefficients(Element_t*,double,double,double*) ;
+static int     ComputeTransferCoefficients(Element_t*,double,double*) ;
 
 static double* ComputeVariables(Element_t*,void*,void*,void*,const double,const double,const int) ;
 static void    ComputeSecondaryVariables(Element_t*,const double,const double,double*,double*) ;
@@ -124,7 +130,7 @@ static double* ComputeVariableDerivatives(Element_t*,const double,const double,d
 #define ReturnMapping(...) \
         Plasticity_ReturnMapping(plasty,__VA_ARGS__)
 #define CopyElasticTensor(...) \
-        Plasticity_CopyElasticTensor(plasty,__VA_ARGS__)
+        Elasticity_CopyStiffnessTensor(elasty,__VA_ARGS__)
 #define CopyTangentStiffnessTensor(...) \
         Plasticity_CopyTangentStiffnessTensor(plasty,__VA_ARGS__)
 
@@ -167,9 +173,9 @@ I_Last
 /* Locally defined intern variables  */
 #define NP               IntFct_MaxNbOfIntPoints
 #define NbOfVariables    (I_Last)
-static double Variables[NP][NbOfVariables] ;
-static double Variables_n[NP][NbOfVariables] ;
-static double dVariables[NbOfVariables] ;
+static double Variable[NP][NbOfVariables] ;
+static double Variable_n[NP][NbOfVariables] ;
+static double dVariable[NbOfVariables] ;
 
 
 
@@ -179,6 +185,8 @@ static double coef2 ;
 static double coef3 ;
 static double* sig0 ;
 static Curve_t* curve1 ;
+static Curve_t* curve2 ;
+static Elasticity_t* elasty ;
 
 
 
@@ -303,7 +311,7 @@ int PrintModelProp(Model_t* model,FILE* ficd)
   fprintf(ficd,"prop3 = 1.e6   # Property 3\n") ;
   fprintf(ficd,"Curves = my_file  # File name: x-axis y1-axis y2-axis\n") ;  
 
-  return(NEQ) ;
+  return(0) ;
 }
 
 
@@ -385,29 +393,109 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
 
 
 
-int  ComputeLoads(Element_t* el,double t,double dt,Load_t* cg,double* r)
+int  ComputeLoads(Element_t* el,double t,double dt,Load_t* load,double* r)
 /** Compute the residu (r) due to loads 
  *  Return 0 if succeeded and -1 if failed */
 {
-  IntFct_t* fi = Element_GetIntFct(el) ;
+  IntFct_t* intfct = Element_GetIntFct(el) ;
   int nn = Element_GetNbOfNodes(el) ;
+  unsigned short int dim = Element_GetDimensionOfSpace(el) ;
   int ndof = nn*NEQ ;
   FEM_t* fem = FEM_GetInstance(el) ;
-  int    i ;
+
+  /* Initialization */
+  {
+    double zero = 0. ;
+    int    i ;
+    
+    for(i = 0 ; i < ndof ; i++) r[i] = zero ;
+  }
 
   {
-    double* r1 = FEM_ComputeSurfaceLoadResidu(fem,fi,cg,t,dt) ;
     
     /* First conservation equation */
-    if(Element_FindEquationPositionIndex(el,Load_GetNameOfEquation(cg)) == E_Name1) {
+    if(Element_FindEquationPositionIndex(el,Load_GetNameOfEquation(load)) == E_Name1) {
+      double* r1 = FEM_ComputeSurfaceLoadResidu(fem,intfct,load,t,dt) ;
+      int    i ;
+      
       for(i = 0 ; i < ndof ; i++) r[i] = -r1[i] ;
     
     /* Second conservation equation */
-    } else if(Element_FindEquationPositionIndex(el,Load_GetNameOfEquation(cg)) == E_Name2) {
-      for(i = 0 ; i < ndof ; i++) r[i] = -r1[i] ;
+    } else if(Element_FindEquationPositionIndex(el,Load_GetNameOfEquation(load)) == E_Name2) {
+      double** u = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+      Symmetry_t sym = Element_GetSymmetry(el) ;
+      Node_t** no = Element_GetPointerToNode(el) ;
+      Field_t* field = Load_GetField(load) ;
+      char*    load_eqn = Load_GetNameOfEquation(load) ;
+      char*    load_type = Load_GetType(load) ;
+      Function_t* function = Load_GetFunction(load) ;
+      int dim_h  = IntFct_GetDimension(intfct) ;
+      int    nf  = IntFct_GetNbOfFunctions(intfct) ;
+      int    np  = IntFct_GetNbOfPoints(intfct) ;
+      int    neq = NEQ ;
+      int    ieq = E_Name2 ;
+      double* x[Element_MaxNbOfNodes] ;
+      int    i ;
+  
+      for(i = 0 ; i < nn ; i++) {
+        x[i] = Node_GetCoordinate(no[i]) ;
+      }
+
+      if(field == NULL) return(0) ;
+
+      /* Position index of the equation */
+      if(ieq < 0) {
+        arret("FEM_ComputeSurfaceLoadResidu (1): unknown equation") ;
+      }
+
+      /* Lin-flux is a user-defined type for a linear dependent flux:
+       * Flux = A(x,t) * U */
+      if(strncmp(load_type,"Lin-flux",4) == 0) {
+        double ft = 1. ;
+    
+        if(function != NULL) {
+          ft = Function_ComputeValue(function,t) ;
+        }
+    
+        if(dim == 1 && nn == 1) {
+          double v = u[0][U_Name2] ;
+          double radius = x[0][0] ;
+      
+          r[ieq] = ft*Field_ComputeValueAtPoint(field,x[0],dim)*v ;
+      
+          if(Symmetry_IsCylindrical(sym)) r[ieq] *= 2*M_PI*radius ;
+          else if(Symmetry_IsSpherical(sym)) r[ieq] *= 4*M_PI*radius*radius ;
+        }
+    
+        if(dim >= 2) {
+          double* rb ;
+          double f[3*IntFct_MaxNbOfIntPoints] ;
+          int p ;
+      
+          for(p = 0 ; p < np ; p++) {
+            double v = FEM_ComputeUnknown(fem,u,intfct,p,U_Name2) ;
+            double* h = IntFct_GetFunctionAtPoint(intfct,p) ;
+            double y[3] = {0.,0.,0.,} ;
+            for(i = 0 ; i < dim ; i++) {
+              int j ;
+              for(j = 0 ; j < nf ; j++) y[i] += h[j]*x[j][i] ;
+            }
+            f[p] = ft*Field_ComputeValueAtPoint(field,y,dim)*v ;
+          }
+      
+          rb = FEM_ComputeBodyForceResidu(fem,intfct,f,1) ;
+      
+          for(i = 0 ; i < nn ; i++) r[i*neq+ieq] = rb[i] ;
+      
+          FEM_FreeBufferFrom(fem,rb) ;
+        }
+      }
     
     /* Other if any */
     } else {
+      double* r1 = FEM_ComputeSurfaceLoadResidu(fem,intfct,load,t,dt) ;
+      int    i ;
+      
       for(i = 0 ; i < ndof ; i++) r[i] = r1[i] ;
     }
   }
@@ -480,6 +568,7 @@ int ComputeInitialState(Element_t* el,double t)
     
   /* Loop on integration points */
   {
+    double** u = Element_ComputePointerToCurrentNodalUnknowns(el) ;
     IntFct_t*  intfct = Element_GetIntFct(el) ;
     int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
     int    p ;
@@ -639,7 +728,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     int m = 2 ; /* Two coupling terms */
     int n = 81 + m*9 + m*(9 + m) ;
     double c[IntFct_MaxNbOfIntPoints*n] ;
-    int dec = ComputeTangentCoefficients(fem,t,dt,c) ;
+    int dec = ComputeTangentCoefficients(el,t,dt,c) ;
     double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,m,E_Mech) ;
     /* The entry c should be stored as 
      * (u for displacement, p for unk1, h for unk2)
@@ -666,7 +755,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     int m = 2 ;
     int n = m*m*9 ;
     double c[IntFct_MaxNbOfIntPoints*n] ;
-    int dec = ComputeTransferCoefficients(fem,dt,c) ;
+    int dec = ComputeTransferCoefficients(el,dt,c) ;
   
     /* Conduction Matrix (dW_1/dUnk1) */
     {
@@ -747,6 +836,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   
   /* Initialization */
   {
+    double zero = 0. ;
     int i ;
     
     for(i = 0 ; i < ndof ; i++) r[i] = zero ;
@@ -872,6 +962,8 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   }
   
   {
+    int dim = Element_GetDimensionOfSpace(el) ;
+    FEM_t* fem = FEM_GetInstance(el) ;
     /* Interpolation functions at s */
     double* a = Element_ComputeCoordinateInReferenceFrame(el,s) ;
     int m = IntFct_ComputeFunctionIndexAtPointOfReferenceFrame(intfct,a) ;
@@ -917,7 +1009,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 
 
 
-int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
+int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
 /*
 **  Tangent matrix (c), return the shift (dec).
 */
@@ -926,7 +1018,6 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
 #define T2(a,i,j)      ((a)[(i)*3+(j)])
 #define C1(i,j,k,l)    T4(c1,i,j,k,l)
 #define B1(i,j)        T2(c1,i,j)
-  Element_t* el  = FEM_GetElement(fem) ;
   double*  vi0   = Element_GetCurrentImplicitTerm(el) ;
   double*  vi0_n = Element_GetPreviousImplicitTerm(el) ;
 //  double*  ve0  = Element_GetExplicitTerm(el) ;
@@ -996,20 +1087,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
           }
       
           {
-            double crit = CRIT ;
-            
-            /* Criterion */
-            if(crit >= 0.) {
-              double* hardv = x + HARDV ;
-              double* sig   = x + I_SIG ;
-              
-              ComputeTangentStiffnessTensor(sig,hardv) ;
-              
-              CopyTangentStiffnessTensor(c1) ;
-            } else {
-      
               CopyElasticTensor(c1) ;
-            }
           }
         }
         
@@ -1117,6 +1195,34 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
 #undef B1
 #undef T2
 #undef T4
+}
+
+
+int ComputeTransferCoefficients(Element_t* el,double dt,double* c)
+/*
+**  Conduction matrix (c) and shift (dec)
+*/
+{
+  double* ve = Element_GetExplicitTerm(el) ;
+  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  int np = IntFct_GetNbOfPoints(intfct) ;
+  int    dec = 9 ;
+  int    p ;
+  
+  for(p = 0 ; p < np ; p++ , ve += NVE) {
+    double* c1 = c + p*dec ;
+    int    i ;
+    
+    /* initialisation */
+    for(i = 0 ; i < dec ; i++) c1[i] = 0. ;
+    
+    /* Permeability tensor */
+    c1[0] = K_1 ;
+    c1[4] = K_1 ;
+    c1[8] = K_1 ;
+  }
+  
+  return(dec) ;
 }
 
 

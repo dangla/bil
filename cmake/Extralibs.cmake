@@ -9,7 +9,7 @@ file(APPEND ${BILEXTRALIBS_H} "#define BILEXTRALIBS_H\n")
 
 file(STRINGS EXTRALIBS libs REGEX "^[^# ]")
 
-foreach(lib ${libs})
+foreach(lib IN ITEMS ${libs})
   #message("lib = ${lib}")
   string(REGEX MATCH "^[A-Z]+" lib_name "${lib}")
   string(REGEX REPLACE "^[ ]*[A-Z]+[ ]+=[ ]+|[ ]+$" "" lib_path "${lib}")

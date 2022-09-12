@@ -232,6 +232,12 @@ listsources:
 	@echo '----------------------------------------------'
 	@echo 'Sources'
 	@echo '----------------------------------------------'
+	@${call PRINT,${SRCALL}}
+
+listsourcesdetailed:
+	@echo '----------------------------------------------'
+	@echo 'Sources'
+	@echo '----------------------------------------------'
 	@echo '1. All source files (SRCALL)'
 	@${call PRINT,${SRCALL}}
 	@echo '----------------------------------------------'
@@ -255,6 +261,12 @@ listsources:
 # Target rules for listing headers
 
 listheaders:
+	@echo '----------------------------------------------'
+	@echo 'Headers'
+	@echo '----------------------------------------------'
+	@${call PRINT,${HEADERSALL}}
+
+listheadersdetailed:
 	@echo '----------------------------------------------'
 	@echo 'Headers'
 	@echo '----------------------------------------------'

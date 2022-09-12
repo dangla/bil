@@ -42,8 +42,7 @@ DataSet_t*  (DataSet_Create)(char* filename,Options_t* opt)
     DataSet_GetDataFile(dataset) = datafile ;
   
     if(DataFile_DoesNotExist(datafile)) {
-      Help_WriteData(filename) ;
-      Message_Info("To start the computation, type bil %s\n",filename) ;
+      Message_Info("File %s not found\n",filename) ;
       Message_Exit ;
     }
   }

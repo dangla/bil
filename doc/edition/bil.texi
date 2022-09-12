@@ -6,7 +6,7 @@
 @c =========================================================================
 @c %**start of header
 @setfilename        bil.info
-@include versions.texi
+@include version.texi
 @set BIL-WEB        @uref{http://bil.ifsttar.fr}
 @set COPYRIGHT      @copyright{} 2002-2006 Patrick Dangla.
 @c @set BIL            Bil-@value{BIL-VERSION} @c Not used
@@ -199,7 +199,8 @@ Bil can be run non-interactively only. To compute the solution of a problem desc
 @sp 1
 @command{bil [@var{options}] my_file}
 @sp 1
-The input data file format is described in the following section. Without any option, running Bil will create the output files @file{my_file.p@var{i}} and @file{my_file.t@var{i}} (@pxref{Output files}). If there is no input data file named @file{my_file}, Bil will open this file in writing mode and will ask the user for the input data. With the option -h (help) there is no input data file to give. The command
+The input data file format is described in the following section. Without any option, running Bil will create the output files @file{my_file.p@var{i}} and @file{my_file.t@var{i}} (@pxref{Output files}). @c If there is no input data file named @file{my_file}, Bil will open this file in writing mode and will ask the user for the input data. 
+With the option -h (help) there is no input data file to give. The command
 @sp 1
 @command{bil}
 @sp 1
@@ -229,7 +230,7 @@ Options are:
 @sp 1
 @end ignore
 
-The way Bil will run may depend whether there are some other files (@pxref{Other files}). The most important of them, namely @file{my_file.graph.iperm}, defines the way nodes are renumbered so as to optimize the resolution algorithm. Except in 1D problems, it is very important, if not essential, to create this file with an aquedate option, e.g. -iperm, (see Bil options).
+The way Bil will run may depend whether there are some other files (@pxref{Other files}). The most important of them, namely @file{my_file.graph.iperm}, defines the way nodes are renumbered so as to optimize the storage of the LU decomposition of the matrix, in case of a Gauss elimination method (Crout's method). Except in 1D problems where nodes are numbered from one end to the other of the mesh, it is very important, if not essential, to create this file with an aquedate option, e.g. -iperm, (see Bil options). In case of multi-frontal methods (such as SuperLU or MA38) this file is not needed.
 
 @c =========================================================================
 @c Input data file
@@ -238,7 +239,7 @@ The way Bil will run may depend whether there are some other files (@pxref{Other
 @node Input data file, Output files, Running Bil, Top
 @chapter Input data file format
 
-The file @file{my_file}, as mentionned above, provides the input data of the problem to be worked out. A list of reserved key-words organizes the inputs in several groups such as mesh, material properties, boundary conditions, etc. For example the key-word @code{Geometry} is followed by the inputs defining the dimension and the symmetry of the problem. Any content of a line after @code{#} is considered as comments and skipped. The full list of reserved key-words which must appear in @file{my_file} is given in the table below.
+The file @file{my_file}, as mentionned above, provides the input data of the problem to be worked out. A list of reserved key-words (with an upper-case first letter) organizes the inputs in several groups such as mesh, material properties, boundary conditions, etc. For example the key-word @code{Geometry} is followed by the inputs defining the dimension and the symmetry of the problem. Any content of a line after @code{#} is considered as comments and skipped. The full list of reserved key-words which must appear in @file{my_file} is given in the table below.
 
 @sp 1
 @multitable @columnfractions 0.35 0.65
@@ -290,8 +291,7 @@ Each run produces 2 sets of output files. In the first set, output files are nam
 @sp 1
 @center @file{my_file.p@var{i}}
 @sp 1
-where @var{i} is an integer ranging from 1 to the number of points defined by the key-word @code{Points}. If there is no point no file will be created. These files provide the results obtained at the specified points. The first column contains the times at which the results have been obtained. The other columns contain the value of specific quantities as implemented in the model defined in the key-word @code{Material}.
-
+where @var{i} is an integer ranging from 1 to the number of points defined by the key-word @code{Points}. If there is no point no file will be created. These files provide the results obtained at the specified points. The first column contains the times at which the results have been obtained. The other columns contain the value of specific quantities as implemented in the model defined in the key-word @code{Material}. 
 In the second set, output files are named:
 @sp 1
 @center @file{my_file.t@var{i}}
@@ -358,7 +358,7 @@ A short description of the available models can be displayed by typing:
 @node How to develop a new model?, Examples, Models, Top
 @chapter How to develop a new model?
 
-To tell Bil to account for a new model, you just need to create a new file, e.g. @file{my_model.c}, in the folder @file{ModelFiles} and add the basename of this file, namely @file{my_model}, to the list of the available models found in @file{ListOfModels.inc}. This model will be taken into account automatically the next time binary files will be created.
+To tell Bil to account for a new model, you just need to create a new file, e.g. @file{my_model.c}, in the folder @file{ModelFiles} and add the basename of this file, namely @file{my_model}, to the list of the available models found in @file{ListOfModels.inc}@footnote{Upper camel case convention is used to name the source files of this project. The same convention is used for the attributes and the methods of objects.}. This model will be taken into account automatically the next time binary files will be created.
 
 To help you in creating this new file, it is recommended to learn from already existing files. This file should contain at least the 11 methods of the Model class-like structure. These methods are listed in the table below.
 
@@ -428,7 +428,7 @@ This problem is governed by the Richards' equation. A 1 meter high sand column i
 
 
 @item @code{Material}           @tab Material 1
-@item @code{Model = m1}         @tab code name of the model
+@item @code{Model = M1}         @tab code name of the model
 @item @code{gravite = -9.81}    @tab gravity
 @item @code{phi = 0.3}          @tab porosity
 @item @code{rho_l = 1000}       @tab fluid mass density

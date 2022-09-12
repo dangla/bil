@@ -6,25 +6,28 @@
 #include "Help.h"
 
 
-static void   Help_Geometry(void) ;
-static void   Help_Mesh(void) ;
-static void   Help_Material(void) ;
-static void   Help_Fields(void) ;
-static void   Help_Initialization(void) ;
-static void   Help_Functions(void) ;
-static void   Help_BoundaryConditions(void) ;
-static void   Help_Loads(void) ;
-static void   Help_Points(void) ;
-static void   Help_Dates(void) ;
-static void   Help_ObjectiveValues(void) ;
-static void   Help_IterativeProcess(void) ;
-static void   Help_TimeStep(void) ;
-static void   Help_BuiltinCurves(void) ;
+static void   (Help_Geometry)(void) ;
+static void   (Help_Mesh)(void) ;
+static void   (Help_Material)(void) ;
+static void   (Help_Fields)(void) ;
+static void   (Help_Initialization)(void) ;
+static void   (Help_Functions)(void) ;
+static void   (Help_BoundaryConditions)(void) ;
+static void   (Help_Loads)(void) ;
+static void   (Help_Points)(void) ;
+static void   (Help_Dates)(void) ;
+static void   (Help_ObjectiveValues)(void) ;
+static void   (Help_IterativeProcess)(void) ;
+static void   (Help_TimeStep)(void) ;
+static void   (Help_BuiltinCurves)(void) ;
+static void   (Help_Periodicities)(void) ;
+static void   (Help_Model)(void) ;
+static void   (Help_Units)(void) ;
 
 
 /* Extern functions */
 
-void Help_HelpOnline(void)
+void (Help_HelpOnline)(void)
 {
   char mot[5] ;
   
@@ -37,28 +40,28 @@ void Help_HelpOnline(void)
   
 /*01234567890123456789012345678901234567890123456789012345678901234567890*/
   Message_Direct("Mandatory fields\n") ;
-  Message_Direct("\
-  Geometry         Mesh             Material              Fields\n") ;
-  Message_Direct("\
-  Initialization   Functions        Boundary Conditions   Loads\n") ;
-  Message_Direct("\
-  Points           Dates            Objective Variations  Iterative Process\n") ;
-  Message_Direct("\
-  Time Steps\n") ;
+  Message_Direct(\
+  "Geometry         Mesh             Material              Fields\n") ;
+  Message_Direct(\
+  "Initialization   Functions        Boundary Conditions   Loads\n") ;
+  Message_Direct(\
+  "Points           Dates            Objective Variations  Iterative Process\n") ;
+  Message_Direct(\
+  "Time Steps\n") ;
   Message_Direct("\n") ;
   Message_Direct("\n") ;
   
   
   Message_Direct("Optional fields\n") ;
-  Message_Direct("\
-  Periodicities         Units\n") ;
+  Message_Direct(\
+  "Periodicities    Units            Model\n") ;
   Message_Direct("\n") ;
   Message_Direct("\n") ;
   
   
   Message_Direct("Other topics\n") ;
-  Message_Direct("\
-  Builtin Curves\n") ;
+  Message_Direct(\
+  "Builtin Curves\n") ;
   Message_Direct("\n") ;
   Message_Direct("\n") ;
   
@@ -82,6 +85,9 @@ void Help_HelpOnline(void)
   else if(!strncasecmp(mot,"Iterative Process"   ,2)) Help_IterativeProcess() ;
   else if(!strncasecmp(mot,"Time Steps"          ,2)) Help_TimeStep() ;
   else if(!strncasecmp(mot,"Builtin Curves"      ,2)) Help_BuiltinCurves() ;
+  else if(!strncasecmp(mot,"Periodicities"       ,2)) Help_Periodicities() ;
+  else if(!strncasecmp(mot,"Units"               ,2)) Help_Units() ;
+  else if(!strncasecmp(mot,"Model"               ,2)) Help_Model() ;
   else {
     Message_Direct("Topic %s not found\n",mot) ;
   }
@@ -90,7 +96,7 @@ void Help_HelpOnline(void)
 }
 
 
-void Help_WriteData(char *nom)
+void (Help_WriteData)(char *nom)
 /* Creation du fichier de donnees */
 {
   int    n_mat = 1,n_el = 0,dim ;
@@ -319,7 +325,7 @@ void Help_WriteData(char *nom)
 
 /* Intern functions */
 
-void Help_Geometry(void)
+void (Help_Geometry)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Geometry: ") ;
@@ -327,110 +333,109 @@ void Help_Geometry(void)
   
   Message_Direct("\n") ;
   
-  Message_Direct("\
-->\t dim\n") ;
+  Message_Direct(\
+  "->     \t dim\n") ;
+  
+  Message_Direct(\
+  "->(opt)\t sym\n") ;
 
   Message_Direct("\n") ;
 
-  Message_Direct("\
-  \t dim = dimension (1,2,3)\n") ;
+  Message_Direct(\
+  "\t dim = the dimension of space (1,2,3)\n") ;
 
   Message_Direct("\n") ;
 
-  Message_Direct("\
-  \t For dim = 1,2:\n") ;
+  Message_Direct(\
+  "\t For dim = 1,2:\n") ;
 
   Message_Direct("\n") ;
   
-  Message_Direct("\
-->\t sym\n") ;
-
-  Message_Direct("\n") ;
-  
-  Message_Direct("\
-  \t sym = symmetry (\"plan\",\"axis\",\"sphe\")\n") ;
+  Message_Direct(\
+  "\t sym = the type of symmetry (\"plane\",\"axis\",\"sphe\")\n"\
+  "\t       by default it is set to \"plane\"\n") ;
 
   Message_Direct("\n") ;
   Message_Direct("Example: ") ;
   Message_Direct("\n") ;
   Message_Direct("Geometry\n") ;
-  Message_Direct("2 plan\n") ;
+  Message_Direct("2 plane\n") ;
 }
 
 
-void Help_Mesh(void)
+void (Help_Mesh)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Definition of the mesh\n") ;
   
   Message_Direct("\n") ;
   
-  Message_Direct("\
-->\t filename\n") ;
+  Message_Direct(\
+  "->\t filename\n") ;
   
   Message_Direct("\n") ;
   
-  Message_Direct("\
-  \t filename      = name of the mesh file\n") ;
+  Message_Direct(\
+  "\t filename      = name of the mesh file\n") ;
   
   Message_Direct("\n") ;
 
-  Message_Direct("\
-  \t Accepted filenames are:\n") ;
+  Message_Direct(\
+  "\t Accepted filenames are:\n") ;
 
-  Message_Direct("\
-  \t *.msh \t(GMSH format);\n\
-  \t *.ces \t(CESAR format);\n\
-  \t *.m1d \t(only for 1D problem);\n") ;
+  Message_Direct(\
+  "\t *.msh \t(GMSH format);\n"\
+  "\t *.ces \t(CESAR format);\n"\
+  "\t *.m1d \t(only for 1D problem);\n") ;
   
   Message_Direct("\n") ;
   
-  Message_Direct("\
-  \t File format \"*.m1d\" is given as follows:\n") ;
+  Message_Direct(\
+  "\t File format \"*.m1d\" is given as follows:\n") ;
   
   Message_Direct("\n") ;
   
-  Message_Direct("\
-->\t np\n\
-->\t (pt,lc)[]\n\
-->\t mat[]\n") ;
+  Message_Direct(\
+  "->\t np\n"\
+  "->\t (pt,lc)[]\n"\
+  "->\t mat[]\n") ;
   
   Message_Direct("\n") ;
   
-  Message_Direct("\
-  \t np                   = nb of points. There are np-1 regions.\n\
-  \t pt[]  (i = 1...np)   = x coordinate of points.\n\
-  \t lc[]  (i = 1...np)   = mesh element size at the points.\n\
-  \t mat[] (i = 1...np-1) = index number of the materials in the regions.\n") ;
+  Message_Direct(\
+  "\t np                   = nb of points. There are np-1 regions.\n"\
+  "\t pt[]  (i = 1...np)   = x coordinate of points.\n"\
+  "\t lc[]  (i = 1...np)   = mesh element size at the points.\n"\
+  "\t mat[] (i = 1...np-1) = index number of the materials in the regions.\n") ;
   
   Message_Direct("\n") ;
   
-  Message_Direct("\n\
-  Instead of \"filename\" and for 1D problem only, we can give the following\n\
-  input data directly after the key-word MESH:\n") ;
+  Message_Direct("\n"\
+  "Instead of \"filename\" and for 1D problem only, we can give the following\n"\
+  "input data directly after the key-word Mesh:\n") ;
   
   Message_Direct("\n") ;
   
-  Message_Direct("\
-->\t np\n\
-->\t pt[]\n\
-->\t dxini\n\
-->\t ne[]\n\
-->\t mat[]\n") ;
+  Message_Direct(\
+  "->\t np\n"\
+  "->\t pt[]\n"\
+  "->\t dxini\n"\
+  "->\t ne[]\n"\
+  "->\t mat[]\n") ;
   
   Message_Direct("\n") ;
   
-  Message_Direct("\
-  \t np                   = nb of points\n\
-  \t pt[]  (i = 1...np)   = x coordinate of points.\n\
-  \t dxini                = length of the first element attached to the first point\n\
-  \t ne[]  (i = 1...np-1) = nb of elements in the regions\n\
-  \t mat[] (i = 1...np-1) = index number of the materials in the regions.\n") ;
+  Message_Direct(\
+  "\t np                   = nb of points\n"\
+  "\t pt[]  (i = 1...np)   = x coordinate of points.\n"\
+  "\t dxini                = length of the first element attached to the first point\n"\
+  "\t ne[]  (i = 1...np-1) = nb of elements in the regions\n"\
+  "\t mat[] (i = 1...np-1) = index number of the materials in the regions.\n") ;
   
   Message_Direct("\n") ;
   
-  Message_Direct("\
-  NB: in 1D problem, to define a 1 node element give the same x-coordinate \
+  Message_Direct(\
+  "NB: in 1D problem, to define a 1 node element give the same x-coordinate\n\
   to 2 points. These 2 points will generate only one node and one element.\n") ;
 
   Message_Direct("\n") ;
@@ -441,7 +446,7 @@ void Help_Mesh(void)
 }
 
 
-void Help_Material(void)
+void (Help_Material)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Definition of the material properties\n") ;
@@ -573,7 +578,7 @@ void Help_Material(void)
 }
 
 
-void Help_Fields(void)
+void (Help_Fields)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Definition of fields\n") ;
@@ -656,7 +661,7 @@ void Help_Fields(void)
 }
 
 
-void Help_Initialization(void)
+void (Help_Initialization)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Initialization of the primary unknowns\n") ;
@@ -699,7 +704,7 @@ void Help_Initialization(void)
 }
 
 
-void Help_Functions(void)
+void (Help_Functions)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Definition of time functions\n") ;
@@ -752,7 +757,7 @@ void Help_Functions(void)
   Message_Direct("\n") ;
 }
 
-void Help_BoundaryConditions(void)
+void (Help_BoundaryConditions)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Definition of boundary conditions\n") ;
@@ -800,53 +805,54 @@ void Help_BoundaryConditions(void)
 }
 
 
-void Help_Loads(void)
+void (Help_Loads)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Definition of loads\n") ;
   
   Message_Direct("\n") ;
   
-  Message_Direct("\
-->\t nch\n\
-  \t nch  = Nb of loads\n") ;
+  Message_Direct(\
+  "->\t nch\n"\
+  "\t nch  = Nb of loads\n") ;
   
   Message_Direct("\n") ;
 
-  Message_Direct("\
-  Give as many times as nch\n\
-  for(i = 0 ; i < nch ; i++) {\n\
-->\t \"Region =\",reg,\"Equation =\",cle,\n\
-->\t \"Type   =\",typ,\"Field    =\",ich,\"Function =\",ifn\n\
-  }\n\
-  ") ;
+  Message_Direct(\
+  "Give as many times as nch\n"\
+  "for(i = 0 ; i < nch ; i++) {\n"\
+  "->\t \"Region =\",reg,\"Equation =\",cle,\n"\
+  "->\t \"Type   =\",typ,\"Field    =\",ich,\"Function =\",ifn\n"\
+  "}\n") ;
   
-  Message_Direct("\
-  \t reg           = Index of the region\n") ;
+  Message_Direct(\
+  "\t reg           = Index of the region\n") ;
 
-  Message_Direct("\
-  \t cle           = String of characters representing the equation\n") ;
+  Message_Direct(\
+  "\t cle           = String of characters representing the equation\n") ;
 
-  Message_Direct("\
-  \t typ           = String of characters representing the loading type\n\
-  \t                 (pression,flux,etc...)\n") ;
+  Message_Direct(\
+  "\t typ           = String of characters representing the loading type\n"\
+  "\t                 (pression,flux,etc...)\n") ;
 
-  Message_Direct("\
-  \t ich           = index of the field connected to this load\n") ;
+  Message_Direct(\
+  "\t ich           = index of the field connected to this load\n") ;
 
-  Message_Direct("\
-  \t ifn           = index of the function f(t) connected to this load\n") ;
+  Message_Direct(\
+  "\t ifn           = index of the function f(t) connected to this load\n") ;
   
   Message_Direct("\n") ;
 
-  Message_Direct("\
-  The load at the boundary is then given by:\n\
-  \t - for a type \"flux\": df/dt(t)*field(x) (by default f(t) = t)\n\
-  \t - for a type \"pressure\": f(t)*field(x) (by default f(t) = 1)\n") ;
+  Message_Direct(\
+  "The load at the boundary is then given by:\n"\
+  "\t - for a type \"flux\": Flux = f(t)*field(x) (by default f(t) = 1)\n"\
+  "\t - for a type \"cumulflux\": Flux = df/dt(t)*field(x) (by default f(t) = t)\n"\
+  "\t - for a type \"linearflux\": Flux = f(t)*field(x)*U (by default f(t) = 1)\n"\
+  "\t - for a type \"pressure\": P = f(t)*field(x) (by default f(t) = 1)\n") ;
 }
 
 
-void Help_Points(void)
+void (Help_Points)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Definition of points\n") ;
@@ -854,14 +860,33 @@ void Help_Points(void)
   Message_Direct("\n") ;
   
   Message_Direct("\
-->\t np\n\
-->\t z[][]\n\
-  \t np      = Nb of points\n\
-  \t z[i][j] = Coordinate j (j = 1 , dim) of point i (i = 1 , np)\n") ;
+->\t np\n") ;
+  
+  Message_Direct("\
+  \t np      = Nb of points\n") ;
+  
+  Message_Direct("\n") ;
+
+  Message_Direct("\
+  Give as many times as np\n\
+  for(i = 0 ; i < np ; i++) {\n\
+->\t z[]\n\
+  \t or\n\
+->\t \"Region =\",reg,\"Coordinate =\",z[],\n\
+  }\n\
+  ") ;
+  
+  Message_Direct("\n") ;
+  
+  Message_Direct("\
+  \t reg  = Index of the region\n") ;
+  
+  Message_Direct("\
+  \t z[j] = Coordinate j (j = 1 , dim)\n") ;
 }
 
 
-void Help_Dates(void)
+void (Help_Dates)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Definition of dates\n") ;
@@ -875,7 +900,7 @@ void Help_Dates(void)
 }
 
 
-void Help_ObjectiveValues(void)
+void (Help_ObjectiveValues)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Definition of objective variations of primary unknowns.\n") ;
@@ -908,7 +933,7 @@ void Help_ObjectiveValues(void)
 }
 
 
-void Help_IterativeProcess(void)
+void (Help_IterativeProcess)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Definition of convergence criteria\n") ;
@@ -936,7 +961,7 @@ void Help_IterativeProcess(void)
 }
 
 
-void Help_TimeStep(void)
+void (Help_TimeStep)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Definition of parameters required to compute the time steps\n") ;
@@ -964,37 +989,35 @@ void Help_TimeStep(void)
   
   Message_Direct("\
 ->\t \"Dtini =\",dtini,\"Dtmax =\",dtmax\n") ;
-
-  Message_Direct("\n") ;
-
-  Message_Direct("\
-\t dtini               = initial time step\n") ;
-  Message_Direct("\
-\t dtmax               = maximum time step\n") ;
   
   Message_Direct("\
 ->(opt)\t \"Dtmin = \",dtmin\n") ;
-
-  Message_Direct("\n") ;
-  Message_Direct("\
-\t dtmin               = minimum time step\n") ;
   
   Message_Direct("\
 ->(opt)\t \"Fraction = \",frac\n") ;
-
-  Message_Direct("\n") ;
-  Message_Direct("\
-\t frac                = Reduction factor (0.5 by default)\n") ;
   
   Message_Direct("\
 ->(opt)\t \"Raison = \",raison\n") ;
 
   Message_Direct("\n") ;
+
+  Message_Direct("\
+\t dtini               = initial time step\n") ;
+
+  Message_Direct("\
+\t dtmax               = maximum time step\n") ;
+
+  Message_Direct("\
+\t dtmin               = minimum time step\n") ;
+
+  Message_Direct("\
+\t frac                = Reduction factor (0.5 by default)\n") ;
+
   Message_Direct("\
 \t raison              = Maximum common ratio\n") ;
 }
 
-void Help_BuiltinCurves(void)
+void (Help_BuiltinCurves)(void)
 {
   Message_Direct("\n") ;
   Message_Direct("Built-in curves\n") ;
@@ -1166,4 +1189,89 @@ void Help_BuiltinCurves(void)
   y = Expressions(i){a = %%lf ; b = %%lf ; c = %%f ; ... ; y = F(a,b,c,...,x)}\n") ;
   
   Message_Direct("\n") ;
+}
+
+
+
+void (Help_Periodicities)(void)
+{
+  Message_Direct("\n") ;
+  Message_Direct("Definition of periodicities\n") ;
+  
+  Message_Direct("\n") ;
+  
+  Message_Direct("\
+->\t nperiod\n\
+  \t nperiod  = Nb of periodicities\n") ;
+  
+  Message_Direct("\n") ;
+
+  Message_Direct("\
+  Give as many times as nperiod\n\
+  for(i = 0 ; i < nperiod ; i++) {\n\
+->\t \"MasterRegion =\",mreg,\"SlaveRegion =\",sreg,\"PeriodVector =\",z[]\n\
+  }\n\
+  ") ;
+  
+  Message_Direct("\
+  \t mreg     = Index of the master region\n") ;
+  
+  Message_Direct("\
+  \t sreg     = Index of the slave region\n") ;
+  
+  Message_Direct("\
+  \t z[j]     = Coordinate j (j = 1 , dim) of the period vector\n") ;
+}
+
+
+
+void (Help_Model)(void)
+{
+  Message_Direct("\n") ;
+  Message_Direct("Definition of model\n") ;
+  
+  Message_Direct("\n") ;
+
+  Message_Direct("\
+->\t \"Name =\",N,\"Equations =\",E[],\"Unknowns =\",U[]\n\
+  ") ;
+  
+  Message_Direct("\n") ;
+  
+  Message_Direct("\
+  \t N        = Name of the model\n") ;
+  
+  Message_Direct("\
+  \t E[j]     = Name of the jth equation\n") ;
+  
+  Message_Direct("\
+  \t U[j]     = Name of the jth unknown\n") ;
+}
+
+
+
+void (Help_Units)(void)
+{
+  Message_Direct("\n") ;
+  Message_Direct("Definition of units\n") ;
+  
+  Message_Direct("\n") ;
+
+  Message_Direct("\
+  Give one or more definition of unit as follows:\n\
+->(opt)\t \"Length =\",l\n\
+->(opt)\t \"Time =\",t\n\
+->(opt)\t \"Mass =\",m\n\
+  ") ;
+  
+  Message_Direct("\n") ;
+  
+  Message_Direct("\
+  \t l   = (nano/micro/milli/centi/deci/deca/hecto/kilo)meter/inch\n") ;
+  
+  Message_Direct("\
+  \t t   = second/minute/hour/day/week/month/year\n") ;
+  
+  Message_Direct("\
+  \t m   = (deca/hecto/kilo)gram/tonne\n") ;
 }

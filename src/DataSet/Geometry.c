@@ -86,10 +86,9 @@ Geometry_t*  (Geometry_Create)(DataFile_t* datafile)
         
       } else {
         
-        arret("Geometry_Create: geometry not available\n\
-        Available geometries are:\n\
-        PLANE, AXIS, SPHE") ;
+        Geometry_SetPlaneSymmetry(geom) ;
         
+        Message_Warning("Geometry_Create: by default the symmetry is set to plane") ;
       }
     }
   }

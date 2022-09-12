@@ -32,6 +32,12 @@
 /* C3A.(Cs)3.H32 = 6Ca[2+] + 2Al(OH)4[-] + 3SO4[2-] + 4OH[-] + 26H2O */
 #define Log10DissociationConstantOfCementHydrationProduct_AFt__6Ca_2AlO4H4_3SO4_4OH_26H2O(T) \
         (-44.9)
+        
+#define Log10DissociationConstantOfCementHydrationProduct_C6As3H32__6Ca_2AlO4H4_3SO4_4OH_26H2O(T) \
+        (-44.9)
+
+#define Log10DissociationConstantOfCementHydrationProduct_Ettringite__6Ca_2AlO4H4_3SO4_4OH_26H2O(T) \
+        (-44.9)
 
 /* C3A.(Cs)3.H32 = 6Ca[2+] + 2Al[3+] + 3SO4[2-] + 12OH[-] + 26H2O */
 #define Log10DissociationConstantOfCementHydrationProduct_AFt__6Ca_2Al_3SO4_12OH_26H2O(T) \
@@ -40,11 +46,17 @@
 /* C3A.(Cs)3.H32 + 12H[+] = 6Ca[2+] + 2Al[3+] + 3SO4[2-] + 38H2O (ref. [5]) */
 #define Log10DissociationConstantOfCementHydrationProduct_AFt_12H__6Ca_2Al_3SO4_38H2O(T) \
         TemperatureDependenceOfLog10EquilibriumConstant(T,-576.29,0,44841.95,195.,0)
+        
+#define Log10DissociationConstantOfCementHydrationProduct_C6As3H32_12H__6Ca_2Al_3SO4_38H2O(T) \
+        TemperatureDependenceOfLog10EquilibriumConstant(T,-576.29,0,44841.95,195.,0)
 
 
 /* Monosulfoalumiate (AFm): (ref [4]) */
 /* C3A.Cs.H12    = 4Ca[2+] + 2Al(OH)4[-] + SO4[2-]  + 4OH[-] + 6H2O */
 #define Log10DissociationConstantOfCementHydrationProduct_AFm__4Ca_2AlO4H4_SO4_4OH_6H2O(T) \
+        (-29.26)
+        
+#define Log10DissociationConstantOfCementHydrationProduct_C4AsH12__4Ca_2AlO4H4_SO4_4OH_6H2O(T) \
         (-29.26)
 
 /* C3A.Cs.H12    = 4Ca[2+] + 2Al[3+] + SO4[2-]  + 12OH[-] + 6H2O */
@@ -55,9 +67,12 @@
 #define Log10DissociationConstantOfCementHydrationProduct_AFm_12H__4Ca_2Al_SO4_18H2O(T) \
         TemperatureDependenceOfLog10EquilibriumConstant(T,59.77,0,24477.17,-28.09,0)
         
+#define Log10DissociationConstantOfCementHydrationProduct_C4AsH12_12H__4Ca_2Al_SO4_18H2O(T) \
+        TemperatureDependenceOfLog10EquilibriumConstant(T,59.77,0,24477.17,-28.09,0)
+        
 
 /* Friedel's salt (ref [7]) */
-/* C3AH10.CaCl2 = C4ACl2H10 = Ca4.Al2.Cl2.12(OH)·4(H2O) 
+/* C3AH10.CaCl2 = Ca4.Al2.Cl2.12(OH)·4(H2O) 
  * Ca4Al2Cl2(OH)12·4H2O = 4Ca[2+] + 2Al(OH)4[-] + 2Cl[-] + 4OH[-] + 4H2O
  * */
 #define Log10DissociationConstantOfCementHydrationProduct_FriedelSalt__4Ca_2AlO4H4_2Cl_4OH_4H2O(T) \

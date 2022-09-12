@@ -39,8 +39,8 @@ extern Model_t*  (Models_FindOrAppendModel)(Models_t*,const char*,Geometry_t*,Da
 
 #include "ListOfModels.h"
 
-#define Models_NbOfModels               (ListOfModels_NbOfModels)
-#define Models_ListOfNames               ListOfModels_ModelNames
+#define Models_NbOfModels               (ListOfModels_Nb)
+#define Models_ListOfNames               ListOfModels_Names
 #define Models_ListOfSetModelProp        ListOfModels_Methods(_SetModelProp)
 
 

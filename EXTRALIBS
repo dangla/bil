@@ -1,3 +1,4 @@
+# This is a comment. Put a # in the first column to comment the line.
 BLAS = /usr/lib/x86_64-linux-gnu/blas/libblas.so
 LAPACK = /usr/lib/x86_64-linux-gnu/lapack/liblapack.so
 SUPERLU = /usr/lib/x86_64-linux-gnu/libsuperlu.so

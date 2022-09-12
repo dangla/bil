@@ -1,6 +1,8 @@
 News in 2.9: A new algorithm is implemented in the module SNIA which
 is based on a sequential non iterative approach (SNIA). The build system is 
 switched to CMake. Bugs fixed in MA38 solver. New way of using extra libraries.
+The number of temporal discrete solutions kept in memory for possible use
+in time discretization schemes can be given in the command line.
 
 News in 2.8: Re-arranging some allocation of memory space for the mesh.
 Reformulation of the jacobian matrix of the transformation between the

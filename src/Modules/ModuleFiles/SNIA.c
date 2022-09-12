@@ -499,13 +499,7 @@ int calcul(DataSet_t* dataset)
   {
     DataFile_t* datafile = DataSet_GetDataFile(dataset) ;
     int i = 0 ;
-  
-  /* Set up the system of equations */
-    {
-      //BConds_t* bconds = DataSet_GetBConds(dataset) ;
-      
-      //Mesh_SetMatrixRowColumnIndexes(mesh,bconds) ;
-    }
+
   /* Print */
     {
       Options_t* options = DataSet_GetOptions(dataset) ;

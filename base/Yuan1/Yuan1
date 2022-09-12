@@ -47,7 +47,7 @@ Region = 3 Unknown = psi            Field = 0 Function = 0
 
 Loads
 1
-Region = 3 Equation = sulfur  Type = flux  Field = 8 Function = 3
+Region = 3 Equation = sulfur  Type = cumulflux  Field = 8 Function = 3
 
 Points
 3
@@ -67,9 +67,6 @@ c_cl      = 1.e-2
 
 Iterative Process
 Iter = 40 Tol = 1.e-4 Recom = 0
-
-Time Steps
-
 
 
 Time Steps

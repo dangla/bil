@@ -18,6 +18,7 @@ extern void          (Context_Delete)(void*) ;
 #define Context_GetPrintModule(CTX)        ((CTX)->printmodule)
 #define Context_GetPrintUsage(CTX)         ((CTX)->printusage)
 #define Context_GetReadOnly(CTX)           ((CTX)->readonly)
+#define Context_GetCreateInputFile(CTX)    ((CTX)->create)
 #define Context_GetInversePermutation(CTX) ((CTX)->invperm)
 #define Context_GetPostProcessing(CTX)     ((CTX)->postprocess)
 #define Context_GetSolver(CTX)             ((CTX)->solver)
@@ -56,6 +57,9 @@ extern void          (Context_Delete)(void*) ;
 #define Context_IsReadOnly(CTX) \
         Context_GetReadOnly(CTX)
 
+#define Context_IsCreateInputFile(CTX) \
+        Context_GetCreateInputFile(CTX)
+
 #define Context_IsInversePermutation(CTX) \
         Context_GetInversePermutation(CTX)
 
@@ -74,6 +78,9 @@ extern void          (Context_Delete)(void*) ;
 #define Context_IsNodalOrdering(CTX) \
         Context_GetNodalOrdering(CTX)
 
+#define Context_IsUseModule(CTX) \
+        Context_GetUseModule(CTX)
+
 #define Context_IsTest(CTX) \
         Context_GetTest(CTX)
 
@@ -90,6 +97,7 @@ struct Context_s {        /* Context */
   void*   printmodule ;
   void*   printusage ;
   void*   readonly ;
+  void*   create ;
   void*   invperm ;
   void*   postprocess ;
   void*   solver ;

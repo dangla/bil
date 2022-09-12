@@ -363,7 +363,6 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       } else {
         Message_FatalError("Unknown model") ;
       }
-      
     }
 
 #if 0

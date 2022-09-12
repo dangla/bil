@@ -65,7 +65,7 @@ void (Bil_Delete)(void* self)
 
 
 
-int (Bil_Main)(Bil_t* bil)
+int (Bil_Execute)(Bil_t* bil)
 {
   int val = 0 ;
   
@@ -163,6 +163,22 @@ void Bil_CLI(Bil_t* bil)
     
     DataSet_Delete(dataset) ;
     free(dataset) ;
+    return ;
+  }
+  
+  if(Context_IsCreateInputFile(ctx)) {
+    char* filename = ((char**) Context_GetInputFileName(ctx))[0] ;
+    FILE* str = fopen(filename,"r") ;
+    
+    if(!str) {
+      Help_WriteData(filename) ;
+      Message_Info("To start the computation, type bil %s\n",filename) ;
+    } else {
+      fclose(str) ;
+      Message_Info("File %s already exists.\n",filename) ;
+      Message_Exit ;
+    }
+    
     return ;
   }
   

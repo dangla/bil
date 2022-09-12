@@ -454,10 +454,17 @@ enum {
 #define dInterfaceCrystalGrowthRate(beta,beta_i) \
         (dCrystalGrowthRate(ai_AFt,di_AFt,(beta_i)/(beta)) / (beta))
 
-#define CrystalGrowthRate(crys,diss,ateb) \
-        ((((ateb) < 1) ? (crys) : (diss)) * (1 - (ateb)))
-#define dCrystalGrowthRate(crys,diss,ateb) \
-        ((((ateb) < 1) ? (crys) : (diss)) * (-1))
+//#define CrystalGrowthRate(crys,diss,ateb) \
+//        ((((ateb) < 1) ? (crys) : (diss)) * (1 - (ateb)))
+//#define dCrystalGrowthRate(crys,diss,ateb) \
+//        ((((ateb) < 1) ? (crys) : (diss)) * (-1))
+
+#define NA    (1)    //(-0.066666667)
+#define NB    (1)    //(1.55)
+#define CrystalGrowthRate(C,D,A) \
+        ((((A) < 1) ? (C) : (-D)) * pow(fabs(1 - pow(A,NA)),NB))
+#define dCrystalGrowthRate(C,D,A) \
+        ((((A) < 1) ? (C) : (D)) * (-fabs(NA)*NB)*pow(A,NA-1)*pow(fabs(1 - pow(A,NA)),NB-1))
 
 
 /* Crystal - liquid interface

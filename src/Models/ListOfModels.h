@@ -1,6 +1,8 @@
 #ifndef LISTOFMODELS_H
 #define LISTOFMODELS_H
-#define ListOfModels_NbOfModels  36
-#define ListOfModels_Methods(m)  Elast##m,Plast##m,Elasd##m,M1##m,M10##m,M2##m,M5##m,M28##m,DWS1##m,Cryspom##m,M7##m,M52##m,Frostaco##m,Frostaco3d##m,M15##m,usoil##m,hydrapel##m,Poroplast##m,Duracem##m,Chloricem##m,Carbocem##m,Carbochloricem##m,Carbochloricemkin##m,Carbocempg##m,Shen##m,CO2coal##m,Gascoal##m,Yuan1##m,Fick##m,Sulfuricem##m,Sulfaco##m,Sulfacocl##m,Sulfaco3d##m,MechaMic##m,CHMBWP##m,CHMBWPCoupledHomoV2##m
-#define ListOfModels_ModelNames  "Elast","Plast","Elasd","M1","M10","M2","M5","M28","DWS1","Cryspom","M7","M52","Frostaco","Frostaco3d","M15","usoil","hydrapel","Poroplast","Duracem","Chloricem","Carbocem","Carbochloricem","Carbochloricemkin","Carbocempg","Shen","CO2coal","Gascoal","Yuan1","Fick","Sulfuricem","Sulfaco","Sulfacocl","Sulfaco3d","MechaMic","CHMBWP","CHMBWPCoupledHomoV2"
+
+#define ListOfModels_Nb          36
+#define ListOfModels_Methods(m)  CHMBWP##m,CHMBWPCoupledHomoV2##m,CO2coal##m,Carbocem##m,Carbocempg##m,Carbochloricem##m,Carbochloricemkin##m,Chloricem##m,Cryspom##m,DWS1##m,Duracem##m,Elasd##m,Elast##m,Fick##m,Frostaco##m,Frostaco3d##m,Gascoal##m,M1##m,M10##m,M15##m,M2##m,M28##m,M5##m,M52##m,M7##m,MechaMic##m,Plast##m,Poroplast##m,Shen##m,Sulfaco##m,Sulfaco3d##m,Sulfacocl##m,Sulfuricem##m,Yuan1##m,hydrapel##m,usoil##m
+#define ListOfModels_Names       "CHMBWP","CHMBWPCoupledHomoV2","CO2coal","Carbocem","Carbocempg","Carbochloricem","Carbochloricemkin","Chloricem","Cryspom","DWS1","Duracem","Elasd","Elast","Fick","Frostaco","Frostaco3d","Gascoal","M1","M10","M15","M2","M28","M5","M52","M7","MechaMic","Plast","Poroplast","Shen","Sulfaco","Sulfaco3d","Sulfacocl","Sulfuricem","Yuan1","hydrapel","usoil"
+
 #endif
