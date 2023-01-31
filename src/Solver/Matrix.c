@@ -14,8 +14,11 @@
 #include "NCFormat.h"
 #include "CoordinateFormat.h"
 
-#ifdef SUPERLULIB
+#if defined (SUPERLULIB) || defined (SUPERLUMTLIB) || defined (SUPERLUDISTLIB)
+  #define SUPERLU
   #include "SuperLUFormat.h"
+#else
+  #undef SUPERLU
 #endif
 
 
@@ -74,7 +77,7 @@ Matrix_t*   (Matrix_Create)(Mesh_t* mesh,Options_t* options,const int imatrix)
       Matrix_GetNonZeroValue(a) = LDUSKLFormat_GetNonZeroValue(askl) ;
     
     /* SuperLU format */
-    #ifdef SUPERLULIB
+    #ifdef SUPERLU
     } else if(Matrix_StorageFormatIs(a,SuperLU)) {
       SuperLUFormat_t* aslu = SuperLUFormat_Create(mesh,imatrix) ;
       NCFormat_t*  asluNC = (NCFormat_t*) SuperLUFormat_GetStorage(aslu) ;
@@ -156,7 +159,7 @@ void (Matrix_Delete)(void* self)
       }
     
     /* SuperLU format */
-    #ifdef SUPERLULIB
+    #ifdef SUPERLU
     } else if(Matrix_StorageFormatIs(a,SuperLU)) {
       SuperLUFormat_t* aslu = (SuperLUFormat_t*) storage ;
     
@@ -216,7 +219,7 @@ void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
     LDUSKLFormat_AssembleElementMatrix(askl,ke,col,row,ndof) ;
     return ;
     
-#ifdef SUPERLULIB
+#ifdef SUPERLU
   /* CCS format (or Harwell-Boeing format) used in SuperLU */
   } else if(Matrix_StorageFormatIs(a,SuperLU)) {
     SuperLUFormat_t* aslu   = (SuperLUFormat_t*) Matrix_GetStorage(a) ;
@@ -254,7 +257,7 @@ void Matrix_PrintMatrix(Matrix_t* a,const char* keyword)
     
     LDUSKLFormat_PrintMatrix(askl,nrows,keyword) ;
     
-#ifdef SUPERLULIB
+#ifdef SUPERLU
   /* format Harwell-Boeing de SuperLU */
   } else if(Matrix_StorageFormatIs(a,SuperLU)) {
     SuperLUFormat_t* aslu   = (SuperLUFormat_t*) Matrix_GetStorage(a) ;

@@ -95,6 +95,11 @@ enum TypeId_e {
   TypeId_Units_t,
   TypeId_View_t,
   TypeId_Views_t,
+  /* from SuperLU_DIST */
+  TypeId_dScalePermstruct_t,
+  TypeId_dLUstruct_t,
+  TypeId_gridinfo_t,
+  /* The end */
   TypeId_last
 } ;
 

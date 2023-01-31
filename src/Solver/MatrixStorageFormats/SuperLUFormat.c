@@ -11,8 +11,11 @@
 
 #include "NCFormat.h"
 
-#ifdef SUPERLULIB
-#include "SuperLUFormat.h"
+#if defined (SUPERLULIB) || defined (SUPERLUMTLIB) || defined (SUPERLUDISTLIB)
+  #define SUPERLU
+  #include "SuperLUFormat.h"
+#else
+  #undef SUPERLU
 #endif
 
 
@@ -21,7 +24,7 @@
 /* Extern functions */
 
 
-#ifdef SUPERLULIB
+#ifdef SUPERLU
 
 SuperLUFormat_t* (SuperLUFormat_Create)(Mesh_t* mesh,const int imatrix)
 /* Create a matrix in SuperLUFormat format */

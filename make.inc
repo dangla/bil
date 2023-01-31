@@ -29,7 +29,7 @@ DFLAGS = -iquote${BIL_PATH} -D '__BASEFILE__=${basename ${notdir $@}}'
 
 # Preprocessor flags
 #-------------------
-IFLAGS-SRC = -iprefix ${BIL_PATH}/src/ -iwithprefix . -iwithprefix Common -iwithprefix DataSet -iwithprefix Help -iwithprefix Libraries -iwithprefix Macros -iwithprefix Main -iwithprefix Models -iwithprefix Modules -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools -iwithprefix Parser
+IFLAGS-SRC = -iprefix ${BIL_PATH}/src/ -iwithprefix . -iwithprefix Common -iwithprefix DataSet -iwithprefix Help -iwithprefix Libraries -iwithprefix Macros -iwithprefix Main -iwithprefix Models -iwithprefix Modules -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools -iwithprefix Parser -iwithprefix MultiThreading
 
 IFLAGS-SOLVER = -iprefix ${BIL_PATH}/src/Solver/ -iwithprefix MatrixStorageFormats -iwithprefix ResolutionMethods
 
@@ -43,9 +43,23 @@ IFLAGS-MODULES =  -iprefix ${BIL_PATH}/src/Modules/ -iwithprefix .
 IFLAGS = ${IFLAGS-SRC} ${IFLAGS-SOLVER} ${IFLAGS-MODELS} ${IFLAGS-MODULES}
 
 
+# Option flags
+#-------------
+
+sinclude ${BIL_PATH}/make.config
+OFLAGS :=
+#${info ENABLE_OPENMP = ${ENABLE_OPENMP}}
+ifdef ENABLE_OPENMP
+  ifeq (${ENABLE_OPENMP},ON)
+    OFLAGS += -fopenmp
+    #${info OFLAGS = ${OFLAGS}}
+  endif
+endif
+
+
 # C/CPP compiler flags
 #---------------------
-CFLAGS = -pedantic ${DFLAGS} ${WFLAGS} ${IFLAGS} -fPIC
+CFLAGS = -pedantic ${DFLAGS} ${WFLAGS} ${IFLAGS} -fPIC ${OFLAGS}
 
 # C compiler flags for models
 CFLAGS-MODELS = ${CFLAGS} #${IFLAGS-MODELS}
@@ -75,7 +89,7 @@ LINKER = g++
 
 # Linker flags
 #-------------
-LFLAGS = -lgfortran
+LFLAGS = -lgfortran ${OFLAGS}
 
 
 

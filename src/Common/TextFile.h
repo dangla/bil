@@ -32,12 +32,6 @@ extern char*           (TextFile_StoreFileContent)(TextFile_t*) ;
  *  Function-like macros
  */
 
-#define TextFile_AllocateInBuffer(TF,sz) \
-        Buffer_Allocate(TextFile_GetBuffer(TF),(sz))
-        
-#define TextFile_FreeBuffer(TF) \
-        Buffer_Free(TextFile_GetBuffer(TF))
-
 #define TextFile_Rewind(TF) \
         do { \
           rewind(TextFile_GetFileStream(TF)) ; \
@@ -86,14 +80,6 @@ extern char*           (TextFile_StoreFileContent)(TextFile_t*) ;
 #define TextFile_GetCurrentPositionInString(TF)    ((TF)->curstrpos)
 
 
-/* Not used
-#define TextFile_GetTextLine(TF)          ((TF)->line)
-#define TextFile_GetBuffer(TF)            ((TF)->buffer)
-#define TextFile_GetNbOfCharacters(TF)    ((TF)->ccount)
-#define TextFile_GetNbOfWords(TF)         ((TF)->wcount)
-#define TextFile_GetNbOfLines(TF)         ((TF)->lcount)
-#define TextFile_GetMaxNbOfCharactersPerLine(TF)    ((TF)->linelength)
-*/
 
 #define TextFile_GetCurrentPositionInFileContent(TF) \
         (TextFile_GetFileContent(TF) + TextFile_GetCurrentPositionInString(TF))

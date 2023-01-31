@@ -59,9 +59,10 @@ static double* MacroGradient(Element_t*,double) ;
 static double* MacroStrain(Element_t*,double) ;
 
 
-#define ComputeFunctionGradients(...)     Damage_ComputeFunctionGradients(damage,__VA_ARGS__)
+#define ComputeTangentStiffnessTensor(...)     Damage_ComputeTangentStiffnessTensor(damage,__VA_ARGS__)
 #define ReturnMapping(...)                Damage_ReturnMapping(damage,__VA_ARGS__)
-#define CopyStiffnessTensor(...)          Damage_CopyStiffnessTensor(damage,__VA_ARGS__)
+#define CopyTangentStiffnessTensor(...)          Damage_CopyTangentStiffnessTensor(damage,__VA_ARGS__)
+#define CopyDamagedStiffnessTensor(...)          Damage_CopyDamagedStiffnessTensor(damage,__VA_ARGS__)
 #define UpdateTangentStiffnessTensor(...) Damage_UpdateTangentStiffnessTensor(damage,__VA_ARGS__)
 
 
@@ -72,6 +73,7 @@ static double* sig0 ;
 static double  hardv0 ;
 static double  macrogradient[9] ;
 static double  macrostrain[9] ;
+static double* cdamaged ;
 static double* cijkl ;
 static Damage_t* damage ;
 static int     damagemodel ;
@@ -244,8 +246,9 @@ void GetProperties(Element_t* el,double t)
   
   damage = Element_FindMaterialData(el,Damage_t,"Damage") ;
   {
-    cijkl   = Damage_GetStiffnessTensor(damage) ;
-    hardv0  = Damage_GetHardeningVariable(damage)[0] ;
+    cdamaged = Damage_GetDamagedStiffnessTensor(damage) ;
+    cijkl    = Damage_GetTangentStiffnessTensor(damage) ;
+    hardv0   = Damage_GetHardeningVariable(damage)[0] ;
   }
 }
 
@@ -797,20 +800,22 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
     {
       double* c1 = c0 ;
       
-      CopyStiffnessTensor(c1) ;
-      
       /* Tangent stiffness matrix */
       {
+        /* Strains */
+        double* eps = x + I_EPS ;
         /* Criterion */
         double crit = CRIT ;
         
         if(crit >= 0.) {
-          /* Strains */
-          double* eps = x + I_EPS ;
-          double crit1 = ComputeFunctionGradients(eps,&DAMAGE,&HARDV) ;
-          double fcg = UpdateTangentStiffnessTensor(c1) ;
           
-          if(fcg < 0) return(-1) ;
+          ComputeTangentStiffnessTensor(eps,&DAMAGE,&HARDV) ;
+          CopyTangentStiffnessTensor(c1) ;
+          
+        } else {
+          
+          ReturnMapping(eps,&DAMAGE,&HARDV) ;
+          CopyDamagedStiffnessTensor(c1) ;
         }
       }
     }
@@ -943,17 +948,19 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       }
     
       /* Stresses */
-      #define C(i,j)  (cijkl[(i)*9+(j)])
-      for(i = 0 ; i < 9 ; i++) {
-        int  j ;
+      {
+        #define C(i,j)  (cdamaged[(i)*9+(j)])
+        for(i = 0 ; i < 9 ; i++) {
+          int  j ;
       
-        for(j = 0 ; j < 9 ; j++) {
-          sig[i] += C(i,j)*eps[j] ;
+          for(j = 0 ; j < 9 ; j++) {
+            sig[i] += C(i,j)*eps[j] ;
+          }
         }
+        #undef C
       }
-      #undef C
       
-      //Damage_PrintStiffnessTensor(damage) ;
+      //Damage_PrintTangentStiffnessTensor(damage) ;
     }
   }
   

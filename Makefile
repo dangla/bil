@@ -83,6 +83,10 @@ BIL_LIBS += ${BIL_EXTRALIBS}
 include make.inc
 
 
+# Options file
+BILCONFIG_H := BilConfig.h
+
+
 #=======================================================================
 # Default target executed when no arguments are given to make.
 all: bin doc
@@ -92,12 +96,12 @@ all: bin doc
 # Target rules for binaries
 
 .PHONY: bin
-bin: make.inc path_init version_init info_init lib compile link
+bin: make.inc path_init version_init info_init config_init lib compile link
 
 compile: make.inc path_init version_init info_init lib
 	@echo "\nCompilation"
 	mkdir -p ${BIL_LIBDIR}
-	for i in ${BIL_DIRS}; do (cd $$i && ${MAKE}); done
+	for i in ${BIL_DIRS}; do ( ${MAKE} -C $$i ); done
 
 link: make.inc
 	@echo "\nLinking with embedded location of shared libraries (rpath method), if any"
@@ -141,7 +145,7 @@ install-liba:
 
 install-doc:
 	@echo "\nInstalling documentations"
-	cd doc && ${MAKE} install-doc
+	( ${MAKE} -C doc install-doc )
 
 
 #=======================================================================
@@ -149,7 +153,7 @@ install-doc:
 
 clean:
 	@echo "\nCleaning directories (removing binaries,...)"
-	for i in ${BIL_DIRS} doc examples base; do (cd $$i && ${MAKE} clean); done
+	for i in ${BIL_DIRS} doc examples base; do (${MAKE} -C $$i clean); done
 	rm -f make.log
 	@echo "\nRemoving libraries"
 	rm -f ${BIL_LIBDIR}/*.a
@@ -164,7 +168,8 @@ clean-all: clean
 	rm -f ${BILINFO_H} 
 	rm -f ${BILEXTRALIBS_H}
 	rm -f ${BILPATH_H}
-	cd doc && ${MAKE} clean-all
+	rm -f ${BILCONFIG_H}
+	( ${MAKE} -C doc clean-all )
 
 
 #=======================================================================
@@ -233,16 +238,43 @@ lib:
 	touch ${BILEXTRALIBS_H}
 	echo "#ifndef BILEXTRALIBS_H"    >>  ${BILEXTRALIBS_H}
 	echo "#define BILEXTRALIBS_H"    >>  ${BILEXTRALIBS_H}
-	@if [ -n "${SUPERLU_DIR}" ]; then \
-	  echo "#define SUPERLULIB  ${SUPERLU_DIR}" >> ${BILEXTRALIBS_H} ; \
-	fi
-	@if [ -n "${BLAS_DIR}" ] ; then \
-	  echo "#define BLASLIB     ${BLAS_DIR}"    >> ${BILEXTRALIBS_H} ; \
-	fi
-	@if [ -n "${LAPACK_DIR}" ] ; then \
+	if [ -n "${LAPACK_DIR}" ] ; then \
 	  echo "#define LAPACKLIB   ${LAPACK_DIR}"  >> ${BILEXTRALIBS_H} ; \
 	fi
+	if [ -n "${BLAS_DIR}" ] ; then \
+	  echo "#define BLASLIB     ${BLAS_DIR}"    >> ${BILEXTRALIBS_H} ; \
+	fi
+	if [ -n "${GSLCBLAS_DIR}" ] ; then \
+	  echo "#define GSLCBLASLIB     ${GSLCBLAS_DIR}"    >> ${BILEXTRALIBS_H} ; \
+	fi
+	if [ -n "${SUPERLU_DIR}" ]; then \
+	  echo "#define SUPERLULIB  ${SUPERLU_DIR}" >> ${BILEXTRALIBS_H} ; \
+	fi
+	if [ -n "${SUPERLUMT_DIR}" ]; then \
+	  echo "#define SUPERLUMTLIB  ${SUPERLUMT_DIR}" >> ${BILEXTRALIBS_H} ; \
+	fi
 	echo "#endif"    >>  ${BILEXTRALIBS_H}
+
+
+#=======================================================================
+# Target rules for config file
+
+config:
+	rm -f ${BILCONFIG_H}
+	touch ${BILCONFIG_H}
+	echo "#ifndef BILCONFIG_H"    >>  ${BILCONFIG_H}
+	echo "#define BILCONFIG_H"    >>  ${BILCONFIG_H}
+	if [ ${ENABLE_OPENMP} = ON ]; then \
+	  echo "#define HAVE_OPENMP" >> ${BILCONFIG_H} ; \
+	fi
+	if [ ${ENABLE_PTHREAD} = ON ]; then \
+	  echo "#define HAVE_PTHREAD" >> ${BILCONFIG_H} ; \
+	fi
+	echo "#endif"    >>  ${BILCONFIG_H}
+
+config_init:
+	@if [ ! -r ${BILCONFIG_H} ]; then ${MAKE} config ; fi
+
 
 
 #=======================================================================
@@ -284,7 +316,7 @@ githelp:
 # Target rules for tests
 
 test:
-	@( cd base; pwd )
+	@( echo "base:"; cd base; pwd )
 	@( echo "BIL_PATH = ${BIL_PATH}" )
 	@( echo "Last part of BIL_PATH = ${notdir ${BIL_PATH}}" )
 	@( echo "BIL_COPYRIGHT = ${BIL_COPYRIGHT}" )
@@ -293,6 +325,7 @@ test:
 	@( echo "BLAS_DIR = ${BLAS_DIR}" )
 	@( echo "LAPACK_DIR = ${LAPACK_DIR}" )
 	@( echo "UEL_DIR = ${UEL_DIR}" )
+	@( echo "CFLAGS = ${CFLAGS}" )
 	
 
 #=======================================================================

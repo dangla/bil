@@ -4,7 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "Buffer.h"
+#include "Buffers.h"
 #include "Geometry.h"
 #include "Nodes.h"
 #include "IntFcts.h"
@@ -74,7 +74,7 @@ Elements_t*  (Elements_New)(const int n,const int nc)
       Element_GetIntFct(el_i)            = NULL ;
       Element_GetUnknownPosition(el_i)   = NULL ;
       Element_GetEquationPosition(el_i)  = NULL ;
-      Element_GetBuffer(el_i)            = NULL ;
+      Element_GetBuffers(el_i)           = NULL ;
       Element_GetElementSol(el_i)        = NULL ;
     }
   }
@@ -112,14 +112,14 @@ void (Elements_Delete)(void* self)
     }
     
     {
-      Buffer_t* buf = Element_GetBuffer(el) ;
+      Buffers_t* buf = Element_GetBuffers(el) ;
     
       if(buf) {
-        Buffer_Delete(buf) ;
+        Buffers_Delete(buf) ;
         free(buf) ;
       }
       
-      Element_GetBuffer(el) = NULL ;
+      Element_GetBuffers(el) = NULL ;
     }
     
     free(el) ;
@@ -221,12 +221,12 @@ void (Elements_CreateMore)(Elements_t* elements)
 
   /* Space allocation for buffer */
   {
-    Buffer_t* buf = Buffer_Create(Element_SizeOfBuffer) ;
+    Buffers_t* buf = Buffers_Create(Element_SizeOfBuffer) ;
     int ie ;
   
     /* ATTENTION: same memory space (buffer) for all the elements */
     for(ie = 0 ; ie < n_el ; ie++) {
-      Element_GetBuffer(el + ie) = buf ;
+      Element_GetBuffers(el + ie) = buf ;
     }
   }
   

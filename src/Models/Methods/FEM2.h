@@ -30,20 +30,32 @@ extern void     (FEM2_InitializeMicrostructureDataSet)(FEM2_t*) ;
 #define FEM2_GetSolvers(F2)                      ((F2)->solvers)
 #define FEM2_GetCurrentSolutions(F2)             ((F2)->sols)
 #define FEM2_GetPreviousSolutions(F2)            ((F2)->sols_n)
-#define FEM2_GetBuffer(F2)                       ((F2)->buffer)
+#define FEM2_GetBuffers(F2)                      ((F2)->buffers)
 
 
 #define FEM2_GetSolver(F2) \
         Solvers_GetSolver(FEM2_GetSolvers(F2))
 
 
-#define FEM2_AllocateInBuffer(F2,sz)         (Buffer_Allocate(FEM2_GetBuffer(F2),(sz)))
-#define FEM2_FreeBuffer(F2)                  (Buffer_Free(FEM2_GetBuffer(F2)))
-#define FEM2_FreeBufferFrom(F2,p)            (Buffer_FreeFrom(FEM2_GetBuffer(F2),(char*) (p)))
+
+/* Buffer */
+#define FEM2_GetBuffer(F2) \
+        Buffers_GetBufferOfCurrentThread(FEM2_GetBuffers(F2))
+        
+        
+
+#define FEM2_AllocateInBuffer(F2,sz) \
+        (Buffer_Allocate(FEM2_GetBuffer(F2),(sz)))
+        
+#define FEM2_FreeBuffer(F2) \
+        (Buffer_Free(FEM2_GetBuffer(F2)))
+        
+#define FEM2_FreeBufferFrom(F2,p) \
+        (Buffer_FreeFrom(FEM2_GetBuffer(F2),(char*) (p)))
 
 
 
-#include "Buffer.h"
+#include "Buffers.h"
 #include "GenericObject.h"
 
 struct FEM2_s {               /* (FEM)^2 */
@@ -51,7 +63,7 @@ struct FEM2_s {               /* (FEM)^2 */
   Solvers_t* solvers ;
   Solutions_t* sols ;
   Solutions_t* sols_n ;
-  Buffer_t*  buffer ;         /* Buffer */
+  Buffers_t*  buffers ;         /* Buffer */
   GenericObject_Delete_t* Delete ;
 } ;
 

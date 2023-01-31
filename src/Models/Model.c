@@ -302,6 +302,7 @@ double* (Model_ComputeVariableDerivatives)(Element_t* el,double t,double dt,doub
   
   {
     double* x  = Model_GetVariable(model,n) ;
+    double* xn = Model_GetPreviousVariable(model,n) ;
     double* dx = Model_GetVariableDerivative(model,n) ;
     int j ;
   
@@ -314,7 +315,7 @@ double* (Model_ComputeVariableDerivatives)(Element_t* el,double t,double dt,doub
     {
       Model_ComputeSecondaryVariables_t* computesecondaryvariables = Model_GetComputeSecondaryVariables(model) ;
       
-      computesecondaryvariables(el,t,dt,dx) ;
+      computesecondaryvariables(el,t,dt,xn,dx) ;
     }
   
     for(j = 0 ; j < NbOfVariables ; j++) {

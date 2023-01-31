@@ -96,16 +96,27 @@ extern double   FEM_ComputeVolume(Mesh_t*) ;
 #define FEM_GetInput(fem)                        ((fem)->input)
 #define FEM_GetOutput(fem)                       ((fem)->output)
 #define FEM_GetShiftOfInput(fem)                 ((fem)->shift)
-#define FEM_GetBuffer(fem)                       ((fem)->buffer)
-
-
-#define FEM_AllocateInBuffer(fem,sz)         (Buffer_Allocate(FEM_GetBuffer(fem),(sz)))
-#define FEM_FreeBuffer(fem)                  (Buffer_Free(FEM_GetBuffer(fem)))
-#define FEM_FreeBufferFrom(fem,p)            (Buffer_FreeFrom(FEM_GetBuffer(fem),(char*) (p)))
+#define FEM_GetBuffers(fem)                      ((fem)->buffers)
 
 
 
-#include "Buffer.h"
+/* Buffer */
+#define FEM_GetBuffer(fem) \
+        Buffers_GetBufferOfCurrentThread(FEM_GetBuffers(fem))
+        
+
+#define FEM_AllocateInBuffer(fem,sz) \
+        (Buffer_Allocate(FEM_GetBuffer(fem),(sz)))
+        
+#define FEM_FreeBuffer(fem) \
+        (Buffer_Free(FEM_GetBuffer(fem)))
+        
+#define FEM_FreeBufferFrom(fem,p) \
+        (Buffer_FreeFrom(FEM_GetBuffer(fem),(char*) (p)))
+
+
+
+#include "Buffers.h"
 #include "GenericObject.h"
 
 struct FEM_s {                /* Finite Element Method */
@@ -114,7 +125,7 @@ struct FEM_s {                /* Finite Element Method */
   void*      input ;
   void*      output ;
   int        shift ;
-  Buffer_t*  buffer ;         /* Buffer */
+  Buffers_t* buffers ;        /* Buffers */
   GenericObject_Delete_t* Delete ;
 } ;
 

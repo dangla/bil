@@ -1,0 +1,12 @@
+#ifndef BILCONFIG_H
+#define BILCONFIG_H
+
+#cmakedefine HAVE_OPENMP
+#cmakedefine HAVE_PTHREAD
+#cmakedefine HAVE_MPI
+
+//#define BIL_CONFIG_OPTIONS "${BIL_CONFIG_OPTIONS}"
+
+//${BIL_CONFIG_PRAGMAS}
+
+#endif

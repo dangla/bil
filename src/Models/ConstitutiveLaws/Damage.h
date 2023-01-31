@@ -8,8 +8,7 @@ struct Damage_s     ; typedef struct Damage_s     Damage_t ;
 
 
 /* Typedef names of methods */
-typedef double  (Damage_ComputeFunctionGradients_t)(Damage_t*,const double*,const double*,const double*) ;
-typedef double  (Damage_Criterion_t)(Damage_t*,const double*,const double*) ;
+typedef double  (Damage_ComputeTangentStiffnessTensor_t)(Damage_t*,const double*,const double*,const double*) ;
 typedef double  (Damage_ReturnMapping_t)(Damage_t*,double*,double*,double*) ;
 
 
@@ -21,8 +20,9 @@ extern void           (Damage_Initialize)                  (Damage_t*) ;
 extern void           (Damage_SetParameters)               (Damage_t*,...) ;
 extern void           (Damage_SetParameter)                (Damage_t*,const char*,double) ;
 extern double         (Damage_UpdateTangentStiffnessTensor)(Damage_t*,double*) ;
-extern void           (Damage_PrintStiffnessTensor)        (Damage_t*) ;
-extern void           (Damage_CopyStiffnessTensor)         (Damage_t*,double*) ;
+extern void           (Damage_PrintTangentStiffnessTensor) (Damage_t*) ;
+extern void           (Damage_CopyTangentStiffnessTensor)  (Damage_t*,double*) ;
+extern void           (Damage_CopyDamagedStiffnessTensor)  (Damage_t*,double*) ;
 //extern Damage_ComputeFunctionGradients_t     Damage_Criterion ;
 //extern Damage_ReturnMapping_t                Damage_ReturnMapping ;
 
@@ -38,11 +38,11 @@ extern void           (Damage_CopyStiffnessTensor)         (Damage_t*,double*) ;
 #define Damage_GetFjiCijkl(D)                   ((D)->fc)
 #define Damage_GetCijklGlk(D)                   ((D)->cg)
 #define Damage_GetFjiCijklGlk(D)                ((D)->fcg)
-#define Damage_GetTangentStiffnessTensor(D)     ((D)->cijkl)
-#define Damage_GetStiffnessTensor(D)            ((D)->cijkl)
+#define Damage_GetDamagedStiffnessTensor(D)     ((D)->cdamaged)
+#define Damage_GetTangentStiffnessTensor(D)     ((D)->ctangent)
 #define Damage_GetElasticity(D)                 ((D)->elasty)
 #define Damage_GetParameter(D)                  ((D)->parameter)
-#define Damage_GetComputeFunctionGradients(D)   ((D)->computefunctiongradients)
+#define Damage_GetComputeTangentStiffnessTensor(D)   ((D)->computetangentstiffnesstensor)
 #define Damage_GetReturnMapping(D)              ((D)->returnmapping)
 
 
@@ -149,8 +149,8 @@ extern void           (Damage_CopyStiffnessTensor)         (Damage_t*,double*) ;
         
         
 /* Shorthands */
-#define Damage_ComputeFunctionGradients(D,...) \
-        Damage_GetComputeFunctionGradients(D)(D,__VA_ARGS__)
+#define Damage_ComputeTangentStiffnessTensor(D,...) \
+        Damage_GetComputeTangentStiffnessTensor(D)(D,__VA_ARGS__)
         
 #define Damage_ReturnMapping(D,...) \
         Damage_GetReturnMapping(D)(D,__VA_ARGS__)
@@ -160,6 +160,10 @@ extern void           (Damage_CopyStiffnessTensor)         (Damage_t*,double*) ;
         
 #define Damage_CopyElasticTensor(D,...) \
         Elasticity_CopyStiffnessTensor(Damage_GetElasticity(D),__VA_ARGS__)
+
+
+#define Damage_ComputeFunctionGradients \
+        Damage_ComputeTangentStiffnessTensor
         
 
 
@@ -183,11 +187,12 @@ struct Damage_s {
   double* fc ;     /** fc(k,l) = dfsds(j,i) * C(i,j,k,l) */
   double* cg ;     /** cg(i,j) = C(i,j,k,l) * dgsds(l,k) */
   double  fcg ;    /** fcg = hardm + dfsds(j,i) * C(i,j,k,l) * dgsds(l,k)) */
-  double* cijkl ;  /** Stiffness tensor of the damaged material */
+  double* cdamaged ;  /** Damaged stiffness tensor */
+  double* ctangent ;  /** Tangent stiffness tensor */
   double* parameter ;
   GenericData_t* genericdata ;  /** Damage properties */
   Elasticity_t* elasty ;
-  Damage_ComputeFunctionGradients_t*  computefunctiongradients ;
+  Damage_ComputeTangentStiffnessTensor_t*  computetangentstiffnesstensor ;
   Damage_ReturnMapping_t*             returnmapping ;
 } ;
 

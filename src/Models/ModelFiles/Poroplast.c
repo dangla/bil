@@ -17,7 +17,7 @@
 /* Nb of equations */
 #define NEQ     (1+dim)
 /* Nb of (im/ex)plicit terms and constant terms */
-#define NVI     (27)
+#define NVI     (28)
 #define NVE     (1)
 #define NV0     (0)
 
@@ -30,21 +30,22 @@
 #define U_u     (1)
 
 /* We define some names for implicit terms */
-#define M_L           (vim[0])
+#define M_L           (vim)[0]
 #define W_L           (vim + 1)
 #define SIG           (vim + 4)
 #define F_MASS        (vim + 13)
 #define EPS_P         (vim + 16)
-#define HARDV         (vim[25])
-#define CRIT          (vim[26])
+#define HARDV         (vim + 25)[0]
+#define CRIT          (vim + 26)[0]
+#define DLAMBDA       (vim + 27)[0]
 
-#define M_L_n         (vim_n[0])
+#define M_L_n         (vim_n)[0]
 #define SIG_n         (vim_n + 4)
 #define EPS_P_n       (vim_n + 16)
-#define HARDV_n       (vim_n[25])
+#define HARDV_n       (vim_n + 25)[0]
 
 /* We define some names for explicit terms */
-#define K_L           (vex[0])
+#define K_L           (vex)[0]
 
 /* We define some names for constant terms */
 
@@ -58,14 +59,15 @@ static int    ComputeTransferCoefficients(FEM_t*,double,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double**,double*,double,double,int) ;
 //static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
-static int     ComputeSecondaryVariables(Element_t*,double,double,double*) ;
+static int     ComputeSecondaryVariables(Element_t*,double,double,double*,double*) ;
 //static double* ComputeVariablesDerivatives(Element_t*,double,double,double*,double,int) ;
 
 
-#define ComputeFunctionGradients(...)  Plasticity_ComputeFunctionGradients(plasty,__VA_ARGS__)
+#define ComputeTangentStiffnessTensor(...)  Plasticity_ComputeTangentStiffnessTensor(plasty,__VA_ARGS__)
 #define ReturnMapping(...)             Plasticity_ReturnMapping(plasty,__VA_ARGS__)
 #define CopyElasticTensor(...)         Plasticity_CopyElasticTensor(plasty,__VA_ARGS__)
 #define UpdateElastoplasticTensor(...) Plasticity_UpdateElastoplasticTensor(plasty,__VA_ARGS__)
+#define CopyTangentStiffnessTensor(...)     Plasticity_CopyTangentStiffnessTensor(plasty,__VA_ARGS__)
 
 
 /* Parameters */
@@ -97,31 +99,38 @@ static int     plasticmodel ;
 #define GetProperty(a)      Element_GetPropertyValue(el,a)
 
 
-#define NbOfVariables     (76)
+/* We define some indices for the local variables */
+enum {
+I_U      = 0,
+I_U2     = I_U + 2,
+I_P_L,
+I_EPS,
+I_EPS8   = I_EPS + 8,
+I_SIG,
+I_SIG8   = I_SIG + 8,
+I_EPS_P,
+I_EPS_P8 = I_EPS_P + 8,
+I_Fmass,
+I_Fmass2 = I_Fmass + 2,
+I_M_L,
+I_W_L,
+I_W_L2 = I_W_L + 2,
+I_HARDV,
+I_CRIT,
+I_RHO_L,
+I_PHI,
+I_K_H,
+I_GRD_P_L,
+I_GRD_P_L2 = I_GRD_P_L + 2,
+I_DLAMBDA,
+I_Last
+} ;
+
+#define NbOfVariables     (I_Last)
 static double  Variable[NbOfVariables] ;
+static double  Variable_n[NbOfVariables] ;
 //static double dVariable[NbOfVariables] ;
 
-#define I_U            (0)
-#define I_P_L          (3)
-
-#define I_EPS          (4)
-
-#define I_SIG          (13)
-#define I_EPS_P        (22)
-#define I_EPS_n        (31)
-#define I_EPS_P_n      (40)
-#define I_Fmass        (49)
-#define I_M_L          (52)
-#define I_W_L          (53)
-#define I_HARDV        (56)
-#define I_CRIT         (57)
-#define I_RHO_L        (58)
-#define I_PHI          (59)
-#define I_P_Ln         (60)
-#define I_K_H          (61)
-#define I_GRD_P_L      (62)
-#define I_SIG_n        (65)
-#define I_HARDV_n      (75)
 
 
 int pm(const char *s)
@@ -487,6 +496,7 @@ int ComputeInitialState(Element_t* el)
     
       CRIT = x[I_CRIT] ;
       HARDV = x[I_HARDV] ;
+      DLAMBDA = x[I_DLAMBDA] ;
     }
     
     
@@ -587,6 +597,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
     
       CRIT = x[I_CRIT] ;
       HARDV = x[I_HARDV] ;
+      DLAMBDA = x[I_DLAMBDA] ;
     }
   }
   
@@ -921,7 +932,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
     //double pl  = x[I_P_L] ;
     
     /* Yield and potential function gradients */
-    double fcg = 0 ;
+    double roted = 0 ;
     
     /* Criterion */
     double crit = CRIT ;
@@ -951,17 +962,26 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
       {
         double* c1 = c0 ;
       
-        CopyElasticTensor(c1) ;
-      
         {
           /* Criterion */
           if(crit >= 0.) {
-            double hardv = HARDV ;
-            double crit1 = ComputeFunctionGradients(sig,&hardv) ;
-        
-            fcg = UpdateElastoplasticTensor(c1) ;
+            /* Continuum tangent stiffness matrix */
+            //ComputeTangentStiffnessTensor(sig,&HARDV) ;
+            /* Consistent tangent stiffness matrix */
+            ComputeTangentStiffnessTensor(sig,&HARDV,DLAMBDA) ;
+            
+            CopyTangentStiffnessTensor(c1) ;
+            
+            {
+              double fcg = Plasticity_GetFjiCijklGlk(plasty) ;
+              double hm  = Plasticity_GetHardeningModulus(plasty)[0] ;
+              
+              roted = 1/(hm + fcg) ;
+            }
           
-            if(fcg < 0) return(-1) ;
+          } else {
+      
+            CopyElasticTensor(c1) ;
           }
         }
       }
@@ -975,11 +995,11 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
       
         if(crit >= 0.) {
           double* dfsds = Plasticity_GetYieldFunctionGradient(plasty) ;
-          double* cg    = Plasticity_GetCijklGlk(plasty) ;
-          double trf    = dfsds[0] + dfsds[4] + dfsds[8] ;
+          double* cg = Plasticity_GetCijklGlk(plasty) ;
+          double trf = dfsds[0] + dfsds[4] + dfsds[8] ;
         
           for(i = 0 ; i < 9 ; i++) {
-            c1[i] -= cg[i]*(beta - b)*trf*fcg ;
+            c1[i] -= cg[i]*(beta - b)*trf*roted ;
           }
         }
       }
@@ -1001,11 +1021,11 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
       
         if(crit >= 0.) {
           double* dgsds = Plasticity_GetPotentialFunctionGradient(plasty) ;
-          double* fc    = Plasticity_GetFjiCijkl(plasty) ;
+          double* fc = Plasticity_GetFjiCijkl(plasty) ;
           double trg = dgsds[0] + dgsds[4] + dgsds[8] ;
       
           for(i = 0 ; i < 9 ; i++) {
-            c1[i] += rho_l*fc[i]*(beta - b)*trg*fcg ;
+            c1[i] += rho_l*fc[i]*(beta - b)*trg*roted ;
           }
         }
       }
@@ -1032,7 +1052,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
           double trg = dgsds[0] + dgsds[4] + dgsds[8] ;
           double trf = dfsds[0] + dfsds[4] + dfsds[8] ;
         
-          c1[0] += rho_l*(beta - b)*(beta - b)*trf*trg*fcg ;
+          c1[0] += rho_l*(beta - b)*(beta - b)*trf*trg*roted ;
         }
         //c1[0] = dx[I_M_L] ;
       }
@@ -1094,6 +1114,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
   int dim = Element_GetDimensionOfSpace(el) ;
 //  double*   x      = Model_GetVariable(model,p) ;
   double*   x      = Variable ;
+  double*   x_n    = Variable_n ;
   
     
   /* Primary Variables */
@@ -1146,18 +1167,18 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       double* vim_n = f_n + p*NVI ;
     
       for(i = 0 ; i < 9 ; i++) {
-        x[I_EPS_n   + i] = eps_n[i] ;
-        x[I_SIG_n   + i] = SIG_n[i] ;
-        x[I_EPS_P_n + i] = EPS_P_n[i] ;
+        x_n[I_EPS   + i] = eps_n[i] ;
+        x_n[I_SIG   + i] = SIG_n[i] ;
+        x_n[I_EPS_P + i] = EPS_P_n[i] ;
       }
       
-      x[I_HARDV_n] = HARDV_n ;
+      x_n[I_HARDV] = HARDV_n ;
       
       FEM_FreeBufferFrom(fem,eps_n) ;
     }
     
     /* Pressure at previous time step */
-    x[I_P_Ln] = FEM_ComputeUnknown(fem,u_n,intfct,p,U_p_l) ;
+    x_n[I_P_L] = FEM_ComputeUnknown(fem,u_n,intfct,p,U_p_l) ;
     
     /* Transfer coefficient */
     {
@@ -1168,33 +1189,33 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
     }
   }
     
-  ComputeSecondaryVariables(el,t,dt,x) ;
+  ComputeSecondaryVariables(el,t,dt,x_n,x) ;
   
   return(x) ;
 }
 
 
 
-int  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
+int  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,double* x)
 {
   int dim = Element_GetDimensionOfSpace(el) ;
   /* Strains */
   double* eps   =  x + I_EPS ;
-  double* eps_n =  x + I_EPS_n ;
+  double* eps_n =  x_n + I_EPS ;
   /* Plastic strains */
   double* eps_p  = x + I_EPS_P ;
-  double* eps_pn = x + I_EPS_P_n ;
+  double* eps_pn = x_n + I_EPS_P ;
   /* Pressure */
   double  pl   = x[I_P_L] ;
-  double  pl_n = x[I_P_Ln] ;
+  double  pl_n = x_n[I_P_L] ;
     
 
 
   /* Backup stresses, plastic strains */
   {
     double* sig   = x + I_SIG ;
-    double* sig_n = x + I_SIG_n ;
-    double  hardv = x[I_HARDV_n] ;
+    double* sig_n = x_n + I_SIG ;
+    double  hardv = x_n[I_HARDV] ;
     double  dpl   = pl - pl_n ;
     
     
@@ -1233,9 +1254,11 @@ int  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
       /* Projection */
       {
         double crit = ReturnMapping(sig,eps_p,&hardv) ;
+        double dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
         
         x[I_CRIT]  = crit ;
         x[I_HARDV] = hardv ;
+        x[I_DLAMBDA] = dlambda ;
       }
     
       /* Total stresses */

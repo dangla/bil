@@ -297,7 +297,7 @@ void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(co
     /* Reading some curves */
     if(!strncmp(mot,"Courbes",6) || !strncmp(mot,"Curves",5)) {
       Curves_t* curves = Material_GetCurves(mat) ;
-      Curves_FreeBuffer(curves) ;
+      
       Curves_ReadCurves(curves,line) ;
       
       if(Curves_GetNbOfCurves(curves) > Material_MaxNbOfCurves) {
@@ -380,7 +380,7 @@ void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(co
     /* Reading some curves */
     if(String_Is(mot,"Courbes",6) || String_Is(mot,"Curves",5)) {
       Curves_t* curves = Material_GetCurves(mat) ;
-      Curves_FreeBuffer(curves) ;
+      
       Curves_ReadCurves(curves,line) ;
       
       if(Curves_GetNbOfCurves(curves) > Material_MaxNbOfCurves) {
@@ -462,9 +462,7 @@ void (Material_ScanProperties1)(Material_t* mat,FILE *ficd,int (*pm)(const char*
     if(!strncasecmp(mot,"courbes",6)) {
       do { /* pour lire plusieurs fois "Courbes" */
         Curves_t* curves = Material_GetCurves(mat) ;
-        int i ;
-        Curves_FreeBuffer(curves) ;
-        i = Curves_ReadCurves(curves,line) ;
+        int i = Curves_ReadCurves(curves,line) ;
       
         if(Curves_GetNbOfCurves(curves) > Material_MaxNbOfCurves) {
           arret("Material_ScanProperties1 (2) : trop de courbes") ;
@@ -526,9 +524,7 @@ void (Material_ScanProperties2)(Material_t* mat,FILE *ficd,int (*pm)(const char*
 
     if(!strncasecmp(mot,"Courbes",6)) {
       Curves_t* curves = Material_GetCurves(mat) ;
-      int i ;
-      Curves_FreeBuffer(curves) ;
-      i = Curves_ReadCurves(curves,line) ;
+      int i = Curves_ReadCurves(curves,line) ;
       
       if(Curves_GetNbOfCurves(curves) > Material_MaxNbOfCurves) {
         arret("Material_ScanProperties2 (2) : trop de courbes") ;

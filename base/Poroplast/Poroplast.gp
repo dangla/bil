@@ -1,7 +1,7 @@
 # Coordinates(1) Pore pressure(4) Displacements(5) Fluid mass flow(8) Stresses(11) Plastic strains(20) Cumulative plastic shear strain(29) Permeability(30)
 
 # Input Data file
-file = 'Poroplast'
+file = 'toto'
 
 # To produce eps file
 set term postscript eps enhanced color 20

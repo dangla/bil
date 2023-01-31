@@ -301,7 +301,7 @@ int   (Monolithic_StepForward)(DataSet_t* dataset,Solutions_t* sols,Solver_t* so
             int iter = IterProcess_GetIterationIndex(iterprocess) ;
               
             Message_Direct("\n") ;
-            Message_Direct("Monolithic_StepForward(2): undefined implicit terms at iteration %d\n",iter) ;
+            Message_Direct("Monolithic_StepForward(2): somethong wrong has happened at iteration %d\n",iter) ;
             goto backupandreturn ;
           }
         }

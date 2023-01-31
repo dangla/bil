@@ -47,9 +47,9 @@ FVM_t* (FVM_Create)(void)
   
   /* Space allocation for buffer */
   {
-    Buffer_t* buf = Buffer_Create(FVM_SizeOfBuffer) ;
+    Buffers_t* buf = Buffers_Create(FVM_SizeOfBuffer) ;
     
-    FVM_GetBuffer(fvm) = buf ;
+    FVM_GetBuffers(fvm) = buf ;
   }
   
   return(fvm) ;
@@ -62,8 +62,16 @@ void (FVM_Delete)(void* self)
   
   free(FVM_GetOutput(fvm)) ;
   free(FVM_GetInput(fvm)) ;
-  Buffer_Delete(FVM_GetBuffer(fvm)) ;
-  free(FVM_GetBuffer(fvm)) ;
+  
+  {
+    Buffers_t* buf = FVM_GetBuffers(fvm) ;
+    
+    if(buf) {
+      Buffers_Delete(buf) ;
+      free(buf) ;
+      FVM_GetBuffers(fvm) = NULL ;
+    }
+  }
 }
 
 

@@ -22,7 +22,7 @@ DOC_DIRS = ${BIL_EDITION_DIR} oxygen
 all:
 	cd ${BIL_EDITION_DIR} && rm -f version.texi
 	cd ${BIL_EDITION_DIR} && echo "@set BIL-VERSION   ${BIL_VERSION}" > version.texi
-	for i in ${DOC_DIRS}; do (cd $$i && ${MAKE} all); done
+	for i in ${DOC_DIRS}; do (${MAKE} -C $$i all); done
 	cd ${BIL_EDITION_DIR} && mv ${BIL_DOC}.ps ..
 	cd ${BIL_EDITION_DIR} && mv ${BIL_DOC}.pdf ..
 	cd ${BIL_EDITION_DIR} && mv ${BIL_DOC}.txt ..
@@ -36,7 +36,7 @@ all:
 doc:
 	cd ${BIL_EDITION_DIR} && rm -f version.texi
 	cd ${BIL_EDITION_DIR} && echo "@set BIL-VERSION   ${BIL_VERSION}" > version.texi
-	cd ${BIL_EDITION_DIR} && ${MAKE} all
+	( ${MAKE} -C ${BIL_EDITION_DIR} all )
 	cd ${BIL_EDITION_DIR} && mv ${BIL_DOC}.ps ..
 	cd ${BIL_EDITION_DIR} && mv ${BIL_DOC}.pdf ..
 	cd ${BIL_EDITION_DIR} && mv ${BIL_DOC}.txt ..
@@ -49,7 +49,7 @@ doc:
 
 .PHONY: oxygen
 oxygen:
-	for i in ${DOC_DIRS}; do (cd $$i && ${MAKE} all); done
+	for i in ${DOC_DIRS}; do (${MAKE} -C $$i all); done
 	cd ${BIL_EDITION_DIR} && mv ${BIL_DOC}.ps ..
 	cd ${BIL_EDITION_DIR} && mv ${BIL_DOC}.pdf ..
 	cd ${BIL_EDITION_DIR} && mv ${BIL_DOC}.txt ..
@@ -57,13 +57,13 @@ oxygen:
 	cd ${BIL_EDITION_DIR} && mv ${BIL_DOC}.html ..
 
 clean:
-	for i in ${DOC_DIRS}; do (cd $$i && ${MAKE} clean); done
+	for i in ${DOC_DIRS}; do (${MAKE} -C $$i clean); done
 
 clean-all: clean
 	rm -f ${BIL_DOC}.ps ${BIL_DOC}.pdf ${BIL_DOC}.txt
 	rm -rf ${BIL_DOC}.html 
 	rm -rf ${BIL_EDITION_DIR}/version.texi
-	for i in ${DOC_DIRS}; do (cd $$i && ${MAKE} clean-all); done
+	for i in ${DOC_DIRS}; do (${MAKE} -C $$i clean-all); done
 
 install-doc:
 	mkdir -p ${MANDIR}/man1

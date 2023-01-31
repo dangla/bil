@@ -12,7 +12,19 @@
 
 #include "Mesh.h"
 
+#include "BilExtraLibs.h"
+
+#ifdef SUPERLULIB
 #include "superlu.h"
+#endif
+
+#ifdef SUPERLUMTLIB
+#include "superlumt.h"
+#endif
+
+#ifdef SUPERLUDISTLIB
+#include "superludist.h"
+#endif
 
   
 

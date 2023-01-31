@@ -5,7 +5,9 @@
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
-struct Element_s      ; typedef struct Element_s      Element_t ;
+struct Element_s ;
+typedef struct Element_s  Element_t ;
+typedef Element_t*        Element_tt ;
 
 
 #include "Mesh.h"
@@ -74,9 +76,14 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
 //#define Element_GetNbOfImplicitTerms(ELT)      ((ELT)->n_vi)
 //#define Element_GetNbOfExplicitTerms(ELT)      ((ELT)->n_ve)
 //#define Element_GetNbOfConstantTerms(ELT)      ((ELT)->nbofconstterms)
-#define Element_GetBuffer(ELT)                 ((ELT)->buffer)
 #define Element_GetElementSol(ELT)             ((ELT)->sol)
+#define Element_GetBuffers(ELT)                ((ELT)->buffers)
 
+
+
+/* Buffer */
+#define Element_GetBuffer(ELT) \
+        Buffers_GetBufferOfCurrentThread(Element_GetBuffers(ELT))
 
 
 
@@ -240,6 +247,9 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
         
 #define Element_FindMaterialData(ELT,T,N) \
         Material_FindData(Element_GetMaterial(ELT),T,N)
+        
+#define Element_FindMaterialGenericData(ELT,T,N) \
+        Material_FindGenericData(Element_GetMaterial(ELT),T,N)
 
 
 
@@ -366,14 +376,14 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
 
 #include "ShapeFct.h"
 #include "Material.h"
-#include "Buffer.h"
+#include "Buffers.h"
 #include "ElementSol.h"
 
 
 struct Element_s {            /* element */
   unsigned int index ;        /* element index */
   unsigned short int nn ;     /* nb of nodes */
-  Node_t** node ;             /* pointers to nodes */
+  Node_tt* node ;             /* pointers to nodes */
   int    reg ;                /* region index */
   int    imat ;               /* material index */
   Material_t* mat ;           /* material */
@@ -387,7 +397,7 @@ struct Element_s {            /* element */
   unsigned int n_ve ;         /* Nb of explicit terms */
 //  unsigned int nbofconstterms ;   /* Nb of constant terms */
   ElementSol_t* sol ;         /* Element Solution */
-  Buffer_t*   buffer ;        /* Buffer */
+  Buffers_t*  buffers ;       /* Buffers */
 } ;
 
 

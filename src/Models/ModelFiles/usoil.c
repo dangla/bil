@@ -72,7 +72,7 @@ static double pie(double,double,Curve_t*) ;
 static double dpiesdpl(double,double,Curve_t*) ;
 
 
-#define ComputeFunctionGradients(...)  Plasticity_ComputeFunctionGradients(plasty,__VA_ARGS__)
+#define ComputeTangentStiffnessTensor(...)  Plasticity_ComputeTangentStiffnessTensor(plasty,__VA_ARGS__)
 #define ReturnMapping(...)             Plasticity_ReturnMapping(plasty,__VA_ARGS__)
 #define CopyElasticTensor(...)         Plasticity_CopyElasticTensor(plasty,__VA_ARGS__)
 #define UpdateElastoplasticTensor(...) Plasticity_UpdateElastoplasticTensor(plasty,__VA_ARGS__)
@@ -933,7 +933,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
         
         {
           double sigm    = (sig[0] + sig[4] + sig[8])/3. ;
-          double bulk    = -(1 + e0)*sigm/kappa ;
+          double bulk    = (1 + e0)*fabs(sigm)/kappa ;
           double lame    = bulk - 2*mu/3. ;
           double poisson = 0.5 * lame / (lame + mu) ;
           double young   = 2 * mu * (1 + poisson) ;
@@ -949,7 +949,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
             double hc    = CapillaryHardening(pc) ;
             double p_co  = HARDV ;
             double pp_co = p_co * hc ;
-            double crit1 = ComputeFunctionGradients(sig,&pp_co) ;
+            double crit1 = ComputeTangentStiffnessTensor(sig,&pp_co) ;
             double fcg   = UpdateElastoplasticTensor(c1) ;
           
             if(fcg < 0) return(-1) ;

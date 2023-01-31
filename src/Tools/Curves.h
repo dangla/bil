@@ -32,14 +32,7 @@ extern int       (Curves_CreateInverse)(Curves_t*,Curve_t*,const char) ;
 #define Curves_GetNbOfAllocatedCurves(CVS)    ((CVS)->n_allocatedcurves)
 #define Curves_GetNbOfCurves(CVS)             ((CVS)->n_cb)
 #define Curves_GetCurve(CVS)                  ((CVS)->cb)
-#define Curves_GetBuffer(CVS)                 ((CVS)->buffer)
 
-
-#define Curves_AllocateInBuffer(CVS,SZ) \
-        (Buffer_Allocate(Curves_GetBuffer(CVS),(SZ)))
-        
-#define Curves_FreeBuffer(CVS) \
-        (Buffer_Free(Curves_GetBuffer(CVS)))
 
 
 
@@ -93,7 +86,6 @@ struct Curves_s {             /* Curves */
   unsigned int n_allocatedcurves ;         /* Nb of allocated curves */
   unsigned int n_cb ;         /* nb of curves */
   Curve_t *cb ;               /* curves */
-  Buffer_t   *buffer ;        /* Buffer */
 } ;
 
 

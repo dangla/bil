@@ -33,26 +33,7 @@ Context_t* (Context_Create)(int argc,char** argv)
   if(argc > 0 && argv) {
     Context_Initialize(ctx) ;
   }
-  /*
-  Context_GetHelpOnline(ctx) = NULL ;
-  Context_GetPrintInfo(ctx) = NULL ;
-  Context_GetInversePermutation(ctx) = NULL ;
-  Context_GetPrintModel(ctx) = NULL ;
-  Context_GetPrintModule(ctx) = NULL ;
-  Context_GetPostProcessing(ctx) = NULL ;
-  Context_GetSolver(ctx) = NULL ;
-  Context_GetReadOnly(ctx) = NULL ;
-  Context_GetDebug(ctx) = NULL ;
-  Context_GetPrintLevel(ctx) = NULL ;
-  Context_GetUseModule(ctx) = NULL ;
-  Context_GetGraph(ctx) = NULL ;
-  Context_GetInputFileName(ctx) = NULL ;
-  Context_GetMiscellaneous(ctx) = NULL ;
-  Context_GetElementOrdering(ctx) = NULL ;
-  Context_GetNodalOrdering(ctx) = NULL ;
-  */
   
-
   
   {
     Options_t* opt = Options_Create(ctx) ;
@@ -152,6 +133,14 @@ void (Context_Initialize)(Context_t* ctx)
         i++ ;
       } else {
         Message_FatalError("Missing level") ;
+      }
+
+    } else if(String_Is(argv[i],"-nthreads",strlen(argv[i]))) {
+      Context_GetNbOfThreads(ctx) = (char**) argv + i ;
+      if(i + 1 < argc) {
+        i++ ;
+      } else {
+        Message_FatalError("Missing nb of requested threads") ;
       }
 
     } else if(String_Is(argv[i],"-with",strlen(argv[i]))) {

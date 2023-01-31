@@ -29,9 +29,6 @@ Curves_t* (Curves_Create)(unsigned int n_curves)
     
     Curves_GetCurve(curves) = cv ;
   }
-    
-  /* Space allocation for buffer */
-  Curves_GetBuffer(curves) = Buffer_Create(Curves_SizeOfBuffer) ;
   
   return(curves) ;
 }
@@ -57,16 +54,6 @@ void (Curves_Delete)(void* self)
     
       free(curve) ;
       Curves_GetCurve(curves) = NULL ;
-    }
-  }
-  
-  {
-    Buffer_t* buf = Curves_GetBuffer(curves) ;
-    
-    if(buf) {
-      Buffer_Delete(buf) ;
-      free(buf) ;
-      Curves_GetBuffer(curves) = NULL ;
     }
   }
 }

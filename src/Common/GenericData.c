@@ -16,9 +16,15 @@
 #include "Plasticity.h"
 #include "ElementsSol.h"
 #include "FEM.h"
+#include "FEM2.h"
 #include "FVM.h"
 #include "Exception.h"
 #include "InternationalSystemOfUnits.h"
+
+#include "BilExtraLibs.h"
+#ifdef SUPERLUDISTLIB
+  #include "superludist.h"
+#endif
 
 
 static void      (GenericData_DeleteData)(TypeId_t*,void*) ;
@@ -159,7 +165,13 @@ void  (GenericData_DeleteData)(TypeId_t* typ,void* self)
     case TypeId_IdNumber(Solutions_t)     : Solutions_Delete(self); return ;
     case TypeId_IdNumber(Solver_t)        : Solver_Delete(self); return ;
     case TypeId_IdNumber(Solvers_t)       : Solvers_Delete(self); return ;
+    /* from SuperLU_DIST */
+    #ifdef SUPERLUDISTLIB
+    case TypeId_IdNumber(dScalePermstruct_t): dScalePermstructFree(self); return ;
+    case TypeId_IdNumber(dLUstruct_t)     : dLUstructFree(self); return ;
+    case TypeId_IdNumber(gridinfo_t)      : superlu_gridexit(self); return ;
     default                               : break ;
+    #endif
   }
   
   Message_FatalError("GenericData_DeleteData: unknown type") ;

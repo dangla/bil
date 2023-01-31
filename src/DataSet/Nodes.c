@@ -6,6 +6,7 @@
 #include "Model.h"
 #include "Element.h"
 #include "Nodes.h"
+#include "Buffers.h"
 
 
 
@@ -75,6 +76,7 @@ Nodes_t*  Nodes_New(const int nn,const int dim,const int nc)
       Node_GetMatrixRowIndex(node_i)    = NULL ;
       Node_GetNodeSol(node_i)           = NULL ;
       Node_GetNbOfElements(node_i)      = 0 ;
+      Node_GetBuffers(node_i)           = NULL ;
     }
   }
   
@@ -186,12 +188,12 @@ void  Nodes_CreateMore(Nodes_t* nodes)
 
   /* Space allocation for buffer */
   {
-    Buffer_t* buf = Buffer_Create(Node_SizeOfBuffer) ;
+    Buffers_t* buf = Buffers_Create(Node_SizeOfBuffer) ;
     int i ;
   
     /* ATTENTION: same memory space (buffer) for all nodes */
     for(i = 0 ; i < n_no ; i++) {
-      Node_GetBuffer(node + i) = buf ;
+      Node_GetBuffers(node + i) = buf ;
     }
   }
 }
@@ -262,10 +264,10 @@ void (Nodes_Delete)(void* self)
     }
     
     {
-      Buffer_t* buf = Node_GetBuffer(node) ;
+      Buffers_t* buf = Node_GetBuffers(node) ;
       
       if(buf) {
-        Buffer_Delete(buf) ;
+        Buffers_Delete(buf) ;
         free(buf) ;
       }
     }
@@ -436,54 +438,6 @@ int  Nodes_UpdateTheNbOfUnknownsAndEquationsPerNode(Nodes_t* nodes)
   }
 
   return(Nodes_GetNbOfDOF(nodes)) ;
-}
-
-
-
-void Nodes_DeleteMore(void* self)
-{
-  Nodes_t* nodes = (Nodes_t*) self ;
-  
-  {
-    Node_t* node = Nodes_GetNode(nodes) ;
-    unsigned int* nb_rows = Nodes_GetNbOfMatrixRows(nodes) ;
-    char** uname = Node_GetNameOfUnknown(node) ;
-    int* seq = Node_GetSequentialIndexOfUnknown(node) ;
-    int* colind = Node_GetMatrixColumnIndex(node) ;
-    int* rowind = Node_GetMatrixRowIndex(node) ;
-    unsigned short int* index = Node_GetObValIndex(node) ;
-    Buffer_t* buf = Node_GetBuffer(node) ;
-    
-    
-    if(uname) {
-      free(uname) ;
-    }
-    
-    if(seq) {
-      free(seq) ;
-    }
-    
-    if(nb_rows) {
-      free(nb_rows) ;
-    }
-    
-    if(colind) {
-      free(colind) ;
-    }
-    
-    if(rowind) {
-      free(rowind) ;
-    }
-    
-    if(index) {
-      free(index) ;
-    }
-    
-    if(buf) {
-      Buffer_Delete(buf) ;
-      free(buf) ;
-    }
-  }
 }
 
 
@@ -923,12 +877,12 @@ void  Nodes_CreateMore(Nodes_t* nodes)
 
   /* Space allocation for buffer */
   {
-    Buffer_t* buf = Buffer_Create(Node_SizeOfBuffer) ;
+    Buffers_t* buf = Buffers_Create(Node_SizeOfBuffer) ;
     int i ;
   
     /* ATTENTION: same memory space (buffer) for all nodes */
     for(i = 0 ; i < n_no ; i++) {
-      Node_GetBuffer(node + i) = buf ;
+      Node_GetBuffers(node + i) = buf ;
     }
   }
 }

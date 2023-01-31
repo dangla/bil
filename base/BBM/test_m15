@@ -1,0 +1,66 @@
+DIME                # dimension (1, 2, 3) et symétrie (axis, plan) du pb
+2 axis
+
+MAIL                # maillage considéré (généré avec GMSH)
+carre.msh
+
+MATE                # liste des matériaux (modèles et param. associés)
+Model = M15         # nom du modèle
+gravite = 0         # gravité
+rho_s = 2000        # masse volumique des particules solides
+kappa = 0.004       # indice de gonflement elastique
+lambda = 0.037      # pente de la NCL dans le plan (ln p', e)
+mu = 1.e8           # module de cisaillement
+M = 1.2             # pente de la CSL dans le plan (p', q)
+p_co = 20e3         # preconsolidation
+sig0 = -1000        # contrainte initiale (isotrope)
+phi = 0.25          # porosite initiale
+rho_l = 1000        # masse volumique du fluide
+p_l0 = 0            # pression initiale du fluide
+k_int = 1e-20       # permeabilite intrinseque
+mu_l = 0.001        # viscosite du liquide
+p_g = 0             # pression du gaz
+Curves = wrc        # nom du fichier contenant p_c S_l k_rl k_rg
+
+CHMP                # champs constants ou linéaires dans l'espace
+2
+Val = 0.e3 Grad = 0 0 Point = 0 0
+Val = 1.e3 Grad = 0 0 Point = 0 0
+
+INIT                # initialisation des variables
+0
+
+FONC                # fonctions temporelles, pour les CL
+1
+N = 3 F(0) = 1 F(1) = 250 F(2) = 1
+
+COND                # conditions aux limites (Dirichlet)
+3
+Reg = 14 Inc = u_1 Champ = 0 Fonction = 0
+Reg = 11 Inc = u_2 Champ = 0 Fonction = 0
+Reg = 100 Inc = p_l Champ = 1 Fonction = 0
+
+CHAR                # conditions aux limites (Neumann)
+2
+Reg = 13 Equ = meca_1 Type = pression Champ = 2 Fonction = 1
+Reg = 12 Equ = meca_1 Type = pression Champ = 2 Fonction = 1
+
+POIN                # points de l'espace pour le stockage des variables
+1
+0.5 0.5
+
+TEMP                # dates pour le stockage des données
+3
+0 1 2
+
+OBJE                # variables objectives (une par ddl)
+u_1 = 1.e-4
+u_2 = 1.e-4
+p_l = 1000
+
+ALGO                # param. num. pour le contrôle de la convergence
+Iter = 100
+Tol = 1e-06
+Rec = 0
+Dtini = 1e-4
+Dtmax = 1e-3

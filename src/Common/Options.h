@@ -24,6 +24,7 @@ extern void        (Options_Delete)(void*) ;
 #define Options_GetNodalOrderingMethod(OPT)    ((OPT)->nordering)
 #define Options_GetPostProcessingMethod(OPT)   ((OPT)->postprocess)
 #define Options_GetContext(OPT)                ((OPT)->context)
+#define Options_GetNbOfThreads(OPT)            ((OPT)->nthreads)
 
 
 
@@ -39,10 +40,10 @@ extern void        (Options_Delete)(void*) ;
 
 
 /* Resolution method */
-#define Options_ResolutionMethodIs(OPT,M) \
-        String_Is(Options_GetResolutionMethod(OPT),M)
+#define Options_ResolutionMethodIs(OPT,...) \
+        String_Is(Options_GetResolutionMethod(OPT),__VA_ARGS__)
         
-#define Options_SetResolutionMethodTo(OPT,M) \
+//#define Options_SetResolutionMethodTo(OPT,M) \
         (strncpy(Options_GetResolutionMethod(OPT),M,Options_MaxLengthOfKeyWord))
 
 
@@ -54,25 +55,29 @@ extern void        (Options_Delete)(void*) ;
 /* Crout method */
 #define Options_ResolutionMethodIsCrout(OPT) \
         Options_ResolutionMethodIs(OPT,"crout")
-        
-#define Options_SetResolutionMethodToCrout(OPT) \
-        Options_SetResolutionMethodTo(OPT,"crout")
 
 
-/* Superlu method */
+/* SuperLU method */
 #define Options_ResolutionMethodIsSuperLU(OPT) \
-        Options_ResolutionMethodIs(OPT,"slu")
-        
-#define Options_SetResolutionMethodToSuperLU(OPT) \
-        Options_SetResolutionMethodTo(OPT,"slu")
+        (Options_ResolutionMethodIs(OPT,"slu") || \
+        (Options_ResolutionMethodIs(OPT,"superlu") && \
+        !Options_ResolutionMethodIs(OPT,"superlumt") && \
+        !Options_ResolutionMethodIs(OPT,"superludist")))
+
+
+/* SuperLUMT method */
+#define Options_ResolutionMethodIsSuperLUMT(OPT) \
+        Options_ResolutionMethodIs(OPT,"superlumt")
+
+
+/* SuperLUDist method */
+#define Options_ResolutionMethodIsSuperLUDist(OPT) \
+        Options_ResolutionMethodIs(OPT,"superludist")
 
 
 /* MA38 method */
 #define Options_ResolutionMethodIsMA38(OPT) \
         Options_ResolutionMethodIs(OPT,"ma38")
-        
-#define Options_SetResolutionMethodToMA38(OPT) \
-        Options_SetResolutionMethodTo(OPT,"ma38")
     
 
 #define Options_GetFillFactor(OPT) \
@@ -97,6 +102,32 @@ extern void        (Options_Delete)(void*) ;
         atoi(((char**) Context_GetUseModule(Options_GetContext(OPT)))[2]) : 1)
 
 
+/* Number of threads for multi-threaded calculations */
+#define Options_NbOfThreads(OPT) \
+        atoi(Options_GetNbOfThreads(OPT))
+
+
+/* Number of threads for multi-threaded solver */
+#define Options_NbOfThreadsInSolver(OPT) \
+        Options_NbInResolutionMethod(OPT)
+
+
+/* Number of threads for multi-threaded solver */
+#define Options_NbOfThreadsInSharedMemorySolver(OPT) \
+        Options_NbInResolutionMethod(OPT)
+
+
+/* Number of processors for distributed-memory solver */
+#define Options_NbOfProcessorsInDistributedMemorySolver(OPT) \
+        Options_NbInResolutionMethod(OPT)
+
+
+/* Implementation */
+#define Options_NbInResolutionMethod(OPT) \
+        ((String_pchar = String_FindAnyChar(Options_GetResolutionMethod(OPT),"0123456789")) ? atoi(String_pchar) : 1)
+
+
+
 struct Options_s {            /* options */
   char*   debug ;             /* what to be printed */
   char*   method ;            /* resolution method */
@@ -111,6 +142,7 @@ struct Options_s {            /* options */
   char*   eordering ;         /* Element ordering method */
   char*   nordering ;         /* Nodal ordering method */
   char*   postprocess ;       /* Post-processing method */
+  char*   nthreads ;          /* Nb of requested threads */
   Context_t* context ;
 } ;
 

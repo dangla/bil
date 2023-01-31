@@ -24,7 +24,7 @@ Building the documentation from source requires:
 and optionally
 
   - Doxygen (<http://www.stack.nl/~dimitri/doxygen>)
-
+  
 
 List of folders
 ===============
@@ -44,9 +44,9 @@ Building and Installation
 
 There are two methods to build Bil from the command line:
 
-  1. from make (native method suited for linux-based OS)
-  2. from cmake (suited for any OS like Windows or MacOS)
-
+  - from make (native method suited for linux-based OS)
+  - from cmake (suited for any OS like Windows or MacOS)
+  
 
 1. Build Bil from make (native method)
 --------------------------------------
@@ -77,8 +77,8 @@ Once the installation is completed, running
         make clean  
 
 will delete all the local files previously created.
-
-
+  
+  
 2. Build Bil from cmake (command line)
 --------------------------------------
 
@@ -162,8 +162,9 @@ Some functionalities (like solvers ma38 and superlu) require the use of the foll
             
   - **LAPACK**: you can obtain the latest LAPACK from http://www.netlib.org/lapack  
 
-  - **SUPERLU**: you can obtain the relevant C functions by visiting the following
-            URL: https://github.com/xiaoyeli/superlu  
+  - **SuperLU, SuperLU_MT, SuperLU_DIST**: you can obtain the relevant C functions by visiting the following
+            URL: https://portal.nersc.gov/project/sparse/superlu/.
+            Note that these three libraries cannot be mixed, only one can be loaded per build target. SuperMU_MT needs either "omp" or "pthread" library. SuperLU_DIST needs "mpi" library.
 
 These librairies are not included in this package. You need to explicitly specify their location in the file "EXTRALIBS". You can also choose to disable the use of these libraries and the associated functionalities by deleting or commenting the locations.
 
@@ -171,7 +172,7 @@ These librairies are not included in this package. You need to explicitly specif
 External software
 =================
 
-This package contains some fortran routines provided by HSL: "HSL, a collection of Fortran codes for large-scale scientific computation. See http://www.hsl.rl.ac.uk/"
+This package contains some fortran routines provided by HSL: "HSL, a collection of Fortran codes for large-scale scientific computation". See http://www.hsl.rl.ac.uk/.
 
 
 Usage

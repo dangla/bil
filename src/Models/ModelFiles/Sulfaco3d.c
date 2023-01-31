@@ -487,9 +487,9 @@ static double DamageStrain(double,double) ;
 
 
 
-#define ComputeFunctionGradients(...)     Damage_ComputeFunctionGradients(damage,__VA_ARGS__)
+#define ComputeTangentStiffnessTensor(...)     Damage_ComputeTangentStiffnessTensor(damage,__VA_ARGS__)
 #define ReturnMapping(...)                Damage_ReturnMapping(damage,__VA_ARGS__)
-#define CopyStiffnessTensor(...)          Damage_CopyStiffnessTensor(damage,__VA_ARGS__)
+#define CopyStiffnessTensor(...)          Damage_CopyTangentStiffnessTensor(damage,__VA_ARGS__)
 #define UpdateTangentStiffnessTensor(...) Damage_UpdateTangentStiffnessTensor(damage,__VA_ARGS__)
 
 
@@ -758,7 +758,7 @@ void GetProperties(Element_t* el)
     double poisson = GetProperty("poisson") ;
     
     K_bulk = young / (3 - 6*poisson) ;
-    cijkl   = Damage_GetStiffnessTensor(damage) ;
+    cijkl   = Damage_GetTangentStiffnessTensor(damage) ;
     hardv0  = Damage_GetHardeningVariable(damage)[0] ;
   }
   
@@ -2134,7 +2134,7 @@ int TangentCoefficients(Element_t* el,double t,double dt,double* c)
             if(crit >= 0.) {
               /* Strains */
               double* eps = x + I_Strain ;
-              double crit1 = ComputeFunctionGradients(eps,&Damage,&Hardv) ;
+              double crit1 = ComputeTangentStiffnessTensor(eps,&Damage,&Hardv) ;
               double fcg = UpdateTangentStiffnessTensor(c1) ;
           
               if(fcg < 0) return(-1) ;
@@ -3010,7 +3010,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
         sig[8] += - bd * s_c * p_c ;
       }
       
-      //Damage_PrintStiffnessTensor(damage) ;
+      //Damage_PrintTangentStiffnessTensor(damage) ;
     }
   }
 #endif

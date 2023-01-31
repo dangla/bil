@@ -6,6 +6,7 @@
 
 /* class-like structure */
 struct Node_s         ; typedef struct Node_s         Node_t ;
+typedef Node_t*   Node_tt ;
 
 
 #include "Utils.h"
@@ -58,10 +59,13 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 #define Node_GetNodeSol(NOD)              ((NOD)->sol)
 #define Node_GetNbOfElements(NOD)         ((NOD)->nel)
 #define Node_GetPointerToElement(NOD)     ((NOD)->element)
-#define Node_GetBuffer(NOD)               ((NOD)->buffer)
+#define Node_GetBuffers(NOD)              ((NOD)->buffers)
 
 
 
+/* Buffer */
+#define Node_GetBuffer(NOD) \
+        Buffers_GetBufferOfCurrentThread(Node_GetBuffers(NOD))
 
 
 /* Access to elements
@@ -211,13 +215,13 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 
 #include "Element.h"
 #include "NodeSol.h"
-#include "Buffer.h"
+#include "Buffers.h"
 
 
 struct Node_s {               /* noeud */
   unsigned int index ;        /* node index */
   unsigned short int nel ;    /* nb of elements */
-  Element_t** element ;       /* pointers to elements */
+  Element_tt* element ;       /* pointers to elements */
   double* x ;                 /* coordonnees */
   unsigned short int neq ;    /* nombre d'equations au noeud */
   unsigned short int nin ;    /* nombre d'inconnues au noeud */
@@ -228,7 +232,7 @@ struct Node_s {               /* noeud */
   int*    colindex ;          /* column index (unknowns) */
   int*    rowindex ;          /* row index (equations) */
   NodeSol_t* sol ;            /* Nodal solution */
-  Buffer_t*   buffer ;        /* Buffer */
+  Buffers_t* buffers ;        /* Buffers */
 } ;
 
 #endif

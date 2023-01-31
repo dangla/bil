@@ -57,6 +57,9 @@ static int    TangentCoefficients(Element_t*,double,double*) ;
 
 /* Parametres */
 static double gravite,phi,rho_l,k_int,mu_l,p_g,schema ;
+#if Threads_APIis(OpenMP)
+  #pragma omp threadprivate(gravite,phi,rho_l,k_int,mu_l,p_g,schema)
+#endif
 
 
 int pm(const char *s)
@@ -272,6 +275,20 @@ int  ComputeImplicitTerms(Element_t *el,double t,double dt)
     
     W_l = - K_l*grd_p_l + K_l*rho_l*gravite ;
   }
+      
+  #if 0
+  {
+    int id = Threads_CurrentThreadId ;
+        
+    if(id == 0) {
+      int nthreads = omp_get_num_threads() ;
+          
+      printf("Actual number of threads: %d\n",nthreads) ;
+    }
+        
+    printf("Current thread id: %d\n",id) ;
+  }
+  #endif
   
   return(0) ;
 }

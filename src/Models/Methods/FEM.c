@@ -10,6 +10,7 @@
 #include "Session.h"
 #include "GenericData.h"
 #include "Mry.h"
+#include "Threads.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -73,9 +74,9 @@ FEM_t* (FEM_Create)(void)
   
   /* Space allocation for buffer */
   {
-    Buffer_t* buf = Buffer_Create(FEM_SizeOfBuffer) ;
+    Buffers_t* buf = Buffers_Create(FEM_SizeOfBuffer) ;
     
-    FEM_GetBuffer(fem) = buf ;
+    FEM_GetBuffers(fem) = buf ;
   }
   
   return(fem) ;
@@ -88,10 +89,20 @@ void (FEM_Delete)(void* self)
   FEM_t* fem = (FEM_t*) self ;
   
   free(FEM_GetOutput(fem)) ;
+  
   free(FEM_GetInput(fem)) ;
+  
   free(FEM_GetPointerToIntFct(fem)) ;
-  Buffer_Delete(FEM_GetBuffer(fem))  ;
-  free(FEM_GetBuffer(fem)) ;
+  
+  {
+    Buffers_t* buf = FEM_GetBuffers(fem) ;
+
+    if(buf) {
+      Buffers_Delete(buf)  ;
+      free(buf) ;
+      FEM_GetBuffers(fem) = NULL ;
+    }
+  }
 }
 
 
@@ -112,6 +123,59 @@ FEM_t* (FEM_GetInstance0)(Element_t* el)
 #endif
 
 
+#if Threads_APIis(OpenMP)
+FEM_t*  (FEM_GetInstance)(Element_t* el)
+{
+  {
+    GenericData_t* gdat = Session_FindGenericData(FEM_t,"FEM") ;
+    
+    if(!gdat) {
+      #pragma omp critical
+      if(!Session_FindGenericData(FEM_t,"FEM")) {
+        int n = Threads_MaxNbOfThreads ;
+        FEM_t* fem = Mry_Create(FEM_t,n,FEM_Create()) ;
+        //FEM_t* fem = FEM_Create() ;
+        
+        gdat = GenericData_Create(n,fem,FEM_t,"FEM") ;
+    
+        Session_AddGenericData(gdat) ;
+    
+        assert(gdat == Session_FindGenericData(FEM_t,"FEM")) ;
+        
+        //Message_Direct("FEM_GetInstance: critical\n") ;
+        //Message_Direct("Thread id: %d\n",Threads_CurrentThreadId) ;
+      }
+    }
+  }
+  
+  {
+    GenericData_t* gdat = Session_FindGenericData(FEM_t,"FEM") ;
+    
+    if(gdat) {
+      FEM_t* fem0 = ((FEM_t*) GenericData_GetData(gdat)) ;
+      int id = Threads_CurrentThreadId ;
+      
+      if(id < GenericData_GetNbOfData(gdat)) {
+        FEM_t* fem = fem0 + id ;
+
+        FEM_GetElement(fem) = el ;
+  
+        FEM_FreeBuffer(fem) ;
+        
+        //Message_Direct("FEM_GetInstance: no critical\n") ;
+        //Message_Direct("Thread id: %d\n",Threads_CurrentThreadId) ;
+  
+        return(fem) ;
+      } else {
+        Message_FatalError("FEM_GetInstance:") ;
+      }
+    } else {
+      Message_FatalError("FEM_GetInstance:") ;
+    }
+  }
+}
+
+#else
 
 FEM_t*  (FEM_GetInstance)(Element_t* el)
 {
@@ -137,6 +201,7 @@ FEM_t*  (FEM_GetInstance)(Element_t* el)
     return(fem) ;
   }
 }
+#endif
 
 
 

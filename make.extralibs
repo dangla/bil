@@ -11,32 +11,31 @@ BIL_EXTRALIBS :=
 sinclude EXTRALIBS
 
 
-# Do you use the library BLAS?
-# ----------------------------
-ifdef BLAS
-  ifeq (${shell test -f ${BLAS} && echo -n yes},yes)
-    BLAS_DIR = ${shell dirname ${BLAS}}
-    BIL_EXTRALIBS += ${BLAS}
-  endif
-endif
-
-
-# Do you use the library LAPACK?
-# ------------------------------
-ifdef LAPACK
-  ifeq (${shell test -f ${LAPACK} && echo -n yes},yes)
-    LAPACK_DIR = ${shell dirname ${LAPACK}}
-    BIL_EXTRALIBS += ${LAPACK}
-  endif
-endif
-
-
 # Do you use the library SUPERLU?
 # -------------------------------
 ifdef SUPERLU
   ifeq (${shell test -f ${SUPERLU} && echo -n yes},yes)
     SUPERLU_DIR = ${shell dirname ${SUPERLU}}
-    BIL_EXTRALIBS += ${SUPERLU}
+    BIL_EXTRALIBS += -Wl,-rpath=${SUPERLU_DIR} ${SUPERLU}
+  endif
+endif
+
+
+# Do you use the library SUPERLUMT?
+# ---------------------------------
+ifdef SUPERLUMT
+  ifeq (${shell test -f ${SUPERLUMT} && echo -n yes},yes)
+    SUPERLUMT_DIR = ${shell dirname ${SUPERLUMT}}
+    BIL_EXTRALIBS += -Wl,-rpath=${SUPERLUMT_DIR} ${SUPERLUMT}
+  endif
+endif
+
+# Do you use the library GSLCBLAS?
+# --------------------------------
+ifdef GSLCBLAS
+  ifeq (${shell test -f ${GSLCBLAS} && echo -n yes},yes)
+    GSLCBLAS_DIR = ${shell dirname ${GSLCBLAS}}
+    BIL_EXTRALIBS += -Wl,-rpath=${GSLCBLAS_DIR} ${GSLCBLAS}
   endif
 endif
 
@@ -46,9 +45,30 @@ endif
 ifdef UEL
   ifeq (${shell test -f ${UEL} && echo -n yes},yes)
     UEL_DIR = ${shell dirname ${UEL}}
-    BIL_EXTRALIBS += ${UEL}
+    BIL_EXTRALIBS += -Wl,-rpath=${UEL_DIR} ${UEL}
   endif
 endif
+
+
+# Do you use the library LAPACK? (LAPACK library should appear before BLAS library)
+# ------------------------------
+ifdef LAPACK
+  ifeq (${shell test -f ${LAPACK} && echo -n yes},yes)
+    LAPACK_DIR = ${shell dirname ${LAPACK}}
+    BIL_EXTRALIBS += -Wl,-rpath=${LAPACK_DIR} ${LAPACK}
+  endif
+endif
+
+
+# Do you use the library BLAS?
+# ----------------------------
+ifdef BLAS
+  ifeq (${shell test -f ${BLAS} && echo -n yes},yes)
+    BLAS_DIR = ${shell dirname ${BLAS}}
+    BIL_EXTRALIBS += -Wl,-rpath=${BLAS_DIR} ${BLAS}
+  endif
+endif
+
 
 
 

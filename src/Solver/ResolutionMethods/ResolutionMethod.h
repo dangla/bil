@@ -4,9 +4,10 @@
 
 enum ResolutionMethod_e {     /* Type of resolution method */
   ResolutionMethod_CROUT,     /* Crout method */
-  ResolutionMethod_SuperLU,       /* SuperLU method*/
-  ResolutionMethod_SLU = ResolutionMethod_SuperLU,
-  ResolutionMethod_MA38       /* MA38 method*/
+  ResolutionMethod_SuperLU,   /* SuperLU method */
+  ResolutionMethod_MA38,      /* MA38 method */
+  ResolutionMethod_SuperLUMT,  /* SuperLUMT method (multi-threaded) */
+  ResolutionMethod_SuperLUDist  /* SuperLUDist method (distributed memory) */
 } ;
 
 

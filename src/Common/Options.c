@@ -8,6 +8,7 @@
 #include "Message.h"
 #include "Options.h"
 #include "Modules.h"
+#include "Threads.h"
 
 
 /* Global functions */
@@ -22,12 +23,13 @@ Options_t*  (Options_Create)(Context_t* ctx)
 
   {
     int   max_mot_debug = Options_MaxLengthOfKeyWord ;
-    char* c = (char*) Mry_New(char[4*max_mot_debug]) ;
+    char* c = (char*) Mry_New(char[5*max_mot_debug]) ;
 
     Options_GetPrintedInfos(options)      = c ;
     Options_GetResolutionMethod(options)  = (c += max_mot_debug) ;
     Options_GetPrintLevel(options)        = (c += max_mot_debug) ;
     Options_GetModule(options)            = (c += max_mot_debug) ;
+    Options_GetNbOfThreads(options)       = (c += max_mot_debug) ;
   }
   
   
@@ -72,6 +74,7 @@ void (Options_SetDefault)(Options_t* options)
   strcpy(Options_GetPrintLevel(options),"1") ;
   strcpy(Options_GetModule(options),defaultmodule) ;
   Options_GetContext(options) = NULL ;
+  strcpy(Options_GetNbOfThreads(options),"1") ;
 }
 
 
@@ -112,6 +115,12 @@ void Options_Initialize(Options_t* options)
     
     //Options_GetPrintLevel(options) = ((char**) Context_GetPrintLevel(ctx))[1] ;
     strcpy(Options_GetPrintLevel(options),level) ;
+  }
+  
+  if(Context_GetNbOfThreads(ctx)) {
+    char* nthreads = ((char**) Context_GetNbOfThreads(ctx))[1] ;
+    
+    strcpy(Options_GetNbOfThreads(options),nthreads) ;
   }
   
   if(Context_GetUseModule(ctx)) {

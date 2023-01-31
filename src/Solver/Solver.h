@@ -58,6 +58,13 @@ extern void       (Solver_Print)(Solver_t*,char*) ;
         Solver_GetGenericWorkSpace(SV) = GenericData_Append(Solver_GetGenericWorkSpace(SV),GD)
 
 
+#define Solver_GetOptions(SV) \
+        ResolutionMethod_GetOptions(Solver_GetResolutionMethod(SV))
+
+#define Solver_NbOfThreads(SV) \
+        Options_NbOfThreads(Solver_GetOptions(SV)) ;
+
+
 
 /*  Typedef names of Methods */
 typedef int  Solver_Solve_t(Solver_t*) ;

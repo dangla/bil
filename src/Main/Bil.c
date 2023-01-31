@@ -20,6 +20,7 @@
 #include "Session.h"
 #include "Mry.h"
 #include "TypeId.h"
+#include "Threads.h"
 
 
 
@@ -323,6 +324,16 @@ void Bil_CLI(Bil_t* bil)
     Options_t* options = Context_GetOptions(ctx) ;
     DataSet_t* dataset =  DataSet_Create(filename,options) ;
     Module_t* module = DataSet_GetModule(dataset) ;
+
+    #if !Threads_APIis(None)
+    {
+      int nthreads = Options_NbOfThreads(options) ;
+      
+      Threads_SetTheNbOfThreads(nthreads) ;
+      Message_Direct("Nb of requested threads: %d\n",nthreads) ;
+      Message_Direct("Multithreading API: "Utils_STR(Threads_API)"\n") ;
+    }
+    #endif
   
     Message_Direct("Calculation of %s\n",filename) ;
     Message_Direct("Enter in %s\n",Module_GetCodeNameOfModule(module)) ;
@@ -439,14 +450,17 @@ void Bil_PrintInfo(void)
 {
   char bil_progname[]  = BIL_PROGNAME ;
   char bil_copyright[] = BIL_COPYRIGHT ;
-  char bil_version[]   = "Version        : " BIL_VERSION ;
-  char bil_license[]   = "License        : " BIL_SHORT_LICENSE ;
-  char bil_os[]        = "Build OS       : " BIL_OS ;
-  char bil_date[]      = "Build date     : " BIL_DATE ;
-  char bil_host[]      = "Build host     : " BIL_HOST ;
-  char bil_packager[]  = "Packager       : " BIL_PACKAGER ;
-  char bil_url[]       = "Web site       : " BIL_URL ;
-  char bil_email[]     = "Contact        : " BIL_EMAIL ;
+  char bil_version[]   = "Version           : " BIL_VERSION ;
+  char bil_license[]   = "License           : " BIL_SHORT_LICENSE ;
+  char bil_os[]        = "Build OS          : " BIL_OS ;
+  char bil_date[]      = "Build date        : " BIL_DATE ;
+  char bil_host[]      = "Build host        : " BIL_HOST ;
+  char bil_packager[]  = "Packager          : " BIL_PACKAGER ;
+  char bil_url[]       = "Web site          : " BIL_URL ;
+  char bil_email[]     = "Contact           : " BIL_EMAIL ;
+  char bil_mtapi[]     = "Multithreading API: " Utils_STR(Threads_API) ;
+  char bil_nthreads[]  = "Nb of CPU threads : " ;
+  int nthreads = Threads_NbOfLogicalCores ;
   
   Message_Direct("%s\n", bil_progname) ;
   Message_Direct("%s\n", bil_copyright) ;
@@ -458,4 +472,6 @@ void Bil_PrintInfo(void)
   Message_Direct("%s\n", bil_packager) ;
   Message_Direct("%s\n", bil_url) ;
   Message_Direct("%s\n", bil_email) ;
+  Message_Direct("%s\n", bil_mtapi) ;
+  Message_Direct("%s%d\n",bil_nthreads,nthreads) ;
 }

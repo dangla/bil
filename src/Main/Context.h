@@ -33,6 +33,7 @@ extern void          (Context_Delete)(void*) ;
 #define Context_GetCommandLine(CTX)        ((CTX)->commandline)
 #define Context_GetOptions(CTX)            ((CTX)->options)
 #define Context_GetTest(CTX)               ((CTX)->test)
+#define Context_GetNbOfThreads(CTX)        ((CTX)->nthreads)
 
 
 
@@ -84,6 +85,9 @@ extern void          (Context_Delete)(void*) ;
 #define Context_IsTest(CTX) \
         Context_GetTest(CTX)
 
+#define Context_IsNbOfThreads(CTX) \
+        Context_GetNbOfThreads(CTX)
+
 
 #include "CommandLine.h"
 #include "Options.h"
@@ -109,6 +113,7 @@ struct Context_s {        /* Context */
   void*   misc ;
   void*   eorder ;
   void*   norder ;
+  void*   nthreads ;
   void*   test ;
 } ;
 

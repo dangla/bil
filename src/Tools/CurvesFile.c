@@ -118,10 +118,6 @@ CurvesFile_t*   (CurvesFile_Create)(void)
   CurvesFile_GetCommandLine(curvesfile) = NULL ;
   CurvesFile_GetCurrentPositionInTheCommandLine(curvesfile) = NULL ;
   
-    
-  /* Space allocation for buffer */
-  CurvesFile_GetBuffer(curvesfile) = Buffer_Create(CurvesFile_SizeOfBuffer) ;
-  
   
   return(curvesfile) ;
 }
@@ -140,13 +136,6 @@ void (CurvesFile_Delete)(void* self)
   }
   
   free(CurvesFile_GetTextLine(curvesfile)) ;
-  
-  {
-    Buffer_t* buf = CurvesFile_GetBuffer(curvesfile) ;
-    
-    Buffer_Delete(buf) ;
-    free(buf) ;
-  }
 }
 
 

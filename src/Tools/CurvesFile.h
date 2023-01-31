@@ -36,7 +36,6 @@ extern int             (CurvesFile_WriteCurves)(CurvesFile_t*) ;
 #define CurvesFile_GetNbOfCurves(CF)                       ((CF)->n_curves)
 #define CurvesFile_GetNbOfPoints(CF)                       ((CF)->n_points)
 #define CurvesFile_GetScaleType(CF)                        ((CF)->scale)
-#define CurvesFile_GetBuffer(CF)                           ((CF)->buffer)
 #define CurvesFile_GetCommandLine(CF)                      ((CF)->cmdline)
 #define CurvesFile_GetCurrentPositionInTheCommandLine(CF)  ((CF)->pcmdline)
 #define CurvesFile_GetCurves(CF)                           ((CF)->readcurves)
@@ -77,12 +76,6 @@ extern int             (CurvesFile_WriteCurves)(CurvesFile_t*) ;
 #define CurvesFile_ReadLineFromCurrentFilePosition(CF) \
         TextFile_ReadLineFromCurrentFilePosition(CurvesFile_GetTextFile(CF),CurvesFile_GetTextLine(CF),CurvesFile_MaxLengthOfTextLine)
 
-#define CurvesFile_AllocateInBuffer(CF,sz) \
-        Buffer_Allocate(CurvesFile_GetBuffer(CF),(sz))
-
-#define CurvesFile_FreeBuffer(CF) \
-        Buffer_Free(CurvesFile_GetBuffer(CF))
-
 #define CurvesFile_FileCopy(CF) \
         TextFile_FileCopy(CurvesFile_GetTextFile(CF))
 
@@ -102,7 +95,6 @@ struct CurvesFile_s {         /* File of discretized curves */
   unsigned int n_curves ;     /* Nb of curves */
   unsigned int n_points ;     /* Nb of points */
   char   scale ;              /* Scale = n(ormal-scale) or l(og-scale) */
-  Buffer_t* buffer ;          /* Buffer */
   Curves_t* readcurves ;      /* Already read curves */
   char* line ;                /* Pointer to text lines */
 } ;

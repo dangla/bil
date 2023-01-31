@@ -42,6 +42,7 @@ extern GenericData_t* (GenericData_Find_)        (GenericData_t*,const int,const
 #define GenericData_GetDelete(GD)                ((GD)->Delete)
 
 
+
 #define GenericData_GetSize(GD) \
         TypeId_GetSize(GenericData_GetTypeId(GD))
 
@@ -66,11 +67,26 @@ extern GenericData_t* (GenericData_Find_)        (GenericData_t*,const int,const
         
         
 #define GenericData_FindData(GD,T,NAME) \
-        (GenericData_Find(GD,T,NAME) ? GenericData_GetData(GenericData_Find(GD,T,NAME)) : NULL)
+        GenericData_GetData_(GenericData_Find(GD,T,NAME))
+        
+        
+#define GenericData_FindNbOfData(GD,T,NAME) \
+        GenericData_GetNbOfData_(GenericData_Find(GD,T,NAME))
         
         
 #define GenericData_Merge(A,B) \
         GenericData_Append(A,GenericData_First(B))
+
+
+
+
+
+/* Implementation */
+#define GenericData_GetNbOfData_(GD) \
+        ((GD) ? GenericData_GetNbOfData(GD) : 0)
+
+#define GenericData_GetData_(GD) \
+        ((GD) ? GenericData_GetData(GD) : NULL)
 
 
 

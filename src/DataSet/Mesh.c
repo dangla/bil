@@ -21,6 +21,7 @@
 #include "String_.h"
 #include "Mry.h"
 #include "Mesh.h"
+#include "Threads.h"
 
 
 #if defined(__cplusplus)
@@ -1419,17 +1420,20 @@ int (Mesh_ComputeInitialState)(Mesh_t* mesh,double t)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
-  unsigned int    ie ;
+  
+  {
+    unsigned int    ie ;
 
-  for(ie = 0 ; ie < n_el ; ie++) {
-    Material_t* mat = Element_GetMaterial(el + ie) ;
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
     
-    if(mat) {
-      int i ;
+      if(mat) {
+        int i ;
       
-      Element_FreeBuffer(el + ie) ;
-      i = Element_ComputeInitialState(el + ie,t) ;
-      if(i != 0) return(i) ;
+        Element_FreeBuffer(el + ie) ;
+        i = Element_ComputeInitialState(el + ie,t) ;
+        if(i != 0) return(i) ;
+      }
     }
   }
   
@@ -1437,59 +1441,220 @@ int (Mesh_ComputeInitialState)(Mesh_t* mesh,double t)
 }
 
 
+
+#if Threads_APIis(OpenMP)
+int (Mesh_ComputeExplicitTerms)(Mesh_t* mesh,double t)
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  int flag = 0 ;
+  
+  {
+    unsigned int    ie ;
+
+    #pragma omp parallel for
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+      if(mat) {
+        int    i ;
+      
+        Element_FreeBuffer(el + ie) ;
+        i = Element_ComputeExplicitTerms(el + ie,t) ;
+        if(i != 0) {
+          #pragma omp critical
+          {
+            flag = i ;
+            n_el = 0 ;
+          }
+        }
+      }
+    }
+  }
+  
+  return(flag) ;
+}
+
+#else
 
 int (Mesh_ComputeExplicitTerms)(Mesh_t* mesh,double t)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
-  unsigned int    ie ;
+  int flag = 0 ;
+  
+  {
+    unsigned int    ie ;
 
-  for(ie = 0 ; ie < n_el ; ie++) {
-    Material_t* mat = Element_GetMaterial(el + ie) ;
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
     
-    if(mat) {
-      int    i ;
+      if(mat) {
+        int    i ;
       
-      Element_FreeBuffer(el + ie) ;
-      i = Element_ComputeExplicitTerms(el + ie,t) ;
-      if(i != 0) return(i) ;
+        Element_FreeBuffer(el + ie) ;
+        i = Element_ComputeExplicitTerms(el + ie,t) ;
+        if(i != 0) {
+          flag = i ;
+          break ;
+        }
+      }
     }
   }
   
-  return(0) ;
+  return(flag) ;
+}
+#endif
+
+
+
+#if Threads_APIis(OpenMP)
+int (Mesh_ComputeMatrix)(Mesh_t* mesh,double t,double dt,Matrix_t* a)
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  int flag = 0 ;
+
+  Matrix_SetValuesToZero(a) ;
+  
+  {
+    unsigned int    ie ;
+    
+    #pragma omp parallel for
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+      if(mat) {
+#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+        double ke[NE*NE] ;
+#undef NE
+        int    i ;
+      
+        Element_FreeBuffer(el + ie) ;
+        i = Element_ComputeMatrix(el + ie,t,dt,ke) ;
+        if(i != 0) {
+          #pragma omp critical
+          {
+            flag = i ;
+            n_el = 0 ;
+          }
+        }
+      
+        #pragma omp critical
+        Matrix_AssembleElementMatrix(a,el+ie,ke) ;
+      }
+    }
+  }
+  
+  return(flag) ;
 }
 
-
+#else
 
 int (Mesh_ComputeMatrix)(Mesh_t* mesh,double t,double dt,Matrix_t* a)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
-  unsigned int    ie ;
+  int flag = 0 ;
 
   Matrix_SetValuesToZero(a) ;
   
-  for(ie = 0 ; ie < n_el ; ie++) {
-    Material_t* mat = Element_GetMaterial(el + ie) ;
+  {
+    unsigned int    ie ;
+  
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
     
-    if(mat) {
+      if(mat) {
 #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
-      double ke[NE*NE] ;
+        double ke[NE*NE] ;
 #undef NE
-      int    i ;
+        int    i ;
       
-      Element_FreeBuffer(el + ie) ;
-      i = Element_ComputeMatrix(el + ie,t,dt,ke) ;
-      if(i != 0) return(i) ;
+        Element_FreeBuffer(el + ie) ;
+        i = Element_ComputeMatrix(el + ie,t,dt,ke) ;
+        if(i != 0) {
+          flag = i ;
+          break ;
+        }
       
-      Matrix_AssembleElementMatrix(a,el+ie,ke) ;
+        Matrix_AssembleElementMatrix(a,el+ie,ke) ;
+      }
     }
   }
   
-  return(0) ;
+  return(flag) ;
+}
+#endif
+
+
+
+#if Threads_APIis(OpenMP)
+void (Mesh_ComputeResidu)(Mesh_t* mesh,double t,double dt,Residu_t* r,Loads_t* loads)
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  
+  Residu_SetValuesToZero(r) ;
+  
+  /* Residu */
+  {
+    unsigned int ie ;
+    
+    #pragma omp parallel for
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+      if(mat) {
+#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+        double re[NE] ;
+#undef NE
+      
+        Element_FreeBuffer(el + ie) ;
+        Element_ComputeResidu(el + ie,t,dt,re) ;
+      
+        #pragma omp critical
+        Residu_AssembleElementResidu(r,el + ie,re) ;
+      }
+    }
+  }
+  
+  /* Loads */
+  {
+    unsigned int n_cg = Loads_GetNbOfLoads(loads) ;
+    Load_t* cg = Loads_GetLoad(loads) ;
+    
+    {
+      unsigned int i_cg ;
+    
+      for(i_cg = 0 ; i_cg < n_cg ; i_cg++) {
+        int reg_cg = Load_GetRegionIndex(cg + i_cg) ;
+        unsigned int ie ;
+    
+        #pragma omp parallel for
+        for(ie = 0 ; ie < n_el ; ie++) {
+          if(Element_GetRegionIndex(el + ie) == reg_cg) {
+            Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+            if(mat) {
+#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+              double re[NE] ;
+#undef NE
+        
+              Element_FreeBuffer(el + ie) ;
+              Element_ComputeLoads(el + ie,t,dt,cg + i_cg,re) ;
+      
+              #pragma omp critical
+              Residu_AssembleElementResidu(r,el + ie,re) ;
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
-
+#else
 
 void (Mesh_ComputeResidu)(Mesh_t* mesh,double t,double dt,Residu_t* r,Loads_t* loads)
 {
@@ -1522,54 +1687,117 @@ void (Mesh_ComputeResidu)(Mesh_t* mesh,double t,double dt,Residu_t* r,Loads_t* l
   {
     unsigned int n_cg = Loads_GetNbOfLoads(loads) ;
     Load_t* cg = Loads_GetLoad(loads) ;
-    unsigned int i_cg ;
     
-    for(i_cg = 0 ; i_cg < n_cg ; i_cg++) {
-      int reg_cg = Load_GetRegionIndex(cg + i_cg) ;
-      unsigned int ie ;
+    {
+      unsigned int i_cg ;
     
-      for(ie = 0 ; ie < n_el ; ie++) {
-        if(Element_GetRegionIndex(el + ie) == reg_cg) {
-          Material_t* mat = Element_GetMaterial(el + ie) ;
+      for(i_cg = 0 ; i_cg < n_cg ; i_cg++) {
+        int reg_cg = Load_GetRegionIndex(cg + i_cg) ;
+        unsigned int ie ;
     
-          if(mat) {
+        for(ie = 0 ; ie < n_el ; ie++) {
+          if(Element_GetRegionIndex(el + ie) == reg_cg) {
+            Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+            if(mat) {
 #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
-            double re[NE] ;
+              double re[NE] ;
 #undef NE
         
-            Element_FreeBuffer(el + ie) ;
-            Element_ComputeLoads(el + ie,t,dt,cg + i_cg,re) ;
+              Element_FreeBuffer(el + ie) ;
+              Element_ComputeLoads(el + ie,t,dt,cg + i_cg,re) ;
       
-            Residu_AssembleElementResidu(r,el + ie,re) ;
+              Residu_AssembleElementResidu(r,el + ie,re) ;
+            }
           }
         }
       }
     }
   }
 }
+#endif
 
 
+
+#if Threads_APIis(OpenMP)
+int (Mesh_ComputeImplicitTerms)(Mesh_t* mesh,double t,double dt)
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  int flag = 0 ;
+  
+  {
+    unsigned int    ie ;
+    
+    #pragma omp parallel for
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+      if(mat) {
+        int    i ;
+      
+        Element_FreeBuffer(el + ie) ;
+        i = Element_ComputeImplicitTerms(el + ie,t,dt) ;
+        if(i != 0) {
+          #pragma omp critical
+          {
+            flag = i ;
+            n_el = 0 ;
+          }
+        }
+      }
+      
+      #if 0
+      {
+        int id = Threads_CurrentThreadId ;
+        
+        printf("Element: %d\n",ie) ;
+        
+        if(id == 0) {
+          int nthreads = Threads_GetTheNbOfThreads() ;
+          
+          printf("Actual number of threads: %d\n",nthreads) ;
+        }
+        
+        printf("Current thread id: %d\n",id) ;
+      }
+      #endif
+    }
+  }
+  
+  return(flag) ;
+}
+
+#else
 
 int (Mesh_ComputeImplicitTerms)(Mesh_t* mesh,double t,double dt)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
-  unsigned int    ie ;
+  int flag = 0 ;
+  
+  {
+    unsigned int    ie ;
 
-  for(ie = 0 ; ie < n_el ; ie++) {
-    Material_t* mat = Element_GetMaterial(el + ie) ;
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
     
-    if(mat) {
-      int    i ;
+      if(mat) {
+        int    i ;
       
-      Element_FreeBuffer(el + ie) ;
-      i = Element_ComputeImplicitTerms(el + ie,t,dt) ;
-      if(i != 0) return(i) ;
+        Element_FreeBuffer(el + ie) ;
+        i = Element_ComputeImplicitTerms(el + ie,t,dt) ;
+        if(i != 0) {
+          flag = i ;
+          break ;
+        }
+      }
     }
   }
   
-  return(0) ;
+  return(flag) ;
 }
+#endif
 
 
 

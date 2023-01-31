@@ -63,13 +63,51 @@ target_compile_features(${BIL_EXE}
 #    -pedantic ${WFLAGS} ${OFLAGS}
 #)
 
+
 set_target_properties(${BIL_EXE}
   PROPERTIES 
-  INSTALL_RPATH "${BIL_INSTALL_FULL_LIBDIR}"
+  INSTALL_RPATH "${BILEXTRALIBS_INSTALL_RPATH}"
   RUNTIME_OUTPUT_DIRECTORY ${BIL_BINDIR}
 )
 
 target_link_libraries(${BIL_EXE} ${BIL_LIB} ${BIL_EXTRALIBS})
+
+string(FIND "${BIL_EXTRALIBS}" "OPENMP" mtapi)
+if(HAVE_OPENMP OR ${mtapi} GREATER -1)
+  find_package(OpenMP)
+  if(OpenMP_FOUND)
+    Message(STATUS "Compiler supports OpenMP.")
+    target_link_libraries(${BIL_EXE} OpenMP::OpenMP_C)
+  else()
+    Message(STATUS "Compiler doesn't support OpenMP.")
+  endif()
+endif()
+
+
+string(FIND "${BIL_EXTRALIBS}" "PTHREAD" mtapi)
+if(HAVE_PTHREAD OR ${mtapi} GREATER -1)
+  find_package(Threads)
+  if(Threads_FOUND)
+    Message(STATUS "Compiler supports Pthread.")
+    target_link_libraries(${BIL_EXE} Threads::Threads)
+  else()
+    Message(STATUS "Compiler doesn't support Pthread.")
+  endif()
+endif()
+
+
+string(FIND "${BIL_EXTRALIBS}" "dist" mtapi)
+if(HAVE_MPI OR ${mtapi} GREATER -1)
+  find_package(MPI)
+  if(MPI_FOUND)
+    Message(STATUS "Compiler supports MPI.")
+    target_link_libraries(${BIL_EXE} MPI::MPI_C)
+  else()
+    Message(STATUS "Compiler doesn't support MPI.")
+  endif()
+endif()
+
+
 
 target_link_options(${BIL_EXE}
   PUBLIC "-O3 -g -gdwarf-3"

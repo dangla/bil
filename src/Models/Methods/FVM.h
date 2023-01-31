@@ -61,15 +61,28 @@ extern double*    FVM_ComputeTheNodalFluxVector(FVM_t*,double*) ;
 #define FVM_GetInput(fvm)                        ((fvm)->input)
 #define FVM_GetOutput(fvm)                       ((fvm)->output)
 #define FVM_GetShiftOfInput(fvm)                 ((fvm)->shift)
-#define FVM_GetBuffer(fvm)                       ((fvm)->buffer)
+#define FVM_GetBuffers(fvm)                      ((fvm)->buffers)
 #define FVM_GetCellVolumes(fvm)                  ((fvm)->cellvolumes)
 #define FVM_GetCellSurfaceAreas(fvm)             ((fvm)->cellsurfaceareas)
 #define FVM_GetIntercellDistances(fvm)           ((fvm)->celldistances)
 
 
-#define FVM_AllocateInBuffer(fvm,sz)         (Buffer_Allocate(FVM_GetBuffer(fvm),(sz)))
-#define FVM_FreeBuffer(fvm)                  (Buffer_Free(FVM_GetBuffer(fvm)))
-#define FVM_FreeBufferFrom(fvm,p)            (Buffer_FreeFrom(FVM_GetBuffer(fvm),(char*) (p)))
+
+
+/* Buffer */
+#define FVM_GetBuffer(fvm) \
+        Buffers_GetBufferOfCurrentThread(FVM_GetBuffers(fvm))
+
+
+
+#define FVM_AllocateInBuffer(fvm,sz) \
+        (Buffer_Allocate(FVM_GetBuffer(fvm),(sz)))
+        
+#define FVM_FreeBuffer(fvm) \
+        (Buffer_Free(FVM_GetBuffer(fvm)))
+        
+#define FVM_FreeBufferFrom(fvm,p) \
+        (Buffer_FreeFrom(FVM_GetBuffer(fvm),(char*) (p)))
 
 
 
@@ -81,7 +94,7 @@ struct FVM_s {                /* Finite Volume Method */
   void*      input ;          /* Input */
   void*      output ;         /* Output*/
   int        shift ;          /* Shift of input */
-  Buffer_t   *buffer ;        /* Buffer */
+  Buffers_t* buffers ;        /* Buffer */
   double*    cellvolumes ;
   double*    cellsurfaceareas ;
   double*    celldistances ;

@@ -1,0 +1,77 @@
+Geometry       # dimension (1, 2, 3) et symétrie (axis, plan) du pb
+2 axis
+
+Mesh                # maillage considéré (généré avec GMSH)
+carre.msh
+
+Material            # liste des matériaux (modèles et param. associés)
+Model = BBM         # nom du modèle
+gravity = 0         # gravité
+rho_s = 2000        # masse volumique des particules solides
+slope_of_swelling_line = 0.004       # indice de gonflement elastique
+slope_of_virgin_consolidation_line = 0.037      # pente de la NCL dans le plan (ln p', e)
+shear_modulus = 1.e8# module de cisaillement
+slope_of_critical_state_line = 1.2             # pente de la CSL dans le plan (p', q)
+initial_pre-consolidation_pressure = 20e3         # preconsolidation
+reference_consolidation_pressure = 0.01e6         # reference consolidation pressure
+kappa_s = 0.008
+initial_stress_11 = -10000        # contrainte initiale (isotrope)
+initial_stress_22 = -10000        # contrainte initiale (isotrope)
+initial_stress_33 = -10000        # contrainte initiale (isotrope)
+initial_porosity = 0.25          # porosite initiale
+rho_l = 1000        # masse volumique du fluide
+k_int = 1e-20       # permeabilite intrinseque
+mu_l = 0.001        # viscosite du liquide
+suction_cohesion_coefficient = 0.8
+Curves = wrc        # nom du fichier contenant p_c S_l k_rl LC
+
+
+
+Fields                # champs constants ou linéaires dans l'espace
+3
+Type = affine  Value =  1.e3     Gradient = 0 0 0   Point = 0 0 0
+Type = affine  Value = -0.33e3   Gradient = 0 0 0   Point = 0 0 0
+Type = affine  Value =  0.66e3   Gradient = 0 0 0   Point = 0 0 0
+
+Initialization                # initialisation des variables
+0
+
+Functions                # fonctions temporelles, pour les CL
+2
+N = 2  F(0) = 10      F(1) = 250      # p en kPa
+N = 2  F(0) = 0       F(1) = 120      # q en kPa
+
+Boundary Conditions                # conditions aux limites (Dirichlet)
+3
+Region = 14 Unknown = u_1 Field = 0 Function = 0
+Region = 11 Unknown = u_2 Field = 0 Function = 0
+Region = 100 Unknown = p_l Field = 1 Function = 0
+
+Loads                # conditions aux limites (Neumann)
+4
+Region = 12  Type = pressure  Equation = meca_1   Field = 1  Function = 1
+Region = 12  Type = pressure  Equation = meca_1   Field = 2  Function = 2
+Region = 13  Type = pressure  Equation = meca_1   Field = 1  Function = 1
+Region = 13  Type = pressure  Equation = meca_1   Field = 3  Function = 2
+
+Points                # points de l'espace pour le stockage des variables
+1
+0.5 0.5
+
+Dates                # dates pour le stockage des données
+2
+0 1 2
+
+Objective Variations                # variables objectives (une par ddl)
+u_1 = 1.e-4
+u_2 = 1.e-4
+p_l = 1000
+
+Iterative Process                # param. num. pour le contrôle de la convergence
+Iteration = 100
+Tolerance = 1e-06
+Repetition = 0
+
+Time Steps
+Dtini = 1.e-4
+Dtmax = 1e-3

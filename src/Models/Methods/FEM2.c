@@ -26,9 +26,9 @@ FEM2_t* (FEM2_Create)(void)
   
   /* Space allocation for buffer */
   {
-    Buffer_t* buf = Buffer_Create(FEM2_SizeOfBuffer) ;
+    Buffers_t* buf = Buffers_Create(FEM2_SizeOfBuffer) ;
     
-    FEM2_GetBuffer(fem2) = buf ;
+    FEM2_GetBuffers(fem2) = buf ;
   }
   
   return(fem2) ;
@@ -41,12 +41,12 @@ void (FEM2_Delete)(void* self)
   FEM2_t* fem2 = (FEM2_t*) self ;
   
   {
-    Buffer_t* buffer = FEM2_GetBuffer(fem2) ;
+    Buffers_t* buf = FEM2_GetBuffers(fem2) ;
     
-    if(buffer) {
-      Buffer_Delete(buffer)  ;
-      free(buffer) ;
-      FEM2_GetBuffer(fem2) = NULL ;
+    if(buf) {
+      Buffers_Delete(buf)  ;
+      free(buf) ;
+      FEM2_GetBuffers(fem2) = NULL ;
     }
   }
 }

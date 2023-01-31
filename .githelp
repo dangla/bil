@@ -29,7 +29,7 @@ Working with remotes
   adding a remote: git remote add <shortname> <url>
 
 Pushing
-  pushing to remote ifsttar: git push ifsttar master
+  pushing to remote ifsttar: git push Universite-Gustave-Eiffel master
   pushing to remote dangla: git push dangla master
   adding a remote: git remote add <shortname> <url>
   Note: Github will no longer accept account passwords

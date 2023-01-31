@@ -3,6 +3,7 @@
 SHELL = /bin/sh
 
 include ../make.inc
+#${info in src/Makefile: CFLAGS = ${CFLAGS}}
 
 LIBBILa     = ${BIL_LIBDIR}/libbil-${BIL_VERSION}.a
 
@@ -184,7 +185,7 @@ Modules/Modules.o: Modules/ListOfModules.inc
 .PHONY: models
 models:
 	@echo "\nLook for available models"
-	cd ${DIRMODELFILES} && ${MAKE}
+	( ${MAKE} -C ${DIRMODELFILES} )
 
 
 
@@ -194,7 +195,7 @@ models:
 .PHONY: modules
 modules:
 	@echo "\nLook for available modules"
-	cd ${DIRMODULEFILES} && ${MAKE}
+	( ${MAKE} -C ${DIRMODULEFILES} )
 
 
 
@@ -204,8 +205,8 @@ modules:
 clean:
 	rm -f ${wildcard ${addsuffix *.o,${DIRSOTHER}}}
 	rm -f ${wildcard ${addsuffix *~,${DIRSOTHER}}}
-	cd ${DIRMODELFILES} && ${MAKE} clean
-	cd ${DIRMODULEFILES} && ${MAKE} clean
+	( ${MAKE} -C ${DIRMODELFILES} clean )
+	( ${MAKE} -C ${DIRMODULEFILES} clean )
 
 
 

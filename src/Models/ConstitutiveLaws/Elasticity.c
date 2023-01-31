@@ -414,3 +414,32 @@ double* (Elasticity_ComputeStressTensor)(Elasticity_t* elasty,const double* stra
   return(stress) ;
 }
 
+
+#if 0
+double* (Elasticit_IsotropicStiffnessTensor)(const double k, const double g,double* c)
+/** Compute the 4th rank isotropic elastic tensor from k and g.
+ *  Return c  */
+{
+#define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
+  double lame    = k - 2./3.*g ;
+   
+  {
+    int    i ;
+
+    for(i = 0 ; i < 81 ; i++) c[i] = 0. ;
+    
+    for(i = 0 ; i < 3 ; i++) {
+      int j ;
+      
+      for(j = 0 ; j < 3 ; j++) {
+        C(i,i,j,j) += lame ;
+        C(i,j,i,j) += g ;
+        C(i,j,j,i) += g ;
+      }
+    }
+  }
+  
+  return(c) ;
+#undef C
+}
+#endif

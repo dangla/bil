@@ -52,9 +52,9 @@ Math_t*  (Math_Create)(void)
   
   /* Space allocation for buffer */
   {
-    Buffer_t* buf = Buffer_Create(Math_SizeOfBuffer) ;
+    Buffers_t* buf = Buffers_Create(Math_SizeOfBuffer) ;
     
-    Math_GetBuffer(math) = buf ;
+    Math_GetBuffers(math) = buf ;
   }
   
   
@@ -71,8 +71,12 @@ void (Math_Delete)(void* self)
   Math_t* math = (Math_t*) self ;
   
   {
-    Buffer_Delete(Math_GetBuffer(math))  ;
-    free(Math_GetBuffer(math))  ;
+    Buffers_t* buf = Math_GetBuffers(math) ;
+    
+    if(buf) {
+      Buffers_Delete(buf)  ;
+      free(buf)  ;
+    }
   }
   
   Math_GetDelete(math) = NULL ;
@@ -361,7 +365,7 @@ double d = 1 ;
         
           SWAP(b[imax],b[k]) ;
           
-          d *= 1 ;
+          d *= -1 ;
         }
       }
     
@@ -419,13 +423,13 @@ double* (Math_SolveByGaussEliminationJIK)(double* a,double* b,int n,int* indx)
  *  On input:
  *  - a is the matrix stored by rows
  *  - n is the dimension of the system (nb of rows/columns)
- *  - b is the right hand side vector 
+ *  - b should point to the right hand side vector or to NULL
  *  - indx is a valid pointer to a free space of n*int or NULL
  *  if indx = NULL no pivoting is performed.
  *  On output:
  *  - a is replaced by the LU decomposition
  *      of a rowwise permutation of itself.
- *  - b is replaced by the solution x.
+ *  - b is replaced by the solution xif b is not NULL.
  * 
  *  Ref:
  *  W. Press, S.A. Teukolky, W.T. Vetterling, B.P. Flannery
@@ -552,13 +556,13 @@ double* (Math_SolveByGaussEliminationKIJ)(double* a,double* b,int n,int* indx)
  *  On input:
  *  - a is the matrix stored by rows
  *  - n is the dimension of the system (nb of rows/columns)
- *  - b is the right hand side vector 
+ *  - b should point to the right hand side vector or to NULL.
  *  - indx is a valid pointer to a free space of n*int or NULL
  *  if indx = NULL no pivoting is performed.
  *  On output:
  *  - a is replaced by the LU decomposition
  *      of a rowwise permutation of itself.
- *  - b is replaced by the solution x.
+ *  - b is replaced by the solution x if b is not NULL.
  * 
  *  Ref:
  *  W. Press, S.A. Teukolky, W.T. Vetterling, B.P. Flannery
@@ -1405,7 +1409,7 @@ void Math_Test(int argc, char** argv)
     //Math_SolveByGaussEliminationJIK(lu,x,n,NULL) ;
     //Math_SolveByGaussEliminationKIJ(lu,x,n,NULL) ;
     Math_SolveByGaussElimination(lu,x,n) ;
-    Math_SolveByGaussJordanElimination(ainv,NULL,n,0) ;
+    Math_InvertMatrix(ainv,n) ;
   }
   
   if(0) {
@@ -1514,13 +1518,58 @@ void Math_Test(int argc, char** argv)
 }
 
 
+
+#define PRINTMAT(N,A) \
+        do {\
+          int i;\
+          for(i = 0 ; i < N ; i++) {\
+            int j;\
+            for(j = 0 ; j < N ; j++) {\
+              printf("%e ",A(i,j));\
+            }\
+            printf("\n");\
+          }\
+        } while(0)
+
+
+
+static int Math_TestDGEEV(int,char**) ;
+
+int Math_TestDGEEV(int argc,char** argv)
+{
+  #define  A(i,j)  (a[(i)*3+(j)])
+  double a[9] = {1,0,0,0,25,0,0,0,400};
+  double* eigv = Math_ComputeRealEigenvaluesAndEigenvectorsOf3x3Matrix(a,'r');
+  
+  printf("a\n") ;
+  PRINTMAT(3,A) ;
+  
+  {
+    int i;
+    
+    printf("Eigen values:\n") ;
+    for(i = 0 ; i < 3 ; i++) {
+      printf("%e ",eigv[i]);
+    }
+    printf("\n") ;
+  }
+  
+  return(0) ;
+}
+
+
 /*
  * Compilation: 
- * g++ -gdwarf-2 -g3  -L/home/dangla/Documents/Softwares/bil/bil-master/lib -Wl,-rpath=/home/dangla/Documents/Softwares/bil/bil-master/lib -lbil-2.8.4 Math_.o  -o out -lgfortran
+ * g++ -gdwarf-2 -g3  -L/home/dangla/Documents/Softwares/bil/bil-master/lib -Wl,-rpath=/home/dangla/Documents/Softwares/bil/bil-master/lib -lbil-2.8.4 /usr/lib/x86_64-linux-gnu/liblapack.a /usr/lib/x86_64-linux-gnu/libblas.a  -o out -lgfortran
 */
 int main(int argc, char** argv)
 {
+  Session_Open() ;
+  
   Math_Test(argc,argv) ;
+  Math_TestDGEEV(argc,argv) ;
+  
+  Session_Close() ;
   return(0) ;
 }
 #endif

@@ -61,6 +61,9 @@ static double  macrogradient[9] ;
 static double  macrostrain[9] ;
 static double* cijkl ;
 static Elasticity_t* elasty ;
+#if Threads_APIis(OpenMP)
+  #pragma omp threadprivate(gravity,rho_s,sig0,macrogradient,macrostrain,cijkl,elasty)
+#endif
 
 
 #define ItIsPeriodic  (Geometry_IsPeriodic(Element_GetGeometry(el)))
@@ -85,6 +88,12 @@ I_Last
 
 
 #define NbOfVariables    (I_Last)
+static double  Variable[NbOfVariables] ;
+//static double  Variable_n[NbOfVariables] ;
+//static double dVariable[NbOfVariables] ;
+#if Threads_APIis(OpenMP)
+  #pragma omp threadprivate(Variable)
+#endif
 
 
 
@@ -628,7 +637,8 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 double* ComputeVariables(Element_t* el,double** u,double* f_n,double t,double dt,int p)
 {
   Model_t*  model  = Element_GetModel(el) ;
-  double*   x      = Model_GetVariable(model,p) ;
+  //double*   x      = Model_GetVariable(model,p) ;
+  double*   x      = Variable ;
   
   {
     IntFct_t* intfct = Element_GetIntFct(el) ;
@@ -682,6 +692,26 @@ double* ComputeVariables(Element_t* el,double** u,double* f_n,double t,double dt
   /* Needed variables to compute secondary components */
     
   ComputeSecondaryVariables(el,t,dt,x) ;
+  
+  #if 0
+  {
+    int id = Threads_CurrentThreadId ;
+    
+    printf("thread: %d\n",id) ;
+    printf("integration point: %d\n",p) ;
+    
+    {
+      int k ;
+      
+      printf("x:",p) ;
+      for(k = 0 ; k < NbOfVariables ; k++) {
+        printf(" %e",x[k]) ;
+      }
+      
+      printf("\n") ;
+    }
+  }
+  #endif
   
   return(x) ;
 }

@@ -96,7 +96,13 @@ use the solver defined by \fImethod\fR. Available methods are:
 \fBcrout\fR: CROUT method (default).
 .RE
 .RS
-\fBslu\fR: SuperLU (if installed).
+\fBsuperlu\fR: Sequential SuperLU (if installed).
+.RE
+.RS
+\fBsuperlumt\fIN\fR\fR: Multithreaded SuperLU (if installed) with \fIN\fR number of threads.
+.RE
+.RS
+\fBsuperludist\fIN\fR\fR: Distributed SuperLU (if installed) with \fIN\fR number of processes.
 .RE
 .RS
 \fBma38\fR: MA38 from HSL (if BLAS library installed).

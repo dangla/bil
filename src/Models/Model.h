@@ -34,7 +34,7 @@ typedef int    (Model_ComputeResidu_t)       (Element_t*,double,double,double*) 
 
 typedef void*  (Model_ComputeVariables_t)(Element_t*,void*,void*,void*,const double,const double,const int) ;
 //typedef double*   (Model_ComputeVariableFluxes_t)(Element_t* el,double** u,double t,double dt,int i,int j,...) ;
-typedef void   (Model_ComputeSecondaryVariables_t)(Element_t*,const double,const double,double*) ;
+typedef void   (Model_ComputeSecondaryVariables_t)(Element_t*,const double,const double,const double*,double*) ;
 typedef void*  (Model_ComputeVariableDerivatives_t)(Element_t*,const double,const double,void*,const double,const int) ;
 
 #include "IntFcts.h"
@@ -156,6 +156,9 @@ extern void      (Model_Scan)(Model_t*,DataFile_t*,Geometry_t*) ;
 
 #define Model_GetVariable(MOD,n) \
         LocalVariableVectors_GetVariable(Model_GetLocalVariableVectors(MOD),n)
+
+#define Model_GetPreviousVariable(MOD,n) \
+        LocalVariableVectors_GetPreviousVariable(Model_GetLocalVariableVectors(MOD),n)
 
 #define Model_GetVariableDerivative(MOD,n) \
         LocalVariableVectors_GetVariableDerivative(Model_GetLocalVariableVectors(MOD),n)

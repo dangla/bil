@@ -1,1 +1,1 @@
-  SELECTEDMODELS    =   Elast Plast Elasd M1 M10 M2 M5 M28 DWS1 Cryspom M7 Frostaco Frostaco3d M15 usoil hydrapel Poroplast Duracem Chloricem Carbocem Carbochloricem Carbochloricemkin Carbocempg Shen CO2coal Gascoal Yuan1 Fick Sulfuricem Sulfaco  Sulfacocl Sulfaco3d MechaMic CHMBWP CHMBWPCoupledHomoV2
+  SELECTEDMODELS    =   Elast Plast Elasd M1 M10 M2 DWS1 Cryspom M7 Frostaco Frostaco3d usoil hydrapel Poroplast Duracem Chloricem Carbocem Carbochloricem Carbochloricemkin Carbocempg Shen Gascoal Yuan1 Fick Sulfuricem Sulfaco Sulfacocl Sulfaco3d MechaMic CHMBWP BBM

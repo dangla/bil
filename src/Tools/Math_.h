@@ -33,6 +33,11 @@ extern double*  (Math_SolveByGaussEliminationKIJ)(double*,double*,int,int*) ;
 extern double*  (Math_SolveByGaussEliminationJIK)(double*,double*,int,int*) ;
 
 
+
+#define Math_InvertMatrix(A,N)  \
+        Math_SolveByGaussJordanElimination(A,NULL,N,0)
+
+
 #define Math_SolveByGaussEliminationWithoutPartialPivoting(...) \
         Math_SolveByGaussEliminationKIJ(__VA_ARGS__,NULL)
 
@@ -54,9 +59,7 @@ extern double*  (Math_SolveByGaussEliminationJIK)(double*,double*,int,int*) ;
   extern "C" {
 #endif
 
-extern void dgeev_(const char *jobvl, const char *jobvr, int *n, double *a,
-                   int *lda, double *wr, double *wi, double *vl, int *ldvl, 
-                   double *vr, int *ldvr, double *work, int *lwork, int *info);
+extern int dgeev_(const char*,const char*,int*,double*,int*,double*, double*,double*,int*,double*,int*,double*,int*,int*);
 
 #if defined(__cplusplus)
   }
@@ -109,10 +112,13 @@ extern void dgeev_(const char *jobvl, const char *jobvr, int *n, double *a,
 
 
 #define Math_GetOutputs(M)             ((M)->outputs)
-#define Math_GetBuffer(M)              ((M)->buffer)
+#define Math_GetBuffers(M)             ((M)->buffers)
 #define Math_GetDelete(M)              ((M)->Delete)
 
 
+
+#define Math_GetBuffer(M) \
+        Buffers_GetBufferOfCurrentThread(Math_GetBuffers(M))
 
 /* Operations on buffer */
 #define Math_AllocateInBuffer(M,sz) \
@@ -126,12 +132,12 @@ extern void dgeev_(const char *jobvl, const char *jobvr, int *n, double *a,
 
 
 
-#include "Buffer.h"
+#include "Buffers.h"
 #include "GenericObject.h"
 
 struct Math_s {          /* some math methods */
   void* outputs ;
-  Buffer_t*  buffer ;         /* Buffer */
+  Buffers_t*  buffers ;         /* Buffer */
   GenericObject_Delete_t* Delete ;
 } ;
 

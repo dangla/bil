@@ -18,6 +18,12 @@ MatrixStorageFormat_t* (MatrixStorageFormat_Create)(Options_t* options)
     
     } else if(Options_ResolutionMethodIsSuperLU(options)) {
       MatrixStorageFormat_GetType(msf) = MatrixStorageFormat_Type(SuperLU) ;
+    
+    } else if(Options_ResolutionMethodIsSuperLUMT(options)) {
+      MatrixStorageFormat_GetType(msf) = MatrixStorageFormat_Type(SuperLU) ;
+    
+    } else if(Options_ResolutionMethodIsSuperLUDist(options)) {
+      MatrixStorageFormat_GetType(msf) = MatrixStorageFormat_Type(SuperLU) ;
 
     } else if(Options_ResolutionMethodIsMA38(options)) {
       MatrixStorageFormat_GetType(msf) = MatrixStorageFormat_Type(Coordinate) ;

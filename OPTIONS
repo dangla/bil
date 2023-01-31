@@ -1,0 +1,4 @@
+# This is a comment. Put a # in the first column to comment the line.
+ENABLE_OPENMP   = OFF
+ENABLE_PTHREAD  = OFF
+ENABLE_MPI      = OFF

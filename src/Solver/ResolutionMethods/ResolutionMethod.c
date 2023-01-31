@@ -19,7 +19,13 @@ ResolutionMethod_t* (ResolutionMethod_Create)(Options_t* options)
       ResolutionMethod_GetType(rm) = ResolutionMethod_Type(CROUT) ;
     
     } else if(Options_ResolutionMethodIsSuperLU(options)) {
-      ResolutionMethod_GetType(rm) = ResolutionMethod_Type(SLU) ;
+      ResolutionMethod_GetType(rm) = ResolutionMethod_Type(SuperLU) ;
+    
+    } else if(Options_ResolutionMethodIsSuperLUMT(options)) {
+      ResolutionMethod_GetType(rm) = ResolutionMethod_Type(SuperLUMT) ;
+    
+    } else if(Options_ResolutionMethodIsSuperLUDist(options)) {
+      ResolutionMethod_GetType(rm) = ResolutionMethod_Type(SuperLUDist) ;
 
     } else if(Options_ResolutionMethodIsMA38(options)) {
       ResolutionMethod_GetType(rm) = ResolutionMethod_Type(MA38) ;

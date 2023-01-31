@@ -1,7 +1,7 @@
 
 #include "BilExtraLibs.h"
 
-#ifdef BLASLIB
+#if defined (BLASLIB) && defined (LAPACKLIB)
 
 #include <stdio.h>
 #include <stdlib.h>

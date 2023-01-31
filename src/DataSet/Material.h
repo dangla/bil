@@ -74,6 +74,14 @@ extern void        (Material_ScanProperties2) (Material_t*,FILE*,Model_ComputePr
 #define Material_GetPropertyValue(MAT,S) \
         (Material_GetProperty(MAT) + Model_GetComputePropertyIndex(Material_GetModel(MAT))(S))[0]
 
+#define Material_SetPropertiesToZero(MAT,N) \
+        do { \
+          int Material_i ; \
+          for(Material_i = 0 ; Material_i < N ; Material_i++) { \
+            Material_GetProperty(MAT)[Material_i] = 0 ; \
+          } \
+        } while(0)
+
 /*
 ** #define Material_ReadProperties(MAT,datafile) \
 *          Model_GetReadMaterialProperties(Material_GetModel(MAT))(MAT,datafile)
@@ -120,6 +128,9 @@ extern void        (Material_ScanProperties2) (Material_t*,FILE*,Model_ComputePr
 #define Material_FindData(MAT,...) \
         GenericData_FindData(Material_GetGenericData(MAT),__VA_ARGS__)
         
+#define Material_FindNbOfData(MAT,...) \
+        GenericData_FindNbOfData(Material_GetGenericData(MAT),__VA_ARGS__)
+
 #define Material_AppendData(MAT,...) \
         Material_AppendGenericData(MAT,GenericData_Create(__VA_ARGS__))
 

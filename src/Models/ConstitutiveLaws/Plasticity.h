@@ -9,8 +9,6 @@ struct Plasticity_s     ; typedef struct Plasticity_s     Plasticity_t ;
 
 /* Typedef names of methods */
 typedef double  (Plasticity_ComputeTangentStiffnessTensor_t)(Plasticity_t*,const double*,const double*,const double) ;
-typedef double  (Plasticity_ComputeFunctionGradients_t)(Plasticity_t*,const double*,const double*) ;
-typedef double  (Plasticity_Criterion_t)(Plasticity_t*,const double*,const double*) ;
 typedef double  (Plasticity_ReturnMapping_t)(Plasticity_t*,double*,double*,double*) ;
 
 
@@ -24,8 +22,6 @@ extern void           (Plasticity_SetParameter)                (Plasticity_t*,co
 extern double         (Plasticity_UpdateElastoplasticTensor)   (Plasticity_t*,double*) ;
 extern void           (Plasticity_PrintTangentStiffnessTensor) (Plasticity_t*) ;
 extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,double*) ;
-//extern Plasticity_ComputeFunctionGradients_t     Plasticity_Criterion ;
-//extern Plasticity_ReturnMapping_t                Plasticity_ReturnMapping ;
 
 
 
@@ -42,7 +38,6 @@ extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,do
 #define Plasticity_GetTangentStiffnessTensor(PL)     ((PL)->cijkl)
 #define Plasticity_GetElasticity(PL)                 ((PL)->elasty)
 #define Plasticity_GetParameter(PL)                  ((PL)->parameter)
-#define Plasticity_GetComputeFunctionGradients(PL)   ((PL)->computefunctiongradients)
 #define Plasticity_GetComputeTangentStiffnessTensor(PL)   ((PL)->computetangentstiffnesstensor)
 #define Plasticity_GetReturnMapping(PL)              ((PL)->returnmapping)
 #define Plasticity_GetPlasticMultiplier(PL)          ((PL)->lambda)
@@ -108,17 +103,6 @@ extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,do
 #define Plasticity_GetInitialVoidRatio(PL) \
         Plasticity_GetParameter(PL)[4]
         
-/* Cam-clayEp
- * ---------- */
-#define Plasticity_IsCamClayEp(PL) \
-        Plasticity_Is(PL,"Cam-clayEp")
-
-#define Plasticity_SetToCamClayEp(PL) \
-        do { \
-          Plasticity_CopyCodeName(PL,"Cam-clayEp") ; \
-          Plasticity_Initialize(PL) ; \
-        } while(0)
-        
 /* Cam-clayOffset
  * -------------- */
 #define Plasticity_IsCamClayOffset(PL) \
@@ -144,11 +128,7 @@ extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,do
         
 #define Plasticity_ComputeFunctionGradients \
         Plasticity_ComputeTangentStiffnessTensor3
-        
-/*
-#define Plasticity_ComputeFunctionGradients(PL,...) \
-        Plasticity_GetComputeFunctionGradients(PL)(PL,__VA_ARGS__)
-*/
+
 
 
 #define Plasticity_ReturnMapping(PL,...) \
@@ -187,7 +167,6 @@ struct Plasticity_s {
   double* parameter ;
   GenericData_t* genericdata ;  /** Plastic properties */
   Elasticity_t* elasty ;
-  //Plasticity_ComputeFunctionGradients_t*  computefunctiongradients ;
   Plasticity_ComputeTangentStiffnessTensor_t* computetangentstiffnesstensor ;
   Plasticity_ReturnMapping_t*             returnmapping ;
 } ;
