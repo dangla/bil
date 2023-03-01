@@ -62,6 +62,8 @@ static double* MacroStrain(Element_t*,double) ;
 
 #define ComputeTangentStiffnessTensor(...)  Plasticity_ComputeTangentStiffnessTensor(plasty,__VA_ARGS__)
 #define ReturnMapping(...)                  Plasticity_ReturnMapping(plasty,__VA_ARGS__)
+//#define ComputeTangentStiffnessTensor(...)  Plasticity_GenericTangentStiffnessTensor(plasty,__VA_ARGS__)
+//#define ReturnMapping(...)                  Plasticity_GenericReturnMapping(plasty,__VA_ARGS__)
 #define CopyElasticTensor(...)              Plasticity_CopyElasticTensor(plasty,__VA_ARGS__)
 #define CopyTangentStiffnessTensor(...)     Plasticity_CopyTangentStiffnessTensor(plasty,__VA_ARGS__)
 
@@ -337,7 +339,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
   /* Plasticity */
   {
     plasty = Mry_Create(Plasticity_t,nthreads,Plasticity_Create()) ;
-      
+
     Material_AppendData(mat,nthreads,plasty,Plasticity_t,"Plasticity") ;
   }
   
@@ -354,12 +356,8 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         
         Elasticity_SetToIsotropy(elasty) ;
         Elasticity_SetParameters(elasty,young,poisson) ;
-      
-        {
-          double* c = Elasticity_GetStiffnessTensor(elasty) ;
-    
-          Elasticity_ComputeStiffnessTensor(elasty,c) ;
-        }
+        
+        Elasticity_UpdateElasticTensors(elasty) ;
       }
       
       /* Drucker-Prager */

@@ -25,6 +25,10 @@ extern void      (Mry_Free)(void*) ;
         Mry_AllocateZeroed((size_t) (N),sizeof(T))
 
 
+/* We use a C extension provided by GNU C:
+ * A compound statement enclosed in parentheses may appear 
+ * as an expression in GNU C.
+ * (https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html#Statement-Exprs) */
 #define Mry_Create(T,N,CREATE) \
         ({ \
           T* Mry_v = (T*) Mry_New(T,N) ; \

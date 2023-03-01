@@ -1,9 +1,10 @@
 static Plasticity_ComputeTangentStiffnessTensor_t    Plasticity_CTDruckerPrager ;
-
 static Plasticity_ReturnMapping_t                    Plasticity_RMDruckerPrager ;
+static Plasticity_YieldFunction_t                    Plasticity_YFDruckerPrager ;
+static Plasticity_FlowRules_t                        Plasticity_FRDruckerPrager ;
 
 
-double Plasticity_CTDruckerPrager(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)
+double (Plasticity_CTDruckerPrager)(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)
 /** Drucker-Prager criterion. 
  * 
  *  Inputs are: 
@@ -216,7 +217,7 @@ double Plasticity_CTDruckerPrager(Plasticity_t* plasty,const double* sig,const d
 
 
 
-double Plasticity_RMDruckerPrager(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
+double (Plasticity_RMDruckerPrager)(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
 /** Drucker-Prager return mapping.
  * 
  *  Parameters are:
@@ -399,4 +400,150 @@ double Plasticity_RMDruckerPrager(Plasticity_t* plasty,double* sig,double* eps_p
   Plasticity_GetPlasticMultiplier(plasty) = dl ;
   
   return(crit) ;
+}
+
+
+
+
+double (Plasticity_YFDruckerPrager)(Plasticity_t* plasty,const double* stress,const double* hardv)
+/** Return the value of the yield function. */
+{
+  double af      = Plasticity_GetFrictionAngle(plasty) ;
+  double cohesion = Plasticity_GetCohesion(plasty) ;
+  double ff      = 6.*sin(af)/(3. - sin(af)) ;
+  double cc0     = 6.*cos(af)/(3. - sin(af))*cohesion ;
+  //double gam_p   = hardv[0] ;
+  double p       = (stress[0] + stress[4] + stress[8])/3. ;
+  double q       = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
+  double yield ;
+  
+  {
+    //double c1 = (gam_p < gam_R) ? 1 - (1 - alpha)*gam_p/gam_R : alpha ;
+    double c1 = 1 ;
+    double cc = cc0*c1*c1 ;
+  
+    yield = q + ff*p - cc ;
+  }
+
+  return(yield) ;
+}
+
+
+
+
+double* (Plasticity_FRDruckerPrager)(Plasticity_t* plasty,const double* stress,const double* hardv)
+/** Drucker-Prager criterion. 
+ * 
+ *  Inputs are: 
+ *  the stresses (stress),
+ *  the cumulative plastic shear strain (gam_p = hardv[0], not used here). 
+ * 
+ *  Parameters are:
+ *  the friction angle (af),
+ *  the dilatancy angle (ad) and the cohesion.
+ * 
+ *  On outputs the following values are modified:
+ *  dfsds = derivative of the yield function wrt stresses
+ *  dgsds = derivative of the potential function wrt stresses
+ *  hm    = hardening modulus
+ * 
+ *  Return the value of the yield function. */
+{
+  size_t SizeNeeded = (9+1)*(sizeof(double)) ;
+  double* flow   = (double*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
+  Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+  double young   = Elasticity_GetYoungModulus(elasty) ;
+  double poisson = Elasticity_GetPoissonRatio(elasty) ;
+  double af      = Plasticity_GetFrictionAngle(plasty) ;
+  double ad      = Plasticity_GetDilatancyAngle(plasty) ;
+  double cohesion = Plasticity_GetCohesion(plasty) ;
+  double ff      = 6.*sin(af)/(3. - sin(af)) ;
+  double dd      = 6.*sin(ad)/(3. - sin(ad)) ;
+  double cc0     = 6.*cos(af)/(3. - sin(af))*cohesion ;
+  //double gam_p   = hardv[0] ;
+  
+  double id[9] = {1,0,0,0,1,0,0,0,1} ;
+  double dev[9] ;
+  double p    = (stress[0] + stress[4] + stress[8])/3. ;
+  double q    = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
+  double crit ;
+  double cc ;
+  
+  
+  /*
+    Cohesion
+  */
+  {
+    //double c1 = (gam_p < gam_R) ? 1 - (1 - alpha)*gam_p/gam_R : alpha ;
+    double c1 = 1 ;
+    
+    cc = cc0*c1*c1 ;
+  }
+  
+  /*
+    Yield function
+  */ 
+  crit = q + ff*p - cc ;
+  
+  /*
+    Deviatoric stresses
+  */
+  {
+    int    i ;
+    
+    for(i = 0 ; i < 9 ; i++) {
+      dev[i] = stress[i] - p*id[i] ;
+    }
+  }
+
+  
+  /*
+    Potential function gradient
+  */
+  
+  /* Elastic case */
+  if(crit <= 0.) {
+    if(q > 0.) {
+      int    i ;
+      
+      for(i = 0 ; i < 9 ; i++) {
+        flow[i] = 1.5*dev[i]/q + id[i]*dd/3. ;
+      }
+      
+    } else {
+      int    i ;
+      
+      for(i = 0 ; i < 9 ; i++) {
+        flow[i] = id[i]*dd/3. ;
+      }
+    }
+  }
+  
+  /* Plastic case */
+  if(crit > 0.) {
+    double k   = young/(3 - 6*poisson) ;
+    double dmu = young/(1 + poisson) ;
+    double mu  = 0.5*dmu ;
+    
+    /* Smooth flow regime */
+    if(q > crit*3*mu/(3*mu+k*ff*dd)) {
+      int    i ;
+      
+      for(i = 0 ; i < 9 ; i++) {
+        flow[i] = 1.5*dev[i]/q + id[i]*dd/3. ;
+      }
+      
+    /* Flow regime at the notch apex */
+    } else {
+      double dl = (ff*p - cc)/(k*ff*dd) ;
+      int    i ;
+      
+      for(i = 0 ; i < 9 ; i++) {
+        flow[i] = dev[i]/(dmu*dl) + id[i]*dd/3. ;
+      }
+    }
+  }
+  
+   
+  return(flow) ;
 }

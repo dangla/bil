@@ -10,6 +10,8 @@ struct Plasticity_s     ; typedef struct Plasticity_s     Plasticity_t ;
 /* Typedef names of methods */
 typedef double  (Plasticity_ComputeTangentStiffnessTensor_t)(Plasticity_t*,const double*,const double*,const double) ;
 typedef double  (Plasticity_ReturnMapping_t)(Plasticity_t*,double*,double*,double*) ;
+typedef double  (Plasticity_YieldFunction_t)(Plasticity_t*,const double*,const double*) ;
+typedef double* (Plasticity_FlowRules_t)(Plasticity_t*,const double*,const double*) ;
 
 
 /* 1. Plasticity_t */
@@ -18,10 +20,12 @@ extern Plasticity_t*  (Plasticity_Create)(void) ;
 extern void           (Plasticity_Delete)(void*) ;
 extern void           (Plasticity_Initialize)                  (Plasticity_t*) ;
 extern void           (Plasticity_SetParameters)               (Plasticity_t*,...) ;
-extern void           (Plasticity_SetParameter)                (Plasticity_t*,const char*,double) ;
+//extern void           (Plasticity_SetParameter)                (Plasticity_t*,const char*,double) ;
 extern double         (Plasticity_UpdateElastoplasticTensor)   (Plasticity_t*,double*) ;
 extern void           (Plasticity_PrintTangentStiffnessTensor) (Plasticity_t*) ;
 extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,double*) ;
+extern Plasticity_ComputeTangentStiffnessTensor_t (Plasticity_GenericTangentStiffnessTensor) ;
+extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMapping) ;
 
 
 
@@ -40,21 +44,34 @@ extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,do
 #define Plasticity_GetParameter(PL)                  ((PL)->parameter)
 #define Plasticity_GetComputeTangentStiffnessTensor(PL)   ((PL)->computetangentstiffnesstensor)
 #define Plasticity_GetReturnMapping(PL)              ((PL)->returnmapping)
+#define Plasticity_GetYieldFunction(PL)              ((PL)->yieldfunction)
+#define Plasticity_GetFlowRules(PL)                  ((PL)->flowrules)
 #define Plasticity_GetPlasticMultiplier(PL)          ((PL)->lambda)
+#define Plasticity_GetBuffers(PL)                    ((PL)->buffers)
+#define Plasticity_GetNbOfHardeningVariables(PL)     ((PL)->nhardv)
+#define Plasticity_GetTypicalSmallIncrementOfHardeningVariable(PL)   ((PL)->dhardv)
+#define Plasticity_GetTypicalSmallIncrementOfStress(PL)              ((PL)->dstress)
+#define Plasticity_GetGenericData(PL)                ((PL)->genericdata)
+#define Plasticity_GetCurves(PL)                     ((PL)->curves)
+
+
+/* Buffer */
+#define Plasticity_GetBuffer(PL) \
+        Buffers_GetBufferOfCurrentThread(Plasticity_GetBuffers(PL))
 
 
 #define Plasticity_MaxLengthOfKeyWord             (100)
-#define Plasticity_MaxNbOfParameters              (6)
+#define Plasticity_MaxNbOfParameters              (10)
 #define Plasticity_MaxNbOfHardeningVariables      (2)
 #define Plasticity_MaxNbOfPlasticMultiplier       (2) // Not used
+#define Plasticity_MaxNbOfCurves                  (2)
+
+#define Plasticity_SizeOfBuffer \
+        (1000*sizeof(double))
 
 
-#include "Elasticity.h"
-#include "GenericData.h"
-#include "Math_.h"
+
 #include "Utils.h"
-
-
 
 
 /* Drucker-Prager
@@ -63,10 +80,7 @@ extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,do
         Plasticity_Is(PL,"Drucker-Prager")
 
 #define Plasticity_SetToDruckerPrager(PL) \
-        do { \
-          Plasticity_CopyCodeName(PL,"Drucker-Prager") ; \
-          Plasticity_Initialize(PL) ; \
-        } while(0)
+        Plasticity_SetTo(PL,"Drucker-Prager")
         
 #define Plasticity_GetFrictionAngle(PL) \
         Plasticity_GetParameter(PL)[0]
@@ -83,10 +97,7 @@ extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,do
         Plasticity_Is(PL,"Cam-clay")
 
 #define Plasticity_SetToCamClay(PL) \
-        do { \
-          Plasticity_CopyCodeName(PL,"Cam-clay") ; \
-          Plasticity_Initialize(PL) ; \
-        } while(0)
+        Plasticity_SetTo(PL,"Cam-clay")
         
 #define Plasticity_GetSlopeSwellingLine(PL) \
         Plasticity_GetParameter(PL)[0]
@@ -109,10 +120,24 @@ extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,do
         Plasticity_Is(PL,"Cam-clayOffset")
 
 #define Plasticity_SetToCamClayOffset(PL) \
-        do { \
-          Plasticity_CopyCodeName(PL,"Cam-clayOffset") ; \
-          Plasticity_Initialize(PL) ; \
-        } while(0)
+        Plasticity_SetTo(PL,"Cam-clayOffset")
+
+/* Barcelona Basic model
+ * --------------------- */
+#define Plasticity_IsBBM(PL) \
+        Plasticity_Is(PL,"BBM")
+
+#define Plasticity_SetToBBM(PL) \
+        Plasticity_SetTo(PL,"BBM")
+
+#define Plasticity_GetSuctionCohesionCoefficient(PL) \
+        Plasticity_GetParameter(PL)[5]
+
+#define Plasticity_GetReferenceConsolidationPressure(PL) \
+        Plasticity_GetParameter(PL)[6]
+        
+#define Plasticity_GetLoadingCollapseFactorCurve(PL) \
+        Curves_GetCurve(Plasticity_GetCurves(PL))
         
         
         
@@ -122,23 +147,63 @@ extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,do
         
 #define Plasticity_ComputeTangentStiffnessTensor3(...) \
         Plasticity_ComputeTangentStiffnessTensor4(__VA_ARGS__,0)
-        
+
+#if 0
 #define Plasticity_ComputeTangentStiffnessTensor4(PL,...) \
         Plasticity_GetComputeTangentStiffnessTensor(PL)(PL,__VA_ARGS__)
+#endif
+        
+/* We use a C extension provided by GNU C:
+ * A compound statement enclosed in parentheses may appear 
+ * as an expression in GNU C.
+ * (https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html#Statement-Exprs) */
+#if 1
+#define Plasticity_ComputeTangentStiffnessTensor4(PL,...) \
+        ({ \
+          Plasticity_ComputeTangentStiffnessTensor_t* Plasticity_ct =  Plasticity_GetComputeTangentStiffnessTensor(PL); \
+          (Plasticity_ct) ? Plasticity_ct(PL,__VA_ARGS__) : \
+          Plasticity_GenericTangentStiffnessTensor(PL,__VA_ARGS__); \
+        })
+#endif
         
 #define Plasticity_ComputeFunctionGradients \
         Plasticity_ComputeTangentStiffnessTensor3
 
 
-
+#if 0
 #define Plasticity_ReturnMapping(PL,...) \
         Plasticity_GetReturnMapping(PL)(PL,__VA_ARGS__)
+#endif
+
+
+#if 1
+#define Plasticity_ReturnMapping(PL,...) \
+        ({ \
+          Plasticity_ReturnMapping_t* Plasticity_rm = Plasticity_GetReturnMapping(PL); \
+          (Plasticity_rm) ? Plasticity_rm(PL,__VA_ARGS__) : \
+          Plasticity_GenericReturnMapping(PL,__VA_ARGS__) ; \
+        })
+#endif
+
 
 #define Plasticity_ComputeElasticTensor(PL,...) \
         Elasticity_ComputeStiffnessTensor(Plasticity_GetElasticity(PL),__VA_ARGS__)
         
-#define Plasticity_CopyElasticTensor(PL,...) \
+#define Plasticity_CopyElasticStiffnessTensor(PL,...) \
         Elasticity_CopyStiffnessTensor(Plasticity_GetElasticity(PL),__VA_ARGS__)
+        
+#define Plasticity_CopyElasticTensor \
+        Plasticity_CopyElasticStiffnessTensor
+        
+#define Plasticity_CopyElasticComplianceTensor(PL,...) \
+        Elasticity_CopyComplianceTensor(Plasticity_GetElasticity(PL),__VA_ARGS__)
+
+
+#define Plasticity_YieldFunction(PL,...) \
+        Plasticity_GetYieldFunction(PL)(PL,__VA_ARGS__)
+
+#define Plasticity_FlowRules(PL,...) \
+        Plasticity_GetFlowRules(PL)(PL,__VA_ARGS__)
         
 
 
@@ -149,14 +214,65 @@ extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,do
 #define Plasticity_Is(PL,TYP) \
         (!strcmp(Plasticity_GetCodeNameOfModel(PL),TYP))
 
+#define Plasticity_SetTo(PL,TYP) \
+        do { \
+          Plasticity_CopyCodeName(PL,TYP) ; \
+          Plasticity_Initialize(PL) ; \
+        } while(0)
+        
+        
+
+/* Operations on buffer */
+#define Plasticity_AllocateInBuffer(PL,sz) \
+        Buffer_Allocate(Plasticity_GetBuffer(PL),(sz))
+        
+#define Plasticity_FreeBuffer(PL)  \
+        Buffer_Free(Plasticity_GetBuffer(PL))
+        
+#define Plasticity_FreeBufferFrom(PL,p) \
+        Buffer_FreeFrom(Plasticity_GetBuffer(PL),(char*) (p))
 
 
+
+/* GenericData */
+#define Plasticity_AppendGenericData(PL,GD) \
+        do { \
+          if(Plasticity_GetGenericData(PL)) { \
+            GenericData_Append(Plasticity_GetGenericData(PL),GD) ; \
+          } else { \
+            Plasticity_GetGenericData(PL) = GD ; \
+          } \
+        } while(0)
+        
+#define Plasticity_FindGenericData(PL,...) \
+        GenericData_Find(Plasticity_GetGenericData(PL),__VA_ARGS__)
+        
+#define Plasticity_FindData(PL,...) \
+        GenericData_FindData(Plasticity_GetGenericData(PL),__VA_ARGS__)
+        
+#define Plasticity_FindNbOfData(PL,...) \
+        GenericData_FindNbOfData(Plasticity_GetGenericData(PL),__VA_ARGS__)
+
+#define Plasticity_AppendData(PL,...) \
+        Plasticity_AppendGenericData(PL,GenericData_Create(__VA_ARGS__))
+
+
+
+
+
+#include "Elasticity.h"
+#include "GenericData.h"
+#include "Curves.h"
+#include "Buffers.h"
 
 struct Plasticity_s {
   char*   codenameofmodel ;
   double* dfsds ;  /** Yield function gradient */
   double* dgsds ;  /** Potential function gradient */
   double* hardv ;  /** Hardening variable */
+  double* dhardv ; /** Typical small increment of hardening variable */
+  double dstress ; /** Typical small increment of stress */
+  int    nhardv ;  /** Nb of hardening variables */
   double* hardm ;  /** Hardening modulus */
   double  criterion ;     /** Value of the yield function criterion */
   double* fc ;     /** fc(k,l) = dfsds(j,i) * C(i,j,k,l) */
@@ -166,9 +282,13 @@ struct Plasticity_s {
   double  lambda ; /** Plastic multiplier */
   double* parameter ;
   GenericData_t* genericdata ;  /** Plastic properties */
+  Curves_t* curves ;          /**< Curves */
   Elasticity_t* elasty ;
   Plasticity_ComputeTangentStiffnessTensor_t* computetangentstiffnesstensor ;
-  Plasticity_ReturnMapping_t*             returnmapping ;
+  Plasticity_ReturnMapping_t*                 returnmapping ;
+  Plasticity_YieldFunction_t*                 yieldfunction ;
+  Plasticity_FlowRules_t*                     flowrules ;
+  Buffers_t*  buffers ;
 } ;
 
 #endif

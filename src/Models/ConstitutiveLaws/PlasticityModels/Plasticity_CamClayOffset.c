@@ -1,10 +1,11 @@
 static Plasticity_ComputeTangentStiffnessTensor_t    Plasticity_CTCamClayOffset ;
-
 static Plasticity_ReturnMapping_t                    Plasticity_RMCamClayOffset ;
+static Plasticity_YieldFunction_t                    Plasticity_YFCamClayOffset ;
+static Plasticity_FlowRules_t                        Plasticity_FRCamClayOffset ;
 
 
 
-double Plasticity_CTCamClayOffset(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)
+double (Plasticity_CTCamClayOffset)(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)
 /** Modified Cam-Clay criterion with offset 
  * 
  *  Inputs are: 
@@ -32,7 +33,7 @@ double Plasticity_CTCamClayOffset(Plasticity_t* plasty,const double* sig,const d
   double* dfsds  = Plasticity_GetYieldFunctionGradient(plasty) ;
   double* dgsds  = Plasticity_GetPotentialFunctionGradient(plasty) ;
   double* hm     = Plasticity_GetHardeningModulus(plasty) ;
-  double pc      = hardv[0] ;
+  double pc      = exp(hardv[0]) ;
   double ps      = hardv[1] ;
   double m2      = m*m ;
   double beta    = 1 ;
@@ -69,19 +70,23 @@ double Plasticity_CTCamClayOffset(Plasticity_t* plasty,const double* sig,const d
     }
   }
   
+  
   /* The hardening modulus */
-  /* H is defined by: df = (df/dsig_ij)*dsig_ij - dl*H 
-   * But df = (df/dsig_ij)*dsig_ij + (df/dpc)*dpc
-   * Hence: H = - (df/dpc) * dpc / dl
-   * On the other hand 
-   * d(ln(pc)) = - (1 + e0)*v*deps_p = - (1 + e0)*v*dl*(dg/dp)
-   * i.e. d(ln(pc)) = dl*hpc with hpc = - (1 + e0)*v*(dg/dp)
-   * Hence: H = (1 + e0)*v*(df/dpc)*(dg/dp)*pc
+  /* df = (df/dsig_ij)*dsig_ij + (df/da)*da
+   * given da = dl*h then df = (df/dsig_ij)*dsig_ij - dl*H
+   * with H the hardening modulus: H = - (df/da) * h
+   * On the other hand with a = ln(pc)
+   * d(a) = - (1 + e0)*v*deps_p = - (1 + e0)*v*dl*(dg/dp)
+   * i.e. h = - (1 + e0)*v*(dg/dp)
    */
   {
     double v = 1./(lambda - kappa) ;
+    double v1 = (1 + e0)*v ;
+    double h = - v1*(2*p + pc - ps) ;
+    double dpcda    = pc ;
+    double dfda     = (p - ps)*dpcda ;
     
-    hm[0] = (1 + e0)*v*(p - ps)*(2*p + pc - ps)*pc ;
+    hm[0] = - dfda * h ;
   }
   
   /*
@@ -100,10 +105,11 @@ double Plasticity_CTCamClayOffset(Plasticity_t* plasty,const double* sig,const d
       double v        = 1./(lambda - kappa) ;
       double v1       = (1 + e0)*v ;
       double h        = - v1*(2*p + pc - ps) ;
-      double dhda     = - v1*pc ;
+      double dpcda    = pc ;
+      double dhda     = - v1*dpcda ;
       double dhdp     = - v1*2 ;
-      double dfda     = (p - ps)*pc ;
-      double ddgdpda  = pc ;
+      double dfda     = (p - ps)*dpcda ;
+      double ddgdpda  = dpcda ;
       double dlambda1 = dlambda / (1 - dlambda*dhda) ;
       Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
       double bulk    = Elasticity_GetBulkModulus(elasty) ;
@@ -153,7 +159,7 @@ double Plasticity_CTCamClayOffset(Plasticity_t* plasty,const double* sig,const d
 
 
 
-double Plasticity_RMCamClayOffset(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
+double (Plasticity_RMCamClayOffset)(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
 /** Modified Cam-Clay return mapping.
  *  Algorithm from Borja & Lee 1990 modified by Dangla.
  * 
@@ -181,7 +187,7 @@ double Plasticity_RMCamClayOffset(Plasticity_t* plasty,double* sig,double* eps_p
   double kappa   = Plasticity_GetSlopeSwellingLine(plasty) ;
   double lambda  = Plasticity_GetSlopeVirginConsolidationLine(plasty) ;
   double e0      = Plasticity_GetInitialVoidRatio(plasty) ;
-  double pc      = hardv[0] ;
+  double pc      = exp(hardv[0]) ;
   double ps      = hardv[1] ;
   double m2      = m*m ;
   double v       = 1./(lambda - kappa) ;
@@ -292,10 +298,105 @@ double Plasticity_RMCamClayOffset(Plasticity_t* plasty,double* sig,double* eps_p
   }
   
   /* Consolidation pressure */
-  hardv[0] = pc ;
+  hardv[0] = log(pc) ;
   
   /* Plastic muliplier */
   Plasticity_GetPlasticMultiplier(plasty) = dl ;
   
   return(crit) ;
+}
+
+
+
+
+double (Plasticity_YFCamClayOffset)(Plasticity_t* plasty,const double* stress,const double* hardv)
+/** Return the value of the yield function. 
+ **/
+{
+  double m     = Plasticity_GetSlopeCriticalStateLine(plasty) ;
+  double pc    = exp(hardv[0]) ;
+  double ps    = hardv[1] ;
+  double m2    = m*m ;
+  double p     = (stress[0] + stress[4] + stress[8])/3. ;
+  double q     = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
+  double yield = q*q/m2 + (p - ps)*(p + pc) ;
+
+  return(yield) ;
+}
+
+
+
+double* (Plasticity_FRCamClayOffset)(Plasticity_t* plasty,const double* stress,const double* hardv)
+/** Modified Cam-Clay criterion with offset.
+ * 
+ *  Inputs are: 
+ *  the slope of the swelling line (kappa),
+ *  the slope of the virgin consolidation line (lambda),
+ *  the shear modulus (mu),
+ *  the slope of the critical state line (M),
+ *  the pre-consolidation pressure (pc=hardv[0]),
+ *  the initial void ratio (e0).
+ *  the isotropic tensile strength (ps=hardv[1]),
+ * 
+ *  Return the direction of the plastic flows based on the flow rules:
+ *    - the plastic strain rate (i.e. the potential gradient)
+ *    - the rate of log(pre-consolidation pressure) (1/dlambda * d(ln(pc))/dt)
+ **/
+{
+  size_t SizeNeeded = (9+2)*(sizeof(double)) ;
+  double* flow   = (double*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
+  double m       = Plasticity_GetSlopeCriticalStateLine(plasty) ;
+  double kappa   = Plasticity_GetSlopeSwellingLine(plasty) ;
+  double lambda  = Plasticity_GetSlopeVirginConsolidationLine(plasty) ;
+  double e0      = Plasticity_GetInitialVoidRatio(plasty) ;
+  double pc      = exp(hardv[0]) ;
+  double ps      = hardv[1] ;
+  double m2      = m*m ;
+  double beta    = 1 ;
+  
+  double id[9] = {1,0,0,0,1,0,0,0,1} ;
+  double p     = (stress[0] + stress[4] + stress[8])/3. ;
+  //double q    = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
+  
+  /*
+    Potential function: g = beta*q*q/m2 + (p - ps)*(p + pc)
+  */
+  
+  /*
+    Plastic strain: deps^p_ij = dl * dg/dstress_ij
+    ----------------------------------------------
+    dp/dstress_ij = 1/3 delta_ij
+    dq/dstress_ij = 3/2 dev_ij/q 
+    dg/dstress_ij = 1/3 (dg/dp) delta_ij + 3/2 (dg/dq) dev_ij/q 
+    dg/dp      = 2*p + pc - ps
+    dg/dq      = beta*2*q/m2
+    
+    dg/dstress_ij = 1/3 (2*p + pc - ps) delta_ij + beta*(3/m2) dev_ij 
+  */
+  {
+    int    i ;
+    
+    for(i = 0 ; i < 9 ; i++) {
+      double dev = stress[i] - p*id[i] ;
+
+      flow[i] = (2*p + pc - ps)*id[i]/3 + 3*beta/m2*dev ;
+    }
+  }
+  
+  /*
+    The hardening flow: d(ln(pc)) = - (1 + e0)*v*deps_p
+   * --------------------------------------------------
+   * Using a = ln(pc) as hardening variable.
+   * d(a) = - dl * (1 + e0) * v * (dg/dp)
+   * So h(p,a) = - (1 + e0) * v * (2*p + pc(a) - ps)
+   */
+  {
+    double v = 1./(lambda - kappa) ;
+    
+    //flow[9] = - (1 + e0)*v*(2*p + pc - ps)*pc ;
+    flow[9]  = - (1 + e0)*v*(2*p + pc - ps) ;
+    flow[10] = 0 ;
+  }
+  
+  return(flow) ;
 }

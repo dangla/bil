@@ -137,13 +137,17 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 #define Node_EliminateMatrixColumnIndexForBCond(NOD,name) \
         do { \
           int idof = Node_FindUnknownPositionIndex(NOD,name) ; \
-          if(idof >= 0) Node_GetMatrixColumnIndex(NOD)[idof] = Node_IndexForBCond ; \
+          if(Node_GetMatrixColumnIndex(NOD) && idof >= 0) { \
+            Node_GetMatrixColumnIndex(NOD)[idof] = Node_IndexForBCond ; \
+          } \
         } while(0)
 
 #define Node_EliminateMatrixRowIndexForBCond(NOD,name) \
         do { \
           int idof = Node_FindEquationPositionIndex(NOD,name) ; \
-          if(idof >= 0) Node_GetMatrixRowIndex(NOD)[idof] = Node_IndexForBCond ; \
+          if(Node_GetMatrixRowIndex(NOD) && idof >= 0) { \
+            Node_GetMatrixRowIndex(NOD)[idof] = Node_IndexForBCond ; \
+          } \
         } while(0)
         
         
@@ -151,47 +155,55 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 #define Node_EliminateMatrixColumnIndexForPeriodicity(NOD,name) \
         do { \
           int idof = Node_FindUnknownPositionIndex(NOD,name) ; \
-          if(idof >= 0) Node_GetMatrixColumnIndex(NOD)[idof] = Node_IndexForPeriodicity ; \
+          if(Node_GetMatrixColumnIndex(NOD) && idof >= 0) { \
+            Node_GetMatrixColumnIndex(NOD)[idof] = Node_IndexForPeriodicity ; \
+          } \
         } while(0)
 
 #define Node_EliminateMatrixRowIndexForPeriodicity(NOD,name) \
         do { \
           int idof = Node_FindEquationPositionIndex(NOD,name) ; \
-          if(idof >= 0) Node_GetMatrixRowIndex(NOD)[idof] = Node_IndexForPeriodicity ; \
+          if(Node_GetMatrixRowIndex(NOD) && idof >= 0) { \
+            Node_GetMatrixRowIndex(NOD)[idof] = Node_IndexForPeriodicity ; \
+          } \
         } while(0)
 
 #define Node_UpdateMatrixColumnIndexForPeriodicity(NODI,NODJ,name) \
         do { \
-          int idof = Node_FindUnknownPositionIndex(NODI,name) ; \
-          int jdof = Node_FindUnknownPositionIndex(NODJ,name) ; \
-          if(idof >= 0 && jdof >= 0) { \
-            int ki = Node_GetMatrixColumnIndex(NODI)[idof] ; \
-            int kj = Node_GetMatrixColumnIndex(NODJ)[jdof] ; \
-            /* The slave is i, the master is j */ \
-            if(kj >= 0 && ki == Node_IndexForPeriodicity) { \
-              Node_GetMatrixColumnIndex(NODI)[idof] = kj ; \
-            } \
-            /* The slave is j, the master is i */ \
-            if(ki >= 0 && kj == Node_IndexForPeriodicity) { \
-              Node_GetMatrixColumnIndex(NODJ)[jdof] = ki ; \
+          if(Node_GetMatrixColumnIndex(NODI) && Node_GetMatrixColumnIndex(NODJ)) { \
+            int idof = Node_FindUnknownPositionIndex(NODI,name) ; \
+            int jdof = Node_FindUnknownPositionIndex(NODJ,name) ; \
+            if(idof >= 0 && jdof >= 0) { \
+              int ki = Node_GetMatrixColumnIndex(NODI)[idof] ; \
+              int kj = Node_GetMatrixColumnIndex(NODJ)[jdof] ; \
+              /* The slave is i, the master is j */ \
+              if(kj >= 0 && ki == Node_IndexForPeriodicity) { \
+                Node_GetMatrixColumnIndex(NODI)[idof] = kj ; \
+              } \
+              /* The slave is j, the master is i */ \
+              if(ki >= 0 && kj == Node_IndexForPeriodicity) { \
+                Node_GetMatrixColumnIndex(NODJ)[jdof] = ki ; \
+              } \
             } \
           } \
         } while(0)
             
 #define Node_UpdateMatrixRowIndexForPeriodicity(NODI,NODJ,name) \
         do { \
-          int idof = Node_FindEquationPositionIndex(NODI,name) ; \
-          int jdof = Node_FindEquationPositionIndex(NODJ,name) ; \
-          if(idof >= 0 && jdof >= 0) { \
-            int ki = Node_GetMatrixRowIndex(NODI)[idof] ; \
-            int kj = Node_GetMatrixRowIndex(NODJ)[jdof] ; \
-            /* The slave is i, the master is j */ \
-            if(kj >= 0 && ki == Node_IndexForPeriodicity) { \
-              Node_GetMatrixRowIndex(NODI)[idof] = kj ; \
-            } \
-            /* The slave is j, the master is i */ \
-            if(ki >= 0 && kj == Node_IndexForPeriodicity) { \
-              Node_GetMatrixRowIndex(NODJ)[jdof] = ki ; \
+          if(Node_GetMatrixRowIndex(NODI) && Node_GetMatrixRowIndex(NODJ)) { \
+            int idof = Node_FindEquationPositionIndex(NODI,name) ; \
+            int jdof = Node_FindEquationPositionIndex(NODJ,name) ; \
+            if(idof >= 0 && jdof >= 0) { \
+              int ki = Node_GetMatrixRowIndex(NODI)[idof] ; \
+              int kj = Node_GetMatrixRowIndex(NODJ)[jdof] ; \
+              /* The slave is i, the master is j */ \
+              if(kj >= 0 && ki == Node_IndexForPeriodicity) { \
+                Node_GetMatrixRowIndex(NODI)[idof] = kj ; \
+              } \
+              /* The slave is j, the master is i */ \
+              if(ki >= 0 && kj == Node_IndexForPeriodicity) { \
+                Node_GetMatrixRowIndex(NODJ)[jdof] = ki ; \
+              } \
             } \
           } \
         } while(0)

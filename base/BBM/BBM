@@ -8,13 +8,13 @@ Material            # liste des matériaux (modèles et param. associés)
 Model = BBM         # nom du modèle
 gravity = 0         # gravité
 rho_s = 2000        # masse volumique des particules solides
-slope_of_swelling_line = 0.004       # indice de gonflement elastique
-slope_of_virgin_consolidation_line = 0.037      # pente de la NCL dans le plan (ln p', e)
+slope_of_swelling_line = 0.011       # indice de gonflement elastique
+slope_of_virgin_consolidation_line = 0.065      # pente de la NCL dans le plan (ln p', e)
 shear_modulus = 1.e8# module de cisaillement
 slope_of_critical_state_line = 1.2             # pente de la CSL dans le plan (p', q)
-initial_pre-consolidation_pressure = 20e3         # preconsolidation
+initial_pre-consolidation_pressure = 0.04e6         # preconsolidation
 reference_consolidation_pressure = 0.01e6         # reference consolidation pressure
-kappa_s = 0.008
+kappa_s = 0.005
 initial_stress_11 = -1000        # contrainte initiale (isotrope)
 initial_stress_22 = -1000        # contrainte initiale (isotrope)
 initial_stress_33 = -1000        # contrainte initiale (isotrope)
@@ -24,27 +24,29 @@ k_int = 1e-20       # permeabilite intrinseque
 mu_l = 0.001        # viscosite du liquide
 suction_cohesion_coefficient = 0.8
 #Curves = wrc        # nom du fichier contenant p_c S_l k_rl LC
-Curves = wrc2   pc = Range{x1 = 0 , x2 = 30.e6, n = 171}  sl = Expressions(1){p0 = 1.e6 ; m = 0.6 ; sl = (1 + (pc/p0)**(1/(1-m)))**(-m)} kl = Expressions(1){kl = 1} kg = Expressions(1){kg = 1} lc = Expressions(1){l0 = 0.037 ; k = 0.004 ; beta = 20.e-6 ; r = 0.75 ; lc = (l0 - k)/(l0*((1-r)*exp(-beta*pc) + r) - k)}
+Curves = wrc2   pc = Range{x1 = 0 , x2 = 30.e6, n = 171}  sl = Expressions(1){p0 = 1.e6 ; m = 0.6 ; sl = (1 + (pc/p0)**(1/(1-m)))**(-m)} kl = Expressions(1){kl = 1} kg = Expressions(1){kg = 1}
+Curves = lc   pc = Range{x1 = 0 , x2 = 1.e6, n = 200}  lc = Expressions(1){l0 = 0.065 ; k = 0.011 ; beta = 20.e-6 ; r = 0.75 ; lc = (l0 - k)/(l0*((1-r)*exp(-beta*pc) + r) - k)}
 
 
 
 Fields                # champs constants ou linéaires dans l'espace
 2
-Value = 0.e3 Gradient = 0 0 Point = 0 0
-Value = 1.e3 Gradient = 0 0 Point = 0 0
+Value = -1.e3 Gradient = 0 0 0 Point = 0 0 0
+Value =  1.e3 Gradient = 0 0 0 Point = 0 0 0
 
 Initialization                # initialisation des variables
 0
 
 Functions                # fonctions temporelles, pour les CL
-1
-N = 3 F(0) = 1 F(1) = 250 F(2) = 1
+2
+N = 7 F(0) = 1 F(1) = 40     F(2) = 1  F(3) = 80    F(4) = 1 F(5) = 160   F(6) = 1
+N = 7 F(0) = 0 F(1.999) = 0  F(2) = 40 F(3.999) = 40 F(4) = 80 F(5.999) = 80 F(6) = 160
 
 Boundary Conditions                # conditions aux limites (Dirichlet)
 3
 Region = 14 Unknown = u_1 Field = 0 Function = 0
 Region = 11 Unknown = u_2 Field = 0 Function = 0
-Region = 100 Unknown = p_l Field = 1 Function = 0
+Region = 100 Unknown = p_l Field = 1 Function = 2
 
 Loads                # conditions aux limites (Neumann)
 2
@@ -56,8 +58,8 @@ Points                # points de l'espace pour le stockage des variables
 0.5 0.5
 
 Dates                # dates pour le stockage des données
-2
-0 1 2
+7
+0 1 2 3 4 5 6
 
 Objective Variations                # variables objectives (une par ddl)
 u_1 = 1.e-4

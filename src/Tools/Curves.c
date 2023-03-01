@@ -26,6 +26,14 @@ Curves_t* (Curves_Create)(unsigned int n_curves)
   
   {
     Curve_t* cv = (Curve_t*) Mry_New(Curve_t[n_curves]) ;
+    int    i ;
+    
+    for(i = 0 ; i < n_curves ; i++) {
+      Curve_t* cvi   = Mry_New(Curve_t) ;
+      
+      cv[i] = cvi[0] ;
+      free(cvi) ;
+    }
     
     Curves_GetCurve(curves) = cv ;
   }

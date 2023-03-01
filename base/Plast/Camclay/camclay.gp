@@ -32,7 +32,7 @@ Pa  = 1.e-3
 m = 0.9
 m2 = m*m
 pc = 0.1*MPa
-Y(p) = (p <= pc) ? m*sqrt(abs(p*(p - pc))) : 1/0
+Y(p,pc) = (p <= pc) ? m*sqrt(abs(p*(p - pc))) : 1/0
 
 
 
@@ -76,7 +76,8 @@ set yrange[y0:y1] noreverse nowriteback
 set grid
 
 plot \
-     Y(x)  title 'Yield function' lt 1 \
+     Y(x,pc) lt 1 title 'Yield function' \
+    ,Y(x,1.5*pc)  lt 3 notitle \
     ,file1 us (-($5+$9+$13)/3*Pa):(abs($5-$9)*Pa) lt 2 title 'p-q'
 
 reset

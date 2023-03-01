@@ -34,8 +34,6 @@ extern double*  (Math_SolveByGaussEliminationJIK)(double*,double*,int,int*) ;
 
 
 
-#define Math_InvertMatrix(A,N)  \
-        Math_SolveByGaussJordanElimination(A,NULL,N,0)
 
 
 #define Math_SolveByGaussEliminationWithoutPartialPivoting(...) \
@@ -75,6 +73,9 @@ extern int dgeev_(const char*,const char*,int*,double*,int*,double*, double*,dou
         
 #define Math_ComputeMatrixInverse(a,n) \
         Math_SolveByGaussJordanElimination(a,NULL,n,0)
+        
+#define Math_InvertMatrix(A,N)  \
+        Math_SolveByGaussJordanElimination(A,NULL,N,0)
 
 #define Math_Max(a,b)          (((a) > (b)) ? (a) : (b))
 #define Math_Min(a,b)          (((a) < (b)) ? (a) : (b))

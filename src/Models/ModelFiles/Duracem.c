@@ -49,7 +49,7 @@
 #include "HardenedCementChemistry.h"
 #include "CementSolutionDiffusion.h"
 
-#define TITLE   "Durability of CBM (2019)"
+#define TITLE   "Mother model of durability of CBM (2019)"
 #define AUTHORS "Dangla and many others"
 
 #include "PredefinedMethods.h"

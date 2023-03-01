@@ -39,7 +39,7 @@ Y(p,pc) = (p <= pc) ? m*sqrt(abs((p + ps)*(p - pc))) : 1/0
 
 
 # Input Data file
-file = 'BBM'
+file = 'toto'
 
 # Data files
 file1 = file.'.p1'

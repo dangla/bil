@@ -8,7 +8,7 @@
 #include "FEM.h"
 #include "Plasticity.h"
 
-#define TITLE "Basic Barcelona Model for unsaturated soils (2023)"
+#define TITLE "Barcelona Basic Model for unsaturated soils (2023)"
 #define AUTHORS "Eizaguirre-Dangla"
 
 #include "PredefinedMethods.h"
@@ -17,7 +17,7 @@
 /* Nb of equations */
 #define NEQ     (1+dim)
 /* Nb of (im/ex)plicit terms and constant terms */
-#define NVI     (27)
+#define NVI     (28)
 #define NVE     (1)
 #define NV0     (0)
 
@@ -46,6 +46,7 @@
 #define HARDV_n       (vim_n + 25)[0]
 
 #define CRIT          (vim   + 26)[0]
+#define DLAMBDA       (vim   + 27)[0]
 
 
 /* We define some names for explicit terms */
@@ -70,9 +71,10 @@ static double* ComputeVariableDerivatives(Element_t*,double,double,double*,doubl
 
 
 #define ComputeTangentStiffnessTensor(...)  Plasticity_ComputeTangentStiffnessTensor(plasty,__VA_ARGS__)
-#define ReturnMapping(...)             Plasticity_ReturnMapping(plasty,__VA_ARGS__)
-#define CopyElasticTensor(...)         Plasticity_CopyElasticTensor(plasty,__VA_ARGS__)
-#define UpdateElastoplasticTensor(...) Plasticity_UpdateElastoplasticTensor(plasty,__VA_ARGS__)
+#define ReturnMapping(...)                  Plasticity_ReturnMapping(plasty,__VA_ARGS__)
+#define CopyElasticTensor(...)              Plasticity_CopyElasticTensor(plasty,__VA_ARGS__)
+#define UpdateElastoplasticTensor(...)      Plasticity_UpdateElastoplasticTensor(plasty,__VA_ARGS__)
+#define CopyTangentStiffnessTensor(...)     Plasticity_CopyTangentStiffnessTensor(plasty,__VA_ARGS__)
 
 
 /* Material properties */
@@ -82,9 +84,6 @@ static double* ComputeVariableDerivatives(Element_t*,double,double,double*,doubl
 
 #define RELATIVEPERM_CURVE                (relativepermcurve)
 #define RelativePermeabilityToLiquid(pc)  (Curve_ComputeValue(RELATIVEPERM_CURVE,pc))
-
-#define LOADINGCOLLAPSEFACTOR_CURVE     (loadingcollapsefactorcurve)
-#define LoadingCollapseFactor(pc)       (Curve_ComputeValue(LOADINGCOLLAPSEFACTOR_CURVE,pc))
 
 
 
@@ -100,17 +99,14 @@ static double  k_int ;
 static double  mu_l ;
 static double  kappa ;
 static double  mu ;
-static double  p_co0 ;
-static double  p_coref ;
 static double  e0 ;
 static double  phi0 ;
+static double  hardv0 ;
 static Elasticity_t* elasty ;
 static Plasticity_t* plasty ;
 static Curve_t* saturationcurve ;
 static Curve_t* relativepermcurve ;
-static Curve_t* loadingcollapsefactorcurve ;
 static double  kappa_s ;
-static double  cohesion_s ;
 static double  p_atm = 101325. ;
 
 
@@ -138,6 +134,7 @@ enum {
   I_K_L,
   I_GRD_P_L,
   I_GRD_P_L2 = I_GRD_P_L + 2,
+  I_DLAMBDA,
   I_Last
 } ;
 
@@ -203,19 +200,17 @@ void GetProperties(Element_t* el)
   sig0    = &Element_GetPropertyValue(el,"initial_stress") ;
   kappa   = Element_GetPropertyValue(el,"slope_of_swelling_line") ;
   mu      = Element_GetPropertyValue(el,"shear_modulus") ;
-  p_co0   = Element_GetPropertyValue(el,"initial_pre-consolidation_pressure") ;
   phi0    = Element_GetPropertyValue(el,"initial_porosity") ;
   e0      = phi0/(1 - phi0) ;
   kappa_s = Element_GetPropertyValue(el,"kappa_s") ;
-  cohesion_s = Element_GetPropertyValue(el,"suction_cohesion_coefficient") ;
-  p_coref  = Element_GetPropertyValue(el,"reference_consolidation_pressure") ;
   
   plasty  = Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
   elasty  = Plasticity_GetElasticity(plasty) ;
   
+  hardv0  = Plasticity_GetHardeningVariable(plasty)[0] ;
+  
   saturationcurve = Element_FindCurve(el,"sl") ;
   relativepermcurve = Element_FindCurve(el,"kl") ;
-  loadingcollapsefactorcurve = Element_FindCurve(el,"lc") ;
 }
 
 
@@ -289,17 +284,20 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       }
     }
     {
-      /* Cam-Clay */
+      /* Barcelona Basic model */
       {
         double lambda = Material_GetPropertyValue(mat,"slope_of_virgin_consolidation_line") ;
         double M      = Material_GetPropertyValue(mat,"slope_of_critical_state_line") ;
         double pc0    = Material_GetPropertyValue(mat,"initial_pre-consolidation_pressure") ;
+        double coh    = Material_GetPropertyValue(mat,"suction_cohesion_coefficient") ;
+        double p_ref  = Material_GetPropertyValue(mat,"reference_consolidation_pressure") ;
+        Curve_t* lc   = Material_FindCurve(mat,"lc") ;
         
         e0     = Material_GetPropertyValue(mat,"initial_void_ratio") ;
         kappa  = Material_GetPropertyValue(mat,"slope_of_swelling_line") ;
         
-        Plasticity_SetToCamClayOffset(plasty) ;
-        Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0) ;
+        Plasticity_SetToBBM(plasty) ;
+        Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0,coh,p_ref,lc) ;
       }
     }
 
@@ -427,7 +425,7 @@ int ComputeInitialState(Element_t* el)
       if(DataFile_ContextIsPartialInitialization(datafile)) {
       } else {
         for(i = 0 ; i < 9 ; i++) SIG[i] = sig0[i] ;
-        HARDV = p_co0 ;
+        HARDV = hardv0 ;
       }
       
       for(i = 0 ; i < 9 ; i++) EPS_P[i]  = 0 ;
@@ -457,6 +455,7 @@ int ComputeInitialState(Element_t* el)
     
       CRIT = x[I_CRIT] ;
       HARDV = x[I_HARDV] ;
+      DLAMBDA = x[I_DLAMBDA] ;
     }
     
     
@@ -563,6 +562,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
     
       CRIT = x[I_CRIT] ;
       HARDV = x[I_HARDV] ;
+      DLAMBDA = x[I_DLAMBDA] ;
     }
   }
   
@@ -942,23 +942,23 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
           double young   = 2 * mu * (1 + poisson) ;
           
           Elasticity_SetParameters(elasty,young,poisson) ;
+          Elasticity_UpdateStiffnessTensor(elasty) ;
         }
 
-        Elasticity_ComputeStiffnessTensor(elasty,c1) ;
+        Elasticity_CopyStiffnessTensor(elasty,c1) ;
       
         {
           /* Criterion */
           if(crit >= 0.) {
-            double p_co  = HARDV ;
-            double lcf   = LoadingCollapseFactor(pc) ;
-            double logp_co_s = log(p_coref) + log(p_co/p_coref) * lcf ;
-            double p_co_s    = exp(logp_co_s) ;
-            double p_s   = cohesion_s * pc ;
-            double hardv[2] = {p_co_s,p_s} ;
-            double crit1 = ComputeTangentStiffnessTensor(sig,hardv) ;
-            double fcg   = UpdateElastoplasticTensor(c1) ;
-          
-            if(fcg < 0) return(-1) ;
+            double logp_co  = HARDV ;
+            double hardv[2] = {logp_co,pc} ;
+            
+          /* Continuum tangent stiffness matrix */
+            //ComputeTangentStiffnessTensor(sig,hardv) ;
+          /* Consistent tangent stiffness matrix */
+            ComputeTangentStiffnessTensor(sig,hardv,DLAMBDA) ;
+
+            CopyTangentStiffnessTensor(c1) ;
           }
         }
       }
@@ -1191,7 +1191,9 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       {
         double sigm_n    = (sig_n[0] + sig_n[4] + sig_n[8])/3. ;
         double trde      = deps[0] + deps[4] + deps[8] ;
-        double sigm      = sigm_n*pow((pc_n+p_atm)/(pc+p_atm),kappa_s/kappa)*exp(-(1 + e0)*trde/kappa) ;
+        double dlns      = log((pc + p_atm)/(pc_n + p_atm)) ;
+        double dlnsigm   = -((1 + e0)*trde + kappa_s*dlns) / kappa ;
+        double sigm      = sigm_n*exp(dlnsigm) ;
         double dsigm     = sigm - sigm_n ;
         
         for(i = 0 ; i < 9 ; i++) sig[i] = sig_n[i] + 2*mu*deps[i] ;
@@ -1213,18 +1215,14 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
     
       /* Return mapping */
       {
-        double p_con = x_n[I_HARDV] ; /* pre-consolidation pressure at 0 suction at the previous time step */
-        double lcf   = LoadingCollapseFactor(pc) ;
-        double logp_co_s = log(p_coref) + log(p_con/p_coref) * lcf ;
-        double p_co_s    = exp(logp_co_s) ;
-        double p_s   = cohesion_s * pc ;
-        double hardv[2] = {p_co_s,p_s} ;
+        double logp_con = x_n[I_HARDV] ; /* log(pre-consolidation pressure) at 0 suction at the previous time step */
+        double hardv[2] = {logp_con,pc} ;
         double crit  = ReturnMapping(sig,eps_p,hardv) ;
-        double logp_co = log(p_coref) + log(hardv[0]/p_coref) / lcf ;
-        double p_co = exp(logp_co) ;
+        double dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
         
         x[I_CRIT]  = crit ;
-        x[I_HARDV] = p_co ;
+        x[I_HARDV] = hardv[0] ;
+        x[I_DLAMBDA] = dlambda ;
       }
     
       /* Total stresses */

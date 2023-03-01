@@ -1,18 +1,26 @@
 Geometry
-2 axis
+2 plan
 
 
 Mesh
-Q4.msh
+../composite1.msh
+
+
+Periodicities
+4
+MasterRegion = 105 SlaveRegion = 13  PeriodVector = 2 0 0
+MasterRegion = 114 SlaveRegion = 125 PeriodVector = 2 0 0
+MasterRegion = 115 SlaveRegion = 104 PeriodVector = 0 2 0
+MasterRegion = 124 SlaveRegion = 14  PeriodVector = 0 2 0
 
 
 Material #1            # matrix
 Model = Plast
 gravity = 0       # gravity
 rho_s = 0         # mass density of the dry material
-sig0_11 = -0.06e6       # initial stress 11
-sig0_22 = -0.06e6       # initial stress 22
-sig0_33 = -0.06e6       # initial stress 33
+sig0_11 = 0       # initial stress 11
+sig0_22 = 0       # initial stress 22
+sig0_33 = 0       # initial stress 33
 young = 2713e6    # Young's modulus
 poisson = 0.339   # Poisson's ratio
 initial_pre-consolidation_pressure = 0.1e6
@@ -20,16 +28,32 @@ slope_of_swelling_line = 0.02
 slope_of_virgin_consolidation_line = 0.2
 slope_of_critical_state_line = 0.9
 initial_void_ratio = 0.9
+macro-gradient_12 = 1.e-3
+macro-gradient_21 = 1.e-3
+macro-fctindex_12 = 1
+macro-fctindex_21 = 1
 
 
-
+Material #2            # inclusion
+Model = Elast
+gravity = 0       # gravity
+rho_s = 0         # mass density of the dry material
+sig0_11 = 0       # initial stress 11
+sig0_22 = 0       # initial stress 22
+sig0_33 = 0       # initial stress 33
+young = 2713e16   # Young's modulus
+poisson = 0.49    # Poisson's ratio
+macro-gradient_12 = 1.e-3
+macro-gradient_21 = 1.e-3
+macro-fctindex_12 = 1
+macro-fctindex_21 = 1
+#cohesion = 1.5e+16
+#frottement = 25
+#dilatance = 25
 
 
 Fields
-3
-Type = affine  Value =  1      Gradient = 0 0 0   Point = 0 0 0
-Type = affine  Value = -0.33   Gradient = 0 0 0   Point = 0 0 0
-Type = affine  Value =  0.66   Gradient = 0 0 0   Point = 0 0 0
+0
 
 
 Initialization
@@ -37,48 +61,40 @@ Initialization
 
 
 Functions
-2
-N = 2  F(0) = 0.06e6  F(10) = 0.04e6   # p
-N = 2  F(0) = 0       F(10) = 0.06e6   # q
+1
+N = 2  F(0) = 0  F(5) = 5.e-2
 
 
 Boundary Conditions
 2
-Region = 13 Unknown = u_1 Field = 0 Function = 0
-Region = 10 Unknown = u_2 Field = 0 Function = 0
-#Region = 12 Unknown = u_2 Field = 1 Function = 2
+Region = 1 Unknown = u_1 Field = 0 Function = 0
+Region = 1 Unknown = u_2 Field = 0 Function = 0
 
 
 Loads
-4
-Region = 11  Type = pressure  Equation = meca_1   Field = 1  Function = 1
-Region = 11  Type = pressure  Equation = meca_1   Field = 2  Function = 2
-Region = 12  Type = pressure  Equation = meca_1   Field = 1  Function = 1
-Region = 12  Type = pressure  Equation = meca_1   Field = 3  Function = 2
+0
 
 
 Points
-1
-Coor = 0.05 0.1 Region = 100
+0
 
 
 Dates
-2
-0 10
+6
+0 1 2 3 4 5
 
 
 Objective Variations
-u_1 = 1.e-6
-u_2 = 1.e-6
+u_1 = 1.e-4
+u_2 = 1.e-4
 
 
 Iterative Process
-Iterations = 300
+Iterations = 10
 Tolerance = 1.e-4
 Repetition = 0
 
 
 Time Steps
 Dtini = 1.e-1
-Dtmin = 1
 Dtmax = 1

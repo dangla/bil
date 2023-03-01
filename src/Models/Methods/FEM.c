@@ -1625,7 +1625,10 @@ double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,
   if(field == NULL) return(r) ;
 
   /* Position index of the equation */
-  if(ieq < 0) arret("FEM_ComputeSurfaceLoadResidu (1): unknown equation") ;
+  if(ieq < 0) {
+    arret("FEM_ComputeSurfaceLoadResidu:\n"\
+          "  illicit position index of equation: %d",ieq) ;
+  }
 
 
   /* flux or cumulative flux*/
@@ -1819,11 +1822,13 @@ double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,
     double ft = 1. ;
     
     if(ii < 0 || ii >= dim) {
-      arret("FEM_ComputeSurfaceLoadResidu (2): unknown type") ;
+      arret("FEM_ComputeSurfaceLoadResidu:\n"\
+            "  first index must range between 1 and %d",dim) ;
     }
     
     if(jj < 0 || jj >= dim) {
-      arret("FEM_ComputeSurfaceLoadResidu (2): unknown type") ;
+      arret("FEM_ComputeSurfaceLoadResidu:\n"\
+            "  second index must range between 1 and %d",dim) ;
     }
     
     if(function != NULL) {
@@ -1856,7 +1861,10 @@ double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,
     }
   }
   
-  arret("FEM_ComputeSurfaceLoadResidu (2): unknown load") ;
+  arret("FEM_ComputeSurfaceLoadResidu: illicit load type.\n"\
+        "  Available types are:\n"\
+        "  flux, cumulflux, linearflux, force, pressure\n"\
+        "  sig_11,sig_12,...,sig_33") ;
   return(r) ;
 }
 

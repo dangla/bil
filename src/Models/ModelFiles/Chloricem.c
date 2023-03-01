@@ -1,4 +1,4 @@
-/* This is a "mother" model from which "daughter" models can derived.
+/* This is a "mother" model from which "daughter" models are derived.
  * The following models have been derived accordingly:
  * - Carbocem
  * - Chloricem
@@ -49,7 +49,7 @@
 #include "HardenedCementChemistry.h"
 #include "CementSolutionDiffusion.h"
 
-#define TITLE   "Durability of CBM (2019)"
+#define TITLE   "Chloride ingress in CBM (2019)"
 #define AUTHORS "Dangla and many others"
 
 #include "PredefinedMethods.h"

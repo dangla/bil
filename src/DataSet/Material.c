@@ -83,22 +83,22 @@ void (Material_Delete)(void* self)
   }
   
   {
-    GenericData_t* gdat = Material_GetGenericData(material) ;
-    
-    if(gdat) {
-      GenericData_Delete(gdat) ;
-      free(gdat) ;
-      Material_GetGenericData(material) = NULL ;
-    }
-  }
-  
-  {
     Curves_t* curves = Material_GetCurves(material) ;
     
     if(curves) {
       Curves_Delete(curves) ;
       free(curves) ;
       Material_GetCurves(material) = NULL ;
+    }
+  }
+  
+  {
+    GenericData_t* gdat = Material_GetGenericData(material) ;
+    
+    if(gdat) {
+      GenericData_Delete(gdat) ;
+      free(gdat) ;
+      Material_GetGenericData(material) = NULL ;
     }
   }
   

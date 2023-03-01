@@ -2,7 +2,7 @@
 #SUPERLU = /usr/lib/x86_64-linux-gnu/libsuperlu.so
 #SUPERLUMT = /home/dangla/Documents/Softwares/bil/bil-master/src/Libraries/superlu/superlu_mt-master/lib/libsuperlu_mt_OPENMP.so
 #SUPERLUMT = /home/dangla/Documents/Softwares/bil/bil-master/src/Libraries/superlu/superlu_mt-master/lib/libsuperlu_mt_PTHREAD.so
-SUPERLUDIST = /usr/local/lib/libsuperlu_dist.so
+#SUPERLUDIST = /usr/local/lib/libsuperlu_dist.so
 #LAPACK = /usr/lib/x86_64-linux-gnu/liblapack.so
 #BLAS = /usr/lib/x86_64-linux-gnu/libblas.so
 #UEL = /home/dangla/Documents/Softwares/bil/Projects/IoannisStefanou/libUEL_64.so

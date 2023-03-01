@@ -703,7 +703,7 @@ void (Math_PrintMatrix)(const double* c,const int n)
     for(i = 0 ; i < n ; i++) {
       int j ;
         
-      printf("Row(%d)-Col(1-%d): (",i,n) ;
+      printf("Row(%d)-Col(1-%d): (",i + 1,n) ;
         
       for (j = 0 ; j < n ; j++) {
         printf(" % e",c[i*n + j]) ;
@@ -1309,10 +1309,11 @@ static void Math_Test(int, char**) ;
 void Math_Test(int argc, char** argv)
 {
   #define N 50
-  int n = N ;
+  int n = (argc > 1) ? atoi(argv[1]) : N ;
   double a[N*N] ;
   double ainv[N*N] ;
   double lu[N*N] ;
+  double id[N*N] ;
   double b[N] ;
   double x[N] ;
   int indx[N] ;
@@ -1356,17 +1357,7 @@ void Math_Test(int argc, char** argv)
     int i ;
     
     printf("Matrix a:\n") ;
-    for(i = 0 ; i < n ; i++) {
-      int j ;
-      
-      printf("a[%d][-]: ",i) ;
-      
-      for(j = 0 ; j < n ; j++) {
-        printf("%e ",a[n*i + j]) ;
-      }
-      
-      printf("\n") ;
-    }
+    Math_PrintMatrix(a,n) ;
     
     printf("The r.h.s:\n") ;
     printf("b: ") ;
@@ -1521,13 +1512,14 @@ void Math_Test(int argc, char** argv)
 
 #define PRINTMAT(N,A) \
         do {\
-          int i;\
+          int i ;\
           for(i = 0 ; i < N ; i++) {\
-            int j;\
-            for(j = 0 ; j < N ; j++) {\
-              printf("%e ",A(i,j));\
+            int j ;\
+            printf("Row(%d)-Col(1-%d): (",i + 1,N) ;\
+            for (j = 0 ; j < N ; j++) {\
+              printf(" % e",A[i*(N) + j]) ;\
             }\
-            printf("\n");\
+            printf(")\n") ;\
           }\
         } while(0)
 
@@ -1542,7 +1534,7 @@ int Math_TestDGEEV(int argc,char** argv)
   double* eigv = Math_ComputeRealEigenvaluesAndEigenvectorsOf3x3Matrix(a,'r');
   
   printf("a\n") ;
-  PRINTMAT(3,A) ;
+  Math_PrintMatrix(a,3) ;
   
   {
     int i;
@@ -1560,7 +1552,7 @@ int Math_TestDGEEV(int argc,char** argv)
 
 /*
  * Compilation: 
- * g++ -gdwarf-2 -g3  -L/home/dangla/Documents/Softwares/bil/bil-master/lib -Wl,-rpath=/home/dangla/Documents/Softwares/bil/bil-master/lib -lbil-2.8.4 /usr/lib/x86_64-linux-gnu/liblapack.a /usr/lib/x86_64-linux-gnu/libblas.a  -o out -lgfortran
+ * g++ -gdwarf-2 -g3  -L/home/dangla/Documents/Softwares/bil/bil-master/lib -Wl,-rpath=/home/dangla/Documents/Softwares/bil/bil-master/lib -lbil-2.8.8-Debug  -o out -lgfortran
 */
 int main(int argc, char** argv)
 {

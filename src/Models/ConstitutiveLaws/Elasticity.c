@@ -28,6 +28,13 @@ Elasticity_t*  (Elasticity_Create)(void)
     Elasticity_GetStiffnessTensor(elasty) = c ;
   }
   
+  /* Allocation of space for the compliance tensor */
+  {
+    double* c = (double*) Mry_New(double[81]) ;
+    
+    Elasticity_GetComplianceTensor(elasty) = c ;
+  }
+  
   /* Allocation of space for the type */
   {
     char* c = (char*) Mry_New(char[Elasticity_MaxLengthOfKeyWord]) ;
@@ -60,10 +67,35 @@ void  (Elasticity_Delete)(void* self)
 {
   Elasticity_t* elasty = (Elasticity_t*) self ;
   
-  free(Elasticity_GetStiffnessTensor(elasty)) ;
-  free(Elasticity_GetType(elasty)) ;
-  free(Elasticity_GetParameter(elasty)) ;
-  free(Elasticity_GetStressTensor(elasty)) ;
+  {
+    double* c = Elasticity_GetStiffnessTensor(elasty) ;
+    
+    if(c) free(c) ;
+  }
+  
+  {
+    double* c = Elasticity_GetComplianceTensor(elasty) ;
+    
+    if(c) free(c) ;
+  }
+  
+  {
+    char* type = Elasticity_GetType(elasty) ;
+    
+    if(type) free(type) ;
+  }
+  
+  {
+    double* c = Elasticity_GetParameter(elasty) ;
+    
+    if(c) free(c) ;
+  }
+  
+  {
+    double* c = Elasticity_GetStressTensor(elasty) ;
+    
+    if(c) free(c) ;
+  }
 }
 
 
@@ -161,7 +193,7 @@ double* (Elasticity_ComputeStiffnessTensor)(Elasticity_t* elasty,double* c)
 
 
 
-void (Elasticity_CopyStiffnessTensor)(Elasticity_t* elasty,double* c)
+double* (Elasticity_CopyStiffnessTensor)(Elasticity_t* elasty,double* c)
 /** Copy the 4th rank stiffness tensor in c. */
 {
   double* cel = Elasticity_GetStiffnessTensor(elasty) ;
@@ -173,6 +205,28 @@ void (Elasticity_CopyStiffnessTensor)(Elasticity_t* elasty,double* c)
       c[i] = cel[i] ;
     }
   }
+  
+  return(c) ;
+}
+
+
+
+
+
+double* (Elasticity_CopyComplianceTensor)(Elasticity_t* elasty,double* c)
+/** Copy the 4th rank stiffness tensor in c. */
+{
+  double* cel = Elasticity_GetComplianceTensor(elasty) ;
+
+  {
+    int i ;
+        
+    for(i = 0 ; i < 81 ; i++) {
+      c[i] = cel[i] ;
+    }
+  }
+  
+  return(c) ;
 }
 
 
@@ -304,60 +358,6 @@ double* (Elasticity_ComputeTransverselyIsotropicStiffnessTensor)(Elasticity_t* e
 
 
 
-double* (Elasticity_StiffnessMatrixInVoigtNotation)(Elasticity_t* elasty,double* cv)
-/** Compute the stiffness matrix in Voigt's notation from the
- *  4th-order stiffness tensor. This stiffness matrix relates 
- *  the stresses in Voigt's notation: Sij = (S11,S22,S33,S12,S23,S31) to
- *  the strains in Voigt's notation:  Eij = (E11,E22,E33,2E12,2E23,2E31)
- *  On inputs:
- *  - elasty should contain the initial 4th-order stiffness tensor,
- *  - cv should point to an allocated space of 36 doubles.
- *  On output:
- *  - cv will contain the stiffness matrix in Voigt's notation
- **/
-{
-#define C(i,j,k,l)  (c[(((i)*3+(j))*3+(k))*3+(l)])
-#define CV(i,j)     (cv[(i)*6+(j)])
-/*
- *                  |0 3 5|
- * VI(i,j) maps to  |3 1 4|
- *                  |5 4 2|
- */
-#define VI(i,j)     (voigtindex[(i)*3 + (j)])
-  double* c = Elasticity_GetStiffnessTensor(elasty) ;
-  int voigtindex[9] = {0,3,5,3,1,4,5,4,2} ;
-  
-  {
-    int    i ;
-
-    for(i = 0 ; i < 3 ; i++) {
-      int j  = (i + 1) % 3 ;
-      int ij = VI(i,j) ;
-      int k ;
-      
-      for(k = 0 ; k < 3 ; k++) {
-        int l  = (k + 1) % 3 ;
-        int kl = VI(k,l) ;
-        
-        CV(i,k)   = C(i,i,k,k) ;
-        CV(i,kl)  = 0.5  * (C(i,i,k,l) + C(i,i,l,k)) ;
-        CV(kl,i)  = 0.5  * (C(k,l,i,i) + C(l,k,i,i)) ;
-        CV(ij,kl) = 0.25 * (C(i,j,k,l) + C(j,i,k,l) + C(i,j,l,k) + C(j,i,l,k)) ;
-      }
-    }
-  }
-  
-  return(cv) ;
-  
-#undef VI
-#undef CV
-#undef C
-}
-
-
-
-
-
 double (Elasticity_ComputeElasticEnergy)(Elasticity_t* elasty,const double* strain)
 /** Return the elastic energy associated to the strain tensor.
  **/
@@ -389,8 +389,6 @@ double (Elasticity_ComputeElasticEnergy)(Elasticity_t* elasty,const double* stra
 
 
 
-
-
 double* (Elasticity_ComputeStressTensor)(Elasticity_t* elasty,const double* strain,double* stress0)
 /** Return the elastic stress tensor associated to the strain tensor.
  **/
@@ -413,6 +411,296 @@ double* (Elasticity_ComputeStressTensor)(Elasticity_t* elasty,const double* stra
   
   return(stress) ;
 }
+
+
+
+double* (Elasticity_ConvertStiffnessMatrixInto6x6Matrix)(double* c)
+/** Convert the 4th-order stiffness tensor into a 6x6 matrix using
+ *  the Mandel's notation. This 6x6 Mandel's matrix relates 
+ *  the stresses in Mandel's notation: Sij = (S11,S22,S33,sr2*S12,sr2*S23,sr2*S31) to
+ *  the strains in Mandel's notation:  Eij = (E11,E22,E33,sr2*E12,sr2*E23,sr2*E31)
+ *  where sr2 stands for the square root of 2.
+ *  On inputs:
+ *  - c should point to an allocated space of 81 doubles containing
+ *    the 81 components of the 4th-order stiffness matrix.
+ *  On output:
+ *  - c is replaced by the 2nd-order stiffness matrix in Mandel's notation.
+ *    Only the first 36 doubles are modified. 
+ *    More precisely the stiffness matrix in Mandel's notation writes
+ *         C1111      C1122      C1133  sr2*C1112  sr2*C1123  sr2*C1131
+ *         C2211      C2222      C2233  sr2*C2212  sr2*C2223  sr2*C2231
+ *         C3311      C3322      C3333  sr2*C3312  sr2*C3323  sr2*C3331
+ *     sr2*C1211  sr2*C1222  sr2*C1233    2*C1212    2*C1223    2*C1231
+ *     sr2*C2311  sr2*C2322  sr2*C2333    2*C2312    2*C2323    2*C2331
+ *     sr2*C3111  sr2*C3122  sr2*C3133    2*C3112    2*C3123    2*C3131
+ *  ref: 
+ *  T. Manik, A natural vector/matrix notation applied in an efficient 
+ *  and robust return-mapping algorithm for advanced yield functions, 
+ *  European Journal of Mechanics / A Solids, 90 (2021).
+ **/
+{
+#define C4(i,j,k,l) (c[(((i)*3+(j))*3+(k))*3+(l)])
+#define C2(i,j)     (c2[(i)*6+(j)])
+/*
+ *                  |0 3 5|
+ * MI(i,j) maps to  |3 1 4|
+ *                  |5 4 2|
+ */
+#define MI(i,j)     (mapindex[(i)*3 + (j)])
+  double  c2[36] ;
+  double z5sr2 = 0.5*sqrt(2) ; /* = 1/sqrt(2) */
+  double z5    = 0.5 ;
+  int mapindex[9] = {0,3,5,3,1,4,5,4,2} ;
+  
+  {
+    int    i ;
+
+    for(i = 0 ; i < 3 ; i++) {
+      int j  = (i + 1) % 3 ;
+      int ii = MI(i,i) ;
+      int ij = MI(i,j) ;
+      int k ;
+      
+      for(k = 0 ; k < 3 ; k++) {
+        int l  = (k + 1) % 3 ;
+        int kk = MI(k,k) ;
+        int kl = MI(k,l) ;
+        
+        C2(ii,kk) = C4(i,i,k,k) ;
+        C2(ii,kl) = z5sr2 * (C4(i,i,k,l) + C4(i,i,l,k)) ;
+        C2(kl,ii) = z5sr2 * (C4(k,l,i,i) + C4(l,k,i,i)) ;
+        C2(ij,kl) = z5 * (C4(i,j,k,l) + C4(j,i,k,l) + C4(i,j,l,k) + C4(j,i,l,k)) ;
+      }
+    }
+  }
+  
+  {
+    int    i ;
+
+    for(i = 0 ; i < 36 ; i++) {
+      c[i] = c2[i] ;
+    }
+  }
+  
+  return(c) ;
+  
+#undef MI
+#undef C2
+#undef C4
+}
+
+
+
+double* (Elasticity_Convert6x6MatrixIntoStiffnessMatrix)(double* c)
+/** Convert a 6x6 stiffness matrix in Mandel's notation into a 
+ *  4th-order stiffness matrix. This 6x6 Mandel's matrix relates 
+ *  the stresses in Mandel's notation: Sij = (S11,S22,S33,sr2*S12,sr2*S23,sr2*S31) to
+ *  the strains in Mandel's notation:  Eij = (E11,E22,E33,sr2*E12,sr2*E23,sr2*E31)
+ *  where sr2 stands for the square root of 2.
+ *  On inputs:
+ *  - c should point to an allocated space of 81 doubles. 
+ *    The first 36 doubles should contain the matrix components 
+ *    in Mandel's notation
+ *  On output:
+ *  - c is replaced by the 4th-order symmetric matrix with 81 components.
+ *    More precisely the stiffness matrix in Mandel's notation writes
+ *         C1111      C1122      C1133  sr2*C1112  sr2*C1123  sr2*C1131
+ *         C2211      C2222      C2233  sr2*C2212  sr2*C2223  sr2*C2231
+ *         C3311      C3322      C3333  sr2*C3312  sr2*C3323  sr2*C3331
+ *     sr2*C1211  sr2*C1222  sr2*C1233    2*C1212    2*C1223    2*C1231
+ *     sr2*C2311  sr2*C2322  sr2*C2333    2*C2312    2*C2323    2*C2331
+ *     sr2*C3111  sr2*C3122  sr2*C3133    2*C3112    2*C3123    2*C3131
+ *  ref: 
+ *  T. Manik, A natural vector/matrix notation applied in an efficient 
+ *  and robust return-mapping algorithm for advanced yield functions, 
+ *  European Journal of Mechanics / A Solids, 90 (2021).
+ **/
+{
+#define C4(i,j,k,l) (c4[(((i)*3+(j))*3+(k))*3+(l)])
+#define C2(i,j)     (c[(i)*6+(j)])
+/*
+ *                  |0 3 5|
+ * MI(i,j) maps to  |3 1 4|
+ *                  |5 4 2|
+ */
+#define MI(i,j)     (mapindex[(i)*3 + (j)])
+  double c4[81] ;
+  double z5sr2 = 0.5*sqrt(2) ; /* = 1/sqrt(2) */
+  double z5    = 0.5 ;
+  int mapindex[9] = {0,3,5,3,1,4,5,4,2} ;
+  
+  {
+    int    i ;
+
+    for(i = 0 ; i < 3 ; i++) {
+      int j  = (i + 1) % 3 ;
+      int ii = MI(i,i) ;
+      int ij = MI(i,j) ;
+      int k ;
+      
+      for(k = 0 ; k < 3 ; k++) {
+        int l  = (k + 1) % 3 ;
+        int kk = MI(k,k) ;
+        int kl = MI(k,l) ;
+        
+        C4(i,i,k,k) = C2(ii,kk) ;
+        C4(i,i,k,l) = z5sr2 * C2(ii,kl) ;
+        C4(i,i,l,k) = z5sr2 * C2(ii,kl) ;
+        C4(k,l,i,i) = z5sr2 * C2(kl,ii) ;
+        C4(l,k,i,i) = z5sr2 * C2(kl,ii) ;
+        C4(i,j,k,l) = z5 * C2(ij,kl) ;
+        C4(j,i,k,l) = z5 * C2(ij,kl) ;
+        C4(i,j,l,k) = z5 * C2(ij,kl) ;
+        C4(j,i,l,k) = z5 * C2(ij,kl) ;
+      }
+    }
+  }
+  
+  {
+    int    i ;
+
+    for(i = 0 ; i < 81 ; i++) {
+      c[i] = c4[i] ;
+    }
+  }
+  
+  return(c) ;
+  
+#undef MI
+#undef C2
+#undef C4
+}
+
+
+
+double* (Elasticity_ConvertStressTensorInto6TermStressVector)(double* c)
+/** Convert the 2nd-order symmetric stress tensor into a 6x1 column 
+ *  matrix using the Mandel's notation. This 6x1 Mandel's column matrix 
+ *  relates the stress tensor to the stresses in Mandel's notation: 
+ *  Sij -> (S11,S22,S33,sr2*S12,sr2*S23,sr2*S31)
+ *  where sr2 stands for the square root of 2.
+ *  On inputs:
+ *  - c should point to an allocated space of 9 doubles containing
+ *    the 9 components of the 2nd-order symmetric stress tensor.
+ *  On output:
+ *  - c is replaced by the column stress vector in Mandel's notation.
+ *    Only the first 6 doubles are modified.
+ **/
+{
+#define C2(i,j)     (c[(i)*3+(j)])
+#define C1(i)       (c1[i])
+/*
+ *                  |0 3 5|
+ * MI(i,j) maps to  |3 1 4|
+ *                  |5 4 2|
+ */
+#define MI(i,j)     (mapindex[(i)*3 + (j)])
+  double  c1[6] ;
+  double z5sr2 = 0.5*sqrt(2) ;
+  int mapindex[9] = {0,3,5,3,1,4,5,4,2} ;
+  
+  {
+    int    i ;
+
+    for(i = 0 ; i < 3 ; i++) {
+      int j  = (i + 1) % 3 ;
+      int ii = MI(i,i) ;
+      int ij = MI(i,j) ;
+      
+      C1(ii) = C2(i,i) ;
+      C1(ij) = z5sr2 * (C2(i,j) + C2(j,i)) ;
+    }
+  }
+  
+  {
+    int    i ;
+
+    for(i = 0 ; i < 6 ; i++) {
+      c[i] = c1[i] ;
+    }
+  }
+  
+  return(c) ;
+  
+#undef MI
+#undef C2
+#undef C1
+}
+
+
+
+double* (Elasticity_Convert6TermStressVectorIntoStressTensor)(double* c)
+/** Convert a 6 term column matrix representing a symmetric vector 
+ *  using the Mandel's notation into a 2nd-order symmetric stress tensor. 
+ *  The Mandel's notation relates the stress tensor to the 6 term vector
+ *  of stresses: 
+ *  Sij -> (S11,S22,S33,sr2*S12,sr2*S23,sr2*S31)
+ *  where sr2 stands for the square root of 2.
+ *  On input:
+ *  - c should point to an allocated space of 9 doubles containing in
+ *    the first 6 terms the column vector in Mandel's notation.
+ *  On output:
+ *  - c is replaced by the 9 components of the 2nd-order symmetric
+ *    stress tensor.
+ **/
+{
+#define C2(i,j)     (c2[(i)*3+(j)])
+#define C1(i)       (c[i])
+/*
+ *                  |0 3 5|
+ * MI(i,j) maps to  |3 1 4|
+ *                  |5 4 2|
+ */
+#define MI(i,j)     (mapindex[(i)*3 + (j)])
+  double  c2[9] ;
+  double z5sr2 = 0.5*sqrt(2) ;
+  int mapindex[9] = {0,3,5,3,1,4,5,4,2} ;
+  
+  {
+    int    i ;
+
+    for(i = 0 ; i < 3 ; i++) {
+      int j  = (i + 1) % 3 ;
+      int ii = MI(i,i) ;
+      int ij = MI(i,j) ;
+      
+      C2(i,i) = C1(ii) ;
+      C2(i,j) = z5sr2 * C1(ij) ;
+      C2(j,i) = z5sr2 * C1(ij) ;
+    }
+  }
+  
+  {
+    int    i ;
+
+    for(i = 0 ; i < 9 ; i++) {
+      c[i] = c2[i] ;
+    }
+  }
+  
+  return(c) ;
+  
+#undef MI
+#undef C2
+#undef C1
+}
+
+
+
+double* (Elasticity_InvertStiffnessMatrix)(double* c)
+/** Replace a 4th-order stiffness tensor by its inverse.
+ **/
+{
+  
+  Elasticity_ConvertStiffnessMatrixInto6x6Matrix(c) ;
+
+  Math_InvertMatrix(c,6) ;
+  
+  Elasticity_Convert6x6MatrixIntoStiffnessMatrix(c) ;
+    
+  return(c) ;
+}
+
 
 
 #if 0
@@ -441,5 +729,210 @@ double* (Elasticit_IsotropicStiffnessTensor)(const double k, const double g,doub
   
   return(c) ;
 #undef C
+}
+#endif
+
+
+
+#if 0
+double* (Elasticity_StiffnessMatrixInVoigtNotation)(double* c)
+/** Compute the stiffness matrix in Voigt's notation from the
+ *  4th-order stiffness tensor. This stiffness Voigt's matrix relates 
+ *  the stresses in Voigt's notation: Sij = (S11,S22,S33,S12,S23,S31) to
+ *  the strains in Voigt's notation:  Eij = (E11,E22,E33,2E12,2E23,2E31)
+ *  On inputs:
+ *  - c should point to an allocated space of 81 doubles containing
+ *    the 81 components of the 4th-order stiffness matrix.
+ *  On output:
+ *  - c is replaced by the 2nd-order stiffness matrix in Voigt's notation.
+ *    Only the first 36 doubles are modified.
+ **/
+{
+#define C4(i,j,k,l) (c[(((i)*3+(j))*3+(k))*3+(l)])
+#define C2(i,j)     (c2[(i)*6+(j)])
+/*
+ *                  |0 3 5|
+ * MI(i,j) maps to  |3 1 4|
+ *                  |5 4 2|
+ */
+#define MI(i,j)     (mapindex[(i)*3 + (j)])
+  double  c2[36] ;
+  int mapindex[9] = {0,3,5,3,1,4,5,4,2} ;
+  
+  {
+    int    i ;
+
+    for(i = 0 ; i < 3 ; i++) {
+      int j  = (i + 1) % 3 ;
+      int ii = MI(i,i) ;
+      int ij = MI(i,j) ;
+      int k ;
+      
+      for(k = 0 ; k < 3 ; k++) {
+        int l  = (k + 1) % 3 ;
+        int kk = MI(k,k) ;
+        int kl = MI(k,l) ;
+        
+        C2(ii,kk) = C4(i,i,k,k) ;
+        C2(ii,kl) = 0.5  * (C4(i,i,k,l) + C4(i,i,l,k)) ;
+        C2(kl,ii) = 0.5  * (C4(k,l,i,i) + C4(l,k,i,i)) ;
+        C2(ij,kl) = 0.25 * (C4(i,j,k,l) + C4(j,i,k,l) + C4(i,j,l,k) + C4(j,i,l,k)) ;
+      }
+    }
+  }
+  
+  {
+    int    i ;
+
+    for(i = 0 ; i < 36 ; i++) {
+      c[i] = c2[i] ;
+    }
+  }
+  
+  return(c) ;
+  
+#undef MI
+#undef C2
+#undef C4
+}
+#endif
+
+
+
+#if 0
+static int Elasticity_Test(int,char**) ;
+
+#include <time.h>
+#include "Math_.h"
+
+int Elasticity_Test(int argc,char** argv)
+{
+  #define  A(i,j)  (a[(i)*3+(j)])
+  double bulk  = (argc > 1) ? (double) atof(argv[1]) : 1 ;
+  double shear = (argc > 2) ? (double) atof(argv[2]) : 1 ;
+  double poisson = (3*bulk - 2*shear)/(6*bulk + 2*shear) ;
+  double young = 9*bulk*shear/(3*bulk+shear) ;
+  Elasticity_t* elasty = Elasticity_Create() ;
+  
+  #if 0
+  printf("Bulk's modulus: %g\n",bulk) ;
+  printf("Shear modulus: %g\n",shear) ;
+  printf("Young's modulus: %g\n",young) ;
+  printf("Poisson's ratio: %g\n",poisson) ;
+  
+  Elasticity_SetToIsotropy(elasty) ;
+  Elasticity_SetParameters(elasty,young,poisson) ;
+    
+  Elasticity_ComputeStiffnessTensor(elasty,c) ;
+  #endif
+  
+  {
+    double c[81] ;
+    double invc[81] ;
+    double id[81] ;
+    
+    /* Fill a 6x6 matrix randomly */
+    {
+      int i ;
+      int rmax = RAND_MAX / 2 ;
+      
+      srand(time(NULL)) ;
+      srand(rand()) ;
+      
+      #define C2(i,j)  c[(i)*6 + (j)]
+      for(i = 0 ; i < 6 ; i++) {
+        int j ;
+        
+        C2(i,i) = ((double) (rand() - rmax))/rmax ;
+        
+        for(j = 0 ; j < 6 ; j++) {
+          C2(i,j) = ((double) (rand() - rmax))/rmax ;
+        }
+      }
+      #undef C2
+    }
+    
+    /* Convert it into a 4th-order stiffness matrix */
+    Elasticity_Convert6x6MatrixIntoStiffnessMatrix(c) ;
+    
+    /* Save it in invc */
+    {
+      int i ;
+      
+      for(i = 0 ; i < 81 ; i++) {
+        invc[i] = c[i] ;
+      }
+    }
+  
+    printf("original c:\n") ;
+    Math_PrintStiffnessTensor(c) ;
+    
+    Elasticity_InvertStiffnessMatrix(invc) ;
+    
+    printf("inverse c:\n") ;
+    Math_PrintStiffnessTensor(invc) ;
+    
+    /* check */
+    {
+      int i ;
+      
+      #define ID(i,j)    id[(i)*9 + (j)]
+      #define C(i,j)     c[(i)*9 + (j)]
+      #define INVC(i,j)  invc[(i)*9 + (j)]
+      for(i = 0 ; i < 9 ; i++) {
+        int j ;
+        
+        for(j = 0 ; j < 9 ; j++) {
+          int k ;
+          
+          ID(i,j) = 0  ;
+          
+          for(k = 0 ; k < 9 ; k++) {
+            ID(i,j) += C(i,k)*INVC(k,j)  ;
+          }
+        }
+      }
+      #undef ID
+      #undef C
+      #undef INVC
+    
+      printf("check original * inverse?:\n") ;
+      Math_PrintStiffnessTensor(id) ;
+    }
+    
+    #if 0
+    {
+      bulk  = 1/(9*bulk) ;
+      shear = 1/(4*shear) ;
+      
+      poisson = (3*bulk - 2*shear)/(6*bulk + 2*shear) ;
+      young = 9*bulk*shear/(3*bulk+shear) ;
+      
+      Elasticity_SetParameters(elasty,young,poisson) ;
+      Elasticity_ComputeIsotropicStiffnessTensor(elasty,c) ;
+      
+      printf("check c\n") ;
+      
+      Math_PrintStiffnessTensor(c) ;
+    }
+    #endif
+  }
+  
+  return(0) ;
+}
+
+
+/*
+ * Compilation: 
+ * g++ -gdwarf-2 -g3  -L/home/dangla/Documents/Softwares/bil/bil-master/lib -Wl,-rpath=/home/dangla/Documents/Softwares/bil/bil-master/lib -lbil-2.8.8-Debug -o out -lgfortran
+*/
+int main(int argc, char** argv)
+{
+  Session_Open() ;
+  
+  Elasticity_Test(argc,argv) ;
+  
+  Session_Close() ;
+  return(0) ;
 }
 #endif
