@@ -2,6 +2,53 @@ static Plasticity_ComputeTangentStiffnessTensor_t    Plasticity_CTCamClayOffset 
 static Plasticity_ReturnMapping_t                    Plasticity_RMCamClayOffset ;
 static Plasticity_YieldFunction_t                    Plasticity_YFCamClayOffset ;
 static Plasticity_FlowRules_t                        Plasticity_FRCamClayOffset ;
+static Plasticity_SetParameters_t                    Plasticity_SPCamClayOffset ;
+
+
+#define Plasticity_GetSlopeSwellingLine(PL) \
+        Plasticity_GetParameter(PL)[0]
+
+#define Plasticity_GetSlopeVirginConsolidationLine(PL) \
+        Plasticity_GetParameter(PL)[1]
+        
+#define Plasticity_GetSlopeCriticalStateLine(PL) \
+        Plasticity_GetParameter(PL)[2]
+        
+#define Plasticity_GetInitialPreconsolidationPressure(PL) \
+        Plasticity_GetParameter(PL)[3]
+        
+#define Plasticity_GetInitialVoidRatio(PL) \
+        Plasticity_GetParameter(PL)[4]
+
+
+void Plasticity_SPCamClayOffset(Plasticity_t* plasty,...)
+{
+  va_list args ;
+  
+  va_start(args,plasty) ;
+  
+  {
+    Plasticity_GetSlopeSwellingLine(plasty)               = va_arg(args,double) ;
+    Plasticity_GetSlopeVirginConsolidationLine(plasty)    = va_arg(args,double) ;
+    Plasticity_GetSlopeCriticalStateLine(plasty)          = va_arg(args,double) ;
+    Plasticity_GetInitialPreconsolidationPressure(plasty) = va_arg(args,double) ;
+    Plasticity_GetInitialVoidRatio(plasty)                = va_arg(args,double) ;
+    
+    {
+      double pc = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
+      
+      //Plasticity_GetHardeningVariable(plasty)[0] = pc ;
+      Plasticity_GetHardeningVariable(plasty)[0] = log(pc) ;
+      
+      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6 ;
+      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[1] = 1.e-6*pc ;
+      Plasticity_GetTypicalSmallIncrementOfStress(plasty) = 1.e-6*pc ;
+    }
+    
+  }
+
+  va_end(args) ;
+}
 
 
 
@@ -388,7 +435,7 @@ double* (Plasticity_FRCamClayOffset)(Plasticity_t* plasty,const double* stress,c
    * --------------------------------------------------
    * Using a = ln(pc) as hardening variable.
    * d(a) = - dl * (1 + e0) * v * (dg/dp)
-   * So h(p,a) = - (1 + e0) * v * (2*p + pc(a) - ps)
+   * So h(p,a) = - (1 + e0) * v * (dg/dp)
    */
   {
     double v = 1./(lambda - kappa) ;

@@ -8,8 +8,8 @@
 #include "FEM.h"
 #include "Plasticity.h"
 
-#define TITLE "Barcelona Basic Model for unsaturated soils (2023)"
-#define AUTHORS "Eizaguirre-Dangla"
+#define TITLE "Non stationary flow surface model for claystone (2023)"
+#define AUTHORS "Hao-Dangla"
 
 #include "PredefinedMethods.h"
 
@@ -97,8 +97,6 @@ static double  rho_l0 ;
 static double  p_g = 0 ;
 static double  k_int ;
 static double  mu_l ;
-static double  kappa ;
-static double  mu ;
 static double  e0 ;
 static double  phi0 ;
 static double  hardv0 ;
@@ -106,8 +104,7 @@ static Elasticity_t* elasty ;
 static Plasticity_t* plasty ;
 static Curve_t* saturationcurve ;
 static Curve_t* relativepermcurve ;
-static double  kappa_s ;
-static double  p_atm = 101325. ;
+static double* cijkl ;
 
 
 
@@ -151,7 +148,7 @@ int pm(const char *s)
     return (0) ;
   } else if(!strcmp(s,"rho_s"))      { 
     return (1) ;
-  } else if(!strcmp(s,"shear_modulus")) { 
+  } else if(!strcmp(s,"young")) { 
     return (2) ;
   } else if(!strcmp(s,"rho_l"))      { 
     return (3) ;
@@ -180,12 +177,16 @@ int pm(const char *s)
     return(19) ;
   } else if(!strcmp(s,"initial_porosity")) {
     return(20) ;
-  } else if(!strcmp(s,"kappa_s")) {
-    return(21) ;
   } else if(!strcmp(s,"suction_cohesion_coefficient")) {
     return(22) ;
   } else if(!strcmp(s,"reference_consolidation_pressure")) {
     return(23) ;
+  } else if(!strcmp(s,"poisson")) {
+    return(24) ;
+  } else if(!strcmp(s,"reference_strain_rate")) {
+    return(25) ;
+  } else if(!strcmp(s,"viscous_exponent")) {
+    return(26) ;
   } else return(-1) ;
 }
 
@@ -198,14 +199,13 @@ void GetProperties(Element_t* el)
   mu_l    = Element_GetPropertyValue(el,"mu_l") ;
   rho_l0  = Element_GetPropertyValue(el,"rho_l") ;
   sig0    = &Element_GetPropertyValue(el,"initial_stress") ;
-  kappa   = Element_GetPropertyValue(el,"slope_of_swelling_line") ;
-  mu      = Element_GetPropertyValue(el,"shear_modulus") ;
   phi0    = Element_GetPropertyValue(el,"initial_porosity") ;
   e0      = phi0/(1 - phi0) ;
-  kappa_s = Element_GetPropertyValue(el,"kappa_s") ;
   
   plasty  = Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
   elasty  = Plasticity_GetElasticity(plasty) ;
+
+  cijkl   = Elasticity_GetStiffnessTensor(elasty) ;
   
   hardv0  = Plasticity_GetHardeningVariable(plasty)[0] ;
   
@@ -252,7 +252,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 /** Read the material properties in the stream file ficd 
  *  Return the nb of (scalar) properties of the model */
 {
-  int  NbOfProp = 24 ;
+  int  NbOfProp = 27 ;
   int i ;
 
   /* Par defaut tout a 0 */
@@ -275,29 +275,33 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
     {
       /* Elasticity */
       {
-        //double young    = Material_GetPropertyValue(mat,"young") ;
-        //double poisson  = Material_GetPropertyValue(mat,"poisson") ;
+        double young    = Material_GetPropertyValue(mat,"young") ;
+        double poisson  = Material_GetPropertyValue(mat,"poisson") ;
         
         Elasticity_SetToIsotropy(elasty) ;
-        //Elasticity_SetParameters(elasty,young,poisson) ;
-        //Elasticity_ComputeStiffnessTensor(elasty) ;
+        Elasticity_SetParameters(elasty,young,poisson) ;
+        
+        Elasticity_UpdateElasticTensors(elasty) ;
       }
     }
     {
-      /* Barcelona Basic model */
+      /* NSFS model */
       {
+        double kappa  = Material_GetPropertyValue(mat,"slope_of_swelling_line") ;
         double lambda = Material_GetPropertyValue(mat,"slope_of_virgin_consolidation_line") ;
         double M      = Material_GetPropertyValue(mat,"slope_of_critical_state_line") ;
         double pc0    = Material_GetPropertyValue(mat,"initial_pre-consolidation_pressure") ;
         double coh    = Material_GetPropertyValue(mat,"suction_cohesion_coefficient") ;
         double p_ref  = Material_GetPropertyValue(mat,"reference_consolidation_pressure") ;
+        double refstrainrate = Material_GetPropertyValue(mat,"reference_strain_rate") ;
+        double viscexp = Material_GetPropertyValue(mat,"viscous_exponent") ;
         Curve_t* lc   = Material_FindCurve(mat,"lc") ;
         
-        e0     = Material_GetPropertyValue(mat,"initial_void_ratio") ;
-        kappa  = Material_GetPropertyValue(mat,"slope_of_swelling_line") ;
+        phi0    = Material_GetPropertyValue(mat,"initial_porosity") ;
+        e0      = phi0/(1 - phi0) ;
         
-        Plasticity_SetToBBM(plasty) ;
-        Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0,coh,p_ref,lc) ;
+        Plasticity_SetToNSFS(plasty) ;
+        Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0,coh,p_ref,refstrainrate,viscexp,lc) ;
       }
     }
 
@@ -911,6 +915,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
     double p_l = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l) ;
     //double p_l = x[I_P_L] ;
     double pc = p_g - p_l ;
+    double sl = SaturationDegree(pc) ;
 
 
     /* initialization */
@@ -928,35 +933,27 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
     
       for(i = 0 ; i < 9 ; i++) sig[i] = SIG[i] ;
     
-      /* Net stresses */
-      sig[0] += p_g ;
-      sig[4] += p_g ;
-      sig[8] += p_g ;
+      /* Effective stresses */
+      {
+        double pcsl = pc*sl ;
+    
+        sig[0] += - pcsl ;
+        sig[4] += - pcsl ;
+        sig[8] += - pcsl ;
+      }
       
       /* Tangent stiffness matrix */
       {
         double* c1 = c0 ;
         double crit = CRIT ;
-        
-        {
-          double* sig_n   = SIG_n ;
-          double signet_n = (sig_n[0] + sig_n[4] + sig_n[8])/3. + p_g ;
-          double bulk     = - signet_n*(1 + e0)/kappa ;
-          double lame     = bulk - 2*mu/3. ;
-          double poisson  = 0.5 * lame / (lame + mu) ;
-          double young    = 2 * mu * (1 + poisson) ;
-          
-          Elasticity_SetParameters(elasty,young,poisson) ;
-          Elasticity_UpdateStiffnessTensor(elasty) ;
-        }
 
         Elasticity_CopyStiffnessTensor(elasty,c1) ;
       
         {
           /* Criterion */
           if(crit >= 0.) {
-            double logp_co  = HARDV ;
-            double hardv[2] = {logp_co,pc} ;
+            double p_co  = HARDV ;
+            double hardv[2] = {p_co,dt} ;
             
           /* Continuum tangent stiffness matrix */
             //ComputeTangentStiffnessTensor(sig,hardv) ;
@@ -985,7 +982,6 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
     {
       /* Fluid mass density */
       double rho_l = rho_l0 ;
-      double sl = SaturationDegree(pc) ;
     
     
       /* Coupling matrix */
@@ -1175,6 +1171,8 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   double  p_ln  = x_n[I_P_L] ;
   double  pc   = p_g - p_l ;
   double  pc_n = p_g - p_ln ;
+  double  sl   = SaturationDegree(pc) ;
+  double  sl_n = SaturationDegree(pc_n) ;
     
 
   /* Outputs 
@@ -1192,41 +1190,36 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       /* Incremental deformations */
       for(i = 0 ; i < 9 ; i++) deps[i] =  eps[i] - eps_n[i] ;
     
-      /* Elastic trial stresses at t */
-      {
-        double trde      = deps[0] + deps[4] + deps[8] ;
-        double dlns      = log((pc + p_atm)/(pc_n + p_atm)) ;
-        double signet_n  = (sig_n[0] + sig_n[4] + sig_n[8])/3. + p_g ;
-        double bulk      = - signet_n*(1 + e0)/kappa ;
-        double dsigm     = bulk*trde - signet_n*kappa_s/kappa*dlns ;
-        double lame      = bulk - 2*mu/3. ;
-        double poisson   = 0.5 * lame / (lame + mu) ;
-        double young     = 2 * mu * (1 + poisson) ;
-          
-        Elasticity_SetParameters(elasty,young,poisson) ;
-        Elasticity_UpdateStiffnessTensor(elasty) ;
-        
-        for(i = 0 ; i < 9 ; i++) sig[i] = sig_n[i] + 2*mu*deps[i] ;
+      /* Elastic trial stresses */
+      for(i = 0 ; i < 9 ; i++) sig[i] = sig_n[i] ;
+    
+      #define C(i,j)  (cijkl[(i)*9+(j)])
+      for(i = 0 ; i < 9 ; i++) {
+        int  j ;
       
-        sig[0] += dsigm - 2*mu*trde/3. ;
-        sig[4] += dsigm - 2*mu*trde/3. ;
-        sig[8] += dsigm - 2*mu*trde/3. ;
+        for(j = 0 ; j < 9 ; j++) {
+          sig[i] += C(i,j)*deps[j] ;
+        }
       }
+      #undef C
       
-      /* Elastic trial net stresses at t  */
+      /* Elastic trial effective stresses */
       {
-        sig[0] += p_g ;
-        sig[4] += p_g ;
-        sig[8] += p_g ;
+        double pcsl_n = pc_n*sl_n ;
+      
+        sig[0] += - pcsl_n ;
+        sig[4] += - pcsl_n ;
+        sig[8] += - pcsl_n ;
       }
+
     
       /* Plastic strains */
       for(i = 0 ; i < 9 ; i++) eps_p[i] = eps_pn[i] ;
     
       /* Return mapping */
       {
-        double logp_con = x_n[I_HARDV] ; /* log(pre-consolidation pressure) at 0 suction at the previous time step */
-        double hardv[2] = {logp_con,pc} ;
+        double p_con = x_n[I_HARDV] ; /* pre-consolidation pressure at 0 suction at the previous time step */
+        double hardv[2] = {p_con,dt} ;
         double crit  = ReturnMapping(sig,eps_p,hardv) ;
         double dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
         
@@ -1236,9 +1229,13 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       }
     
       /* Total stresses */
-      sig[0] -= p_g ;
-      sig[4] -= p_g ;
-      sig[8] -= p_g ;
+      {
+        double pcsl = pc*sl ;
+        
+        sig[0] += pcsl ;
+        sig[4] += pcsl ;
+        sig[8] += pcsl ;
+      }
     }
   }
   
@@ -1273,8 +1270,6 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
     
     /* Liquid mass content, body force */
     {
-    /* saturation */
-      double  sl  = SaturationDegree(pc) ;
       double  m_l = rho_l*phi*sl ;
       double* f_mass = x + I_Fmass ;
       int i ;

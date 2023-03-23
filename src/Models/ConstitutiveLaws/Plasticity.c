@@ -10,6 +10,7 @@
 #include "DataFile.h"
 #include "Math_.h"
 #include "Plasticity.h"
+#include "BilExtraLibs.h"
 
 
 static double* (Plasticity_DerivativeOfFlowRules)(Plasticity_t*,Plasticity_FlowRules_t*,const double*,const double*) ;
@@ -35,6 +36,19 @@ static double* (Plasticity_ResidusOfGenericReturnMappingAlgorithm)(Plasticity_t*
 
 /* Barcelona Basic model */
 #include "PlasticityModels/Plasticity_BBM.c"
+
+
+/* NSFS model */
+#include "PlasticityModels/Plasticity_NSFS.c"
+
+
+/* Asymmetric Cam-Clay model */
+#include "PlasticityModels/Plasticity_ACC.c"
+#undef GSLLIB
+#ifdef GSLLIB
+#include <gsl/gsl_linalg.h>
+#include "PlasticityModels/Plasticity_ACCBraun.c"
+#endif
 
 
 
@@ -230,6 +244,7 @@ void Plasticity_Initialize(Plasticity_t* plasty)
     Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMDruckerPrager ;
     Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFDruckerPrager ;
     Plasticity_GetFlowRules(plasty)                     = Plasticity_FRDruckerPrager ;
+    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPDruckerPrager ;
     Plasticity_GetNbOfHardeningVariables(plasty)        = 0 ;
     
   } else if(Plasticity_IsCamClay(plasty)) {
@@ -237,6 +252,7 @@ void Plasticity_Initialize(Plasticity_t* plasty)
     Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMCamClay ;
     Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFCamClay ;
     Plasticity_GetFlowRules(plasty)                     = Plasticity_FRCamClay ;
+    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPCamClay ;
     Plasticity_GetNbOfHardeningVariables(plasty)        = 1 ;
     
   } else if(Plasticity_IsCamClayOffset(plasty)) {
@@ -244,6 +260,7 @@ void Plasticity_Initialize(Plasticity_t* plasty)
     Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMCamClayOffset ;
     Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFCamClayOffset ;
     Plasticity_GetFlowRules(plasty)                     = Plasticity_FRCamClayOffset ;
+    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPCamClayOffset ;
     Plasticity_GetNbOfHardeningVariables(plasty)        = 2 ;
     
   } else if(Plasticity_IsBBM(plasty)) {
@@ -251,125 +268,39 @@ void Plasticity_Initialize(Plasticity_t* plasty)
     Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMBBM ;
     Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFBBM ;
     Plasticity_GetFlowRules(plasty)                     = Plasticity_FRBBM ;
+    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPBBM ;
+    Plasticity_GetNbOfHardeningVariables(plasty)        = 2 ;
+    
+  } else if(Plasticity_IsACC(plasty)) {
+    Plasticity_GetComputeTangentStiffnessTensor(plasty) = Plasticity_CTACC ;
+    Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMACC ;
+    Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFACC ;
+    Plasticity_GetFlowRules(plasty)                     = Plasticity_FRACC ;
+    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPACC ;
+    Plasticity_GetNbOfHardeningVariables(plasty)        = 1 ;
+    
+  #ifdef GSLLIB
+  } else if(Plasticity_IsACCBraun(plasty)) {
+    Plasticity_GetComputeTangentStiffnessTensor(plasty) = Plasticity_CTACCBraun ;
+    Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMACCBraun ;
+    //Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFACCBraun ;
+    //Plasticity_GetFlowRules(plasty)                     = Plasticity_FRACCBraun ;
+    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPACCBraun ;
+    Plasticity_GetNbOfHardeningVariables(plasty)        = 1 ;
+  #endif
+    
+  } else if(Plasticity_IsNSFS(plasty)) {
+    Plasticity_GetComputeTangentStiffnessTensor(plasty) = Plasticity_CTNSFSHao ;
+    Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMNSFSHao ;
+    //Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFNSFSHao ;
+    //Plasticity_GetFlowRules(plasty)                     = Plasticity_FRNSFSHao ;
+    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPNSFSHao ;
     Plasticity_GetNbOfHardeningVariables(plasty)        = 2 ;
     
   } else {
     Message_RuntimeError("Not known") ;
   }
   
-}
-
-
-#if 0
-void Plasticity_SetParameter(Plasticity_t* plasty,const char* str,double v)
-{
-  
-  if(Plasticity_IsDruckerPrager(plasty)) {
-    if(0) {
-    } else if(!strcmp(str,"friction angle")) {
-      Plasticity_GetFrictionAngle(plasty)  = v ;
-    } else if(!strcmp(str,"dilatancy angle")) {
-      Plasticity_GetDilatancyAngle(plasty) = v ;
-    } else if(!strcmp(str,"cohesion")) {
-      Plasticity_GetCohesion(plasty)       = v ;
-      Plasticity_GetHardeningVariable(plasty)[0] = 0 ;
-    }
-
-  } else if(Plasticity_IsCamClay(plasty) ||
-            Plasticity_IsCamClayOffset(plasty)) {
-    if(0) {
-    } else if(!strcmp(str,"slope swelling line")) {
-      Plasticity_GetSlopeSwellingLine(plasty)               = v ;
-    } else if(!strcmp(str,"slope virgin consolidation line")) {
-      Plasticity_GetSlopeVirginConsolidationLine(plasty)    = v ;
-    } else if(!strcmp(str,"slope critical state line")) {
-      Plasticity_GetSlopeCriticalStateLine(plasty)          = v ;
-    } else if(!strcmp(str,"initial preconsolidation pressure")) {
-      Plasticity_GetInitialPreconsolidationPressure(plasty) = v ;
-      Plasticity_GetHardeningVariable(plasty)[0] = v ;
-    }
-    
-  } else {
-    Message_RuntimeError("Not known") ;
-  }
-}
-#endif
-
-
-
-void Plasticity_SetParameters(Plasticity_t* plasty,...)
-{
-  va_list args ;
-  
-  va_start(args,plasty) ;
-  
-  if(Plasticity_IsDruckerPrager(plasty)) {
-    Plasticity_GetFrictionAngle(plasty)            = va_arg(args,double) ;
-    Plasticity_GetDilatancyAngle(plasty)           = va_arg(args,double) ;
-    Plasticity_GetCohesion(plasty)                 = va_arg(args,double) ;
-    
-    Plasticity_GetHardeningVariable(plasty)[0] = 0 ;
-    
-    {
-      Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
-      double k = Elasticity_GetBulkModulus(elasty) ;
-      
-      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 0 ;
-      Plasticity_GetTypicalSmallIncrementOfStress(plasty) = 1.e-8*k ;
-    }
-    
-  } else if(Plasticity_IsCamClay(plasty) ||
-            Plasticity_IsCamClayOffset(plasty)) {
-    Plasticity_GetSlopeSwellingLine(plasty)               = va_arg(args,double) ;
-    Plasticity_GetSlopeVirginConsolidationLine(plasty)    = va_arg(args,double) ;
-    Plasticity_GetSlopeCriticalStateLine(plasty)          = va_arg(args,double) ;
-    Plasticity_GetInitialPreconsolidationPressure(plasty) = va_arg(args,double) ;
-    Plasticity_GetInitialVoidRatio(plasty)                = va_arg(args,double) ;
-    
-    {
-      double pc = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
-      
-      //Plasticity_GetHardeningVariable(plasty)[0] = pc ;
-      Plasticity_GetHardeningVariable(plasty)[0] = log(pc) ;
-      
-      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6 ;
-      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[1] = 1.e-6*pc ;
-      Plasticity_GetTypicalSmallIncrementOfStress(plasty) = 1.e-6*pc ;
-    }
-    
-  } else if(Plasticity_IsBBM(plasty)) {
-    Plasticity_GetSlopeSwellingLine(plasty)               = va_arg(args,double) ;
-    Plasticity_GetSlopeVirginConsolidationLine(plasty)    = va_arg(args,double) ;
-    Plasticity_GetSlopeCriticalStateLine(plasty)          = va_arg(args,double) ;
-    Plasticity_GetInitialPreconsolidationPressure(plasty) = va_arg(args,double) ;
-    Plasticity_GetInitialVoidRatio(plasty)                = va_arg(args,double) ;
-    Plasticity_GetSuctionCohesionCoefficient(plasty)      = va_arg(args,double) ;
-    Plasticity_GetReferenceConsolidationPressure(plasty)  = va_arg(args,double) ;
-    Curve_t* lc                                           = va_arg(args,Curve_t*) ;
-    int i = Curves_Append(Plasticity_GetCurves(plasty),lc) ;
-    
-    if(i != 0) {
-      Message_RuntimeError("Plasticity_SetParameters: illegal curve") ;
-    }
-    //Plasticity_GetLoadingCollapseFactorCurve(plasty)[0] = lc[0] ;
-    
-    {
-      double pc = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
-      
-      //Plasticity_GetHardeningVariable(plasty)[0] = pc ;
-      Plasticity_GetHardeningVariable(plasty)[0] = log(pc) ;
-      
-      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6 ;
-      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[1] = 1.e-6*pc ;
-      Plasticity_GetTypicalSmallIncrementOfStress(plasty) = 1.e-6*pc ;
-    }
-    
-  } else {
-    Message_RuntimeError("Not known") ;
-  }
-  
-
-  va_end(args) ;
 }
 
 
@@ -1255,7 +1186,6 @@ double (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,dou
  *    - "stress" points to the current elastic trial stress tensor
  *    - "hardv" points to the hardening variables obtained at the previous time step
  *    - "strain_p" points to the plastic strains obtained at the previous time step
- *    - "nhardv" is the number of hardening variables
  * 
  *  On outputs, the following values are modified:
  *    - the stresses ("stress"), 

@@ -12,6 +12,7 @@ typedef double  (Plasticity_ComputeTangentStiffnessTensor_t)(Plasticity_t*,const
 typedef double  (Plasticity_ReturnMapping_t)(Plasticity_t*,double*,double*,double*) ;
 typedef double  (Plasticity_YieldFunction_t)(Plasticity_t*,const double*,const double*) ;
 typedef double* (Plasticity_FlowRules_t)(Plasticity_t*,const double*,const double*) ;
+typedef void    (Plasticity_SetParameters_t)(Plasticity_t*,...) ;
 
 
 /* 1. Plasticity_t */
@@ -19,7 +20,7 @@ typedef double* (Plasticity_FlowRules_t)(Plasticity_t*,const double*,const doubl
 extern Plasticity_t*  (Plasticity_Create)(void) ;
 extern void           (Plasticity_Delete)(void*) ;
 extern void           (Plasticity_Initialize)                  (Plasticity_t*) ;
-extern void           (Plasticity_SetParameters)               (Plasticity_t*,...) ;
+//extern void           (Plasticity_SetParameters)               (Plasticity_t*,...) ;
 //extern void           (Plasticity_SetParameter)                (Plasticity_t*,const char*,double) ;
 extern double         (Plasticity_UpdateElastoplasticTensor)   (Plasticity_t*,double*) ;
 extern void           (Plasticity_PrintTangentStiffnessTensor) (Plasticity_t*) ;
@@ -46,6 +47,7 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 #define Plasticity_GetReturnMapping(PL)              ((PL)->returnmapping)
 #define Plasticity_GetYieldFunction(PL)              ((PL)->yieldfunction)
 #define Plasticity_GetFlowRules(PL)                  ((PL)->flowrules)
+#define Plasticity_GetSetParameters(PL)              ((PL)->setparameters)
 #define Plasticity_GetPlasticMultiplier(PL)          ((PL)->lambda)
 #define Plasticity_GetBuffers(PL)                    ((PL)->buffers)
 #define Plasticity_GetNbOfHardeningVariables(PL)     ((PL)->nhardv)
@@ -72,6 +74,15 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 
 
 #include "Utils.h"
+#include "Arg.h"
+
+#define Plasticity_SetParameters(PL,...) \
+        do {\
+          if(Plasticity_MaxNbOfParameters < Arg_NARG(__VA_ARGS__)) {\
+            Message_RuntimeError("Plasticity_SetParameters: too many parameters") ;\
+          }\
+          Plasticity_GetSetParameters(PL)(PL,__VA_ARGS__) ;\
+        } while(0)
 
 
 /* Drucker-Prager
@@ -81,16 +92,8 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 
 #define Plasticity_SetToDruckerPrager(PL) \
         Plasticity_SetTo(PL,"Drucker-Prager")
-        
-#define Plasticity_GetFrictionAngle(PL) \
-        Plasticity_GetParameter(PL)[0]
 
-#define Plasticity_GetDilatancyAngle(PL) \
-        Plasticity_GetParameter(PL)[1]
-        
-#define Plasticity_GetCohesion(PL) \
-        Plasticity_GetParameter(PL)[2]
-        
+
 /* Cam-clay
  * -------- */
 #define Plasticity_IsCamClay(PL) \
@@ -98,21 +101,7 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 
 #define Plasticity_SetToCamClay(PL) \
         Plasticity_SetTo(PL,"Cam-clay")
-        
-#define Plasticity_GetSlopeSwellingLine(PL) \
-        Plasticity_GetParameter(PL)[0]
 
-#define Plasticity_GetSlopeVirginConsolidationLine(PL) \
-        Plasticity_GetParameter(PL)[1]
-        
-#define Plasticity_GetSlopeCriticalStateLine(PL) \
-        Plasticity_GetParameter(PL)[2]
-        
-#define Plasticity_GetInitialPreconsolidationPressure(PL) \
-        Plasticity_GetParameter(PL)[3]
-        
-#define Plasticity_GetInitialVoidRatio(PL) \
-        Plasticity_GetParameter(PL)[4]
         
 /* Cam-clayOffset
  * -------------- */
@@ -122,6 +111,7 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 #define Plasticity_SetToCamClayOffset(PL) \
         Plasticity_SetTo(PL,"Cam-clayOffset")
 
+
 /* Barcelona Basic model
  * --------------------- */
 #define Plasticity_IsBBM(PL) \
@@ -130,14 +120,32 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 #define Plasticity_SetToBBM(PL) \
         Plasticity_SetTo(PL,"BBM")
 
-#define Plasticity_GetSuctionCohesionCoefficient(PL) \
-        Plasticity_GetParameter(PL)[5]
 
-#define Plasticity_GetReferenceConsolidationPressure(PL) \
-        Plasticity_GetParameter(PL)[6]
-        
-#define Plasticity_GetLoadingCollapseFactorCurve(PL) \
-        Curves_GetCurve(Plasticity_GetCurves(PL))
+/* Asymmetric Cam-Clay model (Ph. Braun)
+ * ------------------------- */
+#define Plasticity_IsACCBraun(PL) \
+        Plasticity_Is(PL,"ACCBraun")
+
+#define Plasticity_SetToACCBraun(PL) \
+        Plasticity_SetTo(PL,"ACCBraun")
+
+
+/* Asymmetric Cam-Clay model
+ * ------------------------- */
+#define Plasticity_IsACC(PL) \
+        Plasticity_Is(PL,"ACC")
+
+#define Plasticity_SetToACC(PL) \
+        Plasticity_SetTo(PL,"ACC")
+
+
+/* NSFS model
+ * ---------- */
+#define Plasticity_IsNSFS(PL) \
+        Plasticity_Is(PL,"NSFS")
+
+#define Plasticity_SetToNSFS(PL) \
+        Plasticity_SetTo(PL,"NSFS")
         
         
         
@@ -148,10 +156,6 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 #define Plasticity_ComputeTangentStiffnessTensor3(...) \
         Plasticity_ComputeTangentStiffnessTensor4(__VA_ARGS__,0)
 
-#if 0
-#define Plasticity_ComputeTangentStiffnessTensor4(PL,...) \
-        Plasticity_GetComputeTangentStiffnessTensor(PL)(PL,__VA_ARGS__)
-#endif
         
 /* We use a C extension provided by GNU C:
  * A compound statement enclosed in parentheses may appear 
@@ -168,12 +172,6 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
         
 #define Plasticity_ComputeFunctionGradients \
         Plasticity_ComputeTangentStiffnessTensor3
-
-
-#if 0
-#define Plasticity_ReturnMapping(PL,...) \
-        Plasticity_GetReturnMapping(PL)(PL,__VA_ARGS__)
-#endif
 
 
 #if 1
@@ -288,6 +286,7 @@ struct Plasticity_s {
   Plasticity_ReturnMapping_t*                 returnmapping ;
   Plasticity_YieldFunction_t*                 yieldfunction ;
   Plasticity_FlowRules_t*                     flowrules ;
+  Plasticity_SetParameters_t*                 setparameters ;
   Buffers_t*  buffers ;
 } ;
 

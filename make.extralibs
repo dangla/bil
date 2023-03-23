@@ -39,6 +39,15 @@ ifdef GSLCBLAS
   endif
 endif
 
+# Do you use the library GSL?
+# ---------------------------
+ifdef GSL
+  ifeq (${shell test -f ${GSL} && echo -n yes},yes)
+    GSL_DIR = ${shell dirname ${GSL}}
+    BIL_EXTRALIBS += -Wl,-rpath=${GSL_DIR} ${GSL}
+  endif
+endif
+
 
 # Do you use the library UEL?
 # ---------------------------

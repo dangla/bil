@@ -2,6 +2,54 @@ static Plasticity_ComputeTangentStiffnessTensor_t    Plasticity_CTCamClay ;
 static Plasticity_ReturnMapping_t                    Plasticity_RMCamClay ;
 static Plasticity_YieldFunction_t                    Plasticity_YFCamClay ;
 static Plasticity_FlowRules_t                        Plasticity_FRCamClay ;
+static Plasticity_SetParameters_t                    Plasticity_SPCamClay ;
+
+
+#define Plasticity_GetSlopeSwellingLine(PL) \
+        Plasticity_GetParameter(PL)[0]
+
+#define Plasticity_GetSlopeVirginConsolidationLine(PL) \
+        Plasticity_GetParameter(PL)[1]
+        
+#define Plasticity_GetSlopeCriticalStateLine(PL) \
+        Plasticity_GetParameter(PL)[2]
+        
+#define Plasticity_GetInitialPreconsolidationPressure(PL) \
+        Plasticity_GetParameter(PL)[3]
+        
+#define Plasticity_GetInitialVoidRatio(PL) \
+        Plasticity_GetParameter(PL)[4]
+
+
+void Plasticity_SPCamClay(Plasticity_t* plasty,...)
+{
+  va_list args ;
+  
+  va_start(args,plasty) ;
+  
+  {
+    Plasticity_GetSlopeSwellingLine(plasty)               = va_arg(args,double) ;
+    Plasticity_GetSlopeVirginConsolidationLine(plasty)    = va_arg(args,double) ;
+    Plasticity_GetSlopeCriticalStateLine(plasty)          = va_arg(args,double) ;
+    Plasticity_GetInitialPreconsolidationPressure(plasty) = va_arg(args,double) ;
+    Plasticity_GetInitialVoidRatio(plasty)                = va_arg(args,double) ;
+    
+    {
+      double pc = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
+      
+      //Plasticity_GetHardeningVariable(plasty)[0] = pc ;
+      Plasticity_GetHardeningVariable(plasty)[0] = log(pc) ;
+      
+      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6 ;
+      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[1] = 1.e-6*pc ;
+      Plasticity_GetTypicalSmallIncrementOfStress(plasty) = 1.e-6*pc ;
+    }
+    
+  }
+
+  va_end(args) ;
+}
+
 
 
 double (Plasticity_CTCamClay)(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)
@@ -83,7 +131,7 @@ double (Plasticity_CTCamClay)(Plasticity_t* plasty,const double* sig,const doubl
     double dfda     = p*dpcda ;
     
     hm[0] = - dfda * h ;
-    hm[0] = (1 + e0)*v*p*(2*p + pc)*pc ;
+    //hm[0] = (1 + e0)*v*p*(2*p + pc)*pc ;
   }
   
   /*
@@ -102,10 +150,11 @@ double (Plasticity_CTCamClay)(Plasticity_t* plasty,const double* sig,const doubl
       double v        = 1./(lambda - kappa) ;
       double v1       = (1 + e0)*v ;
       double h        = - v1*(2*p + pc) ;
-      double dhda     = - v1*pc ;
+      double dpcda    = pc ;
+      double dhda     = - v1*dpcda ;
       double dhdp     = - v1*2 ;
-      double dfda     = p*pc ;
-      double ddgdpda  = pc ;
+      double dfda     = p*dpcda ;
+      double ddgdpda  = dpcda ;
       double dlambda1 = dlambda / (1 - dlambda*dhda) ;
       Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
       double bulk    = Elasticity_GetBulkModulus(elasty) ;
@@ -380,7 +429,7 @@ double* (Plasticity_FRCamClay)(Plasticity_t* plasty,const double* stress,const d
    * --------------------------------------------------
    * Using a = ln(pc) as hardening variable.
    * d(a) = - dl * (1 + e0) * v * (dg/dp)
-   * So h(p,a) = - (1 + e0) * v * (2*p + pc(a))
+   * So h(p,a) = - (1 + e0) * v * (dg/dp)
    */
   {
     double v = 1./(lambda - kappa) ;

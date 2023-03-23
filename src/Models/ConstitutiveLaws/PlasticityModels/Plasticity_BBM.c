@@ -2,6 +2,70 @@ static Plasticity_ComputeTangentStiffnessTensor_t    Plasticity_CTBBM ;
 static Plasticity_ReturnMapping_t                    Plasticity_RMBBM ;
 static Plasticity_YieldFunction_t                    Plasticity_YFBBM ;
 static Plasticity_FlowRules_t                        Plasticity_FRBBM ;
+static Plasticity_SetParameters_t                    Plasticity_SPBBM ;
+
+
+#define Plasticity_GetSlopeSwellingLine(PL) \
+        Plasticity_GetParameter(PL)[0]
+
+#define Plasticity_GetSlopeVirginConsolidationLine(PL) \
+        Plasticity_GetParameter(PL)[1]
+        
+#define Plasticity_GetSlopeCriticalStateLine(PL) \
+        Plasticity_GetParameter(PL)[2]
+        
+#define Plasticity_GetInitialPreconsolidationPressure(PL) \
+        Plasticity_GetParameter(PL)[3]
+        
+#define Plasticity_GetInitialVoidRatio(PL) \
+        Plasticity_GetParameter(PL)[4]
+
+#define Plasticity_GetSuctionCohesionCoefficient(PL) \
+        Plasticity_GetParameter(PL)[5]
+
+#define Plasticity_GetReferenceConsolidationPressure(PL) \
+        Plasticity_GetParameter(PL)[6]
+        
+#define Plasticity_GetLoadingCollapseFactorCurve(PL) \
+        Curves_GetCurve(Plasticity_GetCurves(PL))
+
+
+void Plasticity_SPBBM(Plasticity_t* plasty,...)
+{
+  va_list args ;
+  
+  va_start(args,plasty) ;
+  
+  {
+    Plasticity_GetSlopeSwellingLine(plasty)               = va_arg(args,double) ;
+    Plasticity_GetSlopeVirginConsolidationLine(plasty)    = va_arg(args,double) ;
+    Plasticity_GetSlopeCriticalStateLine(plasty)          = va_arg(args,double) ;
+    Plasticity_GetInitialPreconsolidationPressure(plasty) = va_arg(args,double) ;
+    Plasticity_GetInitialVoidRatio(plasty)                = va_arg(args,double) ;
+    Plasticity_GetSuctionCohesionCoefficient(plasty)      = va_arg(args,double) ;
+    Plasticity_GetReferenceConsolidationPressure(plasty)  = va_arg(args,double) ;
+    Curve_t* lc                                           = va_arg(args,Curve_t*) ;
+    int i = Curves_Append(Plasticity_GetCurves(plasty),lc) ;
+    
+    if(i != 0) {
+      Message_RuntimeError("Plasticity_SetParameters: illegal curve") ;
+    }
+    //Plasticity_GetLoadingCollapseFactorCurve(plasty)[0] = lc[0] ;
+    
+    {
+      double pc = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
+      
+      //Plasticity_GetHardeningVariable(plasty)[0] = pc ;
+      Plasticity_GetHardeningVariable(plasty)[0] = log(pc) ;
+      
+      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6 ;
+      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[1] = 1.e-6*pc ;
+      Plasticity_GetTypicalSmallIncrementOfStress(plasty) = 1.e-6*pc ;
+    }
+  }
+
+  va_end(args) ;
+}
 
 
 
@@ -44,7 +108,6 @@ double (Plasticity_CTBBM)(Plasticity_t* plasty,const double* sig,const double* h
   double lnpc    = lnp_r + lc_s * (lnpc0 - lnp_r) ;
   double pc      = exp(lnpc) ;
   double m2      = m*m ;
-  double v       = 1./(lambda - kappa) ;
   double beta    = 1 ;
   double* dfsds  = Plasticity_GetYieldFunctionGradient(plasty) ;
   double* dgsds  = Plasticity_GetPotentialFunctionGradient(plasty) ;
@@ -96,7 +159,7 @@ double (Plasticity_CTBBM)(Plasticity_t* plasty,const double* sig,const double* h
    * Hence: H = (1 + e0)*v*(p - ps)*(2*p + pc - ps)*pc*lc(s)
    */
   {
-    double v = 1./(lambda - kappa) ;
+    double v  = 1./(lambda - kappa) ;
     double v1 = (1 + e0)*v ;
     double h = - v1*(2*p + pc - ps) ;
     double dpcda    = pc*lc_s ;
@@ -209,7 +272,7 @@ double (Plasticity_RMBBM)(Plasticity_t* plasty,double* sig,double* eps_p,double*
   double p_r     = Plasticity_GetReferenceConsolidationPressure(plasty) ;
   Curve_t* lc    = Plasticity_GetLoadingCollapseFactorCurve(plasty) ;
   double lnpc0   = hardv[0] ;
-  double s       = hardv[1] ;
+  double s       = (hardv[1] > 0) ? hardv[1] : 0 ;
   double ps      = k*s ;
   double lc_s    = Curve_ComputeValue(lc,s) ;
   double lnp_r   = log(p_r) ;

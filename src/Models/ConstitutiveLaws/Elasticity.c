@@ -151,6 +151,10 @@ void (Elasticity_SetParameters)(Elasticity_t* elasty,...)
     double shear   = Young/(2 + 2*Poisson) ;
     double bulk    = Young/(3 - 6*Poisson) ;
     
+    if(Young < 0) {
+      Message_RuntimeError("Elasticity_SetParameters: negative Young's modulus") ;
+    }
+    
     Elasticity_GetYoungModulus(elasty)  = Young ;
     Elasticity_GetPoissonRatio(elasty)  = Poisson ;
     Elasticity_GetBulkModulus(elasty)   = bulk ;
@@ -165,7 +169,7 @@ void (Elasticity_SetParameters)(Elasticity_t* elasty,...)
     Elasticity_GetAxis3(elasty)         = va_arg(args,double) ;
     
   } else {
-    Message_RuntimeError("Not known") ;
+    Message_RuntimeError("Elasticity_SetParameters: illegal elasticity") ;
   }
   
   va_end(args) ;

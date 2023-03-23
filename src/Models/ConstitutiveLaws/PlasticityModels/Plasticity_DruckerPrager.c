@@ -2,6 +2,47 @@ static Plasticity_ComputeTangentStiffnessTensor_t    Plasticity_CTDruckerPrager 
 static Plasticity_ReturnMapping_t                    Plasticity_RMDruckerPrager ;
 static Plasticity_YieldFunction_t                    Plasticity_YFDruckerPrager ;
 static Plasticity_FlowRules_t                        Plasticity_FRDruckerPrager ;
+static Plasticity_SetParameters_t                    Plasticity_SPDruckerPrager ;
+
+
+        
+#define Plasticity_GetFrictionAngle(PL) \
+        Plasticity_GetParameter(PL)[0]
+
+#define Plasticity_GetDilatancyAngle(PL) \
+        Plasticity_GetParameter(PL)[1]
+        
+#define Plasticity_GetCohesion(PL) \
+        Plasticity_GetParameter(PL)[2]
+
+
+
+void Plasticity_SPDruckerPrager(Plasticity_t* plasty,...)
+{
+  va_list args ;
+  
+  va_start(args,plasty) ;
+  
+  {
+    Plasticity_GetFrictionAngle(plasty)            = va_arg(args,double) ;
+    Plasticity_GetDilatancyAngle(plasty)           = va_arg(args,double) ;
+    Plasticity_GetCohesion(plasty)                 = va_arg(args,double) ;
+    
+    //Plasticity_GetHardeningVariable(plasty)[0] = 0 ;
+    
+    {
+      Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+      double k = Elasticity_GetBulkModulus(elasty) ;
+      
+      //Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 0 ;
+      Plasticity_GetTypicalSmallIncrementOfStress(plasty) = 1.e-8*k ;
+    }
+    
+  }
+
+  va_end(args) ;
+}
+
 
 
 double (Plasticity_CTDruckerPrager)(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)

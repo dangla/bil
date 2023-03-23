@@ -41,9 +41,9 @@ Initialization                # initialisation des variables
 
 Functions                # fonctions temporelles, pour les CL
 3
-N = 6  F(0) = 1   F(1) = 40     F(2) = 1  F(3) = 80     F(4) = 1  F(5) = 160  # p en kPa
-N = 6  F(0) = 1   F(1) = 20     F(2) = 1  F(3) = 40     F(4) = 1  F(5) = 80   # q en kPa
-N = 6  F(0) = 0   F(1.999) = 0  F(2) = 40 F(3.999) = 40 F(4) = 80 F(5) = 80   # suction en kPa
+N = 2  F(0) = 1   F(1) = 20  # p en kPa
+N = 3  F(0) = 0   F(1) = 0     F(2) = 24   # q en kPa
+N = 6  F(0) = 0   F(1.999) = 0  F(2) = 0 F(3.999) = 0 F(4) = 0 F(5) = 0   # suction en kPa
 
 Boundary Conditions                # conditions aux limites (Dirichlet)
 3
@@ -63,7 +63,7 @@ Points                # points de l'espace pour le stockage des variables
 0.5 0.5
 
 Dates                # dates pour le stockage des données
-6
+3
 0 1 2 3 4 5
 
 Objective Variations                # variables objectives (une par ddl)

@@ -44,11 +44,18 @@
         (xx)
 
 /* C3A.(Cs)3.H32 + 12H[+] = 6Ca[2+] + 2Al[3+] + 3SO4[2-] + 38H2O (ref. [5]) */
-#define Log10DissociationConstantOfCementHydrationProduct_AFt_12H__6Ca_2Al_3SO4_38H2O(T) \
+//#define Log10DissociationConstantOfCementHydrationProduct_AFt_12H__6Ca_2Al_3SO4_38H2O(T) \
         TemperatureDependenceOfLog10EquilibriumConstant(T,-576.29,0,44841.95,195.,0)
         
-#define Log10DissociationConstantOfCementHydrationProduct_C6As3H32_12H__6Ca_2Al_3SO4_38H2O(T) \
+//#define Log10DissociationConstantOfCementHydrationProduct_C6As3H32_12H__6Ca_2Al_3SO4_38H2O(T) \
         TemperatureDependenceOfLog10EquilibriumConstant(T,-576.29,0,44841.95,195.,0)
+
+/* C3A.(Cs)3.H32 + 12H[+] = 6Ca[2+] + 2Al[3+] + 3SO4[2-] + 38H2O (recalculated from the constant -44.9 thanks to Bo Ran) */
+#define Log10DissociationConstantOfCementHydrationProduct_AFt_12H__6Ca_2Al_3SO4_38H2O(T) \
+        58.92
+        
+#define Log10DissociationConstantOfCementHydrationProduct_C6As3H32_12H__6Ca_2Al_3SO4_38H2O(T) \
+        58.92
 
 
 /* Monosulfoalumiate (AFm): (ref [4]) */
@@ -64,11 +71,18 @@
         (xx)
 
 /* C3A.Cs.H12 + 12H[+]  = 4Ca[2+] + 2Al[3+] + SO4[2-] + 18H2O (ref. [5]) */
-#define Log10DissociationConstantOfCementHydrationProduct_AFm_12H__4Ca_2Al_SO4_18H2O(T) \
+//#define Log10DissociationConstantOfCementHydrationProduct_AFm_12H__4Ca_2Al_SO4_18H2O(T) \
         TemperatureDependenceOfLog10EquilibriumConstant(T,59.77,0,24477.17,-28.09,0)
         
-#define Log10DissociationConstantOfCementHydrationProduct_C4AsH12_12H__4Ca_2Al_SO4_18H2O(T) \
+//#define Log10DissociationConstantOfCementHydrationProduct_C4AsH12_12H__4Ca_2Al_SO4_18H2O(T) \
         TemperatureDependenceOfLog10EquilibriumConstant(T,59.77,0,24477.17,-28.09,0)
+
+/* C3A.Cs.H12 + 12H[+]  = 4Ca[2+] + 2Al[3+] + SO4[2-] + 18H2O (recalculated from the constant -29.26 thanks to Bo Ran) */
+#define Log10DissociationConstantOfCementHydrationProduct_AFm_12H__4Ca_2Al_SO4_18H2O(T) \
+        74.56
+        
+#define Log10DissociationConstantOfCementHydrationProduct_C4AsH12_12H__4Ca_2Al_SO4_18H2O(T) \
+        74.56
         
 
 /* Friedel's salt (ref [7]) */
@@ -119,10 +133,14 @@
 #define Log10DissociationConstantOfCementHydrationProduct_C3AH6__3Ca_2AlO4H4_4OH(T) \
         (-20.5)
 
-/* C3AH6 + 12H[+] = 3Ca[2+] + 2Al[+] + 12H2O (ref [6]) */
-#define Log10DissociationConstantOfCementHydrationProduct_C3AH6_12H__3Ca_2Al_12H2O(T) \
+/* C3AH6 + 12H[+] = 3Ca[2+] + 2Al[3+] + 12H2O (ref [6]) */
+//#define Log10DissociationConstantOfCementHydrationProduct_C3AH6_12H__3Ca_2Al_12H2O(T) \
         (80.32)
 //(PiecewiseLinearTemperatureDependence(T,89.6883,80.32,69.5665,59.7469,50.0831,42.4618,36.2972,31.2083))
+
+/* C3AH6 + 12H[+] = 3Ca[2+] + 2Al[3+] + 12H2O (recalculated from the constant -20.5 thanks to Bo Ran) */
+#define Log10DissociationConstantOfCementHydrationProduct_C3AH6_12H__3Ca_2Al_12H2O(T) \
+        (83.33)
 
 /* C2AH8 = 2Ca[2+] + 2Al(OH)4[-] + 2OH[-] + 3H2O (ref [4]) */
 #define Log10DissociationConstantOfCementHydrationProduct_C2AH8__2Ca_2AlO4H4_2OH_3H2O(T) \
