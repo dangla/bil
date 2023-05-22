@@ -13,41 +13,43 @@
 
 
 
-void (Element_AllocateSolutions)(Element_t* el,Mesh_t* mesh,const int nsol)
+void (Element_AllocateMicrostructureSolutions)(Element_t* el,Mesh_t* mesh,const int nsol)
+/** Allocate space as implicit generic data at the interpolation points 
+ *  of the element "el" for the solutions of the microstructure defined by "mesh".
+ */
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
 
-  /** The solutions from the microstructures */
   {
+    int ie = Element_GetElementIndex(el) ;
+    Solution_t* solution = Element_GetSolution(el) ;
+      
     /* Store "sols" for the whole history */
-    {
-      ElementSol_t* elementsol = Element_GetElementSol(el) ;
-
-      if(elementsol) {
-        do {
-          Solutions_t* sols = (Solutions_t*) Mry_New(Solutions_t[NbOfIntPoints]) ;
+    if(solution) {
+      do {
+        Solutions_t* sols = (Solutions_t*) Mry_New(Solutions_t[NbOfIntPoints]) ;
           
-          {
-            int i ;
+        {
+          int i ;
     
-            for(i = 0 ; i < NbOfIntPoints ; i++) {
-              Solutions_t* solsi = Solutions_Create(mesh,nsol) ;
+          for(i = 0 ; i < NbOfIntPoints ; i++) {
+            Solutions_t* solsi = Solutions_Create(mesh,nsol) ;
               
-              sols[i] = solsi[0] ;
-              free(solsi) ;
-            }
+            sols[i] = solsi[0] ;
+            free(solsi) ;
           }
+        }
           
-          {
-            GenericData_t* gdat  = GenericData_Create(NbOfIntPoints,sols,Solutions_t,"Solutions") ;
+        {
+          ElementSol_t* elementsol = Solution_GetElementSol(solution) + ie ;
+          GenericData_t* gdat  = GenericData_Create(NbOfIntPoints,sols,Solutions_t,"Solutions") ;
           
-            ElementSol_AddImplicitGenericData(elementsol,gdat) ;
-          }
-        
-          elementsol = ElementSol_GetPreviousElementSol(elementsol) ;
-        } while(elementsol != Element_GetElementSol(el)) ;
-      }
+          ElementSol_AddImplicitGenericData(elementsol,gdat) ;
+        }
+
+        solution = Solution_GetPreviousSolution(solution) ;
+      } while(solution != Element_GetSolution(el)) ;
     }
   }
 }
@@ -759,6 +761,7 @@ double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t* el,double* x)
       a[i] = 0 ;
     }
     
+    if(nn == 1) return(a) ;
     if(dim_h == 0) return(a) ;
     
     for(iter = 0 ; iter < max_iter ; iter++) {
@@ -959,14 +962,14 @@ double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t* el,double* x)
 
 int (Element_ComputeNbOfSolutions)(Element_t* el)
 {
-  ElementSol_t* elementsol = Element_GetElementSol(el) ;
+  Solution_t* solution = Element_GetSolution(el) ;
   int n = 0 ;
-  
-  if(elementsol) {
+      
+  if(solution) {
     do {
       n++ ;
-      elementsol = ElementSol_GetPreviousElementSol(elementsol) ;
-    } while(elementsol != Element_GetElementSol(el)) ;
+      solution = Solution_GetPreviousSolution(solution) ;
+    } while(solution != Element_GetSolution(el)) ;
   }
   
   return(n) ;
@@ -1609,5 +1612,24 @@ double* Element_ComputeLumpedMass(Element_t* element,IntFct_t* intfct)
   }
   
   return(lum) ;
+}
+#endif
+
+
+
+
+#if 0
+ElementSol_t* (Element_GetDeepElementSol)(Element_t* el,unsigned int depth)
+{
+  Solution_t* solution = Element_GetSolution(el) ;
+  ElementSol_t* elementsol ;
+  
+  while(depth--) {
+    solution = Solution_GetPreviousSolution(solution) ;
+  }
+  
+  elementsol = Solution_GetElementSol(solution) ;
+  
+  return(elementsol) ;
 }
 #endif

@@ -122,7 +122,8 @@ int (FEM2_HomogenizeTangentStiffnessTensor)(FEM2_t* fem2,double t,double dt,doub
   Matrix_SetValuesToZero(a) ;
   Residu_SetValuesToZero(residu) ;
   
-  Mesh_InitializeSolutionPointers(mesh,sols) ;
+  Solutions_InitializeMeshPointers(sols,mesh) ;
+  //Mesh_InitializeSolutionPointers(mesh,sols) ;
 
 
   /* Initializations */
@@ -366,6 +367,7 @@ int (FEM2_ComputeHomogenizedStressTensor)(FEM2_t* fem2,double t,double dt,double
       }
       
       {
+        Mesh_t* mesh = DataSet_GetMesh(dataset) ;
         int i ;
         
         /* Both method work */
@@ -388,8 +390,9 @@ int (FEM2_ComputeHomogenizedStressTensor)(FEM2_t* fem2,double t,double dt,double
   /* Backup stresses as averaged stresses */
   {
     Mesh_t* mesh = DataSet_GetMesh(dataset) ;
-    
-    Mesh_InitializeSolutionPointers(mesh,sols) ;
+
+    Solutions_InitializeMeshPointers(sols,mesh) ;
+    //Mesh_InitializeSolutionPointers(mesh,sols) ;
     FEM_AverageStresses(mesh,stress) ;
   }
   
@@ -774,7 +777,7 @@ int (FEM2_ComputeHomogenizedStressTensor1)(DataSet_t* dataset,Solver_t* solver,d
   {
     Mesh_t* mesh = DataSet_GetMesh(dataset) ;
     
-    Mesh_InitializeSolutionPointers(mesh,sols) ;
+    //Mesh_InitializeSolutionPointers(mesh,sols) ;
     FEM_AverageStresses(mesh,stress) ;
   }
   

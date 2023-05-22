@@ -10,6 +10,7 @@ typedef Node_t*   Node_tt ;
 
 
 #include "Utils.h"
+#include "Solutions.h"
 
 
 //extern Node_t*  (Node_Create)(const int) ;
@@ -56,10 +57,11 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 #define Node_GetObValIndex(NOD)           ((NOD)->i_obj)
 #define Node_GetMatrixColumnIndex(NOD)    ((NOD)->colindex)
 #define Node_GetMatrixRowIndex(NOD)       ((NOD)->rowindex)
-#define Node_GetNodeSol(NOD)              ((NOD)->sol)
+//#define Node_GetNodeSol(NOD)              ((NOD)->sol)
 #define Node_GetNbOfElements(NOD)         ((NOD)->nel)
 #define Node_GetPointerToElement(NOD)     ((NOD)->element)
 #define Node_GetBuffers(NOD)              ((NOD)->buffers)
+#define Node_GetSolutions(NOD)            ((NOD)->solutions)
 
 
 
@@ -75,22 +77,36 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 
 
 
+/* Access to solution */
+#define Node_GetSolution(NOD) \
+        Solutions_GetSolution(Node_GetSolutions(NOD))
+        
+#define Node_GetPreviousSolution(NOD) \
+        Solutions_GetPreviousSolution(Node_GetSolutions(NOD))
+        
+#define Node_GetNextSolution(NOD) \
+        Solutions_GetNextSolution(Node_GetSolutions(NOD))
+        
+#define Node_GetSolutionInDistantPast(NOD,i) \
+        Solutions_GetSolutionInDistantPast(Node_GetSolutions(NOD),i)
+
+
 /* Access to NodeSol
  * ----------------- */
+#define Node_GetNodeSol(NOD) \
+        (Solution_GetNodeSol(Node_GetSolution(NOD)) + Node_GetNodeIndex(NOD))
+
 #define Node_GetCurrentNodeSol(NOD) \
         Node_GetNodeSol(NOD)
         
 #define Node_GetPreviousNodeSol(NOD) \
-        NodeSol_GetPreviousNodeSol(Node_GetNodeSol(NOD))
+        (Solution_GetNodeSol(Node_GetPreviousSolution(NOD)) + Node_GetNodeIndex(NOD))
         
 #define Node_GetNextNodeSol(NOD) \
-        NodeSol_GetNextNodeSol(Node_GetNodeSol(NOD))
+        (Solution_GetNodeSol(Node_GetNextSolution(NOD)) + Node_GetNodeIndex(NOD))
 
 #define Node_GetNodeSolInDistantPast(NOD,i) \
-        NodeSol_GetNodeSolInDistantPast(Node_GetNodeSol(NOD),i)
-
-#define Node_GetNodeSolInDistantFuture(NOD,i) \
-        NodeSol_GetNodeSolInDistantFuture(Node_GetNodeSol(NOD),i)
+        (Solution_GetNodeSol(Node_GetSolutionInDistantPast(NOD,i)) + Node_GetNodeIndex(NOD))
 
 
 
@@ -107,9 +123,6 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 
 #define Node_GetUnknownInDistantPast(NOD,i) \
         NodeSol_GetUnknown(Node_GetNodeSolInDistantPast(NOD,i))
-
-#define Node_GetUnknownInDistantFuture(NOD,i) \
-        NodeSol_GetUnknown(Node_GetNodeSolInDistantFuture(NOD,i))
 
 
 
@@ -243,8 +256,9 @@ struct Node_s {               /* noeud */
   unsigned short int* i_obj ; /* indices des inconnues dans obj */
   int*    colindex ;          /* column index (unknowns) */
   int*    rowindex ;          /* row index (equations) */
-  NodeSol_t* sol ;            /* Nodal solution */
+  //NodeSol_t* sol ;            /* Nodal solution */
   Buffers_t* buffers ;        /* Buffers */
+  Solutions_t* solutions ;    /* Pointer to the global solutions */
 } ;
 
 #endif

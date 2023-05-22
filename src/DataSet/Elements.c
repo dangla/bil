@@ -75,7 +75,8 @@ Elements_t*  (Elements_New)(const int n,const int nc)
       Element_GetUnknownPosition(el_i)   = NULL ;
       Element_GetEquationPosition(el_i)  = NULL ;
       Element_GetBuffers(el_i)           = NULL ;
-      Element_GetElementSol(el_i)        = NULL ;
+      //Element_GetElementSol(el_i)        = NULL ;
+      Element_GetSolutions(el_i)         = NULL ;
     }
   }
   
@@ -347,15 +348,18 @@ void  (Elements_DefineProperties)(Elements_t* elements)
         int ni = Element_GetNbOfImplicitTerms(el) ;
         int ne = Element_GetNbOfExplicitTerms(el) ;
         int n0 = Element_GetNbOfConstantTerms(el) ;
-        ElementSol_t* elementsol = Element_GetElementSol(el) ;
+        Solution_t* solution = Element_GetSolution(el) ;
   
-        if(elementsol) {
+        if(solution) {
           do {
+            ElementSol_t* elementsol = Solution_GetElementSol(solution) + ie ;
+            
             ElementSol_GetNbOfImplicitTerms(elementsol) = ni ;
             ElementSol_GetNbOfExplicitTerms(elementsol) = ne ;
             ElementSol_GetNbOfConstantTerms(elementsol) = n0 ;
-            elementsol = ElementSol_GetPreviousElementSol(elementsol) ;
-          } while(elementsol != Element_GetElementSol(el)) ;
+            
+            solution = Solution_GetPreviousSolution(solution) ;
+          } while(solution != Element_GetSolution(el)) ;
         }
       }
     }

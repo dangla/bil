@@ -10,14 +10,13 @@ struct ElementSol_s   ; typedef struct ElementSol_s   ElementSol_t ;
 
 extern ElementSol_t* (ElementSol_New)(void) ;
 extern void          (ElementSol_Delete)(void*) ;
-extern ElementSol_t* (ElementSol_GetDeepElementSol)(ElementSol_t*,unsigned int) ;
 extern void          (ElementSol_AllocateMemoryForImplicitTerms)(ElementSol_t*) ;
 extern void          (ElementSol_AllocateMemoryForExplicitTerms)(ElementSol_t*) ;
 extern void          (ElementSol_AllocateMemoryForConstantTerms)(ElementSol_t*) ;
 
 
-#define ElementSol_GetPreviousElementSol(ES)    ((ES)->prev)
-#define ElementSol_GetNextElementSol(ES)        ((ES)->next)
+//#define ElementSol_GetPreviousElementSol(ES)    ((ES)->prev)
+//#define ElementSol_GetNextElementSol(ES)        ((ES)->next)
 #define ElementSol_GetImplicitGenericData(ES)   ((ES)->impgdat)
 #define ElementSol_GetExplicitGenericData(ES)   ((ES)->expgdat)
 #define ElementSol_GetConstantGenericData(ES)   ((ES)->cstgdat)
@@ -117,8 +116,8 @@ struct ElementSol_s {              /* Element Solutions */
   GenericData_t* impgdat ;         /* Implicit generic data */
   GenericData_t* expgdat ;         /* Explicit generic data */
   GenericData_t* cstgdat ;         /* Constant generic data */
-  ElementSol_t*  prev ;            /* Previous Element Solutions */
-  ElementSol_t*  next ;            /* Next Element Solutions */
+  //ElementSol_t*  prev ;            /* Previous Element Solutions */
+  //ElementSol_t*  next ;            /* Next Element Solutions */
 } ;
 
 

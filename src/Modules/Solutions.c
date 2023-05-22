@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include "Mesh.h"
 #include "Solutions.h"
 #include "Mry.h"
 #include "Message.h"
@@ -48,7 +49,8 @@ Solutions_t*   (Solutions_Create)(Mesh_t* mesh,const int n_sol)
    *     (Node_GetMatrixRowIndex/Node_GetMatrixColumnIndex set to < 0)
    */
   {
-    Mesh_InitializeSolutionPointers(mesh,sols) ;
+    Solutions_InitializeMeshPointers(sols,mesh) ;
+    //Mesh_InitializeSolutionPointers(mesh,sols) ;
     Elements_DefineProperties(Mesh_GetElements(mesh)) ;
   }
   
@@ -106,8 +108,6 @@ void   (Solutions_Initialize)(Solutions_t* sols)
   {
     int n_sol = Solutions_GetNbOfSolutions(sols) ;
     Solution_t* sol = Solutions_GetSolution(sols) ;
-    unsigned int n_no = Solution_GetNbOfNodes(sol) ;
-    unsigned int n_el = Solution_GetNbOfElements(sol) ;
     int    i ;
     
     for(i = 0 ; i < n_sol ; i++) {
@@ -116,28 +116,6 @@ void   (Solutions_Initialize)(Solutions_t* sols)
     
       Solution_GetPreviousSolution(sol + i_1) = sol + i_n ;
       Solution_GetNextSolution(sol + i_n)     = sol + i_1 ;
-      
-      {
-        NodeSol_t* nodesol_1 = Solution_GetNodeSol(sol + i_1) ;
-        NodeSol_t* nodesol_n = Solution_GetNodeSol(sol + i_n) ;
-        unsigned int j ;
-        
-        for(j = 0 ; j < n_no ; j++) {
-          NodeSol_GetPreviousNodeSol(nodesol_1 + j) = nodesol_n + j ;
-          NodeSol_GetNextNodeSol(nodesol_n + j)     = nodesol_1 + j ;
-        }
-      }
-
-      {
-        ElementSol_t* elementsol_1 = Solution_GetElementSol(sol + i_1) ;
-        ElementSol_t* elementsol_n = Solution_GetElementSol(sol + i_n) ;
-        unsigned int j ;
-        
-        for(j = 0 ; j < n_el ; j++) {
-          ElementSol_GetPreviousElementSol(elementsol_1 + j) = elementsol_n + j ;
-          ElementSol_GetNextElementSol(elementsol_n + j)     = elementsol_1 + j ;
-        }
-      }
     }
   }
 }
@@ -227,4 +205,25 @@ void (Solutions_StepBackward)(Solutions_t* sols)
   Solution_t* prev = Solution_GetPreviousSolution(sol) ;
   
   Solutions_GetSolution(sols) = prev ;
+}
+
+
+
+void (Solutions_InitializeMeshPointers)(Solutions_t* sols,Mesh_t* mesh)
+/** Initialize the pointers of nodes and elements to sols. */
+{
+  int n_no = Mesh_GetNbOfNodes(mesh) ;
+  Node_t* no = Mesh_GetNode(mesh) ;
+  int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  int    i ;
+
+  for(i = 0 ; i < n_el ; i++) {
+    Element_GetSolutions(el + i) = sols ;
+  }
+  
+  for(i = 0 ; i < n_no ; i++) {
+    Node_GetSolutions(no + i) = sols ;
+  }
+
 }

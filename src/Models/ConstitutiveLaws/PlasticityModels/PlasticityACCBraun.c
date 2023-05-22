@@ -1,8 +1,9 @@
-static Plasticity_ComputeTangentStiffnessTensor_t    Plasticity_CTACCBraun ;
-static Plasticity_ReturnMapping_t                    Plasticity_RMACCBraun ;
-static Plasticity_YieldFunction_t                    Plasticity_YFACCBraun ;
-static Plasticity_FlowRules_t                        Plasticity_FRACCBraun ;
-static Plasticity_SetParameters_t                    Plasticity_SPACCBraun ;
+static Plasticity_ComputeTangentStiffnessTensor_t    PlasticityACCBraun_CT ;
+static Plasticity_ReturnMapping_t                    PlasticityACCBraun_RM ;
+static Plasticity_YieldFunction_t                    PlasticityACCBraun_YF ;
+static Plasticity_FlowRules_t                        PlasticityACCBraun_FR ;
+static Plasticity_SetParameters_t                    PlasticityACCBraun_SP ;
+static Plasticity_SetModelProp_t                     PlasticityACCBraun_SetModelProp ;
 
 static double f_fun(Plasticity_t* plasty,const double* sig,const double pc);//ADDED
 static double g_fun(Plasticity_t* plasty,const double* sig,const double pc);//ADDED
@@ -49,8 +50,26 @@ static void InverseOfMatrix(double matrix[][20], int order) ;
 #define Plasticity_GetACC_f_perp(PL) \
         Plasticity_GetParameter(PL)[8]
         
+        
 
-void Plasticity_SPACCBraun(Plasticity_t* plasty,...)
+
+
+void PlasticityACCBraun_SetModelProp(Plasticity_t* plasty)
+{
+
+  {
+    Plasticity_GetComputeTangentStiffnessTensor(plasty) = PlasticityACCBraun_CT ;
+    Plasticity_GetReturnMapping(plasty)                 = PlasticityACCBraun_RM ;
+    //Plasticity_GetYieldFunction(plasty)                 = PlasticityACCBraun_YF ;
+    //Plasticity_GetFlowRules(plasty)                     = PlasticityACCBraun_FR ;
+    Plasticity_GetSetParameters(plasty)                 = PlasticityACCBraun_SP ;
+    Plasticity_GetNbOfHardeningVariables(plasty)        = 1 ;
+  }
+  
+}
+        
+
+void PlasticityACCBraun_SP(Plasticity_t* plasty,...)
 {
   va_list args ;
   
@@ -84,7 +103,7 @@ void Plasticity_SPACCBraun(Plasticity_t* plasty,...)
 
 
 
-double Plasticity_CTACCBraun(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda) 
+double PlasticityACCBraun_CT(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda) 
 /** Assymmetric Cam-Clay criterion 
  * first hardening parameter is the preconsolidation pressure
  * second hardening parameter is the isotropic tensile elastic limit
@@ -301,7 +320,7 @@ void InverseOfMatrix(double matrix[][20], int order)
 
 
 
-double Plasticity_RMACCBraun(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
+double PlasticityACCBraun_RM(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
 /** Assymmetric Cam-Clay return mapping. Inputs are: 
  *  the elastic properties K and G
  *  the plasticity parmeters,

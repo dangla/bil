@@ -20,7 +20,7 @@ extern void         (Solution_Copy)    (Solution_t*,Solution_t*) ;
 extern void         (Solution_InterpolateCurrentUnknowns)(Solution_t*,const int) ;
 extern void         (Solution_CopySelectedSequentialUnknowns)(Solution_t*,Solution_t*,const int) ;
 //extern Solution_t*  (Solution_GetSolutionInDistantFuture)(Solution_t*,unsigned int) ;
-//extern Solution_t*  (Solution_GetSolutionInDistantPast)(Solution_t*,unsigned int) ;
+extern Solution_t*  (Solution_GetSolutionInDistantPast)(Solution_t*,unsigned int) ;
 
 
 //#define Solution_GetTime(SOL)                 ((SOL)->t)
@@ -45,6 +45,16 @@ extern void         (Solution_CopySelectedSequentialUnknowns)(Solution_t*,Soluti
 #define Solution_GetStepIndex(SOL) \
         Solution_GetSequentialStepIndex(SOL)[Solution_GetNbOfSequences(SOL)-1]
         
+#define Solution_GetPreviousTime(SOL) \
+        Solution_GetSequentialTime(Solution_GetPreviousSolution(SOL))
+        
+#define Solution_GetPreviousTimeStep(SOL) \
+        Solution_GetSequentialTimeStep(Solution_GetPreviousSolution(SOL))
+        
+#define Solution_GetPreviousStepIndex(SOL) \
+        Solution_GetSequentialStepIndex(Solution_GetPreviousSolution(SOL))
+
+
 
 /* Access to Nodes */
 #define Solution_GetNodes(SOL) \

@@ -268,8 +268,27 @@ void   IntFct_ComputeAtGaussPoints(IntFct_t* f,int nn,int dim)
     
   /* 3D */
   } else if(dim == 3) {
+    /* special element for one node mesh */
+    if(nn == 1) {
+      int np = 1 ;
+      double* w = IntFct_GetWeight(f) ;
+      double* h = IntFct_GetFunctionAtPoint(f,0) ;
+      double* dh = IntFct_GetFunctionGradientAtPoint(f,0) ;
+      double* x  = IntFct_GetCoordinatesAtPoint(f,0) ;
+      
+      IntFct_GetNbOfPoints(f) = np  ;
+      
+      w[0] = 1 ;
+        
+      x[0] = 0 ;
+      x[1] = 0 ;
+      x[2] = 0 ;
+        
+      IntFct_ComputeIsoShapeFct(dim,nn,x,h,dh) ;
+      
+      return ;
     /* tetraedre a 4 ou 10 noeuds */
-    if(nn == 4 || nn == 10) {
+    } else if(nn == 4 || nn == 10) {
       int p,np = 4 ;
       double a[3*IntFct_MaxNbOfIntPoints] ;
       //double* a = IntFct_GetPointCoordinates(f) ;

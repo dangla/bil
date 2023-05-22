@@ -1,9 +1,70 @@
-static Damage_ComputeTangentStiffnessTensor_t   Damage_CTMarigoJirasek ;
-static Damage_ReturnMapping_t                   Damage_RMMarigoJirasek ;
+static Damage_ComputeTangentStiffnessTensor_t   DamageMarigoJirasek_CT ;
+static Damage_ReturnMapping_t                   DamageMarigoJirasek_RM ;
+static Damage_SetParameters_t                   DamageMarigoJirasek_SP ;
+
+
+        
+#define Damage_GetCriticalEnergyReleaseRate(D) \
+        Damage_GetParameter(D)[0]
+        
+#define Damage_GetMaximumEnergyReleaseRate(D) \
+        Damage_GetParameter(D)[1]
+        
+#define Damage_GetUniaxialTensileStrength(D) \
+        Damage_GetParameter(D)[2]
+        
+#define Damage_GetFractureEnergy(D) \
+        Damage_GetParameter(D)[3]
+        
+#define Damage_GetCrackBandWidth(D) \
+        Damage_GetParameter(D)[4]
 
 
 
-double Damage_CTMarigoJirasek(Damage_t* damage,const double* strain,const double* d,const double* hardv)
+void DamageMarigoJirasek_SetModelProp(Damage_t* damage)
+{
+  
+  {
+    Damage_GetComputeTangentStiffnessTensor(damage) = DamageMarigoJirasek_CT ;
+    Damage_GetReturnMapping(damage)                 = DamageMarigoJirasek_RM ;
+    Damage_GetSetParameters(damage)                 = DamageMarigoJirasek_SP ;
+  }
+  
+}
+
+
+
+
+
+void DamageMarigoJirasek_SP(Damage_t* damage,...)
+{
+  va_list args ;
+  
+  va_start(args,damage) ;
+  
+  {
+    double ft  = va_arg(args,double) ;
+    double Gf  = va_arg(args,double) ;
+    double w   = va_arg(args,double) ;
+    Elasticity_t* elasty = Damage_GetElasticity(damage) ;
+    double E       = Elasticity_GetYoungModulus(elasty) ;
+    double strain0 = ft/E ;
+    double g0      = 0.5*E*strain0*strain0 ;
+    
+    Damage_GetUniaxialTensileStrength(damage)   = ft ;
+    Damage_GetFractureEnergy(damage)            = Gf ;
+    Damage_GetCrackBandWidth(damage)            = w ;
+    
+    Damage_GetHardeningVariable(damage)[0]      = g0 ;
+    
+  }
+
+  va_end(args) ;
+}
+
+
+
+double DamageMarigoJirasek_CT(Damage_t* damage,const double* strain,const double* d,const double* hardv)
 /** Energy release rate criterion
  *  Refs:
  *  [1] J.J. Marigo, Modelling of brittle and fatigue damage for elastic material 
@@ -111,7 +172,7 @@ double Damage_CTMarigoJirasek(Damage_t* damage,const double* strain,const double
 
 
 
-double Damage_RMMarigoJirasek(Damage_t* damage,double* strain,double* d,double* hardv)
+double DamageMarigoJirasek_RM(Damage_t* damage,double* strain,double* d,double* hardv)
 /** Energy release rate criterion
  *  Refs:
  *  [1] J.J. Marigo, Modelling of brittle and fatigue damage for elastic material 

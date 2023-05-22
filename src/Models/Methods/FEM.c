@@ -216,6 +216,7 @@ double*  (FEM_ComputeStiffnessMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,co
 #define CAJ(i,j)    (caj[(i)*3 + (j)])
   Element_t* el = FEM_GetElement(fem) ;
   int dim = Element_GetDimensionOfSpace(el) ;
+  int dim_e = Element_GetDimension(el) ;
   int nn  = Element_GetNbOfNodes(el) ;
   int nf  = IntFct_GetNbOfFunctions(fi) ;
   int np  = IntFct_GetNbOfPoints(fi) ;
@@ -228,15 +229,16 @@ double*  (FEM_ComputeStiffnessMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,co
   double* x[Element_MaxNbOfNodes] ;
   double zero = 0. ;
   
+  
+  if(Element_IsSubmanifold(el)) {
+    arret("FEM_ComputeStiffnessMatrix") ;
+  }
+  
   /* Initialization */
   {
     int i ;
     
     for(i = 0 ; i < ndof*ndof ; i++) kr[i] = zero ;
-  }
-  
-  if(Element_IsSubmanifold(el)) {
-    arret("FEM_ComputeStiffnessMatrix") ;
   }
   
   {
@@ -247,6 +249,18 @@ double*  (FEM_ComputeStiffnessMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,co
     }
   }
   
+  /* One node mesh: for this special element the displacement u_i stands for strain_ii */
+  if(nn == 1 && dim_e == 3) {
+    int i,j ;
+    
+    for(i = 0 ; i < dim ; i++) {
+      for(j = 0 ; j < dim ; j++) {
+        KR(i,j) = C(i,i,j,j) ;
+      }
+    }
+    
+    return(kr) ;
+  }
 
 
   /* Interface elements */
@@ -447,6 +461,7 @@ double*  (FEM_ComputeBiotMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const i
 #define CAJ(i,j)    (caj[(i)*3 + (j)])
   Element_t* el = FEM_GetElement(fem) ;
   int dim = Element_GetDimensionOfSpace(el) ;
+  int dim_e = Element_GetDimension(el) ;
   int nn  = Element_GetNbOfNodes(el) ;
   int dim_h = IntFct_GetDimension(fi) ;
   int np  = IntFct_GetNbOfPoints(fi) ;
@@ -460,15 +475,15 @@ double*  (FEM_ComputeBiotMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const i
   double* x[Element_MaxNbOfNodes] ;
   double zero = 0. ;
   
+  if(Element_IsSubmanifold(el)) {
+    arret("FEM_ComputeBiotMatrix") ;
+  }
+  
   /* Initialisation */
   {
     int i ;
     
     for(i = 0 ; i < nrow*ncol ; i++) kc[i] = zero ;
-  }
-  
-  if(Element_IsSubmanifold(el)) {
-    arret("FEM_ComputeBiotMatrix") ;
   }
   
   {
@@ -477,6 +492,17 @@ double*  (FEM_ComputeBiotMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const i
     for(i = 0 ; i < nn ; i++) {
       x[i] = Element_GetNodeCoordinate(el,i) ;
     }
+  }
+  
+  /* One node mesh: for this special element the displacement u_i stands for strain_ii */
+  if(nn == 1 && dim_e == 3) {
+    int i ;
+    
+    for(i = 0 ; i < dim ; i++) {
+      kc[i] = C(i,i) ;
+    }
+    
+    return(kc) ;
   }
   
 
@@ -618,6 +644,7 @@ double* (FEM_ComputeMassMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const in
 #define KM(i,j)     (km[(i)*nn + (j)])
   Element_t* el = FEM_GetElement(fem) ;
   int dim = Element_GetDimensionOfSpace(el) ;
+  int dim_e = Element_GetDimension(el) ;
   int nn  = Element_GetNbOfNodes(el) ;
   int np  = IntFct_GetNbOfPoints(fi) ;
   int nf  = IntFct_GetNbOfFunctions(fi) ;
@@ -647,6 +674,13 @@ double* (FEM_ComputeMassMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,const in
     }
   }
   
+  
+  /* One node mesh */
+  if(nn == 1 && dim_e == 3) {
+    KM(0,0) = c[0] ;
+      
+    return(km) ;
+  }
 
 
   /* Interface elements */
@@ -769,6 +803,7 @@ double*  (FEM_ComputeConductionMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,c
 #define CAJ(i,j)    (caj[(i)*3 + (j)])
   Element_t* el = FEM_GetElement(fem) ;
   int dim = Element_GetDimensionOfSpace(el) ;
+  int dim_e = Element_GetDimension(el) ;
   int nn  = Element_GetNbOfNodes(el) ;
   int np  = IntFct_GetNbOfPoints(fi) ;
   int nf  = IntFct_GetNbOfFunctions(fi) ;
@@ -796,6 +831,15 @@ double*  (FEM_ComputeConductionMatrix)(FEM_t* fem,IntFct_t* fi,const double* c,c
     for(i = 0 ; i < nn ; i++) {
       x[i] = Element_GetNodeCoordinate(el,i) ;
     }
+  }
+  
+  
+  
+  /* one node mesh: the unknown stands for the gradient along x-axis */
+  if(nn == 1 && dim_e == 3) {
+    KC(0,0) = C(0,0) ;
+      
+    return(kc) ;
   }
   
 
@@ -967,10 +1011,6 @@ double*  (FEM_ComputePoroelasticMatrix6)(FEM_t* fem,IntFct_t* fi,const double* c
   /* Initialization */
   for(i = 0 ; i < ndof*ndof ; i++) k[i] = zero ;
   
-  
-  if(Element_IsSubmanifold(el)) {
-    arret("FEM_ComputePoroelasticMatrix") ;
-  }
 
   /* 
   ** 1.  Mechanics
@@ -995,7 +1035,7 @@ double*  (FEM_ComputePoroelasticMatrix6)(FEM_t* fem,IntFct_t* fi,const double* c
   /* 1.2 Biot-like coupling terms */
   for(i = 0 ; i < n_dif ; i++) {
     int I_h = I_H(i) ;
-    const double* c1 = c + 81 +i*9 ;
+    const double* c1 = c + 81 + i*9 ;
     double* kb = FEM_ComputeBiotMatrix(fem,fi,c1,dec) ;
     
     #define KB(i,j)     (kb[(i)*nn + (j)])
@@ -1147,6 +1187,7 @@ double*   (FEM_ComputeBodyForceResidu)(FEM_t* fem,IntFct_t* intfct,const double*
 {
   Element_t* el = FEM_GetElement(fem) ;
   int dim = Element_GetDimensionOfSpace(el) ;
+  int dim_e = Element_GetDimension(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int nf = IntFct_GetNbOfFunctions(intfct) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
@@ -1171,6 +1212,14 @@ double*   (FEM_ComputeBodyForceResidu)(FEM_t* fem,IntFct_t* intfct,const double*
     for(i = 0 ; i < nn ; i++) {
       x[i] = Element_GetNodeCoordinate(el,i) ;
     }
+  }
+  
+  
+  /* One node mesh */
+  if(nn == 1 && dim_e == 3) {
+    r[0] = f[0] ;
+
+    return(r) ;
   }
   
   
@@ -1279,6 +1328,7 @@ double*   (FEM_ComputeStrainWorkResidu)(FEM_t* fem,IntFct_t* intfct,const double
 #define R(n,i)      (r[(n)*dim + (i)])
   Element_t* el = FEM_GetElement(fem) ;
   int dim = Element_GetDimensionOfSpace(el) ;
+  int dim_e = Element_GetDimension(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int nf = IntFct_GetNbOfFunctions(intfct) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
@@ -1304,6 +1354,18 @@ double*   (FEM_ComputeStrainWorkResidu)(FEM_t* fem,IntFct_t* intfct,const double
     for(i = 0 ; i < nn ; i++) {
       x[i] = Element_GetNodeCoordinate(el,i) ;
     }
+  }
+  
+  
+  /* One node mesh: for this special element the displacement u_i stands for strain_ii */
+  if(nn == 1 && dim_e == 3) {
+    int i ;
+    
+    for(i = 0 ; i < dim ; i++) {
+      r[i] = SIG(i,i) ;
+    }
+
+    return(r) ;
   }
   
   
@@ -1430,6 +1492,7 @@ double*   (FEM_ComputeFluxResidu)(FEM_t* fem,IntFct_t* intfct,const double* f,co
 #define CAJ(i,j)    (caj[(i)*3 + (j)])
   Element_t* el = FEM_GetElement(fem) ;
   int dim = Element_GetDimensionOfSpace(el) ;
+  int dim_e = Element_GetDimension(el) ;
   int nn  = Element_GetNbOfNodes(el) ;
   int nf = IntFct_GetNbOfFunctions(intfct) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
@@ -1454,6 +1517,14 @@ double*   (FEM_ComputeFluxResidu)(FEM_t* fem,IntFct_t* intfct,const double* f,co
     for(i = 0 ; i < nn ; i++) {
       x[i] = Element_GetNodeCoordinate(el,i) ;
     }
+  }
+  
+  
+  /* one node mesh: the unknown stands for the gradient along x-axis */
+  if(nn == 1 && dim_e == 3) {
+    r[0] = f[0] ;
+    
+    return(r) ;
   }
   
   
@@ -1597,6 +1668,7 @@ double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,
   Geometry_t* geom = Element_GetGeometry(el) ;
   int nn  = Element_GetNbOfNodes(el) ;
   unsigned short int dim = Geometry_GetDimension(geom) ;
+  int dim_e = Element_GetDimension(el) ;
   Symmetry_t sym = Geometry_GetSymmetry(geom) ;
   Node_t** no = Element_GetPointerToNode(el) ;
   Field_t* field = Load_GetField(load) ;
@@ -1835,6 +1907,28 @@ double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,
       ft = Function_ComputeValue(function,t) ;
     }
     
+    /* One node mesh: for this special element the displacement u_i stands for strain_ii */
+    if(nn == 1 && dim_e == 3) {
+      double* h = IntFct_GetFunctionAtPoint(intfct,0) ;
+      double n[3] = {0,0,0} ;
+      double y[3] = {0,0,0} ;
+      
+      if(ii != jj) {
+        arret("FEM_ComputeSurfaceLoadResidu: different indices not allowed") ;
+      }
+        
+      for(i = 0 ; i < dim ; i++) {
+        int j ;
+        
+        for(j = 0 ; j < nf ; j++) y[i] += h[j]*x[j][i] ;
+      }
+      
+      n[ii] = 1 ;
+      r[ieq+ii] = ft*Field_ComputeValueAtPoint(field,y,dim)*n[jj] ;
+      
+      return(r) ;
+    }
+    
     if(dim >= 2) {
       double* rb ;
       double f[3*IntFct_MaxNbOfIntPoints] ;
@@ -1845,10 +1939,12 @@ double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,
         double* h = IntFct_GetFunctionAtPoint(intfct,p) ;
         double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
         double* n = Element_ComputeNormalVector(el,dh,nf,dim_h) ;
-        double y[3] = {0.,0.,0.} ;
+        double y[3] = {0,0,0} ;
+        
         for(i = 0 ; i < dim ; i++) {
           for(j = 0 ; j < nf ; j++) y[i] += h[j]*x[j][i] ;
         }
+        
         f[p] = ft*Field_ComputeValueAtPoint(field,y,dim)*n[jj] ;
       }
       
@@ -2126,13 +2222,28 @@ double* (FEM_ComputeUnknownGradient)(FEM_t* fem,double** u,IntFct_t* intfct,int 
 #define CJ(i,j)  (cj[(i)*3 + (j)])
   Element_t* el = FEM_GetElement(fem) ;
   int dim = Element_GetDimensionOfSpace(el) ;
+  int dim_e = Element_GetDimension(el) ;
   size_t SizeNeeded = 3*sizeof(double) ;
   double* grad = (double*) FEM_AllocateInBuffer(fem,SizeNeeded) ;
+  int nn = IntFct_GetNbOfFunctions(intfct) ;
+  int dim_h = IntFct_GetDimension(intfct) ;
+  
+  
+  /* One node mesh: for this special element the unknown stands for the gradient along x-axis */
+  if(nn == 1 && dim_e == 3){
+    int i ;
+    
+    for(i = 0 ; i < 3 ; i++) {
+      grad[i] = 0 ;
+    }
+
+    grad[0] = U(0) ;
+    
+    return(grad) ;
+  }
   
 
   {
-    int    dim_h  = IntFct_GetDimension(intfct) ;
-    int nn = IntFct_GetNbOfFunctions(intfct) ;
     /* interpolation functions */
     double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
     double* gu = grad ;
@@ -2187,19 +2298,35 @@ double* (FEM_ComputeLinearStrainTensor)(FEM_t* fem,double** u,IntFct_t* intfct,i
 #define U(n,i)   (u[n][Element_GetNodalUnknownPosition(el,n,inc + (i))])
 #define DH(n,i)  (dh[(n)*3 + (i)])
 //#define DH(n,i)  (dh[(n)*dim_h + (i)])
-#define EPS(i,j) (eps[(i)*3 + (j)])
+#define STRAIN(i,j) (strain[(i)*3 + (j)])
 #define CJ(i,j)  (cj[(i)*3 + (j)])
   Element_t* el = FEM_GetElement(fem) ;
   Symmetry_t sym = Element_GetSymmetry(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
+  int dim_e = Element_GetDimension(el) ;
   int dim_h = IntFct_GetDimension(intfct) ;
   size_t SizeNeeded = 9*sizeof(double) ;
   double* strain = (double*) FEM_AllocateInBuffer(fem,SizeNeeded) ;
+  int nn = IntFct_GetNbOfFunctions(intfct) ;
   
   
-  {
-    int nn = IntFct_GetNbOfFunctions(intfct) ;
+  /* One node mesh: for this special element the displacement u_i stands for strain_ii */
+  if(nn == 1 && dim_e == 3){
+    int i ;
     
+    for(i = 0 ; i < 9 ; i++) {
+      strain[i] = 0 ;
+    }
+
+    for(i = 0 ; i < dim ; i++) {
+      STRAIN(i,i) = U(0,i) ;
+    }
+    
+    return(strain) ;
+  }
+
+
+  {
     /* interpolation functions */
     double* h  = IntFct_GetFunctionAtPoint(intfct,p) ;
     double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
@@ -2244,7 +2371,7 @@ double* (FEM_ComputeLinearStrainTensor)(FEM_t* fem,double** u,IntFct_t* intfct,i
       }
       #undef NORM
       
-    } else {
+    } else if(dim_h > 0) {
       double  grf[3][3] = {{0,0,0},{0,0,0},{0,0,0}} ;
       
       /* the gradient in the reference frame */
@@ -2272,6 +2399,8 @@ double* (FEM_ComputeLinearStrainTensor)(FEM_t* fem,double** u,IntFct_t* intfct,i
           }
         }
       }
+    } else {
+      Message_FatalError("FEM_ComputeLinearStrainTensor: dim_h <= 0!") ;
     }
       
     {
@@ -2282,7 +2411,7 @@ double* (FEM_ComputeLinearStrainTensor)(FEM_t* fem,double** u,IntFct_t* intfct,i
         int j ;
         
         for(j = 0 ; j < 3 ; j++) {
-          EPS(i,j) = (gu[i][j] + gu[j][i])*0.5 ;
+          STRAIN(i,j) = (gu[i][j] + gu[j][i])*0.5 ;
         }
       }
   
@@ -2302,9 +2431,9 @@ double* (FEM_ComputeLinearStrainTensor)(FEM_t* fem,double** u,IntFct_t* intfct,i
             u_r   += h[i]*U(i,0) ;
           }
           
-          EPS(2,2) += u_r/radius ;
+          STRAIN(2,2) += u_r/radius ;
           
-          if(Symmetry_IsSpherical(sym)) EPS(1,1) += u_r/radius ;
+          if(Symmetry_IsSpherical(sym)) STRAIN(1,1) += u_r/radius ;
         }
       }
     }
@@ -2315,7 +2444,7 @@ double* (FEM_ComputeLinearStrainTensor)(FEM_t* fem,double** u,IntFct_t* intfct,i
   return(strain) ;
 #undef U
 #undef DH
-#undef EPS
+#undef STRAIN
 #undef CJ
 }
 

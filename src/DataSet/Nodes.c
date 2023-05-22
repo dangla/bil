@@ -74,9 +74,10 @@ Nodes_t*  Nodes_New(const int nn,const int dim,const int nc)
       Node_GetObValIndex(node_i)        = 0 ;
       Node_GetMatrixColumnIndex(node_i) = NULL ;
       Node_GetMatrixRowIndex(node_i)    = NULL ;
-      Node_GetNodeSol(node_i)           = NULL ;
+      //Node_GetNodeSol(node_i)           = NULL ;
       Node_GetNbOfElements(node_i)      = 0 ;
       Node_GetBuffers(node_i)           = NULL ;
+      Node_GetSolutions(node_i)           = NULL ;
     }
   }
   

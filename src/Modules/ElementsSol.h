@@ -32,9 +32,9 @@ extern void             (ElementsSol_Copy)(ElementsSol_t*,ElementsSol_t*) ;
         do { \
           int NbOfElements = ElementsSol_GetNbOfElements(ESS) ; \
           ElementSol_t* elementsol = ElementsSol_GetElementSol(ESS) ; \
-          int j ; \
-          for(j = 0 ; j < NbOfElements ; j++) { \
-            ElementSol_DeleteExplicitGenericData(elementsol + j) ; \
+          int ElementsSol_i ; \
+          for(ElementsSol_i = 0 ; ElementsSol_i < NbOfElements ; ElementsSol_i++) { \
+            ElementSol_DeleteExplicitGenericData(elementsol + ElementsSol_i) ; \
           } \
         } while(0)
         
@@ -43,9 +43,9 @@ extern void             (ElementsSol_Copy)(ElementsSol_t*,ElementsSol_t*) ;
         do { \
           int NbOfElements = ElementsSol_GetNbOfElements(ESS) ; \
           ElementSol_t* elementsol = ElementsSol_GetElementSol(ESS) ; \
-          int j ; \
-          for(j = 0 ; j < NbOfElements ; j++) { \
-            ElementSol_DeleteConstantGenericData(elementsol + j) ; \
+          int ElementsSol_i ; \
+          for(ElementsSol_i = 0 ; ElementsSol_i < NbOfElements ; ElementsSol_i++) { \
+            ElementSol_DeleteConstantGenericData(elementsol + ElementsSol_i) ; \
           } \
         } while(0)
         
@@ -58,10 +58,10 @@ extern void             (ElementsSol_Copy)(ElementsSol_t*,ElementsSol_t*) ;
           ElementSol_t* elementsol_s = ElementsSol_GetElementSol(ESS_SRC) ; \
           ElementSol_t* elementsol_d = ElementsSol_GetElementSol(ESS_DEST) ; \
           { \
-            int i ; \
-            for(i = 0 ; i < NbOfElements ; i++) { \
-              GenericData_t* gdat = ElementSol_GetExplicitGenericData(elementsol_s + i) ; \
-              ElementSol_GetExplicitGenericData(elementsol_d + i) = gdat ; \
+            int ElementsSol_i ; \
+            for(ElementsSol_i = 0 ; ElementsSol_i < NbOfElements ; ElementsSol_i++) { \
+              GenericData_t* gdat = ElementSol_GetExplicitGenericData(elementsol_s + ElementsSol_i) ; \
+              ElementSol_GetExplicitGenericData(elementsol_d + ElementsSol_i) = gdat ; \
             } \
           } \
         } while(0)
@@ -73,10 +73,10 @@ extern void             (ElementsSol_Copy)(ElementsSol_t*,ElementsSol_t*) ;
           ElementSol_t* elementsol_s = ElementsSol_GetElementSol(ESS_SRC) ; \
           ElementSol_t* elementsol_d = ElementsSol_GetElementSol(ESS_DEST) ; \
           { \
-            int i ; \
-            for(i = 0 ; i < NbOfElements ; i++) { \
-              GenericData_t* gdat = ElementSol_GetConstantGenericData(elementsol_s + i) ; \
-              ElementSol_GetConstantGenericData(elementsol_d + i) = gdat ; \
+            int ElementsSol_i ; \
+            for(ElementsSol_i = 0 ; ElementsSol_i < NbOfElements ; ElementsSol_i++) { \
+              GenericData_t* gdat = ElementSol_GetConstantGenericData(elementsol_s + ElementsSol_i) ; \
+              ElementSol_GetConstantGenericData(elementsol_d + ElementsSol_i) = gdat ; \
             } \
           } \
         } while(0)
@@ -88,9 +88,9 @@ extern void             (ElementsSol_Copy)(ElementsSol_t*,ElementsSol_t*) ;
         do { \
           int NbOfElements = ElementsSol_GetNbOfElements(ESS) ; \
           ElementSol_t* elementsol = ElementsSol_GetElementSol(ESS) ; \
-          int j ; \
-          for(j = 0 ; j < NbOfElements ; j++) { \
-            ElementSol_GetExplicitGenericData(elementsol + j) = NULL ; \
+          int ElementsSol_i ; \
+          for(ElementsSol_i = 0 ; ElementsSol_i < NbOfElements ; ElementsSol_i++) { \
+            ElementSol_GetExplicitGenericData(elementsol + ElementsSol_i) = NULL ; \
           } \
         } while(0)
 
@@ -99,9 +99,9 @@ extern void             (ElementsSol_Copy)(ElementsSol_t*,ElementsSol_t*) ;
         do { \
           int NbOfElements = ElementsSol_GetNbOfElements(ESS) ; \
           ElementSol_t* elementsol = ElementsSol_GetElementSol(ESS) ; \
-          int j ; \
-          for(j = 0 ; j < NbOfElements ; j++) { \
-            ElementSol_GetConstantGenericData(elementsol + j) = NULL ; \
+          int ElementsSol_i ; \
+          for(ElementsSol_i = 0 ; ElementsSol_i < NbOfElements ; ElementsSol_i++) { \
+            ElementSol_GetConstantGenericData(elementsol + ElementsSol_i) = NULL ; \
           } \
         } while(0)
 

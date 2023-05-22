@@ -107,8 +107,8 @@ I_SIG,
 I_SIG8   = I_SIG + 8,
 I_EPS_P,
 I_EPS_P8 = I_EPS_P + 8,
-I_Fmass,
-I_Fmass2 = I_Fmass + 2,
+I_FMASS,
+I_FMASS2 = I_FMASS + 2,
 I_HARDV,
 I_CRIT,
 I_DLAMBDA,
@@ -366,7 +366,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double af       = Material_GetPropertyValue(mat,"friction")*M_PI/180. ;
         double ad       = Material_GetPropertyValue(mat,"dilatancy")*M_PI/180. ;
         
-        Plasticity_SetToDruckerPrager(plastyi) ;
+        Plasticity_SetTo(plastyi,DruckerPrager) ;
         Plasticity_SetParameters(plastyi,af,ad,cohesion) ;
       
       /* Cam-Clay with linear elasticity */
@@ -377,7 +377,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double pc0    = Material_GetPropertyValue(mat,"initial_pre-consolidation_pressure") ;
         double e0     = Material_GetPropertyValue(mat,"initial_void_ratio") ;
         
-        Plasticity_SetToCamClay(plastyi) ;
+        Plasticity_SetTo(plastyi,CamClay) ;
         Plasticity_SetParameters(plastyi,kappa,lambda,M,pc0,e0) ;
         
       } else {
@@ -524,7 +524,7 @@ int ComputeInitialState(Element_t* el,double t)
     
       for(i = 0 ; i < 9 ; i++) SIG[i] = x[I_SIG + i] ;
       
-      for(i = 0 ; i < 3 ; i++) F_MASS[i] = x[I_Fmass + i] ;
+      for(i = 0 ; i < 3 ; i++) F_MASS[i] = x[I_FMASS + i] ;
       
       for(i = 0 ; i < 9 ; i++) EPS_P[i]  = x[I_EPS_P + i] ;
     
@@ -577,7 +577,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
     
       for(i = 0 ; i < 9 ; i++) SIG[i] = x[I_SIG + i] ;
       
-      for(i = 0 ; i < 3 ; i++) F_MASS[i] = x[I_Fmass + i] ;
+      for(i = 0 ; i < 3 ; i++) F_MASS[i] = x[I_FMASS + i] ;
       
       for(i = 0 ; i < 9 ; i++) EPS_P[i]  = x[I_EPS_P + i] ;
     
@@ -997,11 +997,11 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   /* Backup body force */
   {
     {
-      double* f_mass = x + I_Fmass ;
+      double* fmass = x + I_FMASS ;
       int i ;
       
-      for(i = 0 ; i < 3 ; i++) f_mass[i] = 0 ;
-      f_mass[dim - 1] = (rho_s)*gravity ;
+      for(i = 0 ; i < 3 ; i++) fmass[i] = 0 ;
+      fmass[dim - 1] = (rho_s)*gravity ;
     }
   }
 }

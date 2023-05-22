@@ -1,8 +1,9 @@
-static Plasticity_ComputeTangentStiffnessTensor_t    Plasticity_CTCamClayOffset ;
-static Plasticity_ReturnMapping_t                    Plasticity_RMCamClayOffset ;
-static Plasticity_YieldFunction_t                    Plasticity_YFCamClayOffset ;
-static Plasticity_FlowRules_t                        Plasticity_FRCamClayOffset ;
-static Plasticity_SetParameters_t                    Plasticity_SPCamClayOffset ;
+static Plasticity_ComputeTangentStiffnessTensor_t    PlasticityCamClayOffset_CT ;
+static Plasticity_ReturnMapping_t                    PlasticityCamClayOffset_RM ;
+static Plasticity_YieldFunction_t                    PlasticityCamClayOffset_YF ;
+static Plasticity_FlowRules_t                        PlasticityCamClayOffset_FR ;
+static Plasticity_SetParameters_t                    PlasticityCamClayOffset_SP ;
+static Plasticity_SetModelProp_t                     PlasticityCamClayOffset_SetModelProp ;
 
 
 #define Plasticity_GetSlopeSwellingLine(PL) \
@@ -19,9 +20,27 @@ static Plasticity_SetParameters_t                    Plasticity_SPCamClayOffset 
         
 #define Plasticity_GetInitialVoidRatio(PL) \
         Plasticity_GetParameter(PL)[4]
+        
+        
 
 
-void Plasticity_SPCamClayOffset(Plasticity_t* plasty,...)
+
+void PlasticityCamClayOffset_SetModelProp(Plasticity_t* plasty)
+{
+  
+  {
+    Plasticity_GetComputeTangentStiffnessTensor(plasty) = PlasticityCamClayOffset_CT ;
+    Plasticity_GetReturnMapping(plasty)                 = PlasticityCamClayOffset_RM ;
+    Plasticity_GetYieldFunction(plasty)                 = PlasticityCamClayOffset_YF ;
+    Plasticity_GetFlowRules(plasty)                     = PlasticityCamClayOffset_FR ;
+    Plasticity_GetSetParameters(plasty)                 = PlasticityCamClayOffset_SP ;
+    Plasticity_GetNbOfHardeningVariables(plasty)        = 2 ;
+  }
+  
+}
+
+
+void PlasticityCamClayOffset_SP(Plasticity_t* plasty,...)
 {
   va_list args ;
   
@@ -52,7 +71,7 @@ void Plasticity_SPCamClayOffset(Plasticity_t* plasty,...)
 
 
 
-double (Plasticity_CTCamClayOffset)(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)
+double (PlasticityCamClayOffset_CT)(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)
 /** Modified Cam-Clay criterion with offset 
  * 
  *  Inputs are: 
@@ -206,7 +225,7 @@ double (Plasticity_CTCamClayOffset)(Plasticity_t* plasty,const double* sig,const
 
 
 
-double (Plasticity_RMCamClayOffset)(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
+double (PlasticityCamClayOffset_RM)(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
 /** Modified Cam-Clay return mapping.
  *  Algorithm from Borja & Lee 1990 modified by Dangla.
  * 
@@ -322,7 +341,7 @@ double (Plasticity_RMCamClayOffset)(Plasticity_t* plasty,double* sig,double* eps
       fcrit  = q*q/m2 + (p - ps)*(p + pc) ;
       
       if(nf++ > 20) {
-        Message_FatalError("Plasticity_RMCamClayOffset: no convergence") ;
+        Message_FatalError("PlasticityCamClayOffset_RM: no convergence") ;
       }
     }
   }
@@ -356,7 +375,7 @@ double (Plasticity_RMCamClayOffset)(Plasticity_t* plasty,double* sig,double* eps
 
 
 
-double (Plasticity_YFCamClayOffset)(Plasticity_t* plasty,const double* stress,const double* hardv)
+double (PlasticityCamClayOffset_YF)(Plasticity_t* plasty,const double* stress,const double* hardv)
 /** Return the value of the yield function. 
  **/
 {
@@ -373,7 +392,7 @@ double (Plasticity_YFCamClayOffset)(Plasticity_t* plasty,const double* stress,co
 
 
 
-double* (Plasticity_FRCamClayOffset)(Plasticity_t* plasty,const double* stress,const double* hardv)
+double* (PlasticityCamClayOffset_FR)(Plasticity_t* plasty,const double* stress,const double* hardv)
 /** Modified Cam-Clay criterion with offset.
  * 
  *  Inputs are: 

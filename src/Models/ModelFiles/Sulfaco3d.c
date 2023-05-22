@@ -47,7 +47,11 @@ enum {
 
 
 /* Nb of equations */
+#ifdef E_Mech
 #define NbOfEquations      (E_Last + dim - 1)
+#else
+#define NbOfEquations      E_Last
+#endif
 #define NEQ                NbOfEquations
 
 
@@ -99,7 +103,6 @@ enum {
 
 /* Aluminium:
  * - U_ZN_Al_S: dissolution kinetics of AH3; Cc at equilibrium
- * - U_LogS_CH: dissolution kinetics of CH; precipitation kinetics of Cc */
 //#define U_C_Al       U_Aluminium
 //#define U_LogC_Al    U_Aluminium
 #define U_ZN_Al_S    U_Aluminium
@@ -394,10 +397,17 @@ enum {
 #define dInterfaceCrystalGrowthRate(beta,beta_i) \
         (dCrystalGrowthRate(ai_AFt,di_AFt,(beta_i)/(beta)) / (beta))
 
-#define CrystalGrowthRate(crys,diss,ateb) \
-        ((((ateb) < 1) ? (crys) : (diss)) * (1 - (ateb)))
-#define dCrystalGrowthRate(crys,diss,ateb) \
-        ((((ateb) < 1) ? (crys) : (diss)) * (-1))
+//#define CrystalGrowthRate(crys,diss,ateb) \
+//        ((((ateb) < 1) ? (crys) : (diss)) * (1 - (ateb)))
+//#define dCrystalGrowthRate(crys,diss,ateb) \
+//        ((((ateb) < 1) ? (crys) : (diss)) * (-1))
+
+#define NA    (1)    //(-0.066666667)
+#define NB    (1)    //(1.55)
+#define CrystalGrowthRate(C,D,A) \
+        ((((A) < 1) ? (C) : (-D)) * pow(fabs(1 - pow(A,NA)),NB))
+#define dCrystalGrowthRate(C,D,A) \
+        ((((A) < 1) ? (C) : (D)) * (-fabs(NA)*NB)*pow(A,NA-1)*pow(fabs(1 - pow(A,NA)),NB-1))
 
 /* Inverse law of crystal growth kinetics */
 #define InverseOfPoreCrystalGrowthRate(growth) \
@@ -940,7 +950,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double B_c = Material_GetPropertyValue(mat,"B_c") ;
         double B_t = Material_GetPropertyValue(mat,"B_t") ;
         
-        Damage_SetToMazars(damage) ;
+        Damage_SetTo(damage,Mazars) ;
         Damage_SetParameters(damage,maxelastrain,A_c,A_t,B_c,B_t) ;
       
       /* Marigo-Jirasek */
@@ -949,7 +959,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double Gf = Material_GetPropertyValue(mat,"fracture_energy") ;
         double w  = Material_GetPropertyValue(mat,"crack_band_width") ;
         
-        Damage_SetToMarigoJirasek(damage) ;
+        Damage_SetTo(damage,MarigoJirasek) ;
         Damage_SetParameters(damage,ft,Gf,w) ;
         
       } else {

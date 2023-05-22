@@ -24,8 +24,8 @@ ElementSol_t*   (ElementSol_New)(void)
   ElementSol_GetConstantGenericData(elementsol) = NULL ;
   #endif
   
-  ElementSol_GetPreviousElementSol(elementsol)  = NULL ;
-  ElementSol_GetNextElementSol(elementsol)      = NULL ;
+  //ElementSol_GetPreviousElementSol(elementsol)  = NULL ;
+  //ElementSol_GetNextElementSol(elementsol)      = NULL ;
   
   return(elementsol) ;
 }
@@ -65,14 +65,6 @@ void   (ElementSol_Delete)(void* self)
       ElementSol_GetConstantGenericData(elementsol) = NULL ;
     }
   }
-}
-
-
-
-ElementSol_t* (ElementSol_GetDeepElementSol)(ElementSol_t* elementsol,unsigned int depth)
-{
-  while(depth--) elementsol = ElementSol_GetPreviousElementSol(elementsol) ;
-  return(elementsol) ;
 }
 
 

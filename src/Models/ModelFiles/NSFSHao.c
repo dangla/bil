@@ -296,12 +296,13 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double refstrainrate = Material_GetPropertyValue(mat,"reference_strain_rate") ;
         double viscexp = Material_GetPropertyValue(mat,"viscous_exponent") ;
         Curve_t* lc   = Material_FindCurve(mat,"lc") ;
+        Curve_t* sl   = Material_FindCurve(mat,"sl") ;
         
         phi0    = Material_GetPropertyValue(mat,"initial_porosity") ;
         e0      = phi0/(1 - phi0) ;
         
-        Plasticity_SetToNSFS(plasty) ;
-        Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0,coh,p_ref,refstrainrate,viscexp,lc) ;
+        Plasticity_SetTo(plasty,NSFS) ;
+        Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0,coh,p_ref,refstrainrate,viscexp,lc,sl) ;
       }
     }
 
@@ -953,7 +954,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
           /* Criterion */
           if(crit >= 0.) {
             double p_co  = HARDV ;
-            double hardv[2] = {p_co,dt} ;
+            double hardv[3] = {p_co,pc,dt} ;
             
           /* Continuum tangent stiffness matrix */
             //ComputeTangentStiffnessTensor(sig,hardv) ;
@@ -1219,7 +1220,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       /* Return mapping */
       {
         double p_con = x_n[I_HARDV] ; /* pre-consolidation pressure at 0 suction at the previous time step */
-        double hardv[2] = {p_con,dt} ;
+        double hardv[3] = {p_con,pc,dt} ;
         double crit  = ReturnMapping(sig,eps_p,hardv) ;
         double dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
         

@@ -22,9 +22,10 @@ extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_SO3_H2O)(CementSolutionChemistry_t*) ;
 extern void   (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O)(CementSolutionChemistry_t*) ;
 
-extern void CementSolutionChemistry_SupplementSystemWith_Cl(CementSolutionChemistry_t*) ;
-extern void CementSolutionChemistry_SupplementSystemWith_CO2(CementSolutionChemistry_t*) ;
-extern void CementSolutionChemistry_SupplementSystemWith_SO3(CementSolutionChemistry_t*) ;
+extern void (CementSolutionChemistry_SupplementSystemWith_Cl)     (CementSolutionChemistry_t*) ;
+extern void (CementSolutionChemistry_SupplementSystemWith_CO2)    (CementSolutionChemistry_t*) ;
+extern void (CementSolutionChemistry_SupplementSystemWith_SO3)    (CementSolutionChemistry_t*) ;
+extern void (CementSolutionChemistry_SupplementSystemWith_Al2O3)  (CementSolutionChemistry_t*) ;
 
 extern void   (CementSolutionChemistry_PrintChemicalConstants)(CementSolutionChemistry_t*) ;
 
@@ -107,7 +108,7 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
 #define CementSolutionChemistry_Al2O3        (2)
 #define CementSolutionChemistry_LogQ_AH3     (2)
 #define CementSolutionChemistry_LogA_AlO4H4 \
-        (2 + CementSolutionChemistry_NbOfPrimaryVariables) // not used yet
+        (2 + CementSolutionChemistry_NbOfPrimaryVariables)
 
 #define CementSolutionChemistry_Na20         (3)
 #define CementSolutionChemistry_LogA_Na      (3)
@@ -151,6 +152,10 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
         
 #define CementSolutionChemistry_InputSO3Is(CSC,V) \
         CementSolutionChemistry_InputIs(CSC,SO3,V)
+
+#define CementSolutionChemistry_InputAl2O3Is(CSC,V) \
+        CementSolutionChemistry_InputIs(CSC,Al2O3,V)
+
         
 /* Inputs: implementation
  * ---------------------- */

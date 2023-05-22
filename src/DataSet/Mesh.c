@@ -1109,7 +1109,7 @@ void (Mesh_SetEquationContinuity)(Mesh_t* mesh)
 }
 
 
-
+#if 0
 void (Mesh_InitializeSolutionPointers)(Mesh_t* mesh,Solutions_t* sols)
 /** Initialize the pointers of nodes and elements to
  ** the pointers of the solution sol. */
@@ -1122,14 +1122,15 @@ void (Mesh_InitializeSolutionPointers)(Mesh_t* mesh,Solutions_t* sols)
   int    i ;
 
   for(i = 0 ; i < n_el ; i++) {
-    Element_GetElementSol(el + i) = Solution_GetElementSol(sol) + i ;
+    //Element_GetElementSol(el + i) = Solution_GetElementSol(sol) + i ;
   }
   
   for(i = 0 ; i < n_no ; i++) {
-    Node_GetNodeSol(no + i) = Solution_GetNodeSol(sol) + i ;
+    //Node_GetNodeSol(no + i) = Solution_GetNodeSol(sol) + i ;
   }
 
 }
+#endif
 
 
 
@@ -1509,7 +1510,7 @@ int (Mesh_ComputeExplicitTerms)(Mesh_t* mesh,double t)
 
 
 #if Threads_APIis(OpenMP)
-int (Mesh_ComputeMatrix)(Mesh_t* mesh,double t,double dt,Matrix_t* a)
+int (Mesh_ComputeMatrix)(Mesh_t* mesh,Matrix_t* a,double t,double dt)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
@@ -1551,7 +1552,7 @@ int (Mesh_ComputeMatrix)(Mesh_t* mesh,double t,double dt,Matrix_t* a)
 
 #else
 
-int (Mesh_ComputeMatrix)(Mesh_t* mesh,double t,double dt,Matrix_t* a)
+int (Mesh_ComputeMatrix)(Mesh_t* mesh,Matrix_t* a,double t,double dt)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
@@ -1590,7 +1591,7 @@ int (Mesh_ComputeMatrix)(Mesh_t* mesh,double t,double dt,Matrix_t* a)
 
 
 #if Threads_APIis(OpenMP)
-void (Mesh_ComputeResidu)(Mesh_t* mesh,double t,double dt,Residu_t* r,Loads_t* loads)
+void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,double dt)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
@@ -1656,7 +1657,7 @@ void (Mesh_ComputeResidu)(Mesh_t* mesh,double t,double dt,Residu_t* r,Loads_t* l
 
 #else
 
-void (Mesh_ComputeResidu)(Mesh_t* mesh,double t,double dt,Residu_t* r,Loads_t* loads)
+void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,double dt)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
@@ -1826,7 +1827,7 @@ void (Mesh_OneNode)(Mesh_t* mesh)
     Element_GetMaterialIndex(el) = 0 ;
     Element_GetRegionIndex(el) = 1 ;
 
-    Element_GetDimension(el) = 0 ;
+    Element_GetDimension(el) = 3 ;
 
     /* Numbering */
     Element_GetNbOfNodes(el) = 1 ;

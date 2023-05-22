@@ -1,14 +1,13 @@
-#include <stdlib.h>
-#include "Bil.h"
+#include "Entry.h"
 
 
 int main(int argc,char** argv)
 {
-  Bil_t* bil = Bil_Create(argc,argv) ;
+  Entry_t* entry = Entry_Create(argc,argv) ;
   
-  Bil_Execute(bil) ;
+  Entry_Execute(entry) ;
   
-  Bil_Delete(bil) ;
+  Entry_Delete(entry) ;
   
   return(0) ;
 }

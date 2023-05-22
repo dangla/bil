@@ -197,8 +197,20 @@ void (ShapeFct_ComputeValuesAtPoint)(int dim,int nn,double* x,double* h,double* 
     
     /* 3D */
   } else if(dim == 3) {
+    /* special element for one node mesh */
+    if(nn == 1) {
+      if(h) {
+        h[0] = 1. ;
+      }
+      /* is it useful? */
+      if(dh) {
+        DHx(0)  = 1 ;
+        DHy(0)  = 1 ;
+        DHz(0)  = 1 ;
+      }
+      return ;
     /* tetraedre a 4 noeuds */
-    if(nn == 4) {
+    } else if(nn == 4) {
       if(h) {
         h[0]    = 1. - X - Y - Z;
         h[1]    = X ;

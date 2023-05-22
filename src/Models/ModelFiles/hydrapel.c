@@ -314,17 +314,17 @@ int pm(const char *s)
   } else if(!strcmp(s,"lambda_M0"))  {
     return(33) ;
 
-	
+  
   } else if(!strcmp(s,"initial_pel_dry_dens"))  {
     return(34) ;
   } else if(!strcmp(s,"p_poudre"))  {
     return(35) ;
   } else if(!strcmp(s,"p_pellet"))  {
-    return(36) ;	
+    return(36) ;  
   } else if(!strcmp(s,"initial_equivalent_radius"))  {
-    return(37) ;	
+    return(37) ;  
   } else if(!strcmp(s,"beta_hydro_0"))  {
-    return(38) ;	
+    return(38) ;  
   } else if(!strcmp(s,"beta_hydro_a"))  {
     return(39) ;
   } else if(!strcmp(s,"rho_solid"))  {
@@ -333,8 +333,8 @@ int pm(const char *s)
     return(41) ;
   } else if(!strcmp(s,"k_int_M_b"))      { 
     return (42) ;
-	
-	} else return(-1) ;
+  
+  } else return(-1) ;
 }
 
 
@@ -489,7 +489,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         e0     = Material_GetPropertyValue(mat,"initial_void_ratio") ;
         kappa_M  = Material_GetPropertyValue(mat,"kappa_M") ;
         
-        Plasticity_SetToCamClayOffset(plasty) ;
+        Plasticity_SetTo(plasty,CamClayOffset) ;
         Plasticity_SetParameters(plasty,kappa_M,lambda_M0,M,pc0,e0) ; // verifier e0
       }
     }

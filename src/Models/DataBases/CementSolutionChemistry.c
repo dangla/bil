@@ -44,9 +44,10 @@ static double*   (CementSolutionChemistry_CreateValence)(void) ;
 static void      (CementSolutionChemistry_InitializeValence)(double*) ;
 
 
-static void CementSolutionChemistry_SupplementSystemWith_SO3_1(CementSolutionChemistry_t*) ;
-
-static void CementSolutionChemistry_SupplementSystemWith_SO3_2(CementSolutionChemistry_t*) ;
+static void (CementSolutionChemistry_SupplementSystemWith_SO3_LogA_H2SO4)   (CementSolutionChemistry_t*) ;
+static void (CementSolutionChemistry_SupplementSystemWith_SO3_LogA_SO4)     (CementSolutionChemistry_t*) ;
+static void (CementSolutionChemistry_SupplementSystemWith_Al2O3_LogQ_AH3)   (CementSolutionChemistry_t*) ;
+static void (CementSolutionChemistry_SupplementSystemWith_Al2O3_LogA_AlO4H4)(CementSolutionChemistry_t*) ;
 
 static double* instancevalence = NULL ;
 
@@ -717,10 +718,10 @@ void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O)(CementSol
 void (CementSolutionChemistry_SupplementSystemWith_SO3)(CementSolutionChemistry_t* csc)
 {
   if(CementSolutionChemistry_InputSO3Is(csc,LogA_H2SO4)) {
-    CementSolutionChemistry_SupplementSystemWith_SO3_1(csc) ;
+    CementSolutionChemistry_SupplementSystemWith_SO3_LogA_H2SO4(csc) ;
     return ;
   } else if(CementSolutionChemistry_InputSO3Is(csc,LogA_SO4)) {
-    CementSolutionChemistry_SupplementSystemWith_SO3_2(csc) ;
+    CementSolutionChemistry_SupplementSystemWith_SO3_LogA_SO4(csc) ;
     return ;
   }
   
@@ -731,7 +732,7 @@ void (CementSolutionChemistry_SupplementSystemWith_SO3)(CementSolutionChemistry_
 
 
 
-void (CementSolutionChemistry_SupplementSystemWith_SO3_1)(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_SupplementSystemWith_SO3_LogA_H2SO4)(CementSolutionChemistry_t* csc)
 {
   /* Supplement with SO3 */
   double loga_h2so4 = Input(LogA_H2SO4) ;
@@ -816,7 +817,7 @@ void (CementSolutionChemistry_SupplementSystemWith_SO3_1)(CementSolutionChemistr
 
 
 
-void (CementSolutionChemistry_SupplementSystemWith_SO3_2)(CementSolutionChemistry_t* csc)
+void (CementSolutionChemistry_SupplementSystemWith_SO3_LogA_SO4)(CementSolutionChemistry_t* csc)
 {
   /* Supplement with SO3 */
   double loga_so4 = Input(LogA_SO4) ;
@@ -890,11 +891,40 @@ void (CementSolutionChemistry_SupplementSystemWith_SO3_2)(CementSolutionChemistr
 
 
 
+
 void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O)(CementSolutionChemistry_t* csc)
 {
   /* Compute the system CaO-SiO2-Na2O-K2O */
   CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
   
+  /* Supplement with Al2O3 */
+  CementSolutionChemistry_SupplementSystemWith_Al2O3(csc) ;
+}
+
+
+
+
+
+
+void (CementSolutionChemistry_SupplementSystemWith_Al2O3)(CementSolutionChemistry_t* csc)
+{
+  if(CementSolutionChemistry_InputAl2O3Is(csc,LogQ_AH3)) {
+    CementSolutionChemistry_SupplementSystemWith_Al2O3_LogQ_AH3(csc) ;
+    return ;
+  } else if(CementSolutionChemistry_InputAl2O3Is(csc,LogA_AlO4H4)) {
+    CementSolutionChemistry_SupplementSystemWith_Al2O3_LogA_AlO4H4(csc) ;
+    return ;
+  }
+  
+  arret("CementSolutionChemistry_SupplementSystemWith_Al2O3") ;
+}
+
+
+
+
+
+void (CementSolutionChemistry_SupplementSystemWith_Al2O3_LogQ_AH3)(CementSolutionChemistry_t* csc)
+{
   /* Supplement with Al2O3 */
   double logq_ah3   = Input(LogQ_AH3) ;
   
@@ -909,6 +939,53 @@ void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O)(CementS
   double loga_al     = 0.5*logq_ah3 - 3*loga_oh ;
   double logk_alo4h4 = LogKeq(AlO4H4) ;
   double loga_alo4h4 = loga_al + 4*loga_oh - logk_alo4h4 ;
+  
+  
+  /* Chemical reactions involving compounds of type II. */
+  
+  
+  /* Backup activities */
+  {
+    LogActivity(Al)     = loga_al ;
+    LogActivity(AlO4H4) = loga_alo4h4 ;
+  }
+  
+  
+  /* Backup concentrations */
+  {
+    /* Translate into concentrations providing ideality */
+    double logc0             = LogC0_ref ;
+    
+    double logc_al           = loga_al      + logc0 ;
+    double logc_alo4h4       = loga_alo4h4  + logc0 ;
+    
+    Concentration(Al)        = pow(10,logc_al) ;
+    Concentration(AlO4H4)    = pow(10,logc_alo4h4) ;
+  
+    LogConcentration(Al)     = logc_al ;
+    LogConcentration(AlO4H4) = logc_alo4h4 ;
+  }
+}
+
+
+
+
+
+void (CementSolutionChemistry_SupplementSystemWith_Al2O3_LogA_AlO4H4)(CementSolutionChemistry_t* csc)
+{
+  /* Supplement with Al2O3 */
+  double loga_alo4h4   = Input(LogA_AlO4H4) ;
+  
+
+  /* Water */
+  double loga_oh  = LogActivity(OH) ;
+  
+  
+  /* Chemical reactions involving compounds of type I. */
+
+  /* Aluminium compounds */
+  double logk_alo4h4 = LogKeq(AlO4H4) ;
+  double loga_al     = loga_alo4h4 - 4*loga_oh + logk_alo4h4 ;
   
   
   /* Chemical reactions involving compounds of type II. */
@@ -972,9 +1049,11 @@ void (CementSolutionChemistry_SupplementSystemWith_Cl)(CementSolutionChemistry_t
 
 void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_Cl_H2O)(CementSolutionChemistry_t* csc)
 {
-  /* Compute the system CaO-SiO2-Na2O-Al2O3-K2O */
-  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(csc) ;
+  /* Compute the system CaO-SiO2-Na2O-K2O */
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
   
+  /* Supplement with Al2O3 */
+  CementSolutionChemistry_SupplementSystemWith_Al2O3(csc) ;
   /* Supplement with Cl */
   CementSolutionChemistry_SupplementSystemWith_Cl(csc) ;
 }
@@ -985,9 +1064,11 @@ void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_Cl_H2O)(Ceme
 
 void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_H2O)(CementSolutionChemistry_t* csc)
 {
-  /* Compute the system CaO-SiO2-Na2O-K2O-Al2O3 */
-  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(csc) ;
+  /* Compute the system CaO-SiO2-Na2O-K2O */
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
   
+  /* Supplement with Al2O3 */
+  CementSolutionChemistry_SupplementSystemWith_Al2O3(csc) ;
   /* Supplement with CO2 */
   CementSolutionChemistry_SupplementSystemWith_CO2(csc) ;
 }
@@ -998,11 +1079,14 @@ void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_H2O)(Cem
 
 void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_Cl_H2O)(CementSolutionChemistry_t* csc)
 {
-  /* Compute the system CaO-SiO2-Na2O-K2O-Al2O3 */
-  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(csc) ;
+  /* Compute the system CaO-SiO2-Na2O-K2O */
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
   
-  /* Supplement with CO2 and Cl */
+  /* Supplement with Al2O3 */
+  CementSolutionChemistry_SupplementSystemWith_Al2O3(csc) ;
+  /* Supplement with CO2 */
   CementSolutionChemistry_SupplementSystemWith_CO2(csc) ;
+  /* Supplement with Cl */
   CementSolutionChemistry_SupplementSystemWith_Cl(csc) ;
 }
 
@@ -1012,9 +1096,11 @@ void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_CO2_Cl_H2O)(
 
 void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_SO3_H2O)(CementSolutionChemistry_t* csc)
 {
-  /* Compute the system CaO-SiO2-Na2O-K2O-Al2O3 */
-  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_H2O(csc) ;
+  /* Compute the system CaO-SiO2-Na2O-K2O */
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
   
+  /* Supplement with Al2O3 */
+  CementSolutionChemistry_SupplementSystemWith_Al2O3(csc) ;
   /* Supplement with SO3 */
   CementSolutionChemistry_SupplementSystemWith_SO3(csc) ;
 }
@@ -1025,50 +1111,15 @@ void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_Al2O3_SO3_H2O)(Cem
 
 void (CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_Al2O3_H2O)(CementSolutionChemistry_t* csc)
 {
-  /* Compute the system CaO-SiO2-Na2O-K2O-SO3 */
-  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_SO3_H2O(csc) ;
+  /* Compute the system CaO-SiO2-Na2O-K2O */
+  CementSolutionChemistry_ComputeSystem_CaO_SiO2_Na2O_K2O_H2O(csc) ;
   
   /* Supplement with Al2O3 */
-  double logq_ah3   = Input(LogQ_AH3) ;
-  
-
-  /* Water */
-  double loga_oh  = LogActivity(OH) ;
-  
-  
-  /* Chemical reactions involving compounds of type I. */
-
-  /* Aluminium compounds */
-  double loga_al     = 0.5*logq_ah3 - 3*loga_oh ;
-  double logk_alo4h4 = LogKeq(AlO4H4) ;
-  double loga_alo4h4 = loga_al + 4*loga_oh - logk_alo4h4 ;
-  
-  
-  /* Chemical reactions involving compounds of type II. */
-  
-  
-  /* Backup activities */
-  {
-    LogActivity(Al)     = loga_al ;
-    LogActivity(AlO4H4) = loga_alo4h4 ;
-  }
-  
-  
-  /* Backup concentrations */
-  {
-    /* Translate into concentrations providing ideality */
-    double logc0             = LogC0_ref ;
-    
-    double logc_al           = loga_al      + logc0 ;
-    double logc_alo4h4       = loga_alo4h4  + logc0 ;
-    
-    Concentration(Al)        = pow(10,logc_al) ;
-    Concentration(AlO4H4)    = pow(10,logc_alo4h4) ;
-  
-    LogConcentration(Al)     = logc_al ;
-    LogConcentration(AlO4H4) = logc_alo4h4 ;
-  }
+  CementSolutionChemistry_SupplementSystemWith_Al2O3(csc) ;
+  /* Supplement with SO3 */
+  CementSolutionChemistry_SupplementSystemWith_SO3(csc) ;
 }
+
 
 
 

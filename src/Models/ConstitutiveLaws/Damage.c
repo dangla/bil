@@ -13,10 +13,10 @@
 
 
 /* Mazars */
-#include "DamageModels/Damage_Mazars.c"
+#include "DamageModels/DamageMazars.c"
 
 /* Marigo-Jirasek */
-#include "DamageModels/Damage_MarigoJirasek.c"
+#include "DamageModels/DamageMarigoJirasek.c"
 
 
 
@@ -172,108 +172,16 @@ void  (Damage_Delete)(void* self)
 void Damage_Initialize(Damage_t* damage)
 {
   
-  if(Damage_IsMazars(damage)) {
-    Damage_GetComputeTangentStiffnessTensor(damage) = Damage_CTMazars ;
-    Damage_GetReturnMapping(damage)                 = Damage_RMMazars ;
+  if(Damage_Is(damage,Mazars)) {
+    Damage_GetSetModelProp(damage)                  = DamageMazars_SetModelProp ;
       
-  } else if(Damage_IsMarigoJirasek(damage)) {
-    Damage_GetComputeTangentStiffnessTensor(damage) = Damage_CTMarigoJirasek ;
-    Damage_GetReturnMapping(damage)                 = Damage_RMMarigoJirasek ;
+  } else if(Damage_Is(damage,MarigoJirasek)) {
+    Damage_GetSetModelProp(damage)                  = DamageMarigoJirasek_SetModelProp ;
     
   } else {
     Message_RuntimeError("Not known") ;
   }
   
-}
-
-
-
-void Damage_SetParameter(Damage_t* damage,const char* str,double v)
-{
-  
-  if(Damage_IsMazars(damage)) {
-    if(0) {
-    } else if(!strcmp(str,"max elastic strain")) {
-      Damage_GetStrainAtUniaxialTensileStrength(damage)  = v ;
-      Damage_GetHardeningVariable(damage)[0]  = v ;
-    } else if(!strcmp(str,"A_c")) {
-      Damage_GetA_c(damage)  = v ;
-    } else if(!strcmp(str,"A_t")) {
-      Damage_GetA_t(damage)  = v ;
-    } else if(!strcmp(str,"B_c")) {
-      Damage_GetB_c(damage)  = v ;
-    } else if(!strcmp(str,"B_t")) {
-      Damage_GetB_t(damage)  = v ;
-    }
-    
-  } else if(Damage_IsMarigoJirasek(damage)) {
-    Elasticity_t* elasty = Damage_GetElasticity(damage) ;
-    double young = Elasticity_GetYoungModulus(elasty) ;
-    
-    if(0) {
-    } else if(!strcmp(str,"uniaxial tensile strength")) {
-      double ft = v ;
-      double strain0 = ft/young ;
-      double g0   = 0.5*young*strain0*strain0 ;
-      
-      Damage_GetUniaxialTensileStrength(damage)  = ft ;
-      Damage_GetHardeningVariable(damage)[0] = g0 ;
-    } else if(!strcmp(str,"fracture energy")) {
-      Damage_GetFractureEnergy(damage)  = v ;
-    } else if(!strcmp(str,"crack band width")) {
-      Damage_GetCrackBandWidth(damage)  = v ;
-    }
-    
-  } else {
-    Message_RuntimeError("Not known") ;
-  }
-
-}
-
-
-
-void Damage_SetParameters(Damage_t* damage,...)
-{
-  va_list args ;
-  
-  va_start(args,damage) ;
-  
-  if(Damage_IsMazars(damage)) {
-    double strain0  = va_arg(args,double) ;
-    double A_c  = va_arg(args,double) ;
-    double A_t  = va_arg(args,double) ;
-    double B_c  = va_arg(args,double) ;
-    double B_t  = va_arg(args,double) ;
-    
-    Damage_GetStrainAtUniaxialTensileStrength(damage) = strain0 ;
-    Damage_GetA_c(damage)  = A_c ;
-    Damage_GetA_t(damage)  = A_t ;
-    Damage_GetB_c(damage)  = B_c ;
-    Damage_GetB_t(damage)  = B_t ;
-    
-    Damage_GetHardeningVariable(damage)[0] = strain0 ;
-    
-  } else if(Damage_IsMarigoJirasek(damage)) {
-    double ft  = va_arg(args,double) ;
-    double Gf  = va_arg(args,double) ;
-    double w   = va_arg(args,double) ;
-    Elasticity_t* elasty = Damage_GetElasticity(damage) ;
-    double E       = Elasticity_GetYoungModulus(elasty) ;
-    double strain0 = ft/E ;
-    double g0      = 0.5*E*strain0*strain0 ;
-    
-    Damage_GetUniaxialTensileStrength(damage)   = ft ;
-    Damage_GetFractureEnergy(damage)            = Gf ;
-    Damage_GetCrackBandWidth(damage)            = w ;
-    
-    Damage_GetHardeningVariable(damage)[0]      = g0 ;
-    
-  } else {
-    Message_RuntimeError("Not known") ;
-  }
-  
-
-  va_end(args) ;
 }
 
 

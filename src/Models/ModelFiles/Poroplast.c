@@ -303,7 +303,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double af       = Material_GetPropertyValue(mat,"friction")*M_PI/180. ;
         double ad       = Material_GetPropertyValue(mat,"dilatancy")*M_PI/180. ;
         
-        Plasticity_SetToDruckerPrager(plasty) ;
+        Plasticity_SetTo(plasty,DruckerPrager) ;
         Plasticity_SetParameters(plasty,af,ad,cohesion) ;
       
       /* Cam-Clay */
@@ -314,7 +314,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double pc0    = Material_GetPropertyValue(mat,"initial_pre-consolidation_pressure") ;
         double e0     = Material_GetPropertyValue(mat,"initial_void_ratio") ;
         
-        Plasticity_SetToCamClay(plasty) ;
+        Plasticity_SetTo(plasty,CamClay) ;
         Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0) ;
         
       } else {
@@ -642,65 +642,15 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   {
     double c[IntFct_MaxNbOfIntPoints*100] ;
     int dec = ComputeTangentCoefficients(fem,dt,c) ;
-    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,1) ;
-    /* The matrix kp is stored as (u for displacement, p for pressure)
-     * | Kuu Kup |
-     * | Kpu Kpp |
-     * i.e. the displacements u are in the positions 0 to dim-1 and
-     * the pressure p is in the position dim.
-     * So we need to store the matrix by accounting for the right indexes.
-     */
-    #define KP(i,j)   (kp[(i)*ndof + (j)])
+    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,1,U_u) ;
     
-    if(E_mec == 0) {
+    {
       int i ;
       
       for(i = 0 ; i < ndof*ndof ; i++) {
         k[i] = kp[i] ;
       }
-    } else {
-      int n ;
-      
-      for(n = 0 ; n < nn ; n++) {
-        int m ;
-        
-        for(m = 0 ; m < nn ; m++) {
-          
-          /* Mechanics */
-          {
-            int i ;
-      
-            /* Stiffness matrix */
-            for(i = 0 ; i < dim ; i++) {
-              int j ;
-            
-              for(j = 0 ; j < dim ; j++) {
-                K(E_mec + i + n*NEQ,U_u + j + m*NEQ) = KP(0 + i + n*NEQ,0 + j + m*NEQ) ;
-              }
-            }
-          
-            /* Coupling matrix */
-            for(i = 0 ; i < dim ; i++) {
-              K(E_mec + i + n*NEQ,U_p_l + m*NEQ) = KP(0 + i + n*NEQ,dim + m*NEQ) ;
-            }
-          }
-          
-          /* Hydraulics */
-          {
-            int j ;
-            
-            /* Coupling matrix */
-            for(j = 0 ; j < dim ; j++) {
-              K(E_liq + n*NEQ,U_u + j + m*NEQ) = KP(dim + n*NEQ,0 + j + m*NEQ) ;
-            }
-          
-            /* Storage matrix */
-            K(E_liq + n*NEQ,U_p_l + m*NEQ) = KP(dim + n*NEQ,dim + m*NEQ) ;
-          }
-        }
-      }
     }
-    #undef KP
   }
   
   /*

@@ -339,7 +339,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double B_c = Material_GetPropertyValue(mat,"B_c") ;
         double B_t = Material_GetPropertyValue(mat,"B_t") ;
         
-        Damage_SetToMazars(damage) ;
+        Damage_SetTo(damage,Mazars) ;
         Damage_SetParameters(damage,maxelastrain,A_c,A_t,B_c,B_t) ;
       
       /* Marigo-Jirasek */
@@ -348,7 +348,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double Gf = Material_GetPropertyValue(mat,"fracture_energy") ;
         double w  = Material_GetPropertyValue(mat,"crack_band_width") ;
         
-        Damage_SetToMarigoJirasek(damage) ;
+        Damage_SetTo(damage,MarigoJirasek) ;
         Damage_SetParameters(damage,ft,Gf,w) ;
         
       } else {

@@ -30,7 +30,7 @@ extern void     (Mesh_UpdateMatrixRowColumnIndexes)(Mesh_t*) ;
 extern void     (Mesh_InitializeMatrixRowColumnIndexes)(Mesh_t*) ;
 extern void     (Mesh_WriteGraph)(Mesh_t*,const char*,const char*) ;
 extern void     (Mesh_WriteInversePermutation)(Mesh_t*,const char*,const char*) ;
-extern void     (Mesh_InitializeSolutionPointers)(Mesh_t*,Solutions_t*) ;
+//extern void     (Mesh_InitializeSolutionPointers)(Mesh_t*,Solutions_t*) ;
 extern int      (Mesh_LoadCurrentSolution)(Mesh_t*,DataFile_t*,double*) ;
 extern int      (Mesh_StoreCurrentSolution)(Mesh_t*,DataFile_t*,double) ;
 extern void     (Mesh_SetCurrentUnknownsWithBoundaryConditions)(Mesh_t*,BConds_t*,double) ;
@@ -40,8 +40,8 @@ extern void     (Mesh_PrintData)(Mesh_t*,char*) ;
 
 extern int      (Mesh_ComputeInitialState)(Mesh_t*,double) ;
 extern int      (Mesh_ComputeExplicitTerms)(Mesh_t*,double) ;
-extern int      (Mesh_ComputeMatrix)(Mesh_t*,double,double,Matrix_t*) ;
-extern void     (Mesh_ComputeResidu)(Mesh_t*,double,double,Residu_t*,Loads_t*) ;
+extern int      (Mesh_ComputeMatrix)(Mesh_t*,Matrix_t*,double,double) ;
+extern void     (Mesh_ComputeResidu)(Mesh_t*,Residu_t*,Loads_t*,double,double) ;
 extern int      (Mesh_ComputeImplicitTerms)(Mesh_t*,double,double) ;
 
 

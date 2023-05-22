@@ -1,5 +1,5 @@
 Request(21/10/2022)  - Rename all files using the prefix "bil_".
-To avoid confusion rename also "Bil.[c,h]" as "BilEntry.[c,h]"
+To avoid confusion rename also "Bil.[c,h]" as "Entry.[c,h]"
 
 Request(21/09/2019)  - Improve solver "ludcmp" by pivoting rows and columns.
 

@@ -1,8 +1,9 @@
-static Plasticity_ComputeTangentStiffnessTensor_t    Plasticity_CTACC ;
-static Plasticity_ReturnMapping_t                    Plasticity_RMACC ;
-static Plasticity_YieldFunction_t                    Plasticity_YFACC ;
-static Plasticity_FlowRules_t                        Plasticity_FRACC ;
-static Plasticity_SetParameters_t                    Plasticity_SPACC ;
+static Plasticity_ComputeTangentStiffnessTensor_t    PlasticityACC_CT ;
+static Plasticity_ReturnMapping_t                    PlasticityACC_RM ;
+static Plasticity_YieldFunction_t                    PlasticityACC_YF ;
+static Plasticity_FlowRules_t                        PlasticityACC_FR ;
+static Plasticity_SetParameters_t                    PlasticityACC_SP ;
+static Plasticity_SetModelProp_t                     PlasticityACC_SetModelProp ;
 
 
 static void Plasticity_ScaleStressACC(Plasticity_t*,double*) ;
@@ -39,8 +40,26 @@ static void Plasticity_ScaleStressACC(Plasticity_t*,double*) ;
 #define Plasticity_GetACC_f_perp(PL) \
         Plasticity_GetParameter(PL)[8]
         
+        
 
-void Plasticity_SPACC(Plasticity_t* plasty,...)
+
+
+void PlasticityACC_SetModelProp(Plasticity_t* plasty)
+{
+  
+  {
+    Plasticity_GetComputeTangentStiffnessTensor(plasty) = PlasticityACC_CT ;
+    Plasticity_GetReturnMapping(plasty)                 = PlasticityACC_RM ;
+    Plasticity_GetYieldFunction(plasty)                 = PlasticityACC_YF ;
+    Plasticity_GetFlowRules(plasty)                     = PlasticityACC_FR ;
+    Plasticity_GetSetParameters(plasty)                 = PlasticityACC_SP ;
+    Plasticity_GetNbOfHardeningVariables(plasty)        = 1 ;
+  }
+  
+}
+        
+
+void PlasticityACC_SP(Plasticity_t* plasty,...)
 {
   va_list args ;
   
@@ -74,7 +93,7 @@ void Plasticity_SPACC(Plasticity_t* plasty,...)
 
 
 
-double Plasticity_CTACC(Plasticity_t* plasty,const double* stress,const double* hardv,const double dlambda)
+double PlasticityACC_CT(Plasticity_t* plasty,const double* stress,const double* hardv,const double dlambda)
 /** Asymmetric Cam-Clay criterion 
  *  first hardening parameter is the preconsolidation pressure
  *  second hardening parameter is the isotropic tensile elastic limit
@@ -84,15 +103,15 @@ double Plasticity_CTACC(Plasticity_t* plasty,const double* stress,const double* 
   double* dgsds  = Plasticity_GetPotentialFunctionGradient(plasty) ;
   double* hm     = Plasticity_GetHardeningModulus(plasty) ;
 
-  double crit = Plasticity_YFACC(plasty,stress,hardv) ;
+  double crit = PlasticityACC_YF(plasty,stress,hardv) ;
 
   /*
     Flow directions
   */
   {
     int    i ;
-    double* dyield = Plasticity_DerivativeOfYieldFunction(plasty,Plasticity_YFACC,stress,hardv) ;
-    double* flow = Plasticity_FRACC(plasty,stress,hardv) ;
+    double* dyield = Plasticity_DerivativeOfYieldFunction(plasty,PlasticityACC_YF,stress,hardv) ;
+    double* flow = PlasticityACC_FR(plasty,stress,hardv) ;
     
     for(i = 0 ; i < 9 ; i++) {
       dfsds[i] = dyield[i] ;
@@ -110,7 +129,7 @@ double Plasticity_CTACC(Plasticity_t* plasty,const double* stress,const double* 
   }
   
   /*
-   * Tangent matrix
+   * Continuum tangent stiffness matrix
    */
   {
     double* c = Plasticity_GetTangentStiffnessTensor(plasty) ;
@@ -125,7 +144,7 @@ double Plasticity_CTACC(Plasticity_t* plasty,const double* stress,const double* 
 
 
 
-double Plasticity_RMACC(Plasticity_t* plasty,double* stress,double* strain_p,double* hardv)
+double PlasticityACC_RM(Plasticity_t* plasty,double* stress,double* strain_p,double* hardv)
 {
   double crit = Plasticity_GenericReturnMapping(plasty,stress,strain_p,hardv) ;
   
@@ -134,12 +153,12 @@ double Plasticity_RMACC(Plasticity_t* plasty,double* stress,double* strain_p,dou
 
 
 
-double Plasticity_YFACC(Plasticity_t* plasty,const double* stress,const double* hardv)
+double PlasticityACC_YF(Plasticity_t* plasty,const double* stress,const double* hardv)
 {
   double m  = Plasticity_GetACC_M(plasty)  ;
   double k  = Plasticity_GetACC_k(plasty)   ;
   double ps = Plasticity_GetInitialIsotropicTensileLimit(plasty) ;
-  double pc = hardv[0] ;
+  double pc = exp(hardv[0]) ;
 
   double stress_tilde[9] ;
   double yield ;
@@ -167,7 +186,7 @@ double Plasticity_YFACC(Plasticity_t* plasty,const double* stress,const double* 
 
 
 
-double* Plasticity_FRACC(Plasticity_t* plasty,const double* stress,const double* hardv)
+double* (PlasticityACC_FR)(Plasticity_t* plasty,const double* stress,const double* hardv)
 {
   size_t SizeNeeded = (9+1)*(sizeof(double)) ;
   double* flow   = (double*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
@@ -175,7 +194,7 @@ double* Plasticity_FRACC(Plasticity_t* plasty,const double* stress,const double*
   double n  = Plasticity_GetACC_N(plasty)  ;
   double k  = Plasticity_GetACC_k(plasty)   ;
   double ps = Plasticity_GetInitialIsotropicTensileLimit(plasty) ;
-  double beta_eps=  Plasticity_GetVolumetricStrainHardeningParameter(plasty) ;
+  double beta_eps =  Plasticity_GetVolumetricStrainHardeningParameter(plasty) ;
   double pc = exp(hardv[0]) ;
 
   //grab parameters f_par and f_perp
@@ -250,9 +269,9 @@ double* Plasticity_FRACC(Plasticity_t* plasty,const double* stress,const double*
       double p_star = 0.5*(ps-pc)*k2 ;
       
       if(p > p_star) {
-        flow[9] = 0. ;
+        flow[9] = 0 ;
       } else {
-        flow[9]  = - beta_eps * (flow[0] + flow[4] + flow[8]) / 3 ;
+        flow[9] = - beta_eps * (flow[0] + flow[4] + flow[8]) / 3 ;
       }
     }
   }

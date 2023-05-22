@@ -473,7 +473,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double ACC_scaling_perp  = Material_GetPropertyValue(mat,"perp_scaling") ;
         
 
-        Plasticity_SetToACCBraun(plasty) ;
+        Plasticity_SetTo(plasty,ACCBraun) ;
         Plasticity_SetParameters(plasty,ACC_k,ACC_M,ACC_N,ACC_pt0,ACC_pc0,ACC_beta_eps,ACC_beta_T0,ACC_scaling_par,ACC_scaling_perp) ;
 
       }
@@ -485,7 +485,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double af       = Material_GetPropertyValue(mat,"friction")*M_PI/180. ;
         double ad       = Material_GetPropertyValue(mat,"dilatancy")*M_PI/180. ;
         
-        Plasticity_SetToDruckerPrager(plasty) ;
+        Plasticity_SetTo(plasty,DruckerPrager) ;
         Plasticity_SetParameters(plasty,af,ad,cohesion) ;
       }
       */
@@ -499,7 +499,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double pc0    = Material_GetPropertyValue(mat,"initial pre-consolidation pressure") ;
         double e0     = Material_GetPropertyValue(mat,"initial void ratio") ;
         
-        Plasticity_SetToCamClay(plasty) ;
+        Plasticity_SetTo(plasty,CamClay) ;
         Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0) ;
       }
       */

@@ -23,31 +23,31 @@ static double* (Plasticity_ResidusOfGenericReturnMappingAlgorithm)(Plasticity_t*
 
 
 /* Drucker-Prager */
-#include "PlasticityModels/Plasticity_DruckerPrager.c"
+#include "PlasticityModels/PlasticityDruckerPrager.c"
 
 
 /* Cam-Clay */
-#include "PlasticityModels/Plasticity_CamClay.c"
+#include "PlasticityModels/PlasticityCamClay.c"
 
 
 /* Cam-Clay with tensile strength (offset) */
-#include "PlasticityModels/Plasticity_CamClayOffset.c"
+#include "PlasticityModels/PlasticityCamClayOffset.c"
 
 
 /* Barcelona Basic model */
-#include "PlasticityModels/Plasticity_BBM.c"
+#include "PlasticityModels/PlasticityBBM.c"
 
 
 /* NSFS model */
-#include "PlasticityModels/Plasticity_NSFS.c"
+#include "PlasticityModels/PlasticityNSFS.c"
 
 
 /* Asymmetric Cam-Clay model */
-#include "PlasticityModels/Plasticity_ACC.c"
+#include "PlasticityModels/PlasticityACC.c"
 #undef GSLLIB
 #ifdef GSLLIB
 #include <gsl/gsl_linalg.h>
-#include "PlasticityModels/Plasticity_ACCBraun.c"
+#include "PlasticityModels/PlasticityACCBraun.c"
 #endif
 
 
@@ -239,63 +239,28 @@ void  (Plasticity_Delete)(void* self)
 void Plasticity_Initialize(Plasticity_t* plasty)
 {
   
-  if(Plasticity_IsDruckerPrager(plasty)) {
-    Plasticity_GetComputeTangentStiffnessTensor(plasty) = Plasticity_CTDruckerPrager ;
-    Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMDruckerPrager ;
-    Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFDruckerPrager ;
-    Plasticity_GetFlowRules(plasty)                     = Plasticity_FRDruckerPrager ;
-    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPDruckerPrager ;
-    Plasticity_GetNbOfHardeningVariables(plasty)        = 0 ;
+  if(Plasticity_Is(plasty,DruckerPrager)) {
+    Plasticity_GetSetModelProp(plasty) = PlasticityDruckerPrager_SetModelProp ;
     
-  } else if(Plasticity_IsCamClay(plasty)) {
-    Plasticity_GetComputeTangentStiffnessTensor(plasty) = Plasticity_CTCamClay ;
-    Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMCamClay ;
-    Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFCamClay ;
-    Plasticity_GetFlowRules(plasty)                     = Plasticity_FRCamClay ;
-    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPCamClay ;
-    Plasticity_GetNbOfHardeningVariables(plasty)        = 1 ;
+  } else if(Plasticity_Is(plasty,CamClay)) {
+    Plasticity_GetSetModelProp(plasty) = PlasticityCamClay_SetModelProp ;
     
-  } else if(Plasticity_IsCamClayOffset(plasty)) {
-    Plasticity_GetComputeTangentStiffnessTensor(plasty) = Plasticity_CTCamClayOffset ;
-    Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMCamClayOffset ;
-    Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFCamClayOffset ;
-    Plasticity_GetFlowRules(plasty)                     = Plasticity_FRCamClayOffset ;
-    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPCamClayOffset ;
-    Plasticity_GetNbOfHardeningVariables(plasty)        = 2 ;
+  } else if(Plasticity_Is(plasty,CamClayOffset)) {
+    Plasticity_GetSetModelProp(plasty) = PlasticityCamClayOffset_SetModelProp ;
     
-  } else if(Plasticity_IsBBM(plasty)) {
-    Plasticity_GetComputeTangentStiffnessTensor(plasty) = Plasticity_CTBBM ;
-    Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMBBM ;
-    Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFBBM ;
-    Plasticity_GetFlowRules(plasty)                     = Plasticity_FRBBM ;
-    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPBBM ;
-    Plasticity_GetNbOfHardeningVariables(plasty)        = 2 ;
+  } else if(Plasticity_Is(plasty,BBM)) {
+    Plasticity_GetSetModelProp(plasty) = PlasticityBBM_SetModelProp ;
     
-  } else if(Plasticity_IsACC(plasty)) {
-    Plasticity_GetComputeTangentStiffnessTensor(plasty) = Plasticity_CTACC ;
-    Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMACC ;
-    Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFACC ;
-    Plasticity_GetFlowRules(plasty)                     = Plasticity_FRACC ;
-    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPACC ;
-    Plasticity_GetNbOfHardeningVariables(plasty)        = 1 ;
+  } else if(Plasticity_Is(plasty,ACC)) {
+    Plasticity_GetSetModelProp(plasty) = PlasticityACC_SetModelProp ;
     
   #ifdef GSLLIB
-  } else if(Plasticity_IsACCBraun(plasty)) {
-    Plasticity_GetComputeTangentStiffnessTensor(plasty) = Plasticity_CTACCBraun ;
-    Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMACCBraun ;
-    //Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFACCBraun ;
-    //Plasticity_GetFlowRules(plasty)                     = Plasticity_FRACCBraun ;
-    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPACCBraun ;
-    Plasticity_GetNbOfHardeningVariables(plasty)        = 1 ;
+  } else if(Plasticity_Is(plasty,ACCBraun)) {
+    Plasticity_GetSetModelProp(plasty) = PlasticityACCBraun_SetModelProp ;
   #endif
     
-  } else if(Plasticity_IsNSFS(plasty)) {
-    Plasticity_GetComputeTangentStiffnessTensor(plasty) = Plasticity_CTNSFSHao ;
-    Plasticity_GetReturnMapping(plasty)                 = Plasticity_RMNSFSHao ;
-    //Plasticity_GetYieldFunction(plasty)                 = Plasticity_YFNSFSHao ;
-    //Plasticity_GetFlowRules(plasty)                     = Plasticity_FRNSFSHao ;
-    Plasticity_GetSetParameters(plasty)                 = Plasticity_SPNSFSHao ;
-    Plasticity_GetNbOfHardeningVariables(plasty)        = 2 ;
+  } else if(Plasticity_Is(plasty,NSFS)) {
+    Plasticity_GetSetModelProp(plasty) = PlasticityNSFS_SetModelProp ;
     
   } else {
     Message_RuntimeError("Not known") ;
@@ -691,7 +656,7 @@ double* (Plasticity_DerivativeOfFlowRules)(Plasticity_t* plasty,double* (*flowru
 
 
 #if 1
-double (Plasticity_GenericTangentStiffnessTensor)(Plasticity_t* plasty,const double* stress,const double* hardv,const double dlambda)
+double (Plasticity_GenericTangentStiffnessTensor)(Plasticity_t* plasty,const double* stress,const double* hardv,const double lambda)
 /** Compute the consistent tangent stiffness tensor in a generic way
  * 
  *  Inputs are: 
@@ -765,7 +730,7 @@ double (Plasticity_GenericTangentStiffnessTensor)(Plasticity_t* plasty,const dou
     }
     
     #define INVC(i,j)    invc[(i)*9+(j)]
-    if(dlambda > 0) {
+    if(lambda > 0) {
       double* invc = Elasticity_InvertStiffnessMatrix(c) ;
 
       {
@@ -775,7 +740,7 @@ double (Plasticity_GenericTangentStiffnessTensor)(Plasticity_t* plasty,const dou
           int j ;
       
           for(j = 0 ; j < 9 ; j++) {
-            INVC(i,j) += dlambda * DFLOWSTRAINDSTRESS(i,j) ;
+            INVC(i,j) += lambda * DFLOWSTRAINDSTRESS(i,j) ;
           }
         }
       }
@@ -796,7 +761,7 @@ double (Plasticity_GenericTangentStiffnessTensor)(Plasticity_t* plasty,const dou
             int l ;
             
             for(l = 0 ; l < nhardv ; l++) {
-              D(k,l) = - dlambda * DFLOWHARDVDHARDV(k,l) ;
+              D(k,l) = - lambda * DFLOWHARDVDHARDV(k,l) ;
             }
 
             D(k,k) += 1 ;
@@ -836,7 +801,7 @@ double (Plasticity_GenericTangentStiffnessTensor)(Plasticity_t* plasty,const dou
         #undef D
 
         {
-          double dlambda2 = dlambda * dlambda ;
+          double lambda2 = lambda * lambda ;
           int k ;
               
           for(k = 0 ; k < nhardv ; k++) {
@@ -846,7 +811,7 @@ double (Plasticity_GenericTangentStiffnessTensor)(Plasticity_t* plasty,const dou
               int j ;
       
               for(j = 0 ; j < 9 ; j++) {
-                INVC(i,j) += dlambda2 * DFLOWSTRAINDHARDV(i,k)*DFLOWHARDVDSTRESS1(k,j) ;
+                INVC(i,j) += lambda2 * DFLOWSTRAINDHARDV(i,k)*DFLOWHARDVDSTRESS1(k,j) ;
               }
             }
           }
@@ -859,8 +824,8 @@ double (Plasticity_GenericTangentStiffnessTensor)(Plasticity_t* plasty,const dou
             int    i ;
     
             for(i = 0 ; i < 9 ; i++) {
-              dfsds[i] += dlambda * DYIELDDHARDV(k) * DFLOWHARDVDSTRESS1(k,i) ;
-              dgsds[i] += dlambda * DFLOWSTRAINDHARDV(i,k) * flowhardv1[k] ;
+              dfsds[i] += lambda * DYIELDDHARDV(k) * DFLOWHARDVDSTRESS1(k,i) ;
+              dgsds[i] += lambda * DFLOWSTRAINDHARDV(i,k) * flowhardv1[k] ;
             }
           }
       
@@ -902,7 +867,7 @@ double (Plasticity_GenericTangentStiffnessTensor)(Plasticity_t* plasty,const dou
 
 
 #if 1
-double* (Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm)(Plasticity_t* plasty,const double* stress,const double* hardv,const double dlambda,double* matrix)
+double* (Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm)(Plasticity_t* plasty,const double* stress,const double* hardv,const double lambda,double* matrix)
 /** Compute the jacobian matrix of the function residus 
  *  used for the return mapping algorithm. 
  *  This a (6+nhardv+1)x(6+nhardv+1) matrix associated to
@@ -967,7 +932,7 @@ double* (Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm)(Plasticity_t*
           int j ;
           
           for(j = 0 ; j < 6 ; j++) {
-            MATRIX(i,j) = invc66[6*i+j] + dlambda * DFLOWSTRAINDSTRESS[6*i+j] ;
+            MATRIX(i,j) = invc66[6*i+j] + lambda * DFLOWSTRAINDSTRESS[6*i+j] ;
           }
         }
       }
@@ -982,7 +947,7 @@ double* (Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm)(Plasticity_t*
           Elasticity_ConvertStressTensorInto6TermStressVector(dflowk) ;
           
           for(i = 0 ; i < 6 ; i++) {
-            MATRIX(i,6+k) = dlambda * dflowk[i] ;
+            MATRIX(i,6+k) = lambda * dflowk[i] ;
           }
         }
       }
@@ -1007,7 +972,7 @@ double* (Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm)(Plasticity_t*
           Elasticity_ConvertStressTensorInto6TermStressVector(dflowk) ;
           
           for(j = 0 ; j < 6 ; j++) {
-            MATRIX(6+k,j) = - dlambda * dflowk[j] ;
+            MATRIX(6+k,j) = - lambda * dflowk[j] ;
           }
         }
       }
@@ -1022,7 +987,7 @@ double* (Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm)(Plasticity_t*
           MATRIX(6+k,6+k) = 1 ;
           
           for(l = 0 ; l < nhardv ; l++) {
-            MATRIX(6+k,6+l) -= dlambda * dflowk[l] ;
+            MATRIX(6+k,6+l) -= lambda * dflowk[l] ;
           }
         }
       }
@@ -1073,7 +1038,7 @@ double* (Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm)(Plasticity_t*
 
 
 #if 1
-double* (Plasticity_ResidusOfGenericReturnMappingAlgorithm)(Plasticity_t* plasty,const double* stress,const double* hardv,const double* stress_t,const double* hardv_n,const double dlambda,double* residu)
+double* (Plasticity_ResidusOfGenericReturnMappingAlgorithm)(Plasticity_t* plasty,const double* stress,const double* hardv,const double* stress_t,const double* hardv_n,const double lambda,double* residu)
 /** Compute the residu vector used for the return mapping algorithm. 
  *  
  *  On input residu should point to an array of 9+nhardv+1 doubles.
@@ -1129,7 +1094,7 @@ double* (Plasticity_ResidusOfGenericReturnMappingAlgorithm)(Plasticity_t* plasty
         for(i = 0 ; i < 9 ; i++) {
           int j ;
           
-          RESIDUSTRAIN[i] = dlambda * FLOWSTRAIN[i] ;
+          RESIDUSTRAIN[i] = lambda * FLOWSTRAIN[i] ;
           
           for(j = 0 ; j < 9 ; j++) {
             RESIDUSTRAIN[i] += invc[9*i + j] * dstress[j] ;
@@ -1144,7 +1109,7 @@ double* (Plasticity_ResidusOfGenericReturnMappingAlgorithm)(Plasticity_t* plasty
         int k ;
         
         for(k = 0 ; k < nhardv ; k++) {
-          RESIDUHARDV[k] = hardv[k] - hardv_n[k] - dlambda * FLOWHARDV[k] ;
+          RESIDUHARDV[k] = hardv[k] - hardv_n[k] - lambda * FLOWHARDV[k] ;
         }
       }
       
@@ -1198,7 +1163,7 @@ double (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,dou
   Plasticity_YieldFunction_t* yieldfunction = Plasticity_GetYieldFunction(plasty) ;
   int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
   double yield = 0 ;
-  double dlambda = 0 ;
+  double lambda = 0 ;
   
   if(!yieldfunction) {
     arret("Plasticity_GenericReturnMapping") ;
@@ -1236,9 +1201,9 @@ double (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,dou
       #undef N
       int nmat = 6 + nhardv + 1 ;
       
-      Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm(plasty,stress,hardv,dlambda,matrix) ;
+      Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm(plasty,stress,hardv,lambda,matrix) ;
 
-      Plasticity_ResidusOfGenericReturnMappingAlgorithm(plasty,stress,hardv,stress_t,hardv_n,dlambda,residu+3) ;
+      Plasticity_ResidusOfGenericReturnMappingAlgorithm(plasty,stress,hardv,stress_t,hardv_n,lambda,residu+3) ;
 
       #if 0
       {
@@ -1285,7 +1250,7 @@ double (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,dou
           hardv[i] += residu[9+i] ;
         }
         
-        dlambda += residu[9+nhardv] ;
+        lambda += residu[9+nhardv] ;
       }
       
       /* Convergence checks */
@@ -1312,7 +1277,7 @@ double (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,dou
         #endif
         
         {
-          if(fabs(residu[9+nhardv]) > tol*fabs(dlambda)) {
+          if(fabs(residu[9+nhardv]) > tol*fabs(lambda)) {
             convergencenotattained = 1 ;
           }
         }
@@ -1329,7 +1294,7 @@ double (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,dou
           printf("hardv[%d] = %e\n",i,hardv[i]) ;
         }
         
-        printf("lambda = %e\n",dlambda) ;
+        printf("lambda = %e\n",lambda) ;
       }
       #endif
 
@@ -1343,7 +1308,7 @@ double (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,dou
     Plastic strains
   */
   
-  if(dlambda > 0) {
+  if(lambda > 0) {
     Plasticity_FlowRules_t* flowrules = Plasticity_GetFlowRules(plasty) ;
   
     if(flowrules) {
@@ -1351,7 +1316,7 @@ double (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,dou
       int    i ;
     
       for(i = 0 ; i < 9 ; i++) {
-        strain_p[i] += dlambda*flow[i] ;
+        strain_p[i] += lambda*flow[i] ;
       }
       
       Plasticity_FreeBufferFrom(plasty,flow) ;
@@ -1361,7 +1326,7 @@ double (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,dou
   }
   
   /* Plastic muliplier */
-  Plasticity_GetPlasticMultiplier(plasty) = dlambda ;
+  Plasticity_GetPlasticMultiplier(plasty) = lambda ;
   
   return(yield) ;
 }
@@ -1462,7 +1427,7 @@ double* Plasticity_DataCamclay(Plasticity_t* plasty)
     double e0 = phi0/(1 - phi0) ;
     double kappa = 0.004 ;
   
-    Plasticity_SetToCamClay(plasty) ;
+    Plasticity_SetTo(plasty,CamClay) ;
     Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0) ;
   
     {
@@ -1504,7 +1469,7 @@ double* Plasticity_DataCamclayOffset(Plasticity_t* plasty)
     double e0 = phi0/(1 - phi0) ;
     double kappa = 0.004 ;
   
-    Plasticity_SetToCamClay(plasty) ;
+    Plasticity_SetTo(plasty,CamClay) ;
     Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0) ;
   
     {
@@ -1554,7 +1519,7 @@ double* Plasticity_DataBBM(Plasticity_t* plasty)
     int n = Curves_ReadCurves(curves,"Curves = LC   pc = Range{x1 = 0 , x2 = 1.e6, n = 200} lc = Expressions(1){l0 = 0.037 ; k = 0.004 ; beta = 20.e-6 ; r = 0.75 ; lc = (l0 - k)/(l0*((1-r)*exp(-beta*pc) + r) - k)}") ;
     Curve_t* lc   = Curves_FindCurve(curves,"lc") ;
         
-    Plasticity_SetToBBM(plasty) ;
+    Plasticity_SetTo(plasty,BBM) ;
     Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0,coh,p_ref,lc) ;
   
     {

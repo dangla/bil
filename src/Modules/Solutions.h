@@ -20,6 +20,7 @@ extern void           (Solutions_MergeExplicitTerms)(Solutions_t*) ;
 extern void           (Solutions_MergeConstantTerms)(Solutions_t*) ;
 extern void           (Solutions_StepForward)(Solutions_t*) ;
 extern void           (Solutions_StepBackward)(Solutions_t*) ;
+extern void           (Solutions_InitializeMeshPointers)(Solutions_t*,Mesh_t*) ;
 
 
 #define Solutions_GetNbOfSolutions(SOLS)    ((SOLS)->n_sol)
@@ -35,6 +36,12 @@ extern void           (Solutions_StepBackward)(Solutions_t*) ;
 
 #define Solutions_GetPreviousSolution(SOLS) \
         Solution_GetPreviousSolution(Solutions_GetSolution(SOLS))
+
+#define Solutions_GetNextSolution(SOLS) \
+        Solution_GetNextSolution(Solutions_GetSolution(SOLS))
+
+#define Solutions_GetSolutionInDistantPast(SOLS,i) \
+        Solution_GetSolutionInDistantPast(Solutions_GetSolution(SOLS),i)
 
 
 /* Access to times */

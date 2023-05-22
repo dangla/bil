@@ -1,8 +1,9 @@
-static Plasticity_ComputeTangentStiffnessTensor_t    Plasticity_CTDruckerPrager ;
-static Plasticity_ReturnMapping_t                    Plasticity_RMDruckerPrager ;
-static Plasticity_YieldFunction_t                    Plasticity_YFDruckerPrager ;
-static Plasticity_FlowRules_t                        Plasticity_FRDruckerPrager ;
-static Plasticity_SetParameters_t                    Plasticity_SPDruckerPrager ;
+static Plasticity_ComputeTangentStiffnessTensor_t    PlasticityDruckerPrager_CT ;
+static Plasticity_ReturnMapping_t                    PlasticityDruckerPrager_RM ;
+static Plasticity_YieldFunction_t                    PlasticityDruckerPrager_YF ;
+static Plasticity_FlowRules_t                        PlasticityDruckerPrager_FR ;
+static Plasticity_SetParameters_t                    PlasticityDruckerPrager_SP ;
+static Plasticity_SetModelProp_t                     PlasticityDruckerPrager_SetModelProp ;
 
 
         
@@ -14,10 +15,28 @@ static Plasticity_SetParameters_t                    Plasticity_SPDruckerPrager 
         
 #define Plasticity_GetCohesion(PL) \
         Plasticity_GetParameter(PL)[2]
+        
+        
 
 
 
-void Plasticity_SPDruckerPrager(Plasticity_t* plasty,...)
+void PlasticityDruckerPrager_SetModelProp(Plasticity_t* plasty)
+{
+
+  {
+    Plasticity_GetComputeTangentStiffnessTensor(plasty) = PlasticityDruckerPrager_CT ;
+    Plasticity_GetReturnMapping(plasty)                 = PlasticityDruckerPrager_RM ;
+    Plasticity_GetYieldFunction(plasty)                 = PlasticityDruckerPrager_YF ;
+    Plasticity_GetFlowRules(plasty)                     = PlasticityDruckerPrager_FR ;
+    Plasticity_GetSetParameters(plasty)                 = PlasticityDruckerPrager_SP ;
+    Plasticity_GetNbOfHardeningVariables(plasty)        = 0 ;
+  }
+  
+}
+
+
+
+void PlasticityDruckerPrager_SP(Plasticity_t* plasty,...)
 {
   va_list args ;
   
@@ -45,7 +64,7 @@ void Plasticity_SPDruckerPrager(Plasticity_t* plasty,...)
 
 
 
-double (Plasticity_CTDruckerPrager)(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)
+double (PlasticityDruckerPrager_CT)(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)
 /** Drucker-Prager criterion. 
  * 
  *  Inputs are: 
@@ -258,7 +277,7 @@ double (Plasticity_CTDruckerPrager)(Plasticity_t* plasty,const double* sig,const
 
 
 
-double (Plasticity_RMDruckerPrager)(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
+double (PlasticityDruckerPrager_RM)(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
 /** Drucker-Prager return mapping.
  * 
  *  Parameters are:
@@ -382,7 +401,7 @@ double (Plasticity_RMDruckerPrager)(Plasticity_t* plasty,double* sig,double* eps
         }
         
         if(nf++ > 20) {
-          Message_FatalError("Plasticity_RMDruckerPrager: no convergence") ;
+          Message_FatalError("PlasticityDruckerPrager_RM: no convergence") ;
         }
       }
       
@@ -446,7 +465,7 @@ double (Plasticity_RMDruckerPrager)(Plasticity_t* plasty,double* sig,double* eps
 
 
 
-double (Plasticity_YFDruckerPrager)(Plasticity_t* plasty,const double* stress,const double* hardv)
+double (PlasticityDruckerPrager_YF)(Plasticity_t* plasty,const double* stress,const double* hardv)
 /** Return the value of the yield function. */
 {
   double af      = Plasticity_GetFrictionAngle(plasty) ;
@@ -472,7 +491,7 @@ double (Plasticity_YFDruckerPrager)(Plasticity_t* plasty,const double* stress,co
 
 
 
-double* (Plasticity_FRDruckerPrager)(Plasticity_t* plasty,const double* stress,const double* hardv)
+double* (PlasticityDruckerPrager_FR)(Plasticity_t* plasty,const double* stress,const double* hardv)
 /** Drucker-Prager criterion. 
  * 
  *  Inputs are: 

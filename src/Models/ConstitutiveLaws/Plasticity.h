@@ -11,8 +11,9 @@ struct Plasticity_s     ; typedef struct Plasticity_s     Plasticity_t ;
 typedef double  (Plasticity_ComputeTangentStiffnessTensor_t)(Plasticity_t*,const double*,const double*,const double) ;
 typedef double  (Plasticity_ReturnMapping_t)(Plasticity_t*,double*,double*,double*) ;
 typedef double  (Plasticity_YieldFunction_t)(Plasticity_t*,const double*,const double*) ;
-typedef double* (Plasticity_FlowRules_t)(Plasticity_t*,const double*,const double*) ;
+typedef double* (Plasticity_FlowRules_t)    (Plasticity_t*,const double*,const double*) ;
 typedef void    (Plasticity_SetParameters_t)(Plasticity_t*,...) ;
+typedef void    (Plasticity_SetModelProp_t) (Plasticity_t*) ;
 
 
 /* 1. Plasticity_t */
@@ -48,6 +49,7 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 #define Plasticity_GetYieldFunction(PL)              ((PL)->yieldfunction)
 #define Plasticity_GetFlowRules(PL)                  ((PL)->flowrules)
 #define Plasticity_GetSetParameters(PL)              ((PL)->setparameters)
+#define Plasticity_GetSetModelProp(PL)               ((PL)->setmodelprop)
 #define Plasticity_GetPlasticMultiplier(PL)          ((PL)->lambda)
 #define Plasticity_GetBuffers(PL)                    ((PL)->buffers)
 #define Plasticity_GetNbOfHardeningVariables(PL)     ((PL)->nhardv)
@@ -63,8 +65,8 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 
 
 #define Plasticity_MaxLengthOfKeyWord             (100)
-#define Plasticity_MaxNbOfParameters              (10)
-#define Plasticity_MaxNbOfHardeningVariables      (2)
+#define Plasticity_MaxNbOfParameters              (20)
+#define Plasticity_MaxNbOfHardeningVariables      (3)
 #define Plasticity_MaxNbOfPlasticMultiplier       (2) // Not used
 #define Plasticity_MaxNbOfCurves                  (2)
 
@@ -83,69 +85,6 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
           }\
           Plasticity_GetSetParameters(PL)(PL,__VA_ARGS__) ;\
         } while(0)
-
-
-/* Drucker-Prager
- * -------------- */
-#define Plasticity_IsDruckerPrager(PL) \
-        Plasticity_Is(PL,"Drucker-Prager")
-
-#define Plasticity_SetToDruckerPrager(PL) \
-        Plasticity_SetTo(PL,"Drucker-Prager")
-
-
-/* Cam-clay
- * -------- */
-#define Plasticity_IsCamClay(PL) \
-        Plasticity_Is(PL,"Cam-clay")
-
-#define Plasticity_SetToCamClay(PL) \
-        Plasticity_SetTo(PL,"Cam-clay")
-
-        
-/* Cam-clayOffset
- * -------------- */
-#define Plasticity_IsCamClayOffset(PL) \
-        Plasticity_Is(PL,"Cam-clayOffset")
-
-#define Plasticity_SetToCamClayOffset(PL) \
-        Plasticity_SetTo(PL,"Cam-clayOffset")
-
-
-/* Barcelona Basic model
- * --------------------- */
-#define Plasticity_IsBBM(PL) \
-        Plasticity_Is(PL,"BBM")
-
-#define Plasticity_SetToBBM(PL) \
-        Plasticity_SetTo(PL,"BBM")
-
-
-/* Asymmetric Cam-Clay model (Ph. Braun)
- * ------------------------- */
-#define Plasticity_IsACCBraun(PL) \
-        Plasticity_Is(PL,"ACCBraun")
-
-#define Plasticity_SetToACCBraun(PL) \
-        Plasticity_SetTo(PL,"ACCBraun")
-
-
-/* Asymmetric Cam-Clay model
- * ------------------------- */
-#define Plasticity_IsACC(PL) \
-        Plasticity_Is(PL,"ACC")
-
-#define Plasticity_SetToACC(PL) \
-        Plasticity_SetTo(PL,"ACC")
-
-
-/* NSFS model
- * ---------- */
-#define Plasticity_IsNSFS(PL) \
-        Plasticity_Is(PL,"NSFS")
-
-#define Plasticity_SetToNSFS(PL) \
-        Plasticity_SetTo(PL,"NSFS")
         
         
         
@@ -202,23 +141,27 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 
 #define Plasticity_FlowRules(PL,...) \
         Plasticity_GetFlowRules(PL)(PL,__VA_ARGS__)
+
+#define Plasticity_SetModelProp(PL) \
+        Plasticity_GetSetModelProp(PL)(PL)
         
 
 
 /* Implementation */
-#define Plasticity_CopyCodeName(PL,TYP) \
-        memcpy(Plasticity_GetCodeNameOfModel(PL),TYP,MAX(strlen(TYP),Plasticity_MaxLengthOfKeyWord))
+#define Plasticity_CopyCodeName(PL,STR) \
+        memcpy(Plasticity_GetCodeNameOfModel(PL),STR,MAX(strlen(STR),Plasticity_MaxLengthOfKeyWord))
 
-#define Plasticity_Is(PL,TYP) \
-        (!strcmp(Plasticity_GetCodeNameOfModel(PL),TYP))
+#define Plasticity_Is(PL,MOD) \
+        (!strcmp(Plasticity_GetCodeNameOfModel(PL),Utils_STR(MOD)))
 
-#define Plasticity_SetTo(PL,TYP) \
+#define Plasticity_SetTo(PL,MOD) \
         do { \
-          Plasticity_CopyCodeName(PL,TYP) ; \
+          Plasticity_CopyCodeName(PL,Utils_STR(MOD)) ; \
           Plasticity_Initialize(PL) ; \
+          Plasticity_SetModelProp(PL) ; \
         } while(0)
-        
-        
+          
+
 
 /* Operations on buffer */
 #define Plasticity_AllocateInBuffer(PL,sz) \
@@ -287,6 +230,7 @@ struct Plasticity_s {
   Plasticity_YieldFunction_t*                 yieldfunction ;
   Plasticity_FlowRules_t*                     flowrules ;
   Plasticity_SetParameters_t*                 setparameters ;
+  Plasticity_SetModelProp_t*                  setmodelprop ;
   Buffers_t*  buffers ;
 } ;
 

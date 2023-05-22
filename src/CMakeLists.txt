@@ -39,7 +39,9 @@ install(TARGETS ${BIL_LIB}
 include(AppendBilFiles)
 append_bil_files("${BIL_DIRSALL}" "h" BIL_HDRALL)
 install(FILES ${BIL_HDRALL} DESTINATION ${BIL_INSTALL_FULL_INCLUDEDIR})
-
+include(CreateBilHeader)
+create_bil_header("${BIL_HDRALL}" "${BIL_INCLUDEDIR}/bil.h")
+install(FILES "${BIL_INCLUDEDIR}/bil.h" DESTINATION ${BIL_INSTALL_FULL_INCLUDEDIR})
 
 
 #[[

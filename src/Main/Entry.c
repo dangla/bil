@@ -13,7 +13,7 @@
 #include "OutputFiles.h"
 #include "PosFilesForGMSH.h"
 #include "Models.h"
-#include "Bil.h"
+#include "Entry.h"
 #include "Exception.h"
 #include "BilVersion.h"
 #include "BilInfo.h"
@@ -24,49 +24,49 @@
 
 
 
-static void   (Bil_PrintUsage)(char*) ;
-static void   (Bil_PrintInfo)(void) ;
-static void   (Bil_CLI)(Bil_t*) ;
+static void   (Entry_PrintUsage)(char*) ;
+static void   (Entry_PrintInfo)(void) ;
+static void   (Entry_CLI)(Entry_t*) ;
 
 
 
-Bil_t*    (Bil_Create)(int argc,char** argv)
+Entry_t*    (Entry_Create)(int argc,char** argv)
 {
-  Bil_t* bil = (Bil_t*) Mry_New(Bil_t) ;
+  Entry_t* entry = (Entry_t*) Mry_New(Entry_t) ;
   
   Session_Open() ;
   
   {
     Context_t* ctx = Context_Create(argc,argv) ;
     
-    Bil_GetContext(bil) = ctx ;
+    Entry_GetContext(entry) = ctx ;
   }
     
   Session_Close() ;
   
-  return(bil) ;
+  return(entry) ;
 }
 
 
 
-void (Bil_Delete)(void* self)
+void (Entry_Delete)(void* self)
 {
-  Bil_t* bil = (Bil_t*) self ;
+  Entry_t* entry = (Entry_t*) self ;
   
   {
-    Context_t* ctx = Bil_GetContext(bil) ;
+    Context_t* ctx = Entry_GetContext(entry) ;
     
     if(ctx) {
       Context_Delete(ctx) ;
       free(ctx) ;
-      Bil_GetContext(bil) = NULL ;
+      Entry_GetContext(entry) = NULL ;
     }
   }
 }
 
 
 
-int (Bil_Execute)(Bil_t* bil)
+int (Entry_Execute)(Entry_t* entry)
 {
   int val = 0 ;
   
@@ -77,9 +77,9 @@ int (Bil_Execute)(Bil_t* bil)
     
     if(!val) {
       /* Command-line interface */
-      Bil_CLI(bil) ;
+      Entry_CLI(entry) ;
       /* Graphical user interface */
-      //Bil_GUI(bil) ; /* Not done yet */
+      //Entry_GUI(entry) ; /* Not done yet */
     } else {
       Message_Direct("An exception occurs with value %d\n",val) ;
     }
@@ -101,22 +101,22 @@ int (Bil_Execute)(Bil_t* bil)
 #include "HardenedCementChemistry.h"
 #include "LogActivityOfWaterInBrine.h"
 
-void Bil_CLI(Bil_t* bil)
+void Entry_CLI(Entry_t* entry)
 /** Command-line interface */
 {
-  Context_t* ctx = Bil_GetContext(bil) ;
+  Context_t* ctx = Entry_GetContext(entry) ;
 
   Message_Info("Started on %s",Message_LaunchDate()) ;
   
   if(Context_IsPrintUsage(ctx)) {
     char** argv = (char**) Context_GetPrintUsage(ctx) ;
     
-    Bil_PrintUsage(argv[0]) ;
+    Entry_PrintUsage(argv[0]) ;
     return ;
   }
   
   if(Context_IsPrintInfo(ctx)) {
-    Bil_PrintInfo() ;
+    Entry_PrintInfo() ;
     return ;
   }
   
@@ -353,7 +353,7 @@ void Bil_CLI(Bil_t* bil)
 
 
 
-void Bil_PrintUsage(char* path)
+void Entry_PrintUsage(char* path)
 {
   Message_Direct("Usage: %s [options] file\n",path) ;
   Message_Direct("\n") ;
@@ -446,7 +446,7 @@ void Bil_PrintUsage(char* path)
 
 
 
-void Bil_PrintInfo(void)
+void Entry_PrintInfo(void)
 {
   char bil_progname[]  = BIL_PROGNAME ;
   char bil_copyright[] = BIL_COPYRIGHT ;

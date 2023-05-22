@@ -18,8 +18,8 @@ NodeSol_t* (NodeSol_Create)(const int n)
   
     NodeSol_GetUnknown(nodesol) = u ;
   
-    NodeSol_GetPreviousNodeSol(nodesol) = NULL ;
-    NodeSol_GetNextNodeSol(nodesol)     = NULL ;
+    //NodeSol_GetPreviousNodeSol(nodesol) = NULL ;
+    //NodeSol_GetNextNodeSol(nodesol)     = NULL ;
   }
   
   return(nodesol) ;
@@ -39,20 +39,4 @@ void (NodeSol_Delete)(void* self)
       NodeSol_GetUnknown(nodesol) = NULL ;
     }
   }
-}
-
-
-
-NodeSol_t* (NodeSol_GetNodeSolInDistantPast)(NodeSol_t* nodesol,unsigned int dist)
-{
-  while(dist--) nodesol = NodeSol_GetPreviousNodeSol(nodesol) ;
-  return(nodesol) ;
-}
-
-
-
-NodeSol_t* (NodeSol_GetNodeSolInDistantFuture)(NodeSol_t* nodesol,unsigned int dist)
-{
-  while(dist--) nodesol = NodeSol_GetNextNodeSol(nodesol) ;
-  return(nodesol) ;
 }

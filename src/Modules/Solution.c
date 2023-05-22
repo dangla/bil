@@ -168,15 +168,16 @@ void (Solution_CopySelectedSequentialUnknowns)(Solution_t* sol_dest,Solution_t* 
 }
 
 
-#if 0
+#if 1
 Solution_t* (Solution_GetSolutionInDistantPast)(Solution_t* sol,unsigned int dist)
 {
   while(dist--) sol = Solution_GetPreviousSolution(sol) ;
   return(sol) ;
 }
+#endif
 
 
-
+#if 0
 Solution_t* (Solution_GetSolutionInDistantFuture)(Solution_t* sol,unsigned int dist)
 {
   while(dist--) sol = Solution_GetNextSolution(sol) ;

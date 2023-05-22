@@ -73,9 +73,10 @@ static double dpiesdpl(double,double,Curve_t*) ;
 
 
 #define ComputeTangentStiffnessTensor(...)  Plasticity_ComputeTangentStiffnessTensor(plasty,__VA_ARGS__)
-#define ReturnMapping(...)             Plasticity_ReturnMapping(plasty,__VA_ARGS__)
-#define CopyElasticTensor(...)         Plasticity_CopyElasticTensor(plasty,__VA_ARGS__)
-#define UpdateElastoplasticTensor(...) Plasticity_UpdateElastoplasticTensor(plasty,__VA_ARGS__)
+#define ReturnMapping(...)                  Plasticity_ReturnMapping(plasty,__VA_ARGS__)
+#define CopyElasticTensor(...)              Plasticity_CopyElasticTensor(plasty,__VA_ARGS__)
+#define UpdateElastoplasticTensor(...)      Plasticity_UpdateElastoplasticTensor(plasty,__VA_ARGS__)
+#define CopyTangentStiffnessTensor(...)     Plasticity_CopyTangentStiffnessTensor(plasty,__VA_ARGS__)
 
 
 /* Material properties */
@@ -106,7 +107,7 @@ static double  k_int ;
 static double  mu_l ;
 static double  kappa ;
 static double  mu ;
-static double  p_co0 ;
+static double  hardv0 ;
 static double  e0 ;
 static double  phi0 ;
 static Elasticity_t* elasty ;
@@ -199,12 +200,13 @@ void GetProperties(Element_t* el)
   sig0    = &Element_GetPropertyValue(el,"initial_stress") ;
   kappa   = Element_GetPropertyValue(el,"slope_of_swelling_line") ;
   mu      = Element_GetPropertyValue(el,"shear_modulus") ;
-  p_co0   = Element_GetPropertyValue(el,"initial_pre-consolidation_pressure") ;
   e0      = Element_GetPropertyValue(el,"initial_void_ratio") ;
   phi0    = e0/(1 + e0) ;
   
   plasty  = Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
   elasty  = Plasticity_GetElasticity(plasty) ;
+  
+  hardv0  = Plasticity_GetHardeningVariable(plasty)[0] ;
   
   saturationcurve = Element_FindCurve(el,"sl") ;
   relativepermcurve = Element_FindCurve(el,"kl") ;
@@ -291,7 +293,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         e0     = Material_GetPropertyValue(mat,"initial_void_ratio") ;
         kappa  = Material_GetPropertyValue(mat,"slope_of_swelling_line") ;
         
-        Plasticity_SetToCamClay(plasty) ;
+        Plasticity_SetTo(plasty,CamClay) ;
         Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0) ;
       }
     }
@@ -420,7 +422,7 @@ int ComputeInitialState(Element_t* el)
       if(DataFile_ContextIsPartialInitialization(datafile)) {
       } else {
         for(i = 0 ; i < 9 ; i++) SIG[i] = sig0[i] ;
-        HARDV = p_co0 ;
+        HARDV = hardv0 ;
       }
       
       for(i = 0 ; i < 9 ; i++) EPS_P[i]  = 0 ;
@@ -939,9 +941,10 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
           double young   = 2 * mu * (1 + poisson) ;
           
           Elasticity_SetParameters(elasty,young,poisson) ;
+          Elasticity_UpdateStiffnessTensor(elasty) ;
         }
 
-        Elasticity_ComputeStiffnessTensor(elasty,c1) ;
+        Elasticity_CopyStiffnessTensor(elasty,c1) ;
       
         {
           /* Criterion */
@@ -950,9 +953,11 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
             double p_co  = HARDV ;
             double pp_co = p_co * hc ;
             double crit1 = ComputeTangentStiffnessTensor(sig,&pp_co) ;
-            double fcg   = UpdateElastoplasticTensor(c1) ;
+            //double fcg   = UpdateElastoplasticTensor(c1) ;
           
-            if(fcg < 0) return(-1) ;
+            //if(fcg < 0) return(-1) ;
+
+            CopyTangentStiffnessTensor(c1) ;
           }
         }
       }
@@ -1193,6 +1198,13 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
         double trde      = deps[0] + deps[4] + deps[8] ;
         double sigmeff   = sigmeff_n*exp(-(1 + e0)*trde/kappa) ;
         double dsigmeff  = sigmeff - sigmeff_n ;
+        double bulk      = - sigmeff*(1 + e0)/kappa ;
+        double lame      = bulk - 2*mu/3. ;
+        double poisson   = 0.5 * lame / (lame + mu) ;
+        double young     = 2 * mu * (1 + poisson) ;
+          
+        Elasticity_SetParameters(elasty,young,poisson) ;
+        Elasticity_UpdateStiffnessTensor(elasty) ;
         
         for(i = 0 ; i < 9 ; i++) sig[i] = sigeff_n[i] + 2*mu*deps[i] ;
       
@@ -1208,12 +1220,13 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       {
         double pc    = p_g - p_l;
         double hc    = CapillaryHardening(pc) ;
-        double p_co  = x_n[I_HARDV] ;
-        double pp_co = p_co * hc ;
-        double crit  = ReturnMapping(sig,eps_p,&pp_co) ;
+        double logp_co  = x_n[I_HARDV] ;
+        double loghc = log(hc) ;
+        double logpp_co = logp_co + loghc ;
+        double crit  = ReturnMapping(sig,eps_p,&logpp_co) ;
         
         x[I_CRIT]  = crit ;
-        x[I_HARDV] = pp_co/hc ;
+        x[I_HARDV] = logpp_co - loghc ;
       }
     
       /* Total stresses */

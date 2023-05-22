@@ -448,11 +448,11 @@ enum {
 #define dPoreCrystalGrowthRate(s_c,beta,beta_p) \
         ((s_c) * dCrystalGrowthRate(ap_AFt,dp_AFt,(beta_p)/(beta)) / (beta))
 
-#define InterfaceCrystalGrowthRate(beta,beta_i) \
-        (CrystalGrowthRate(ai_AFt,di_AFt,(beta_i)/(beta)))
+#define InterfaceCrystalGrowthRate(beta,beta_r) \
+        (CrystalGrowthRate(ar_AFt,dr_AFt,(beta_r)/(beta)))
         
-#define dInterfaceCrystalGrowthRate(beta,beta_i) \
-        (dCrystalGrowthRate(ai_AFt,di_AFt,(beta_i)/(beta)) / (beta))
+#define dInterfaceCrystalGrowthRate(beta,beta_r) \
+        (dCrystalGrowthRate(ar_AFt,dr_AFt,(beta_r)/(beta)) / (beta))
 
 //#define CrystalGrowthRate(crys,diss,ateb) \
 //        ((((ateb) < 1) ? (crys) : (diss)) * (1 - (ateb)))
@@ -553,7 +553,7 @@ static double phimin = 0.01 ;
 static double r_afm,r_aft,r_c3ah6,r_csh2 ;
 static double n_ca_ref,n_si_ref,n_al_ref ;
 static double n_afm_0,n_aft_0,n_c3ah6_0,n_csh2_0 ;
-static double ai_AFt,di_AFt ;
+static double ar_AFt,dr_AFt ;
 static double RT ;
 static Curve_t* satcurve ;
 static double K_bulk ;
@@ -676,6 +676,7 @@ int pm(const char *s)
   else if(strcmp(s,"R_C3AH6") == 0)    return (14) ;
   else if(strcmp(s,"R_CSH2") == 0)     return (15) ;
   else if(strcmp(s,"A_i") == 0)        return (16) ;
+  else if(strcmp(s,"A_r") == 0)        return (16) ; /* synonym */
   else if(strcmp(s,"K_bulk") == 0)     return (17) ;
   else if(strcmp(s,"Strain0") == 0)    return (18) ;
   else if(strcmp(s,"Strainf") == 0)    return (19) ;
@@ -686,6 +687,7 @@ int pm(const char *s)
   else if(strcmp(s,"Biot") == 0)       return (24) ;
   else if(strcmp(s,"G_s") == 0)        return (25) ;
   else if(strcmp(s,"B_i") == 0)        return (26) ;
+  else if(strcmp(s,"B_r") == 0)        return (26) ; /* synonym */
   else if(strcmp(s,"B_p") == 0)        return (27) ;
   else {
     return(-1) ;
@@ -707,11 +709,9 @@ void GetProperties(Element_t* el)
   r_aft     = GetProperty("R_AFt") ;
   r_c3ah6   = GetProperty("R_C3AH6") ;
   r_csh2    = GetProperty("R_CSH2") ;
-  ai_AFt    = GetProperty("A_i") ;
   K_bulk    = GetProperty("K_bulk") ;
   strain0   = GetProperty("Strain0") ;
   strainf   = GetProperty("Strainf") ;
-  ap_AFt    = GetProperty("A_p") ;
   alphacoef = GetProperty("AlphaCoef") ;
   betacoef  = GetProperty("BetaCoef") ;
   r0        = GetProperty("r0") ;
@@ -720,7 +720,9 @@ void GetProperties(Element_t* el)
   //K_s       = K_bulk/(1-Biot) ;
   //N_Biot    = K_s/(Biot - phi0) ;
   //G_Biot    = G_s/(0.75*phi0) ;
-  di_AFt    = GetProperty("B_i") ;
+  ar_AFt    = GetProperty("A_r") ;
+  ap_AFt    = GetProperty("A_p") ;
+  dr_AFt    = GetProperty("B_r") ;
   dp_AFt    = GetProperty("B_p") ;
   
   satcurve  = Element_FindCurve(el,"S_r") ;
@@ -797,15 +799,15 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
     Material_GetProperty(mat)[pm("BetaCoef")]  = 0 ;
     Material_GetProperty(mat)[pm("r0")] = 16*nm ;
     
-    Material_GetProperty(mat)[pm("B_i")] = -1 ;
+    Material_GetProperty(mat)[pm("B_r")] = -1 ;
     Material_GetProperty(mat)[pm("B_p")] = -1 ;
 
     Material_ScanProperties(mat,datafile,pm) ;
     
-    if(Material_GetProperty(mat)[pm("B_i")] < 0) {
-      double c = Material_GetProperty(mat)[pm("A_i")] ;
+    if(Material_GetProperty(mat)[pm("B_r")] < 0) {
+      double c = Material_GetProperty(mat)[pm("A_r")] ;
       
-      Material_GetProperty(mat)[pm("B_i")] = c ;
+      Material_GetProperty(mat)[pm("B_r")] = c ;
     }
     
     if(Material_GetProperty(mat)[pm("B_p")] < 0) {
@@ -2356,10 +2358,10 @@ double Radius(double r_n,double beta,double dt,Element_t* el)
   
   {
     double s_ln     = LiquidSaturationDegree(r_n) ;
-    //double beta_i_in  = InterfaceEquilibriumSaturationIndex(r_n) ;
-    double beta_i_min = InterfaceEquilibriumSaturationIndex(r_max) ;
-    //double beta_i_inf = (beta > beta_i_min) ? beta : beta_i_min ;
-    double r_inf = (beta > beta_i_min) ? InverseOfInterfaceEquilibriumSaturationIndex(beta) : r_max ;
+    //double beta_r_in  = InterfaceEquilibriumSaturationIndex(r_n) ;
+    double beta_r_min = InterfaceEquilibriumSaturationIndex(r_max) ;
+    //double beta_r_inf = (beta > beta_r_min) ? beta : beta_r_min ;
+    double r_inf = (beta > beta_r_min) ? InverseOfInterfaceEquilibriumSaturationIndex(beta) : r_max ;
     //double s_linf  = LiquidSaturationDegree(r_inf) ;
     int iterations = 40 ;
     double tol = 1.e-6 ;
@@ -2368,9 +2370,9 @@ double Radius(double r_n,double beta,double dt,Element_t* el)
     if(r_n == r_inf) return(r_n) ;
     
     for(i = 0 ; i < iterations ; i++) {
-      double beta_i  =  InterfaceEquilibriumSaturationIndex(r) ;
-      double dbeta_i = dInterfaceEquilibriumSaturationIndex(r) ;
-      //double dbeta_i = (beta_i_inf - beta_i_in)/(r_inf - r_n) ;
+      double beta_r  =  InterfaceEquilibriumSaturationIndex(r) ;
+      double dbeta_r = dInterfaceEquilibriumSaturationIndex(r) ;
+      //double dbeta_r = (beta_r_inf - beta_r_in)/(r_inf - r_n) ;
       
       double s_l   =  LiquidSaturationDegree(r) ;
       double ds_l  = dLiquidSaturationDegree(r) ;
@@ -2378,8 +2380,8 @@ double Radius(double r_n,double beta,double dt,Element_t* el)
       
       /* Kinetic law */
       /* Modified 03/06/2017 */
-      double  scrate =  InterfaceCrystalGrowthRate(beta,beta_i) ;
-      double dscrate = dInterfaceCrystalGrowthRate(beta,beta_i)*dbeta_i ;
+      double  scrate =  InterfaceCrystalGrowthRate(beta,beta_r) ;
+      double dscrate = dInterfaceCrystalGrowthRate(beta,beta_r)*dbeta_r ;
       double  eq   =  s_l - s_ln + dt*scrate ;
       double deq   = ds_l        + dt*dscrate ;
       
@@ -2428,7 +2430,7 @@ double Radius(double r_n,double beta,double dt,Element_t* el)
         printf("s_linf = %e, ",s_linf) ;
         printf("s_l    = %e\n",s_l) ;
         printf("ds_l   = %e, ",ds_l) ;
-        printf("dbeta_i= %e\n",dbeta_i) ;
+        printf("dbeta_r= %e\n",dbeta_r) ;
         printf("r_n    = %e, ",r_n) ;
         printf("r_inf  = %e, ",r_inf) ;
         printf("r      = %e\n",r) ;

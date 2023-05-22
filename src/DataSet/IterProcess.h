@@ -58,11 +58,11 @@ extern void            (IterProcess_PrintCurrentError)(IterProcess_t*) ;
 
 
 /* Operations on convergence */
-#define IterProcess_ConvergenceIsMet(IPR) \
+#define IterProcess_ConvergenceIsAttained(IPR) \
         (IterProcess_GetCurrentError(IPR) < IterProcess_GetTolerance(IPR))
 
-#define IterProcess_ConvergenceIsNotMet(IPR) \
-        (!IterProcess_ConvergenceIsMet(IPR))
+#define IterProcess_ConvergenceIsNotAttained(IPR) \
+        (!IterProcess_ConvergenceIsAttained(IPR))
 
 
 /* Error on which unknown? */

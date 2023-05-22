@@ -1,9 +1,10 @@
 /* Modified Cam-Clay model with NFSF theory*/
 
 /* Hao */
-static Plasticity_ComputeTangentStiffnessTensor_t    Plasticity_CTNSFSHao;
-static Plasticity_ReturnMapping_t                    Plasticity_RMNSFSHao;
-static Plasticity_SetParameters_t                    Plasticity_SPNSFSHao ;
+static Plasticity_ComputeTangentStiffnessTensor_t    PlasticityNSFS_CT;
+static Plasticity_ReturnMapping_t                    PlasticityNSFS_RM;
+static Plasticity_SetParameters_t                    PlasticityNSFS_SP ;
+static Plasticity_SetModelProp_t                     PlasticityNSFS_SetModelProp ;
 
 
 #define Plasticity_GetSlopeSwellingLine(PL) \
@@ -37,12 +38,30 @@ static Plasticity_SetParameters_t                    Plasticity_SPNSFSHao ;
         Curves_GetCurve(Plasticity_GetCurves(PL))
         
 #define Plasticity_GetSaturationDegreeCurve(PL) \
-        Curves_GetCurve(Plasticity_GetCurves(PL) + 1)
+        (Curves_GetCurve(Plasticity_GetCurves(PL)) + 1)
+        
+        
+
+
+
+void PlasticityNSFS_SetModelProp(Plasticity_t* plasty)
+{
+  
+  {
+    Plasticity_GetComputeTangentStiffnessTensor(plasty) = PlasticityNSFS_CT ;
+    Plasticity_GetReturnMapping(plasty)                 = PlasticityNSFS_RM ;
+    //Plasticity_GetYieldFunction(plasty)                 = PlasticityNSFS_YF ;
+    //Plasticity_GetFlowRules(plasty)                     = PlasticityNSFS_FR ;
+    Plasticity_GetSetParameters(plasty)                 = PlasticityNSFS_SP ;
+    Plasticity_GetNbOfHardeningVariables(plasty)        = 3 ;
+  }
+  
+}
 
 
 
 
-void Plasticity_SPNSFSHao(Plasticity_t* plasty,...)
+void PlasticityNSFS_SP(Plasticity_t* plasty,...)
 {
   va_list args ;
   
@@ -89,7 +108,7 @@ void Plasticity_SPNSFSHao(Plasticity_t* plasty,...)
 
 
 
-double Plasticity_CTNSFSHao(Plasticity_t* plasty, const double* sig, const double* hardv, const double dlambda)
+double PlasticityNSFS_CT(Plasticity_t* plasty, const double* sig, const double* hardv, const double dlambda)
 /** Modified Cam-Clay criterion */
 {
     double m = Plasticity_GetSlopeCriticalStateLine(plasty);
@@ -100,18 +119,18 @@ double Plasticity_CTNSFSHao(Plasticity_t* plasty, const double* sig, const doubl
     double* dfsds = Plasticity_GetYieldFunctionGradient(plasty);
     double* dgsds = Plasticity_GetPotentialFunctionGradient(plasty);
     double* hm = Plasticity_GetHardeningModulus(plasty);
-	
-	double p_c     = Plasticity_GetReferenceConsolidationPressure(plasty) ;
-	Curve_t* lc    = Plasticity_GetLoadingCollapseFactorCurve(plasty) ;
+  
+  double p_c     = Plasticity_GetReferenceConsolidationPressure(plasty) ;
+  Curve_t* lc    = Plasticity_GetLoadingCollapseFactorCurve(plasty) ;
     Curve_t* sl    = Plasticity_GetSaturationDegreeCurve(plasty) ;
-	
+  
     double pc0 = hardv[0]; /* pc0 */
-	double s  = hardv[1];
-	double sl_s = Curve_ComputeValue(sl,s) ;
+  double s  = hardv[1];
+  double sl_s = Curve_ComputeValue(sl,s) ;
     double lc_s = Curve_ComputeValue(lc,s) ;
-	double ps   = sl_s*s ;
-	double pc_b = p_c * pow(pc0/p_c,lc_s);
-	double pc_p = pc_b + ps; 
+  double ps   = sl_s*s ;
+  double pc_b = p_c * pow(pc0/p_c,lc_s);
+  double pc_p = pc_b + ps; 
     double m2 = m*m;
     //double beta    = 1 ;
 
@@ -236,7 +255,7 @@ double Plasticity_CTNSFSHao(Plasticity_t* plasty, const double* sig, const doubl
 
 
 
-double Plasticity_RMNSFSHao(Plasticity_t* plasty, double* sig, double* eps_p, double* hardv)
+double PlasticityNSFS_RM(Plasticity_t* plasty, double* sig, double* eps_p, double* hardv)
 /** Modified NFSF Cam-Clay return mapping.
  *  Algorithm from Borja & Lee 1990 modified by Wang.
  *
@@ -264,13 +283,13 @@ double Plasticity_RMNSFSHao(Plasticity_t* plasty, double* sig, double* eps_p, do
     double young = Elasticity_GetYoungModulus(elasty);
     double poisson = Elasticity_GetPoissonRatio(elasty);
     double mu = 0.5 * young / (1 + poisson);
-	double bulk  =  young / (1 - 2*poisson)/3;
+  double bulk  =  young / (1 - 2*poisson)/3;
     double m = Plasticity_GetSlopeCriticalStateLine(plasty);
     double kappa = Plasticity_GetSlopeSwellingLine(plasty);
     double lambda = Plasticity_GetSlopeVirginConsolidationLine(plasty);
     double e0 = Plasticity_GetInitialVoidRatio(plasty);
-	
-	double p_c     = Plasticity_GetReferenceConsolidationPressure(plasty) ;	
+  
+  double p_c     = Plasticity_GetReferenceConsolidationPressure(plasty) ; 
     Curve_t* lc    = Plasticity_GetLoadingCollapseFactorCurve(plasty) ;
     Curve_t* sl    = Plasticity_GetSaturationDegreeCurve(plasty) ;
     //double pc0     = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
@@ -279,10 +298,10 @@ double Plasticity_RMNSFSHao(Plasticity_t* plasty, double* sig, double* eps_p, do
     double dt = hardv[2];
     double sl_s = Curve_ComputeValue(sl,s) ;
     double lc_s = Curve_ComputeValue(lc,s) ;
-	double ps   = sl_s*s ;
-	double pc_b = p_c * pow(pc0/p_c,lc_s);
-	double pc_p = pc_b + ps; 	
-	
+  double ps   = sl_s*s ;
+  double pc_b = p_c * pow(pc0/p_c,lc_s);
+  double pc_p = pc_b + ps;  
+  
     double phi0 = e0 / (1 + e0);
     double m2 = m * m;
     double v = 1. / (lambda - kappa);
@@ -294,13 +313,13 @@ double Plasticity_RMNSFSHao(Plasticity_t* plasty, double* sig, double* eps_p, do
     double CA = Plasticity_GetViscousExponent(plasty); // These parameters need to be identified from experiments.
     double epsr_pr = Plasticity_GetReferenceStrainRate(plasty);
     double p_pr = Plasticity_GetInitialPreconsolidationPressure(plasty); /* The initial Preconsolidation Pressure  
-	is taken as the reference one */
+  is taken as the reference one */
 
     double id[9] = { 1,0,0,0,1,0,0,0,1 };
     double p, q, crit;
     double p_t, q_t;
     double dl;
-	
+  
     /* To call the the eps_pv value at the previous time step.*/
     double eps_pv = eps_p[0] + eps_p[4] + eps_p[8]; //viscoplastic volumetric strain
     double eps_pv_t = eps_pv;
@@ -325,7 +344,7 @@ double Plasticity_RMNSFSHao(Plasticity_t* plasty, double* sig, double* eps_p, do
     
 
 
-    if (crit > 0.) {
+    if (crit > 0. && dt > 0) {
         double pc_n = pc_p; // pc_p = pc in Camclay
         double fcrit = crit;
         int nf = 0;
@@ -354,8 +373,8 @@ double Plasticity_RMNSFSHao(Plasticity_t* plasty, double* sig, double* eps_p, do
              * should be equal to the decrease of elastic volumetric strain induced by the decrease
              * of effective mean p. During the iteration, the influence of viscoplastic
              * volumetric strain rate is contained.
-             */			
-						 
+             */     
+             
             double dpc_psdp = pc_b * lc_s * ( - v / (1 - phi0)  + CA / Math_Max(dt*epsr_pvr, eps_pv - eps_pv_t) )/ bulk; // i.e., dpc_r-dp
 
 
@@ -419,8 +438,8 @@ double Plasticity_RMNSFSHao(Plasticity_t* plasty, double* sig, double* eps_p, do
       
             // To calculate pc0 with the complete format
             pc0 = p_pr * pow(epsr_pvr / epsr_pr, CA) * exp(-v / (1 - phi0) * eps_pv);
-	        pc_b = p_c * pow(pc0/p_c,lc_s);
-	        pc_p = pc_b + ps;
+          pc_b = p_c * pow(pc0/p_c,lc_s);
+          pc_p = pc_b + ps;
 
             dl = (p - p_t) / bulk / (2 * p + pc_p);
             q = q_t * m2 / (m2 + 6 * mu * dl);
@@ -452,8 +471,6 @@ double Plasticity_RMNSFSHao(Plasticity_t* plasty, double* sig, double* eps_p, do
 
     /* Consolidation pressure parameters */
     hardv[0] = pc0;
-	hardv[1] = s;
-    hardv[2] = dt;
 
     /* Plastic muliplier */
     Plasticity_GetPlasticMultiplier(plasty) = dl;

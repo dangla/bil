@@ -1,9 +1,70 @@
-static Damage_ComputeTangentStiffnessTensor_t    Damage_CTMazars ;
-static Damage_ReturnMapping_t                    Damage_RMMazars ;
+static Damage_ComputeTangentStiffnessTensor_t    DamageMazars_CT ;
+static Damage_ReturnMapping_t                    DamageMazars_RM ;
+static Damage_SetParameters_t                    DamageMazars_SP ;
 
 
 
-double Damage_CTMazars(Damage_t* damage,const double* strain,const double* d,const double* hardv)
+        
+#define Damage_GetStrainAtUniaxialTensileStrength(D) \
+        Damage_GetParameter(D)[0]
+        
+#define Damage_GetA_t(D) \
+        Damage_GetParameter(D)[1]
+        
+#define Damage_GetB_t(D) \
+        Damage_GetParameter(D)[2]
+        
+#define Damage_GetA_c(D) \
+        Damage_GetParameter(D)[3]
+        
+#define Damage_GetB_c(D) \
+        Damage_GetParameter(D)[4]
+
+
+
+void DamageMazars_SetModelProp(Damage_t* damage)
+{
+  
+  {
+    Damage_GetComputeTangentStiffnessTensor(damage) = DamageMazars_CT ;
+    Damage_GetReturnMapping(damage)                 = DamageMazars_RM ;
+    Damage_GetSetParameters(damage)                 = DamageMazars_SP ;
+      
+  }
+  
+}
+        
+
+
+void DamageMazars_SP(Damage_t* damage,...)
+{
+  va_list args ;
+  
+  va_start(args,damage) ;
+  
+  {
+    double strain0  = va_arg(args,double) ;
+    double A_c  = va_arg(args,double) ;
+    double A_t  = va_arg(args,double) ;
+    double B_c  = va_arg(args,double) ;
+    double B_t  = va_arg(args,double) ;
+    
+    Damage_GetStrainAtUniaxialTensileStrength(damage) = strain0 ;
+    Damage_GetA_c(damage)  = A_c ;
+    Damage_GetA_t(damage)  = A_t ;
+    Damage_GetB_c(damage)  = B_c ;
+    Damage_GetB_t(damage)  = B_t ;
+    
+    Damage_GetHardeningVariable(damage)[0] = strain0 ;
+    
+  }
+
+  va_end(args) ;
+}
+
+
+
+double DamageMazars_CT(Damage_t* damage,const double* strain,const double* d,const double* hardv)
 /** Mazars criterion.
  *  J. Mazars, A description of micro- and macroscale damage of concrete structures,
  *  Engineering Fracture Mechanics (1986), 25(5/6): 729-737.
@@ -191,7 +252,7 @@ double Damage_CTMazars(Damage_t* damage,const double* strain,const double* d,con
 
 
 
-double Damage_RMMazars(Damage_t* damage,double* strain,double* d,double* hardv)
+double DamageMazars_RM(Damage_t* damage,double* strain,double* d,double* hardv)
 /** Mazars return mapping.
  *  Inputs are:
  *  the strains (strain), 

@@ -39,9 +39,10 @@ include(SetBilInfos)
 
 # Directories of Bil
 # ------------------
-set(BIL_LIBDIR ${BIL_PATH}/lib)
-set(BIL_BINDIR ${BIL_PATH}/bin)
-set(BIL_SRCDIR ${BIL_PATH}/src)
+set(BIL_LIBDIR     ${BIL_PATH}/lib)
+set(BIL_BINDIR     ${BIL_PATH}/bin)
+set(BIL_SRCDIR     ${BIL_PATH}/src)
+set(BIL_INCLUDEDIR ${BIL_PATH}/include)
 
 
 # Installation directories

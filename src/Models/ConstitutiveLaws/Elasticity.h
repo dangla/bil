@@ -12,7 +12,6 @@ struct Elasticity_s     ; typedef struct Elasticity_s     Elasticity_t ;
 extern Elasticity_t*  (Elasticity_Create)(void) ;
 extern void           (Elasticity_Delete)(void*) ;
 extern void           (Elasticity_SetParameters)           (Elasticity_t*,...) ;
-extern void           (Elasticity_SetParameter)            (Elasticity_t*,const char*,double) ;
 extern double*        (Elasticity_ComputeStiffnessTensor)  (Elasticity_t*,double*) ;
 extern double*        (Elasticity_CopyStiffnessTensor)     (Elasticity_t*,double*) ;
 extern double*        (Elasticity_CopyComplianceTensor)    (Elasticity_t*,double*) ;

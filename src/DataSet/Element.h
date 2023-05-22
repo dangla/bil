@@ -13,7 +13,7 @@ typedef Element_t*        Element_tt ;
 #include "Mesh.h"
 #include "Node.h"
 
-extern void     (Element_AllocateSolutions)(Element_t*,Mesh_t*,const int) ;
+extern void     (Element_AllocateMicrostructureSolutions)       (Element_t*,Mesh_t*,const int) ;
 extern double** (Element_ComputePointerToCurrentNodalUnknowns)  (Element_t*) ;
 extern double** (Element_ComputePointerToPreviousNodalUnknowns) (Element_t*) ;
 extern double*  (Element_ComputeCurrentNodalUnknowns)           (Element_t*) ;
@@ -76,8 +76,9 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
 //#define Element_GetNbOfImplicitTerms(ELT)      ((ELT)->n_vi)
 //#define Element_GetNbOfExplicitTerms(ELT)      ((ELT)->n_ve)
 //#define Element_GetNbOfConstantTerms(ELT)      ((ELT)->nbofconstterms)
-#define Element_GetElementSol(ELT)             ((ELT)->sol)
+//#define Element_GetElementSol(ELT)             ((ELT)->sol)
 #define Element_GetBuffers(ELT)                ((ELT)->buffers)
+#define Element_GetSolutions(ELT)              ((ELT)->solutions)
 
 
 
@@ -99,12 +100,21 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
 
 
 
-/* Access to elementsol */
-#define Element_GetPreviousElementSol(ELT) \
-        ElementSol_GetPreviousElementSol(Element_GetElementSol(ELT))
+/* Access to solution */
+#define Element_GetSolution(ELT) \
+        Solutions_GetSolution(Element_GetSolutions(ELT))
         
-#define Element_GetNextElementSol(ELT) \
-        ElementSol_GetNextElementSol(Element_GetElementSol(ELT))
+#define Element_GetPreviousSolution(ELT) \
+        Solution_GetPreviousSolution(Element_GetSolution(ELT))
+
+
+
+/* Access to elementsol */
+#define Element_GetElementSol(ELT) \
+        (Solution_GetElementSol(Element_GetSolution(ELT)) + Element_GetElementIndex(ELT))
+
+#define Element_GetPreviousElementSol(ELT) \
+        (Solution_GetElementSol(Element_GetPreviousSolution(ELT)) + Element_GetElementIndex(ELT))
 
 
 
@@ -364,6 +374,26 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
 
 
 
+/* The time, time step and step index */
+#define Element_GetTime(ELT) \
+        Solution_GetTime(Element_GetSolution(ELT))
+        
+#define Element_GetTimeStep(ELT) \
+        Solution_GetTimeStep(Element_GetSolution(ELT))
+        
+#define Element_GetStepIndex(ELT) \
+        Solution_GetStepIndex(Element_GetSolution(ELT))
+        
+#define Element_GetPreviousTime(ELT) \
+        Solution_GetTime(Element_GetPreviousSolution(ELT))
+        
+#define Element_GetPreviousTimeStep(ELT) \
+        Solution_GetTimeStep(Element_GetPreviousSolution(ELT))
+        
+#define Element_GetPreviousStepIndex(ELT) \
+        Solution_GetStepIndex(Element_GetPreviousSolution(ELT))
+
+
 
 #include "IntFct.h"
 
@@ -378,6 +408,7 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
 #include "Material.h"
 #include "Buffers.h"
 #include "ElementSol.h"
+#include "Solutions.h"
 
 
 struct Element_s {            /* element */
@@ -396,8 +427,9 @@ struct Element_s {            /* element */
   unsigned int n_vi ;         /* Nb of implicit terms */
   unsigned int n_ve ;         /* Nb of explicit terms */
 //  unsigned int nbofconstterms ;   /* Nb of constant terms */
-  ElementSol_t* sol ;         /* Element Solution */
+  //ElementSol_t* sol ;         /* Element Solution */
   Buffers_t*  buffers ;       /* Buffers */
+  Solutions_t* solutions ;    /* Pointer to the global solutions */
 } ;
 
 

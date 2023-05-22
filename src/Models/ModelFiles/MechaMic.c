@@ -321,10 +321,10 @@ int PrintModelProp(Model_t* model,FILE *ficd)
 
 
 /* The current and the previous solutions */
-#define Element_GetCurrentSolutions(EL) \
+#define Element_GetCurrentLocalSolutions(EL) \
         ((Solutions_t*) Element_FindCurrentImplicitData(EL,Solutions_t,"Solutions"))
 
-#define Element_GetPreviousSolutions(EL) \
+#define Element_GetPreviousLocalSolutions(EL) \
         ((Solutions_t*) Element_FindPreviousImplicitData(EL,Solutions_t,"Solutions"))
 
 
@@ -361,7 +361,7 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
     
     /* Store "sols" for the whole history */
     
-    Element_AllocateSolutions(el,mesh,nsol_micro) ;
+    Element_AllocateMicrostructureSolutions(el,mesh,nsol_micro) ;
   }
   
 
@@ -370,10 +370,12 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
     /* Merging explicit terms (not essential!) */
     #if 0
     {
-      ElementSol_t* elementsol = Element_GetElementSol(el) ;
+      int ie = Element_GetElementIndex(el) ;
+      Solution_t* solution = Element_GetSolution(el) ;
 
-      if(elementsol) {
+      if(solution) {
         do {
+          ElementSol_t* elementsol = Solution_GetElementSol(solution) + ie ;
           Solutions_t* sols = ElementSol_FindImplicitData(elementsol,Solutions_t,"Solutions") ;
           
           {
@@ -383,9 +385,9 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
               Solutions_MergeExplicitTerms(sols + i) ;
             }
           }
-        
-          elementsol = ElementSol_GetPreviousElementSol(elementsol) ;
-        } while(elementsol != Element_GetElementSol(el)) ;
+
+          solution = Solution_GetPreviousSolution(solution) ;
+        } while(solution != Element_GetSolution(el)) ;
       }
     }
     #endif
@@ -427,7 +429,7 @@ int ComputeInitialState(Element_t* el,double t)
   double** u   = Element_ComputePointerToNodalUnknowns(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-  Solutions_t* sols = Element_GetCurrentSolutions(el) ;
+  Solutions_t* sols = Element_GetCurrentLocalSolutions(el) ;
   int    p ;
   
   /* We skip if the element is a submanifold */
@@ -485,7 +487,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
   double* vim_n  = Element_GetPreviousImplicitTerm(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  Solutions_t* sols_n = Element_GetPreviousSolutions(el) ;
+  Solutions_t* sols_n = Element_GetPreviousLocalSolutions(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
   int    p ;
@@ -740,7 +742,7 @@ int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
   DataSet_t* dataset = Element_GetDataSet(el) ;
   DataFile_t* df = DataSet_GetDataFile(dataset) ;
   Solvers_t* solvers = Element_GetSolvers(el) ;
-  Solutions_t* sols   = Element_GetCurrentSolutions(el) ;
+  Solutions_t* sols   = Element_GetCurrentLocalSolutions(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
   int    dec = 81 ;
@@ -870,7 +872,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,Solut
   }
   
   {
-    Solutions_t* sols = Element_GetCurrentSolutions(el) ;
+    Solutions_t* sols = Element_GetCurrentLocalSolutions(el) ;
     
     ComputeSecondaryVariables(el,t,dt,x_n,x,sols_n + p,sols + p) ;
   }
@@ -999,8 +1001,8 @@ int ComputeTangentCoefficients1(FEM_t* fem,double t,double dt,double* c)
     double* vim_n  = Element_GetPreviousImplicitTerm(el) ;
     double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
     double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-    Solutions_t* sols   = Element_GetCurrentSolutions(el) ;
-    Solutions_t* sols_n = Element_GetPreviousSolutions(el) ;
+    Solutions_t* sols   = Element_GetCurrentLocalSolutions(el) ;
+    Solutions_t* sols_n = Element_GetPreviousLocalSolutions(el) ;
     IntFct_t*  intfct = Element_GetIntFct(el) ;
     int np = IntFct_GetNbOfPoints(intfct) ;
     int    p ;
