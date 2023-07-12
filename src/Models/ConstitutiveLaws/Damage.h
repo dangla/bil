@@ -100,8 +100,8 @@ extern void           (Damage_CopyDamagedStiffnessTensor)  (Damage_t*,double*) ;
 #define Damage_CopyCodeName(D,STR) \
         memcpy(Damage_GetCodeNameOfModel(D),STR,MAX(strlen(STR),Damage_MaxLengthOfKeyWord))
 
-#define Damage_Is(D,MOD) \
-        (!strcmp(Damage_GetCodeNameOfModel(D),Utils_STR(MOD)))
+#define Damage_Is(D,STR) \
+        (!strcmp(Damage_GetCodeNameOfModel(D),STR))
 
 
 #define Damage_SetTo(D,MOD) \

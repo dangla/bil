@@ -11,6 +11,8 @@ enum MatrixStorageFormat_e {        /* format of the matrix to be stored */
   MatrixStorageFormat_NC = MatrixStorageFormat_CCS,
   MatrixStorageFormat_CRS,          /* Compressed row storage format */
   MatrixStorageFormat_Coordinate,   /* Coordinate format */
+  MatrixStorageFormat_CSR,          /* Compressed sparse row format */
+  MatrixStorageFormat_PETSCAIJ,     /* PETSc AIJ format (same as CSR) */
   MatrixStorageFormat_NULL
 } ;
 

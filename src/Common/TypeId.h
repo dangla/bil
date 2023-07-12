@@ -99,6 +99,9 @@ enum TypeId_e {
   TypeId_dScalePermstruct_t,
   TypeId_dLUstruct_t,
   TypeId_gridinfo_t,
+  /* from Petsc */
+  TypeId_KSP,
+  TypeId_PC,
   /* The end */
   TypeId_last
 } ;

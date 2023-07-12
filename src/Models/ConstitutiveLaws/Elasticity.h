@@ -60,7 +60,7 @@ extern double*        (Elasticity_Convert6TermStressVectorIntoStressTensor)(doub
         Elasticity_GetParameter(EL)[3]
 
 
-/* Transversely isotropy */
+/* Transverse isotropy */
 #define Elasticity_IsTransverselyIsotropic(EL) \
         (!strcmp(Elasticity_GetType(EL),"transiso"))
         
@@ -108,7 +108,10 @@ extern double*        (Elasticity_Convert6TermStressVectorIntoStressTensor)(doub
 
 
 #define Elasticity_UpdateComplianceTensor(EL) \
-        Elasticity_ComputeComplianceTensor(EL,Elasticity_GetComplianceTensor(EL))
+        do {\
+          Elasticity_CopyStiffnessTensor(EL,Elasticity_GetComplianceTensor(EL)) ;\
+          Elasticity_InvertStiffnessMatrix(Elasticity_GetComplianceTensor(EL)) ;\
+        } while(0)
 
 
 #define Elasticity_UpdateStiffnessTensor(EL) \

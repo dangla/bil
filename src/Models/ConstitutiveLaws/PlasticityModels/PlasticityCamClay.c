@@ -71,7 +71,7 @@ void PlasticityCamClay_SP(Plasticity_t* plasty,...)
 
 
 
-double (PlasticityCamClay_CT)(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)
+double* (PlasticityCamClay_CT)(Plasticity_t* plasty,const double* sig,const double* hardv,const double* plambda)
 /** Modified Cam-Clay criterion.
  * 
  *  Inputs are: 
@@ -91,6 +91,7 @@ double (PlasticityCamClay_CT)(Plasticity_t* plasty,const double* sig,const doubl
  *  Return the value of the yield function. 
  **/
 {
+  double* yield  = Plasticity_GetCriterionValue(plasty) ;
   double m       = Plasticity_GetSlopeCriticalStateLine(plasty) ;
   double kappa   = Plasticity_GetSlopeSwellingLine(plasty) ;
   double lambda  = Plasticity_GetSlopeVirginConsolidationLine(plasty) ;
@@ -104,6 +105,7 @@ double (PlasticityCamClay_CT)(Plasticity_t* plasty,const double* sig,const doubl
   
   double id[9] = {1,0,0,0,1,0,0,0,1} ;
   double p,q,crit ;
+  double dlambda = (plambda) ? plambda[0] : 0 ;
   
   /* 
      The yield criterion
@@ -218,12 +220,14 @@ double (PlasticityCamClay_CT)(Plasticity_t* plasty,const double* sig,const doubl
     Plasticity_UpdateElastoplasticTensor(plasty,c) ;
   }
   
-  return(crit) ;
+  yield[0] = crit ;
+  
+  return(yield) ;
 }
 
 
 
-double (PlasticityCamClay_RM)(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
+double* (PlasticityCamClay_RM)(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
 /** Modified Cam-Clay return mapping.
  *  Algorithm from Borja & Lee 1990 modified by Dangla.
  * 
@@ -243,6 +247,7 @@ double (PlasticityCamClay_RM)(Plasticity_t* plasty,double* sig,double* eps_p,dou
  *  Return the value of the yield function. 
  **/
 {
+  double* yield  = Plasticity_GetCriterionValue(plasty) ;
   Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
   double bulk    = Elasticity_GetBulkModulus(elasty) ;
   double mu      = Elasticity_GetShearModulus(elasty) ;
@@ -363,24 +368,28 @@ double (PlasticityCamClay_RM)(Plasticity_t* plasty,double* sig,double* eps_p,dou
   hardv[0] = log(pc) ;
   
   /* Plastic muliplier */
-  Plasticity_GetPlasticMultiplier(plasty) = dl ;
+  Plasticity_GetPlasticMultiplier(plasty)[0] = dl ;
   
-  return(crit) ;
+  yield[0] = crit ;
+  return(yield) ;
 }
 
 
 
 
-double (PlasticityCamClay_YF)(Plasticity_t* plasty,const double* stress,const double* hardv)
+double* (PlasticityCamClay_YF)(Plasticity_t* plasty,const double* stress,const double* hardv)
 /** Return the value of the yield function. 
  **/
 {
+  size_t SizeNeeded = sizeof(double) ;
+  double* yield   = (double*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
   double m     = Plasticity_GetSlopeCriticalStateLine(plasty) ;
   double pc    = exp(hardv[0]) ;
   double m2    = m*m ;
   double p     = (stress[0] + stress[4] + stress[8])/3. ;
   double q     = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
-  double yield = q*q/m2 + p*(p + pc) ;
+  
+  yield[0] = q*q/m2 + p*(p + pc) ;
   
   return(yield) ;
 }
@@ -459,3 +468,11 @@ double* (PlasticityCamClay_FR)(Plasticity_t* plasty,const double* stress,const d
   
   return(flow) ;
 }
+
+
+
+#undef Plasticity_GetSlopeSwellingLine
+#undef Plasticity_GetSlopeVirginConsolidationLine
+#undef Plasticity_GetSlopeCriticalStateLine
+#undef Plasticity_GetInitialPreconsolidationPressure
+#undef Plasticity_GetInitialVoidRatio

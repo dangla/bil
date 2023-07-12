@@ -2428,12 +2428,14 @@ double* (FEM_ComputeLinearStrainTensor)(FEM_t* fem,double** u,IntFct_t* intfct,i
             double* x = Element_GetNodeCoordinate(el,i) ;
           
             radius += h[i]*x[0] ;
-            u_r   += h[i]*U(i,0) ;
+            u_r    += h[i]*U(i,0) ;
           }
           
-          STRAIN(2,2) += u_r/radius ;
+          if(radius > 0) {
+            STRAIN(2,2) += u_r/radius ;
           
-          if(Symmetry_IsSpherical(sym)) STRAIN(1,1) += u_r/radius ;
+            if(Symmetry_IsSpherical(sym)) STRAIN(1,1) += u_r/radius ;
+          }
         }
       }
     }

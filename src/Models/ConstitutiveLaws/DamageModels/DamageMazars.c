@@ -386,3 +386,10 @@ double DamageMazars_RM(Damage_t* damage,double* strain,double* d,double* hardv)
   
   return(crit) ;
 }
+
+        
+#undef Damage_GetStrainAtUniaxialTensileStrength
+#undef Damage_GetA_t
+#undef Damage_GetB_t
+#undef Damage_GetA_c
+#undef Damage_GetB_c

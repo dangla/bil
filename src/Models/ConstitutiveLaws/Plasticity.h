@@ -8,9 +8,9 @@ struct Plasticity_s     ; typedef struct Plasticity_s     Plasticity_t ;
 
 
 /* Typedef names of methods */
-typedef double  (Plasticity_ComputeTangentStiffnessTensor_t)(Plasticity_t*,const double*,const double*,const double) ;
-typedef double  (Plasticity_ReturnMapping_t)(Plasticity_t*,double*,double*,double*) ;
-typedef double  (Plasticity_YieldFunction_t)(Plasticity_t*,const double*,const double*) ;
+typedef double* (Plasticity_ComputeTangentStiffnessTensor_t)(Plasticity_t*,const double*,const double*,const double*) ;
+typedef double* (Plasticity_ReturnMapping_t)(Plasticity_t*,double*,double*,double*) ;
+typedef double* (Plasticity_YieldFunction_t)(Plasticity_t*,const double*,const double*) ;
 typedef double* (Plasticity_FlowRules_t)    (Plasticity_t*,const double*,const double*) ;
 typedef void    (Plasticity_SetParameters_t)(Plasticity_t*,...) ;
 typedef void    (Plasticity_SetModelProp_t) (Plasticity_t*) ;
@@ -27,6 +27,7 @@ extern double         (Plasticity_UpdateElastoplasticTensor)   (Plasticity_t*,do
 extern void           (Plasticity_PrintTangentStiffnessTensor) (Plasticity_t*) ;
 extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,double*) ;
 extern Plasticity_ComputeTangentStiffnessTensor_t (Plasticity_GenericTangentStiffnessTensor) ;
+extern Plasticity_ComputeTangentStiffnessTensor_t (Plasticity_GenericTangentStiffnessTensor1) ;
 extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMapping) ;
 
 
@@ -52,6 +53,7 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 #define Plasticity_GetSetModelProp(PL)               ((PL)->setmodelprop)
 #define Plasticity_GetPlasticMultiplier(PL)          ((PL)->lambda)
 #define Plasticity_GetBuffers(PL)                    ((PL)->buffers)
+#define Plasticity_GetNbOfCriteria(PL)               ((PL)->ncriteria)
 #define Plasticity_GetNbOfHardeningVariables(PL)     ((PL)->nhardv)
 #define Plasticity_GetTypicalSmallIncrementOfHardeningVariable(PL)   ((PL)->dhardv)
 #define Plasticity_GetTypicalSmallIncrementOfStress(PL)              ((PL)->dstress)
@@ -66,9 +68,9 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 
 #define Plasticity_MaxLengthOfKeyWord             (100)
 #define Plasticity_MaxNbOfParameters              (20)
-#define Plasticity_MaxNbOfHardeningVariables      (3)
-#define Plasticity_MaxNbOfPlasticMultiplier       (2) // Not used
-#define Plasticity_MaxNbOfCurves                  (2)
+#define Plasticity_MaxNbOfHardeningVariables      (5)
+#define Plasticity_MaxNbOfCriteria                (2)
+#define Plasticity_MaxNbOfCurves                  (4)
 
 #define Plasticity_SizeOfBuffer \
         (1000*sizeof(double))
@@ -93,7 +95,7 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
         Utils_CAT_NARG(Plasticity_ComputeTangentStiffnessTensor,__VA_ARGS__)(__VA_ARGS__)
         
 #define Plasticity_ComputeTangentStiffnessTensor3(...) \
-        Plasticity_ComputeTangentStiffnessTensor4(__VA_ARGS__,0)
+        Plasticity_ComputeTangentStiffnessTensor4(__VA_ARGS__,NULL)
 
         
 /* We use a C extension provided by GNU C:
@@ -151,8 +153,8 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 #define Plasticity_CopyCodeName(PL,STR) \
         memcpy(Plasticity_GetCodeNameOfModel(PL),STR,MAX(strlen(STR),Plasticity_MaxLengthOfKeyWord))
 
-#define Plasticity_Is(PL,MOD) \
-        (!strcmp(Plasticity_GetCodeNameOfModel(PL),Utils_STR(MOD)))
+#define Plasticity_Is(PL,STR) \
+        (!strcmp(Plasticity_GetCodeNameOfModel(PL),STR))
 
 #define Plasticity_SetTo(PL,MOD) \
         do { \
@@ -212,15 +214,16 @@ struct Plasticity_s {
   double* dgsds ;  /** Potential function gradient */
   double* hardv ;  /** Hardening variable */
   double* dhardv ; /** Typical small increment of hardening variable */
-  double dstress ; /** Typical small increment of stress */
-  int    nhardv ;  /** Nb of hardening variables */
+  double  dstress ; /** Typical small increment of stress */
+  int     ncriteria ;  /** Nb of criteria */
+  int     nhardv ;  /** Nb of hardening variables */
   double* hardm ;  /** Hardening modulus */
-  double  criterion ;     /** Value of the yield function criterion */
+  double* criterion ; /** Value of the yield function criterion */
   double* fc ;     /** fc(k,l) = dfsds(j,i) * C(i,j,k,l) */
   double* cg ;     /** cg(i,j) = C(i,j,k,l) * dgsds(l,k) */
-  double  fcg ;    /** fcg = hardm + dfsds(j,i) * C(i,j,k,l) * dgsds(l,k)) */
+  double* fcg ;    /** fcg = hardm + dfsds(j,i) * C(i,j,k,l) * dgsds(l,k)) */
   double* cijkl ;  /** Tangent stiffness tensor */
-  double  lambda ; /** Plastic multiplier */
+  double* lambda ; /** Plastic multiplier */
   double* parameter ;
   GenericData_t* genericdata ;  /** Plastic properties */
   Curves_t* curves ;          /**< Curves */

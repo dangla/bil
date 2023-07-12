@@ -20,7 +20,7 @@ CoordinateFormat_t* (CoordinateFormat_Create)(Mesh_t* mesh,Options_t* options,co
   {
     /* Nb of entries */
     {
-      int nnz = Mesh_ComputeNbOfMatrixEntries(mesh) ;
+      int nnz = Mesh_ComputeNbOfSelectedMatrixEntries(mesh,imatrix) ;
       
       CoordinateFormat_GetNbOfNonZeroValues(cfmt) = nnz ;
     }

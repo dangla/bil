@@ -6,7 +6,7 @@
 macro LIBBIL(); return :("libbil-2.8.8-Debug"); end;
 
 macro Entry_Create(A,B);
-  return :(ccall((:Entry_Create, @LIBBIL), Ptr{Cvoid}, (Int,Ptr{Ptr{UInt8}}), $A, $B));
+  return :(ccall((:Entry_Create, @LIBBIL), Ptr{Cvoid}, (Cint,Ptr{Ptr{Cchar}}), $A, $B));
 end;
 
 macro Entry_Execute(A);
@@ -21,8 +21,8 @@ argv = [PROGRAM_FILE]
 append!(argv,ARGS)
 argc = length(argv)
 
-#entry = @Entry_Create(argc, argv)
+entry = @Entry_Create(argc, argv)
 
-@Entry_Execute(@Entry_Create(argc, argv))
+@Entry_Execute(entry)
 
 #@Entry_Delete(entry)

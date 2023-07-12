@@ -97,8 +97,7 @@ void PlasticityNSFS_SP(Plasticity_t* plasty,...)
       Plasticity_GetHardeningVariable(plasty)[0] = pc ;
       //Plasticity_GetHardeningVariable(plasty)[0] = log(pc) ;
       
-      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6 ;
-      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[1] = 1.e-6*pc ;
+      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6*pc ;
       Plasticity_GetTypicalSmallIncrementOfStress(plasty) = 1.e-6*pc ;
     }
   }
@@ -108,9 +107,10 @@ void PlasticityNSFS_SP(Plasticity_t* plasty,...)
 
 
 
-double PlasticityNSFS_CT(Plasticity_t* plasty, const double* sig, const double* hardv, const double dlambda)
+double* PlasticityNSFS_CT(Plasticity_t* plasty, const double* sig, const double* hardv, const double* plambda)
 /** Modified Cam-Clay criterion */
 {
+  double* yield  = Plasticity_GetCriterionValue(plasty) ;
     double m = Plasticity_GetSlopeCriticalStateLine(plasty);
     double kappa = Plasticity_GetSlopeSwellingLine(plasty);
     double lambda = Plasticity_GetSlopeVirginConsolidationLine(plasty);
@@ -250,12 +250,14 @@ double PlasticityNSFS_CT(Plasticity_t* plasty, const double* sig, const double* 
         Plasticity_UpdateElastoplasticTensor(plasty, c);
     }
 
-    return(crit);
+  yield[0] = crit ;
+  
+  return(yield);
 }
 
 
 
-double PlasticityNSFS_RM(Plasticity_t* plasty, double* sig, double* eps_p, double* hardv)
+double* PlasticityNSFS_RM(Plasticity_t* plasty, double* sig, double* eps_p, double* hardv)
 /** Modified NFSF Cam-Clay return mapping.
  *  Algorithm from Borja & Lee 1990 modified by Wang.
  *
@@ -279,6 +281,7 @@ double PlasticityNSFS_RM(Plasticity_t* plasty, double* sig, double* eps_p, doubl
  *  Return the value of the yield function.
  **/
 {
+  double* yield  = Plasticity_GetCriterionValue(plasty) ;
     Elasticity_t* elasty = Plasticity_GetElasticity(plasty);
     double young = Elasticity_GetYoungModulus(elasty);
     double poisson = Elasticity_GetPoissonRatio(elasty);
@@ -473,9 +476,23 @@ double PlasticityNSFS_RM(Plasticity_t* plasty, double* sig, double* eps_p, doubl
     hardv[0] = pc0;
 
     /* Plastic muliplier */
-    Plasticity_GetPlasticMultiplier(plasty) = dl;
-
-    return(crit);
+    Plasticity_GetPlasticMultiplier(plasty)[0] = dl;
+    
+    yield[0] = crit ;
+    
+    return(yield);
 }
 
 
+
+#undef Plasticity_GetSlopeSwellingLine
+#undef Plasticity_GetSlopeVirginConsolidationLine
+#undef Plasticity_GetSlopeCriticalStateLine
+#undef Plasticity_GetInitialPreconsolidationPressure
+#undef Plasticity_GetInitialVoidRatio
+#undef Plasticity_GetSuctionCohesionCoefficient
+#undef Plasticity_GetReferenceConsolidationPressure
+#undef Plasticity_GetViscousExponent
+#undef Plasticity_GetReferenceStrainRate
+#undef Plasticity_GetLoadingCollapseFactorCurve
+#undef Plasticity_GetSaturationDegreeCurve

@@ -4,6 +4,7 @@
 # or
 # python gmshCrack.py -f filename -r region_id -p physical_id
 
+import os
 import sys
 import getopt
 from gmshMesh import Mesh
@@ -64,8 +65,16 @@ def main():
 
 #===============================================================================
 def usage():
-    print 'Usage: python %s -f<filename> -c<crack_id> -t<cracktip_id> -s<oneside_id> -r<region_ids> -p<physical_id>' % sys.argv[0]
-
+    print 'Usages:'
+    print 'python %s -f<filename> -c<crack_id> -t<cracktip_id> -s<oneside_id>' % os.path.basename(sys.argv[0])
+    print('or')
+    print 'python %s -f<filename> -r<region_ids> -p<physical_id>' % os.path.basename(sys.argv[0])
+    
+    print '\n'
+    
+    print 'In the first usage, 1D meshes in 2D or 2D meshes in 3D,'
+    print 'denoted as cracks below, should exist in the mesh (filename).'
+    
     print '\n'
 
     print 'Options:'
@@ -74,7 +83,9 @@ def usage():
     print '-s, --side_crack: Comma separated elementary IDs of elements touching the'
     print '                  cracks on one side so that their nodes are changed to the'
     print '                  created overlapping nodes of the zero-thickness elements.'
-    #print '                  so that the overlapping nodes follow the same local node ordering'
+    print '                  So these elements must touch the opposite side of the'
+    print '                  zero-thickness elements in the orientation given by the'
+    print '                  numbering of the surface element.'
     print '-r, --region:     Comma separated elementary IDs of elements to be cracked.'
     print '-p, --physical:   Physical ID of the created zero-thickness elements.'
     print '-f, --file:       Mesh file name.'
@@ -84,6 +95,10 @@ def usage():
 
     print 'Restriction:'
     print 'Use options (-c -t -s) or (-r -p) but do not mix them.'
+    print 'Examples:'
+    print 'python %s -f filename -c crack_id -t cracktip_id -s oneside_id'
+    print 'or'
+    print 'python %s -f filename -r region_id -p physical_id' % os.path.basename(sys.argv[0])
 
     
 #===============================================================================

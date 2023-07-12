@@ -959,7 +959,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
           /* Continuum tangent stiffness matrix */
             //ComputeTangentStiffnessTensor(sig,hardv) ;
           /* Consistent tangent stiffness matrix */
-            ComputeTangentStiffnessTensor(sig,hardv,DLAMBDA) ;
+            ComputeTangentStiffnessTensor(sig,hardv,&DLAMBDA) ;
 
             CopyTangentStiffnessTensor(c1) ;
           }
@@ -1221,12 +1221,12 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       {
         double p_con = x_n[I_HARDV] ; /* pre-consolidation pressure at 0 suction at the previous time step */
         double hardv[3] = {p_con,pc,dt} ;
-        double crit  = ReturnMapping(sig,eps_p,hardv) ;
-        double dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
+        double* crit  = ReturnMapping(sig,eps_p,hardv) ;
+        double* dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
         
-        x[I_CRIT]  = crit ;
+        x[I_CRIT]  = crit[0] ;
         x[I_HARDV] = hardv[0] ;
-        x[I_DLAMBDA] = dlambda ;
+        x[I_DLAMBDA] = dlambda[0] ;
       }
     
       /* Total stresses */

@@ -1204,7 +1204,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
               double p_s     = k_s * s2 ;
               double hardv[2] = {p_co,p_s} ;
               double* sig = SIG ;
-              double crit1 = ComputeFunctionGradients(sig,hardv) ;
+              double* crit1 = ComputeFunctionGradients(sig,hardv) ;
               double fcg   = UpdateElastoplasticTensor(c1) ;
           
               if(fcg < 0) return(-1) ;
@@ -1764,11 +1764,11 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
         double p_co    = exp(logp_co) ;
         double p_s     = k_s * s2 ;
         double hardv[2] = {p_co,p_s} ;
-        double crit  = ReturnMapping(sig,eps_p,hardv) ;
+        double* crit  = ReturnMapping(sig,eps_p,hardv) ;
         
         p_co = p_c * exp(log(hardv[0]/p_c) / lcf) ;
         
-        x[I_CRIT]  = crit ;
+        x[I_CRIT]  = crit[0] ;
         x[I_HARDV] = p_co ;
       }
     }

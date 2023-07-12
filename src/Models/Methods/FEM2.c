@@ -106,8 +106,8 @@ int (FEM2_HomogenizeTangentStiffnessTensor)(FEM2_t* fem2,double t,double dt,doub
   int dim = Mesh_GetDimension(mesh) ;
   Matrix_t* a = Solver_GetMatrix(solver) ;
   Residu_t* residu = Solver_GetResidu(solver) ;
-  double*   b = Residu_GetRHS(residu) ;
-  double*   u = Residu_GetSolution(residu) ;
+  double*   b = (double*) Residu_GetRHS(residu) ;
+  double*   u = (double*) Residu_GetSolution(residu) ;
   int nrhs = Residu_GetNbOfRHS(residu) ;
   int ncol = Residu_GetLengthOfRHS(residu) ;
   double*  pb[9] = {b,b+ncol,b+2*ncol,b+ncol,b+3*ncol,b+4*ncol,b+2*ncol,b+4*ncol,b+5*ncol} ;
@@ -504,8 +504,8 @@ int (FEM2_HomogenizeTangentStiffnessTensor1)(Mesh_t* mesh,Solver_t* solver,doubl
   int dim = Mesh_GetDimension(mesh) ;
   Matrix_t* a = Solver_GetMatrix(solver) ;
   Residu_t* residu = Solver_GetResidu(solver) ;
-  double*   b = Residu_GetRHS(residu) ;
-  double*   u = Residu_GetSolution(residu) ;
+  double*   b = (double*) Residu_GetRHS(residu) ;
+  double*   u = (double*) Residu_GetSolution(residu) ;
   int nrhs = Residu_GetNbOfRHS(residu) ;
   int ncol = Residu_GetLengthOfRHS(residu) ;
   double*  pb[9] = {b,b+ncol,b+2*ncol,b+ncol,b+3*ncol,b+4*ncol,b+2*ncol,b+4*ncol,b+5*ncol} ;

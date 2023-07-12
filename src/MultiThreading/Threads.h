@@ -42,7 +42,8 @@ struct Threads_s     ; typedef struct Threads_s     Threads_t ;
 #define Threads_APIis(TYP) \
         (Utils_CAT(Threads_,Threads_API) == Utils_CAT(Threads_,TYP))
 
-
+#define Threads_APIisNot(TYP) \
+        (!Threads_APIis(TYP))
 
 
 /* The nb of logical cores (n_sockets*n_cores*n_threads) 

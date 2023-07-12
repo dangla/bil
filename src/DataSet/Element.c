@@ -434,7 +434,7 @@ double*  (Element_ComputeNormalVector)(Element_t* element,double* dh,int nn,cons
 
 
 
-double* Element_ComputeJacobianMatrix(Element_t* el,double* dh,int nn,const int dim_h)
+double* (Element_ComputeJacobianMatrix)(Element_t* el,double* dh,int nn,const int dim_h)
 /** Compute the 3x3 jacobian matrix */
 {
 #define DH(n,i)  (dh[(n)*3 + (i)])
@@ -629,7 +629,7 @@ double* Element_ComputeJacobianMatrix(Element_t* el,double* dh,int nn,const int 
 
 
 #if 1
-double Element_ComputeJacobianDeterminant(Element_t* el,double* dh,int nn,const int dim_h)
+double (Element_ComputeJacobianDeterminant)(Element_t* el,double* dh,int nn,const int dim_h)
 /** Compute the determinant of the jacobian matrix */
 {
   double* jac  = Element_ComputeJacobianMatrix(el,dh,nn,dim_h) ;
@@ -647,7 +647,7 @@ double Element_ComputeJacobianDeterminant(Element_t* el,double* dh,int nn,const 
 
 
 #if 1
-double* Element_ComputeInverseJacobianMatrix(Element_t* el,double* dh,int nn,const int dim_h)
+double* (Element_ComputeInverseJacobianMatrix)(Element_t* el,double* dh,int nn,const int dim_h)
 /** Compute the inverse jacobian matrix */
 {
   size_t SizeNeeded = 9*sizeof(double) ;
@@ -673,7 +673,7 @@ double* Element_ComputeInverseJacobianMatrix(Element_t* el,double* dh,int nn,con
 
 
 
-double* Element_ComputeCoordinateVector(Element_t* el,double* h)
+double* (Element_ComputeCoordinateVector)(Element_t* el,double* h)
 /** Compute the coordinate vector */
 {
   int dim = Element_GetDimensionOfSpace(el) ;
@@ -1035,7 +1035,7 @@ int* (Element_ComputeSelectedMatrixRowAndColumnIndices)(Element_t* el,const int 
 
 
 
-double Element_ComputeSize(Element_t* element)
+double (Element_ComputeSize)(Element_t* element)
 {
   int nn = Element_GetNbOfNodes(element) ;
   int dim = Element_GetDimensionOfSpace(element) ;
@@ -1077,7 +1077,7 @@ double Element_ComputeSize(Element_t* element)
 
 
 
-double* Element_ComputeSizes(Element_t* element)
+double* (Element_ComputeSizes)(Element_t* element)
 {
   int nn = Element_GetNbOfNodes(element) ;
   int dim = Element_GetDimensionOfSpace(element) ;
@@ -1136,7 +1136,7 @@ double* Element_ComputeSizes(Element_t* element)
 
 
 
-int Element_HasZeroThickness(Element_t* element)
+int (Element_HasZeroThickness)(Element_t* element)
 {
   int nn = Element_GetNbOfNodes(element) ;
   ShapeFct_t* shapefct = Element_GetShapeFct(element) ;
@@ -1173,7 +1173,7 @@ int Element_HasZeroThickness(Element_t* element)
 
 
 
-int Element_NbOfOverlappingNodes(Element_t* element)
+int (Element_NbOfOverlappingNodes)(Element_t* element)
 /** Return the number of overlapping nodes for zero-thickness element. */
 {
   int nn  = Element_GetNbOfNodes(element) ;
@@ -1212,7 +1212,7 @@ int Element_NbOfOverlappingNodes(Element_t* element)
 
 
 
-int Element_OverlappingNode(Element_t* element,const int n)
+int (Element_OverlappingNode)(Element_t* element,const int n)
 /** Return the index of the first node other than n 
  *  overlapping node n or n if it fails. */
 {
@@ -1254,7 +1254,7 @@ int Element_OverlappingNode(Element_t* element,const int n)
 
 
 #if 0
-double Element_ComputeThickness(Element_t* element)
+double (Element_ComputeThickness)(Element_t* element)
 {
   int nn = Element_GetNbOfNodes(element) ;
   int dim = Element_GetDimensionOfSpace(element) ;
@@ -1301,7 +1301,7 @@ double Element_ComputeThickness(Element_t* element)
 
 
 #if 0
-double Element_DistanceBetweenNodes(Element_t* element,const int i,const int j)
+double (Element_DistanceBetweenNodes)(Element_t* element,const int i,const int j)
 {
   int nn = Element_GetNbOfNodes(element) ;
   int dim = Element_GetDimensionOfSpace(element) ;
@@ -1328,7 +1328,7 @@ double Element_DistanceBetweenNodes(Element_t* element,const int i,const int j)
 
 
 
-int Element_ComputeNbOfMatrixEntries(Element_t* element)
+int (Element_ComputeNbOfMatrixEntries)(Element_t* element)
 {
   int   ndof = Element_GetNbOfDOF(element) ;
   int*  row  = Element_ComputeMatrixRowAndColumnIndices(element) ;
@@ -1357,13 +1357,52 @@ int Element_ComputeNbOfMatrixEntries(Element_t* element)
     }
   }
   
+  Element_FreeBufferFrom(element,row) ;
+  
   return(len) ;
 }
 
 
 
 
-void Element_MakeUnknownContinuousAcrossZeroThicknessElement(Element_t* element,const char* name)
+int (Element_ComputeNbOfSelectedMatrixEntries)(Element_t* element,const int imatrix)
+{
+  int   ndof = Element_GetNbOfDOF(element) ;
+  int*  row  = Element_ComputeSelectedMatrixRowAndColumnIndices(element,imatrix) ;
+  int*  col  = row + ndof ;
+  int   len  = 0 ;
+  
+  {
+    int   jdof ;
+
+    for(jdof = 0 ; jdof < ndof ; jdof++) {
+      int jcol = col[jdof] ;
+    
+      if(jcol < 0) continue ;
+
+      {
+        int idof ;
+            
+        for(idof = 0 ; idof < ndof ; idof++) {
+          int irow = row[idof] ;
+      
+          if(irow < 0) continue ;
+        
+          len++ ;
+        }
+      }
+    }
+  }
+  
+  Element_FreeBufferFrom(element,row) ;
+  
+  return(len) ;
+}
+
+
+
+
+void (Element_MakeUnknownContinuousAcrossZeroThicknessElement)(Element_t* element,const char* name)
 {
   ShapeFct_t* shapefct = Element_GetShapeFct(element) ;
   int nf = ShapeFct_GetNbOfNodes(shapefct) ;
@@ -1378,7 +1417,7 @@ void Element_MakeUnknownContinuousAcrossZeroThicknessElement(Element_t* element,
 
 
 
-void Element_MakeEquationContinuousAcrossZeroThicknessElement(Element_t* element,const char* name)
+void (Element_MakeEquationContinuousAcrossZeroThicknessElement)(Element_t* element,const char* name)
 {
   ShapeFct_t* shapefct = Element_GetShapeFct(element) ;
   int nf = ShapeFct_GetNbOfNodes(shapefct) ;
@@ -1395,7 +1434,7 @@ void Element_MakeEquationContinuousAcrossZeroThicknessElement(Element_t* element
 
 
 
-int Element_FindNodeIndex(Element_t* element,const Node_t* node)
+int (Element_FindNodeIndex)(Element_t* element,const Node_t* node)
 /** Return the local node index matching that of node
  *  or -1 if it fails. */
 {
@@ -1415,7 +1454,7 @@ int Element_FindNodeIndex(Element_t* element,const Node_t* node)
 
 /* The two following functions have not been tested yet */
 #if 0
-double* Element_ComputeDiscreteGradientOperator(Element_t* element,IntFct_t* intfct)
+double* (Element_ComputeDiscreteGradientOperator)(Element_t* element,IntFct_t* intfct)
 /** Compute the discrete gradient operator.
  *  On ouput:
  *  a pointer to double with allocated space of DIM*NN*NN
@@ -1536,7 +1575,7 @@ double* Element_ComputeDiscreteGradientOperator(Element_t* element,IntFct_t* int
 
 
 
-double* Element_ComputeLumpedMass(Element_t* element,IntFct_t* intfct)
+double* (Element_ComputeLumpedMass)(Element_t* element,IntFct_t* intfct)
 /** Compute the lumped mass.
  *  On ouput:
  *  a pointer to double with allocated space of NN

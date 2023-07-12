@@ -16,6 +16,7 @@ extern void         (Elements_CreateMore)               (Elements_t*) ;
 extern void         (Elements_LinkUp)                   (Elements_t*,Materials_t*) ;
 extern void         (Elements_DefineProperties)         (Elements_t*) ;
 extern int          (Elements_ComputeNbOfMatrixEntries) (Elements_t*) ;
+extern int          (Elements_ComputeNbOfSelectedMatrixEntries)(Elements_t*,const int) ;
 extern void         (Elements_UpdateMatrixRowColumnIndexes)(Elements_t*) ;
 extern void         (Elements_EliminateMatrixRowColumnIndexesOfOverlappingNodes)(Elements_t*) ;
 extern void         (Elements_UpdateMatrixRowColumnIndexesOfOverlappingNodes)(Elements_t*) ;

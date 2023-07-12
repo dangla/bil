@@ -1477,7 +1477,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
           
           if(crit >= 0.) {
             double hardv = HARDV ; //TODO update here for temperature effect???
-            double crit1 = ComputeFunctionGradients(sig,&hardv) ;
+            double* crit1 = ComputeFunctionGradients(sig,&hardv) ;
         
             //fcg = UpdateElastoplasticTensor(c1) ;//!
             // since this is deactivated, we do not update the stiffness tensor. 
@@ -1903,9 +1903,9 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x)
         } 
         
         
-        double crit = ReturnMapping(sig,eps_p,&hardv);  // changed here directly to ACC !
+        double* crit = ReturnMapping(sig,eps_p,&hardv);  // changed here directly to ACC !
               
-        x[I_CRIT]  = crit ;
+        x[I_CRIT]  = crit[0] ;
         x[I_HARDV] = hardv ;
       }
 

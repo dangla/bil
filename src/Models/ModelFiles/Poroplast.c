@@ -918,12 +918,12 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
             /* Continuum tangent stiffness matrix */
             //ComputeTangentStiffnessTensor(sig,&HARDV) ;
             /* Consistent tangent stiffness matrix */
-            ComputeTangentStiffnessTensor(sig,&HARDV,DLAMBDA) ;
+            ComputeTangentStiffnessTensor(sig,&HARDV,&DLAMBDA) ;
             
             CopyTangentStiffnessTensor(c1) ;
             
             {
-              double fcg = Plasticity_GetFjiCijklGlk(plasty) ;
+              double fcg = Plasticity_GetFjiCijklGlk(plasty)[0] ;
               double hm  = Plasticity_GetHardeningModulus(plasty)[0] ;
               
               roted = 1/(hm + fcg) ;
@@ -1201,14 +1201,16 @@ int  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,doub
       /* Plastic strains */
       for(i = 0 ; i < 9 ; i++) eps_p[i] = eps_pn[i] ;
     
+      //Plasticity_FreeBuffer(plasty) ;
+      
       /* Projection */
       {
-        double crit = ReturnMapping(sig,eps_p,&hardv) ;
-        double dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
+        double* crit = ReturnMapping(sig,eps_p,&hardv) ;
+        double* dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
         
-        x[I_CRIT]  = crit ;
+        x[I_CRIT]  = crit[0] ;
         x[I_HARDV] = hardv ;
-        x[I_DLAMBDA] = dlambda ;
+        x[I_DLAMBDA] = dlambda[0] ;
       }
     
       /* Total stresses */

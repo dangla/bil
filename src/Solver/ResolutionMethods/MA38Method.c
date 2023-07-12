@@ -20,7 +20,7 @@
 #include "CoordinateFormat.h"
 
 
-static void M38Method_PrintErrorDiagnostics(double*,int*,int*) ;
+static void MA38Method_PrintErrorDiagnostics(double*,int*,int*) ;
 
 
 /* 
@@ -92,7 +92,7 @@ int   MA38Method_Solve(Solver_t* solver)
       
       printf("Fill factors = %e ; %e\n",ffindex,ffvalue) ;
       
-      M38Method_PrintErrorDiagnostics(cntl,icntl,info) ;
+      MA38Method_PrintErrorDiagnostics(cntl,icntl,info) ;
 
       return(-1) ;
     }
@@ -121,7 +121,7 @@ int   MA38Method_Solve(Solver_t* solver)
 }
 
 
-void M38Method_PrintErrorDiagnostics(double* cntl,int* icntl,int* info)
+void MA38Method_PrintErrorDiagnostics(double* cntl,int* icntl,int* info)
 {
   int ne     = info[4] + info[2] + info[1] ;
   int n      = info[11] - info[10] - info[9] - info[6] ;

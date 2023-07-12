@@ -21,6 +21,10 @@
   #undef SUPERLU
 #endif
 
+#if defined (PETSCLIB)
+  #include <petsc.h>
+#endif
+
 
 /* Extern functions */
 
@@ -103,6 +107,24 @@ Matrix_t*   (Matrix_Create)(Mesh_t* mesh,Options_t* options,const int imatrix)
       Matrix_GetNbOfNonZeroValues(a) = CoordinateFormat_GetNbOfNonZeroValues(ac) ;
       Matrix_GetNonZeroValue(a) = CoordinateFormat_GetNonZeroValue(ac) ;
 
+    #ifdef PETSCLIB
+    } else if(Matrix_StorageFormatIs(a,PETSCAIJ)) {
+      //PETSCAIJFormat_t* petscaij = PETSCAIJFormat_Create(mesh,imatrix) ;
+      Mat* aij = (Mat*) Mry_New(Mat) ;
+      PetscInt ierror = MatCreate(PETSC_COMM_WORLD,aij)  ;
+  
+      /* undefined ref to PetscCall ??? */
+      //PetscCall(ierror)  ;
+    
+      Matrix_GetStorage(a) = (void*) aij ;
+  
+      {
+        int n = Mesh_GetNbOfMatrixColumns(mesh)[imatrix] ;
+    
+        MatSetSizes(*aij,PETSC_DECIDE,PETSC_DECIDE,n,n) ;
+      }
+    #endif
+
     } else {
       arret("Matrix_Create: unknown format") ;
     }
@@ -177,6 +199,16 @@ void (Matrix_Delete)(void* self)
         free(ac) ;
       }
 
+    #ifdef PETSCLIB
+    } else if(Matrix_StorageFormatIs(a,PETSCAIJ)) {
+      Mat* aij = (Mat*) storage ;
+    
+      if(aij) {
+        MatDestroy(aij) ;
+        free(aij) ;
+      }
+    #endif
+
     } else {
       arret("Matrix_Delete: unknown format") ;
     }
@@ -217,7 +249,6 @@ void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
     LDUSKLFormat_t* askl = (LDUSKLFormat_t*) Matrix_GetStorage(a) ;
     
     LDUSKLFormat_AssembleElementMatrix(askl,ke,col,row,ndof) ;
-    return ;
     
 #ifdef SUPERLU
   /* CCS format (or Harwell-Boeing format) used in SuperLU */
@@ -229,7 +260,6 @@ void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
     int         nrow = SuperLUFormat_GetNbOfRows(aslu) ;
     
     NCFormat_AssembleElementMatrix(asluNC,ke,col,row,ndof,rowptr,nrow) ;
-    return ;
 #endif
   
   } else if(Matrix_StorageFormatIs(a,Coordinate)) {
@@ -239,10 +269,22 @@ void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
     len = CoordinateFormat_AssembleElementMatrix(ac,ke,col,row,ndof,len) ;
     
     Matrix_GetNbOfEntries(a) = len ;
-    return ;
+    
+#ifdef PETSCLIB
+  /* format used in Petsc */
+  } else if(Matrix_StorageFormatIs(a,PETSCAIJ)) {
+      Mat* aij = (Mat*) Matrix_GetStorage(a) ;
+      
+      MatSetValues(*aij,ndof,row,ndof,col,ke,ADD_VALUES) ;
+#endif
+    
+  } else {
+    arret("Matrix_AssembleElementMatrix: unknown format") ;
   }
   
-  arret("Matrix_AssembleElementMatrix: unknown format") ;
+  Element_FreeBufferFrom(el,row) ;
+  
+  return ;
 }
 
 
@@ -272,10 +314,17 @@ void Matrix_PrintMatrix(Matrix_t* a,const char* keyword)
     int nrows = Matrix_GetNbOfRows(a) ;
     
     CoordinateFormat_PrintMatrix(ac,nrows,keyword) ;
-    return ;
+    
+  #ifdef PETSCLIB
+  /* format used in Petsc */
+  } else if(Matrix_StorageFormatIs(a,PETSCAIJ)) {
+    Mat* aij = (Mat*) Matrix_GetStorage(a) ;
+    
+    MatView(*aij,PETSC_VIEWER_STDOUT_WORLD) ;
+  #endif
 
   } else {
-      arret("Matrix_PrintMatrix: unknown format") ;
+    arret("Matrix_PrintMatrix: unknown format") ;
   }
 
   fflush(stdout) ;

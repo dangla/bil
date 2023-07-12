@@ -251,3 +251,11 @@ double DamageMarigoJirasek_RM(Damage_t* damage,double* strain,double* d,double* 
   
   return(crit) ;
 }
+
+
+        
+#undef Damage_GetCriticalEnergyReleaseRate
+#undef Damage_GetMaximumEnergyReleaseRate
+#undef Damage_GetUniaxialTensileStrength
+#undef Damage_GetFractureEnergy
+#undef Damage_GetCrackBandWidth

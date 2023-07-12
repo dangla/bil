@@ -433,6 +433,27 @@ int (Elements_ComputeNbOfMatrixEntries)(Elements_t* elements)
 
 
 
+
+int (Elements_ComputeNbOfSelectedMatrixEntries)(Elements_t* elements,const int imatrix)
+{
+  int nel = Elements_GetNbOfElements(elements) ;
+  Element_t* el = Elements_GetElement(elements) ;
+  int len = 0 ;
+      
+  {
+    int ie ;
+      
+    for(ie = 0 ; ie < nel ; ie++) {
+      Element_FreeBuffer(el + ie) ;
+      len += Element_ComputeNbOfSelectedMatrixEntries(el + ie,imatrix) ;
+    }
+  }
+  
+  return(len) ;
+}
+
+
+
 void  (Elements_InitializeMatrixRowColumnIndexes)(Elements_t* elements)
 /** Initialize the Matrix Row/Column Indexes to 0 
  *  for nodes belonging to elements */

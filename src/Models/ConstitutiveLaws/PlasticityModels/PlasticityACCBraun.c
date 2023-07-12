@@ -1,7 +1,7 @@
 static Plasticity_ComputeTangentStiffnessTensor_t    PlasticityACCBraun_CT ;
 static Plasticity_ReturnMapping_t                    PlasticityACCBraun_RM ;
-static Plasticity_YieldFunction_t                    PlasticityACCBraun_YF ;
-static Plasticity_FlowRules_t                        PlasticityACCBraun_FR ;
+//static Plasticity_YieldFunction_t                    PlasticityACCBraun_YF ;
+//static Plasticity_FlowRules_t                        PlasticityACCBraun_FR ;
 static Plasticity_SetParameters_t                    PlasticityACCBraun_SP ;
 static Plasticity_SetModelProp_t                     PlasticityACCBraun_SetModelProp ;
 
@@ -103,12 +103,13 @@ void PlasticityACCBraun_SP(Plasticity_t* plasty,...)
 
 
 
-double PlasticityACCBraun_CT(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda) 
+double* PlasticityACCBraun_CT(Plasticity_t* plasty,const double* sig,const double* hardv,const double* plambda) 
 /** Assymmetric Cam-Clay criterion 
  * first hardening parameter is the preconsolidation pressure
  * second hardening parameter is the isotropic tensile elastic limit
 */
 {
+  double* yield  = Plasticity_GetCriterionValue(plasty) ;
   double m       = Plasticity_GetACC_M(plasty)  ;
   double n       = Plasticity_GetACC_N(plasty)  ;
   double k       = Plasticity_GetACC_k(plasty)   ;
@@ -196,7 +197,10 @@ double PlasticityACCBraun_CT(Plasticity_t* plasty,const double* sig,const double
 
     //*hm = beta_eps*pc0*(-2*k*pow(q, 2) + pow(n, 2)*(pc - ps)*(2*p - pc + ps)*exp(k*(2*p - pc + ps)/(pc - ps)))*(-2*k*p*pow(q, 2) + pow(m, 2)*(p + ps)*pow(pc - ps, 2)*exp(k*(2*p - pc + ps)/(pc - ps)))*exp((beta_eps*eps_v_pl*(pc - ps) - 2*k*(2*p - pc + ps))/(pc - ps))/pow(pc - ps, 3);
   }
-  return(crit) ;
+  
+  yield[0] = crit ;
+  
+  return(yield) ;
 }
 
 
@@ -320,7 +324,7 @@ void InverseOfMatrix(double matrix[][20], int order)
 
 
 
-double PlasticityACCBraun_RM(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
+double* PlasticityACCBraun_RM(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
 /** Assymmetric Cam-Clay return mapping. Inputs are: 
  *  the elastic properties K and G
  *  the plasticity parmeters,
@@ -335,6 +339,7 @@ double PlasticityACCBraun_RM(Plasticity_t* plasty,double* sig,double* eps_p,doub
  * Note that this does not affect the previous function (ComputeFunctionGradients), which remains general.
  * */
 {
+  double* yield  = Plasticity_GetCriterionValue(plasty) ;
   Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
   double young   = Elasticity_GetYoungModulus(elasty) ;
   double poisson = Elasticity_GetPoissonRatio(elasty) ;
@@ -1671,7 +1676,8 @@ double PlasticityACCBraun_RM(Plasticity_t* plasty,double* sig,double* eps_p,doub
   //   pc=pc_t ;
   // }
   hardv[0] = pc ;
-  return(crit) ;
+  yield[0] = crit ;
+  return(yield) ;
 }
 
 
@@ -1806,3 +1812,16 @@ double pc_fun(Plasticity_t* plasty,const double* sig, const double* sig_t, const
   double pc = pc_t*exp(beta_eps*depspv) ; 
   return(pc) ;
 }
+
+
+
+
+#undef Plasticity_GetACC_k
+#undef Plasticity_GetACC_M
+#undef Plasticity_GetACC_N
+#undef Plasticity_GetInitialIsotropicTensileLimit
+#undef Plasticity_GetACCInitialPreconsolidationPressure
+#undef Plasticity_GetVolumetricStrainHardeningParameter
+#undef Plasticity_GetThermalHardeningParameter
+#undef Plasticity_GetACC_f_par
+#undef Plasticity_GetACC_f_perp

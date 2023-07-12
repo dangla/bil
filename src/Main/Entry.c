@@ -325,7 +325,7 @@ void Entry_CLI(Entry_t* entry)
     DataSet_t* dataset =  DataSet_Create(filename,options) ;
     Module_t* module = DataSet_GetModule(dataset) ;
 
-    #if !Threads_APIis(None)
+    #if Threads_APIisNot(None)
     {
       int nthreads = Options_NbOfThreads(options) ;
       

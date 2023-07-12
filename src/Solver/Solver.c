@@ -29,6 +29,11 @@
   #include "MA38Method.h"
 #endif
 
+#if defined (PETSCLIB)
+  #include "PetscKSPMethod.h"
+  #include <petsc.h>
+#endif
+
 
 
 
@@ -57,10 +62,7 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
   
   /* Allocation of space for the residu */
   {
-    int n_col = Solver_GetNbOfColumns(solver) ;
-    Residu_t* residu = Residu_Create(n_col,n_res) ;
-    
-    Residu_GetResiduIndex(residu) = imatrix ;
+    Residu_t* residu = Residu_Create(mesh,options,n_res,imatrix) ;
     
     Solver_GetResidu(solver) = residu ;
   }
@@ -228,6 +230,47 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
       }
     #endif
     
+    #if defined (PETSCLIB)
+    } else if(Solver_ResolutionMethodIs(solver,PetscKSP)) {
+      Matrix_t* matrix = Solver_GetMatrix(solver) ;
+      
+      Solver_GetSolve(solver) = PetscKSPMethod_Solve ;
+      
+      /* Initialization */
+        
+      PetscFunctionBeginUser;
+        
+      {
+        ResolutionMethod_t* rm = Solver_GetResolutionMethod(solver) ;
+        Options_t* opt = ResolutionMethod_GetOptions(rm) ;
+        Context_t* ctx = Options_GetContext(opt) ;
+        CommandLine_t* cmd = Context_GetCommandLine(ctx) ;
+        int argc = CommandLine_GetNbOfArg(cmd) ;
+        char** argv = CommandLine_GetArg(cmd) ;
+        
+        PetscInitialize(&argc,&argv,NULL,NULL) ;
+      }
+      
+      /*  Create the solver KSP and the preconditioner PC */
+      {
+        Mat* A = (Mat*) Matrix_GetStorage(matrix) ;
+        KSP* ksp = (KSP*) Mry_New(KSP) ;
+        PC*  pc = (PC*) Mry_New(PC) ;
+        
+        KSPCreate(PETSC_COMM_SELF,ksp) ;
+        
+        KSPSetOperators(*ksp,*A,*A) ;
+        KSPGetPC(*ksp,pc) ;
+        PCSetType(*pc,PCJACOBI) ;
+        
+        GenericData_t* gksp = GenericData_Create(1,ksp,KSP,"ksp") ;
+        GenericData_t* gpc = GenericData_Create(1,pc,PC,"pc") ;
+        
+        Solver_AppendGenericWorkSpace(solver,gksp) ;
+        Solver_AppendGenericWorkSpace(solver,gpc) ;
+      }
+    #endif
+    
     } else {
       arret("Solver_Create: method not available") ;
     }
@@ -294,17 +337,9 @@ void Solver_Print(Solver_t* solver,char* keyword)
   fprintf(stdout,"-----\n") ;
             
   if(!strcmp(keyword,"residu")) {
-    double*  rhs = Solver_GetRHS(solver) ;
-    int n_col = Solver_GetNbOfColumns(solver) ;
-    int i ;
+    Residu_t* residu = Solver_GetResidu(solver) ;
     
-    fprintf(stdout,"\n") ;
-    fprintf(stdout,"residu:\n") ;
-    fprintf(stdout,"n = %d\n",n_col) ;
-            
-    for(i = 0 ; i < n_col ; i++) {
-      fprintf(stdout,"res %d: % e\n",i,rhs[i]) ;
-    }
+    Residu_PrintResidu(residu,keyword) ;
   }
   
   if(!strncmp(keyword,"matrix",6)) {

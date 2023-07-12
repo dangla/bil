@@ -28,6 +28,7 @@ extern double*  (Math_ComputeRealEigenvaluesAndEigenvectorsOf3x3Matrix)(double*,
 extern void     (Math_PrintStiffnessTensor)(const double*) ;
 extern void     (Math_PrintStressTensor)(const double*) ;
 extern void     (Math_PrintMatrix)(const double*,const int) ;
+extern void     (Math_PrintVector)(const double*,const int) ;
 extern double*  (Math_ComputeDeviatoricStress)(const double*) ;
 extern double*  (Math_SolveByGaussEliminationKIJ)(double*,double*,int,int*) ;
 extern double*  (Math_SolveByGaussEliminationJIK)(double*,double*,int,int*) ;

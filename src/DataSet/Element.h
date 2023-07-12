@@ -33,6 +33,7 @@ extern int*     (Element_ComputeSelectedMatrixRowAndColumnIndices)(Element_t*,co
 extern double   (Element_ComputeSize)                           (Element_t*) ;
 extern double*  (Element_ComputeSizes)                          (Element_t*) ;
 extern int      (Element_ComputeNbOfMatrixEntries)              (Element_t*) ;
+extern int      (Element_ComputeNbOfSelectedMatrixEntries)      (Element_t*,const int) ;
 extern double*  (Element_ComputeJacobianMatrix)                 (Element_t*,double*,int,const int) ;
 extern double   (Element_ComputeJacobianDeterminant)            (Element_t*,double*,int,const int) ;
 extern double*  (Element_ComputeInverseJacobianMatrix)          (Element_t*,double*,int,const int) ;
@@ -338,7 +339,17 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
 /* Access to datafile */
 #define Element_GetDataFile(ELT) \
         Model_GetDataFile(Element_GetModel(ELT))
-        
+
+
+/* Access to dataset */
+#define Element_GetDataSet(ELT) \
+        DataFile_GetDataSet(Element_GetDataFile(ELT))
+
+
+/* Access to module */
+#define Element_GetModule(ELT) \
+        DataSet_GetModule(Element_GetDataSet(ELT))
+
 
 /* Method */
 #include "String_.h"
@@ -375,23 +386,33 @@ extern double*  (Element_ComputeCoordinateVector)               (Element_t*,doub
 
 
 /* The time, time step and step index */
+#define Element_GetTimeOf(ELT,SOL) \
+        Solution_GetSequentialTime(SOL)[Element_GetCurrentSequentialIndex(ELT)]
+        
+#define Element_GetTimeStepOf(ELT,SOL) \
+        Solution_GetSequentialTimeStep(SOL)[Element_GetCurrentSequentialIndex(ELT)]
+        
+#define Element_GetStepIndexOf(ELT,SOL) \
+        Solution_GetSequentialStepIndex(SOL)[Element_GetCurrentSequentialIndex(ELT)]
+
+
 #define Element_GetTime(ELT) \
-        Solution_GetTime(Element_GetSolution(ELT))
+        Element_GetTimeOf(ELT,Element_GetSolution(ELT))
         
 #define Element_GetTimeStep(ELT) \
-        Solution_GetTimeStep(Element_GetSolution(ELT))
+        Element_GetTimeStepOf(ELT,Element_GetSolution(ELT))
         
 #define Element_GetStepIndex(ELT) \
-        Solution_GetStepIndex(Element_GetSolution(ELT))
+        Element_GetStepIndexOf(ELT,Element_GetSolution(ELT))
         
 #define Element_GetPreviousTime(ELT) \
-        Solution_GetTime(Element_GetPreviousSolution(ELT))
+        Element_GetTimeOf(ELT,Element_GetPreviousSolution(ELT))
         
 #define Element_GetPreviousTimeStep(ELT) \
-        Solution_GetTimeStep(Element_GetPreviousSolution(ELT))
+        Element_GetTimeStepOf(ELT,Element_GetPreviousSolution(ELT))
         
 #define Element_GetPreviousStepIndex(ELT) \
-        Solution_GetStepIndex(Element_GetPreviousSolution(ELT))
+        Element_GetStepIndexOf(ELT,Element_GetPreviousSolution(ELT))
 
 
 

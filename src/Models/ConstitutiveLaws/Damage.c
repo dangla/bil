@@ -172,11 +172,11 @@ void  (Damage_Delete)(void* self)
 void Damage_Initialize(Damage_t* damage)
 {
   
-  if(Damage_Is(damage,Mazars)) {
-    Damage_GetSetModelProp(damage)                  = DamageMazars_SetModelProp ;
+  if(Damage_Is(damage,"Mazars")) {
+    Damage_GetSetModelProp(damage) = DamageMazars_SetModelProp ;
       
-  } else if(Damage_Is(damage,MarigoJirasek)) {
-    Damage_GetSetModelProp(damage)                  = DamageMarigoJirasek_SetModelProp ;
+  } else if(Damage_Is(damage,"MarigoJirasek")) {
+    Damage_GetSetModelProp(damage) = DamageMarigoJirasek_SetModelProp ;
     
   } else {
     Message_RuntimeError("Not known") ;

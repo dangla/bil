@@ -9,4 +9,5 @@
 #GSL = /usr/lib/x86_64-linux-gnu/libgsl.so
 #GSLCBLAS = /usr/lib/x86_64-linux-gnu/libgslcblas.so
 #F2C = /usr/lib/x86_64-linux-gnu/libf2c.so
+#PETSC = /usr/lib/x86_64-linux-gnu/libpetsc.so
 

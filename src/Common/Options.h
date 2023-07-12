@@ -78,6 +78,11 @@ extern void        (Options_Delete)(void*) ;
 /* MA38 method */
 #define Options_ResolutionMethodIsMA38(OPT) \
         Options_ResolutionMethodIs(OPT,"ma38")
+
+
+/* PetscKSP method */
+#define Options_ResolutionMethodIsPetscKSP(OPT) \
+        Options_ResolutionMethodIs(OPT,"petscksp")
     
 
 #define Options_GetFillFactor(OPT) \

@@ -89,7 +89,7 @@ void PlasticityBBM_SP(Plasticity_t* plasty,...)
 
 
 
-double (PlasticityBBM_CT)(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)
+double* (PlasticityBBM_CT)(Plasticity_t* plasty,const double* sig,const double* hardv,const double* plambda)
 /** Barcelona Basic model criterion.
  * 
  *  Inputs are: 
@@ -113,6 +113,7 @@ double (PlasticityBBM_CT)(Plasticity_t* plasty,const double* sig,const double* h
  *  Return the value of the yield function. 
  **/
 {
+  double* yield  = Plasticity_GetCriterionValue(plasty) ;
   double m       = Plasticity_GetSlopeCriticalStateLine(plasty) ;
   double kappa   = Plasticity_GetSlopeSwellingLine(plasty) ;
   double lambda  = Plasticity_GetSlopeVirginConsolidationLine(plasty) ;
@@ -135,6 +136,7 @@ double (PlasticityBBM_CT)(Plasticity_t* plasty,const double* sig,const double* h
   
   double id[9] = {1,0,0,0,1,0,0,0,1} ;
   double p,q,crit ;
+  double dlambda = (plambda) ? plambda[0] : 0 ;
   
   /* 
      The yield criterion
@@ -253,12 +255,14 @@ double (PlasticityBBM_CT)(Plasticity_t* plasty,const double* sig,const double* h
     Plasticity_UpdateElastoplasticTensor(plasty,c) ;
   }
   
-  return(crit) ;
+  yield[0] = crit ;
+  
+  return(yield) ;
 }
 
 
 
-double (PlasticityBBM_RM)(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
+double* (PlasticityBBM_RM)(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
 /** Barcelona Basic model criterion.
  * 
  *  Inputs are: 
@@ -281,6 +285,7 @@ double (PlasticityBBM_RM)(Plasticity_t* plasty,double* sig,double* eps_p,double*
  *  Return the value of the yield function. 
  **/
 {
+  double* yield  = Plasticity_GetCriterionValue(plasty) ;
   Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
   double bulk    = Elasticity_GetBulkModulus(elasty) ;
   double mu      = Elasticity_GetShearModulus(elasty) ;
@@ -303,7 +308,8 @@ double (PlasticityBBM_RM)(Plasticity_t* plasty,double* sig,double* eps_p,double*
   double beta    = 1 ;
   
   double id[9] = {1,0,0,0,1,0,0,0,1} ;
-  double p,q,crit ;
+  double crit ;
+  double p,q ;
   double p_t,q_t ;
   double dl ;
   
@@ -420,18 +426,21 @@ double (PlasticityBBM_RM)(Plasticity_t* plasty,double* sig,double* eps_p,double*
   }
   
   /* Plastic muliplier */
-  Plasticity_GetPlasticMultiplier(plasty) = dl ;
+  Plasticity_GetPlasticMultiplier(plasty)[0] = dl ;
   
-  return(crit) ;
+  yield[0] = crit ;
+  return(yield) ;
 }
 
 
 
 
-double (PlasticityBBM_YF)(Plasticity_t* plasty,const double* stress,const double* hardv)
+double* (PlasticityBBM_YF)(Plasticity_t* plasty,const double* stress,const double* hardv)
 /** Return the value of the yield function. 
  **/
 {
+  size_t SizeNeeded = sizeof(double) ;
+  double* yield   = (double*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
   double m     = Plasticity_GetSlopeCriticalStateLine(plasty) ;
   double k     = Plasticity_GetSuctionCohesionCoefficient(plasty) ;
   double p_r   = Plasticity_GetReferenceConsolidationPressure(plasty) ;
@@ -446,7 +455,8 @@ double (PlasticityBBM_YF)(Plasticity_t* plasty,const double* stress,const double
   double m2    = m*m ;
   double p     = (stress[0] + stress[4] + stress[8])/3. ;
   double q     = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
-  double yield = q*q/m2 + (p - ps)*(p + pc) ;
+  
+  yield[0] = q*q/m2 + (p - ps)*(p + pc) ;
 
   return(yield) ;
 }
@@ -536,3 +546,14 @@ double* (PlasticityBBM_FR)(Plasticity_t* plasty,const double* stress,const doubl
   
   return(flow) ;
 }
+
+
+
+#undef Plasticity_GetSlopeSwellingLine
+#undef Plasticity_GetSlopeVirginConsolidationLine
+#undef Plasticity_GetSlopeCriticalStateLine
+#undef Plasticity_GetInitialPreconsolidationPressure
+#undef Plasticity_GetInitialVoidRatio
+#undef Plasticity_GetSuctionCohesionCoefficient
+#undef Plasticity_GetReferenceConsolidationPressure
+#undef Plasticity_GetLoadingCollapseFactorCurve

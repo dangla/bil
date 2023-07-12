@@ -6,7 +6,7 @@ static Plasticity_SetParameters_t                    PlasticityACC_SP ;
 static Plasticity_SetModelProp_t                     PlasticityACC_SetModelProp ;
 
 
-static void Plasticity_ScaleStressACC(Plasticity_t*,double*) ;
+static void PlasticityACC_ScaleStress(Plasticity_t*,double*) ;
 
 
 #define Elasticity_GetInverseStiffnessTensor \
@@ -93,17 +93,24 @@ void PlasticityACC_SP(Plasticity_t* plasty,...)
 
 
 
-double PlasticityACC_CT(Plasticity_t* plasty,const double* stress,const double* hardv,const double dlambda)
+double* PlasticityACC_CT(Plasticity_t* plasty,const double* stress,const double* hardv,const double* plambda)
 /** Asymmetric Cam-Clay criterion 
  *  first hardening parameter is the preconsolidation pressure
  *  second hardening parameter is the isotropic tensile elastic limit
 */
 {
+  double* crit   = Plasticity_GetCriterionValue(plasty) ;
   double* dfsds  = Plasticity_GetYieldFunctionGradient(plasty) ;
   double* dgsds  = Plasticity_GetPotentialFunctionGradient(plasty) ;
   double* hm     = Plasticity_GetHardeningModulus(plasty) ;
 
-  double crit = PlasticityACC_YF(plasty,stress,hardv) ;
+  {
+    double* yield = PlasticityACC_YF(plasty,stress,hardv) ;
+  
+    crit[0] = yield[0] ;
+    
+    Plasticity_FreeBufferFrom(plasty,yield) ;
+  }
 
   /*
     Flow directions
@@ -131,6 +138,7 @@ double PlasticityACC_CT(Plasticity_t* plasty,const double* stress,const double* 
   /*
    * Continuum tangent stiffness matrix
    */
+   #if 0
   {
     double* c = Plasticity_GetTangentStiffnessTensor(plasty) ;
      
@@ -138,30 +146,39 @@ double PlasticityACC_CT(Plasticity_t* plasty,const double* stress,const double* 
        
     Plasticity_UpdateElastoplasticTensor(plasty,c) ;
   }
+  #endif
+    
+  /*
+   * Consistent tangent stiffness matrix
+   */
+  {
+    Plasticity_GenericTangentStiffnessTensor(plasty,stress,hardv,plambda) ;
+  }
   
   return(crit) ;
 }
 
 
 
-double PlasticityACC_RM(Plasticity_t* plasty,double* stress,double* strain_p,double* hardv)
+double* PlasticityACC_RM(Plasticity_t* plasty,double* stress,double* strain_p,double* hardv)
 {
-  double crit = Plasticity_GenericReturnMapping(plasty,stress,strain_p,hardv) ;
+  double* crit = Plasticity_GenericReturnMapping(plasty,stress,strain_p,hardv) ;
   
   return(crit) ;
 }
 
 
 
-double PlasticityACC_YF(Plasticity_t* plasty,const double* stress,const double* hardv)
+double* PlasticityACC_YF(Plasticity_t* plasty,const double* stress,const double* hardv)
 {
+  size_t SizeNeeded = sizeof(double) ;
+  double* yield   = (double*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
   double m  = Plasticity_GetACC_M(plasty)  ;
   double k  = Plasticity_GetACC_k(plasty)   ;
   double ps = Plasticity_GetInitialIsotropicTensileLimit(plasty) ;
   double pc = exp(hardv[0]) ;
 
   double stress_tilde[9] ;
-  double yield ;
   
   {
     int i ;
@@ -170,7 +187,7 @@ double PlasticityACC_YF(Plasticity_t* plasty,const double* stress,const double* 
       stress_tilde[i] = stress[i] ;
     }
     
-    Plasticity_ScaleStressACC(plasty,stress_tilde) ;
+    PlasticityACC_ScaleStress(plasty,stress_tilde) ;
   }
 
   //evaluate p and q for scaled stress_tilde
@@ -178,7 +195,7 @@ double PlasticityACC_YF(Plasticity_t* plasty,const double* stress,const double* 
     double p = (stress_tilde[0] + stress_tilde[4] + stress_tilde[8])/3. ;  
     double q = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress_tilde)) ;
     
-    yield = q*q*exp(k*(2*p+pc-ps)/(pc-ps)) + m*m*(p - ps)*(p + pc) ;
+    yield[0] = q*q*exp(k*(2*p+pc-ps)/(pc-ps)) + m*m*(p - ps)*(p + pc) ;
   }
   
   return(yield) ;
@@ -216,7 +233,7 @@ double* (PlasticityACC_FR)(Plasticity_t* plasty,const double* stress,const doubl
       stress_tilde[i] = stress[i] ;
     }
     
-    Plasticity_ScaleStressACC(plasty,stress_tilde) ;
+    PlasticityACC_ScaleStress(plasty,stress_tilde) ;
   }
 
 
@@ -281,7 +298,7 @@ double* (PlasticityACC_FR)(Plasticity_t* plasty,const double* stress,const doubl
 
 
 
-void Plasticity_ScaleStressACC(Plasticity_t* plasty,double* stress)
+void PlasticityACC_ScaleStress(Plasticity_t* plasty,double* stress)
 {
   //grab parameters f_par and f_perp
   double f_par  = Plasticity_GetACC_f_par(plasty)  ;
@@ -296,3 +313,16 @@ void Plasticity_ScaleStressACC(Plasticity_t* plasty,double* stress)
   stress[4] *= f_scale[1];
   stress[8] *= f_scale[2];
 }
+
+
+
+
+#undef Plasticity_GetACC_k
+#undef Plasticity_GetACC_M
+#undef Plasticity_GetACC_N
+#undef Plasticity_GetInitialIsotropicTensileLimit
+#undef Plasticity_GetACCInitialPreconsolidationPressure
+#undef Plasticity_GetVolumetricStrainHardeningParameter
+#undef Plasticity_GetThermalHardeningParameter
+#undef Plasticity_GetACC_f_par
+#undef Plasticity_GetACC_f_perp

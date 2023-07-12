@@ -110,6 +110,9 @@ extern int      (Mesh_ComputeImplicitTerms)(Mesh_t*,double,double) ;
 #define Mesh_ComputeNbOfMatrixEntries(MSH) \
         Elements_ComputeNbOfMatrixEntries(Mesh_GetElements(MSH))
 
+#define Mesh_ComputeNbOfSelectedMatrixEntries(MSH,IND) \
+        Elements_ComputeNbOfSelectedMatrixEntries(Mesh_GetElements(MSH),IND)
+
 
 
 

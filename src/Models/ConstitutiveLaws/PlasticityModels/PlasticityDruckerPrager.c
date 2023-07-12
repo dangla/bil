@@ -64,7 +64,7 @@ void PlasticityDruckerPrager_SP(Plasticity_t* plasty,...)
 
 
 
-double (PlasticityDruckerPrager_CT)(Plasticity_t* plasty,const double* sig,const double* hardv,const double dlambda)
+double* (PlasticityDruckerPrager_CT)(Plasticity_t* plasty,const double* sig,const double* hardv,const double* plambda)
 /** Drucker-Prager criterion. 
  * 
  *  Inputs are: 
@@ -82,6 +82,7 @@ double (PlasticityDruckerPrager_CT)(Plasticity_t* plasty,const double* sig,const
  * 
  *  Return the value of the yield function. */
 {
+  double* yield  = Plasticity_GetCriterionValue(plasty) ;
   Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
   double young   = Elasticity_GetYoungModulus(elasty) ;
   double poisson = Elasticity_GetPoissonRatio(elasty) ;
@@ -100,6 +101,7 @@ double (PlasticityDruckerPrager_CT)(Plasticity_t* plasty,const double* sig,const
   double p,q,dev[9],devn[9] ;
   double crit ;
   double cc ;
+  double dlambda = (plambda) ? plambda[0] : 0 ;
   
   
   /*
@@ -214,7 +216,7 @@ double (PlasticityDruckerPrager_CT)(Plasticity_t* plasty,const double* sig,const
   }
   */
   
-  Plasticity_GetCriterionValue(plasty) = crit ;
+  //Plasticity_GetCriterionValue(plasty)[0] = crit ;
   
   /*
    * Consistent tangent matrix
@@ -271,13 +273,15 @@ double (PlasticityDruckerPrager_CT)(Plasticity_t* plasty,const double* sig,const
        
     Plasticity_UpdateElastoplasticTensor(plasty,c) ;
   }
-   
-  return(crit) ;
+  
+  yield[0] = crit ;
+  
+  return(yield) ;
 }
 
 
 
-double (PlasticityDruckerPrager_RM)(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
+double* (PlasticityDruckerPrager_RM)(Plasticity_t* plasty,double* sig,double* eps_p,double* hardv)
 /** Drucker-Prager return mapping.
  * 
  *  Parameters are:
@@ -295,6 +299,7 @@ double (PlasticityDruckerPrager_RM)(Plasticity_t* plasty,double* sig,double* eps
  * 
  *  Return the value of the yield function. */
 {
+  double* yield  = Plasticity_GetCriterionValue(plasty) ;
   Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
   double young   = Elasticity_GetYoungModulus(elasty) ;
   double poisson = Elasticity_GetPoissonRatio(elasty) ;
@@ -457,17 +462,21 @@ double (PlasticityDruckerPrager_RM)(Plasticity_t* plasty,double* sig,double* eps
   }
   
   /* Plastic multiplier */
-  Plasticity_GetPlasticMultiplier(plasty) = dl ;
+  Plasticity_GetPlasticMultiplier(plasty)[0] = dl ;
   
-  return(crit) ;
+  yield[0] = crit ;
+  
+  return(yield) ;
 }
 
 
 
 
-double (PlasticityDruckerPrager_YF)(Plasticity_t* plasty,const double* stress,const double* hardv)
+double* (PlasticityDruckerPrager_YF)(Plasticity_t* plasty,const double* stress,const double* hardv)
 /** Return the value of the yield function. */
 {
+  size_t SizeNeeded = sizeof(double) ;
+  double* yield   = (double*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
   double af      = Plasticity_GetFrictionAngle(plasty) ;
   double cohesion = Plasticity_GetCohesion(plasty) ;
   double ff      = 6.*sin(af)/(3. - sin(af)) ;
@@ -475,14 +484,13 @@ double (PlasticityDruckerPrager_YF)(Plasticity_t* plasty,const double* stress,co
   //double gam_p   = hardv[0] ;
   double p       = (stress[0] + stress[4] + stress[8])/3. ;
   double q       = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
-  double yield ;
   
   {
     //double c1 = (gam_p < gam_R) ? 1 - (1 - alpha)*gam_p/gam_R : alpha ;
     double c1 = 1 ;
     double cc = cc0*c1*c1 ;
   
-    yield = q + ff*p - cc ;
+    yield[0] = q + ff*p - cc ;
   }
 
   return(yield) ;
@@ -607,3 +615,9 @@ double* (PlasticityDruckerPrager_FR)(Plasticity_t* plasty,const double* stress,c
    
   return(flow) ;
 }
+
+
+        
+#undef Plasticity_GetFrictionAngle
+#undef Plasticity_GetDilatancyAngle
+#undef Plasticity_GetCohesion

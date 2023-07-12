@@ -717,6 +717,29 @@ void (Math_PrintMatrix)(const double* c,const int n)
 
 
 
+void (Math_PrintVector)(const double* c,const int n)
+/** Print a vector of rank n.
+ **/
+{
+  {
+    
+    {
+      int j ;
+        
+      printf("V(1-%d): (",n) ;
+        
+      for (j = 0 ; j < n ; j++) {
+        printf(" % e",c[j]) ;
+      }
+        
+      printf(")\n") ;
+    }
+  }
+}
+
+
+
+
 void (Math_PrintStressTensor)(const double* c)
 /** Print a 2nd rank tensor.
  **/

@@ -29,6 +29,9 @@ ResolutionMethod_t* (ResolutionMethod_Create)(Options_t* options)
 
     } else if(Options_ResolutionMethodIsMA38(options)) {
       ResolutionMethod_GetType(rm) = ResolutionMethod_Type(MA38) ;
+
+    } else if(Options_ResolutionMethodIsPetscKSP(options)) {
+      ResolutionMethod_GetType(rm) = ResolutionMethod_Type(PetscKSP) ;
       
     } else {
       arret("ResolutionMethod_Create: method not available") ;

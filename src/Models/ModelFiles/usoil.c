@@ -952,7 +952,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
             double hc    = CapillaryHardening(pc) ;
             double p_co  = HARDV ;
             double pp_co = p_co * hc ;
-            double crit1 = ComputeTangentStiffnessTensor(sig,&pp_co) ;
+            double* crit1 = ComputeTangentStiffnessTensor(sig,&pp_co) ;
             //double fcg   = UpdateElastoplasticTensor(c1) ;
           
             //if(fcg < 0) return(-1) ;
@@ -1223,9 +1223,9 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
         double logp_co  = x_n[I_HARDV] ;
         double loghc = log(hc) ;
         double logpp_co = logp_co + loghc ;
-        double crit  = ReturnMapping(sig,eps_p,&logpp_co) ;
+        double* crit  = ReturnMapping(sig,eps_p,&logpp_co) ;
         
-        x[I_CRIT]  = crit ;
+        x[I_CRIT]  = crit[0] ;
         x[I_HARDV] = logpp_co - loghc ;
       }
     
