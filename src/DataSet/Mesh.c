@@ -1802,6 +1802,161 @@ int (Mesh_ComputeImplicitTerms)(Mesh_t* mesh,double t,double dt)
 
 
 
+int* (Mesh_ComputeNbOfMatrixNonzerosPerRowAndColumn)(Mesh_t* mesh,const int imatrix)
+/** Return an array of int containing the number of nonzeros 
+ *  per row and per column in the matrix of index imatrix.  */
+{
+  int n_col = Mesh_GetNbOfMatrixColumns(mesh)[imatrix] ;
+  int*  nnzrow = (int*) Mry_New(int[2*n_col]) ;
+  int*  nnzcol = nnzrow + n_col ;
+  
+  if(imatrix >= Mesh_GetNbOfMatrices(mesh)) {
+    arret("Mesh_ComputeNbOfMatrixNonzerosPerRowAndColumn") ;
+  }
+  
+  
+  {
+    int i ;
+    
+    for(i = 0 ; i < 2*n_col ; i++) nnzrow[i] = 0 ;
+  }
+
+
+  {
+    int n_el = Mesh_GetNbOfElements(mesh) ;
+    Element_t* el0 = Mesh_GetElement(mesh) ;
+    int ie ;
+
+    /* Max nb of terms per row */
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Element_t* el = el0 + ie ;
+      int   ndof = Element_GetNbOfDOF(el) ;
+      int*  row  = Element_ComputeSelectedMatrixRowAndColumnIndices(el,imatrix) ;
+      int*  col  = row + ndof ;
+  
+      {
+        int   jdof ;
+
+        for(jdof = 0 ; jdof < ndof ; jdof++) {
+          int jcol = col[jdof] ;
+    
+          if(jcol < 0) continue ;
+
+          {
+            int idof ;
+            
+            for(idof = 0 ; idof < ndof ; idof++) {
+              int irow = row[idof] ;
+      
+              if(irow < 0) continue ;
+              
+              nnzrow[irow] += 1 ;
+              nnzcol[jcol] += 1 ;
+            }
+          }
+        }
+      }
+  
+      Element_FreeBufferFrom(el,row) ;
+    }
+  }
+  
+  /* Checks */
+  {
+    int nnz = Mesh_ComputeNbOfSelectedMatrixEntries(mesh,imatrix) ;
+    int i ;
+    int nnzr = 0 ;
+    int nnzc = 0 ;
+    
+    for(i = 0 ; i < n_col ; i++) {
+      nnzr += nnzrow[i] ;
+      nnzc += nnzcol[i] ;
+    }
+    
+    if((nnzr != nnzc) || (nnzr != nnz)) {
+      arret("Mesh_ComputeNbOfMatrixNonzerosPerRowAndColumn") ;
+    }
+  }
+
+  return(nnzrow) ;
+}
+
+
+
+int* (Mesh_ComputeNbOfSubmatrixNonzerosPerRow)(Mesh_t* mesh,const int imatrix,const int Istart,const int Iend)
+/** Compute the number of the non zeros in the two submatrices of the 
+ *  global matrix of index imatrix. The two submatrices are the diagonal
+ *  submatrix and the off-diagonal submatrix defined by the global rows
+ *  of index ranging between Istart and Iend-1.
+ *  Return an array of 2*(Iend-Istart) int containing the number of 
+ *  the diagonal non zeros per local row followed by 
+ *  the off-diagonal non zeros per local row */
+{
+  int   nlocalrows = Iend - Istart ;
+  int*  d_nnzrow = (int*) Mry_New(int[2*nlocalrows]) ;
+  int*  o_nnzrow = d_nnzrow + nlocalrows ;
+  
+  if(imatrix >= Mesh_GetNbOfMatrices(mesh)) {
+    arret("Mesh_ComputeNbOfSubmatrixNonzerosPerRow") ;
+  }
+  
+  
+  {
+    int i ;
+    
+    for(i = 0 ; i < 2*nlocalrows ; i++) d_nnzrow[i] = 0 ;
+  }
+
+
+  {
+    int n_el = Mesh_GetNbOfElements(mesh) ;
+    Element_t* el0 = Mesh_GetElement(mesh) ;
+    int ie ;
+
+    /* Max nb of terms per row */
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Element_t* el = el0 + ie ;
+      int   ndof = Element_GetNbOfDOF(el) ;
+      int*  row  = Element_ComputeSelectedMatrixRowAndColumnIndices(el,imatrix) ;
+      int*  col  = row + ndof ;
+  
+      {
+        int   jdof ;
+
+        for(jdof = 0 ; jdof < ndof ; jdof++) {
+          int jcol = col[jdof] ;
+    
+          if(jcol < 0) continue ;
+
+          {
+            int idof ;
+            
+            for(idof = 0 ; idof < ndof ; idof++) {
+              int irow = row[idof] ;
+      
+              if(irow < 0) continue ;
+              
+              if(irow >= Istart && irow < Iend) {
+                if(jcol >= Istart && jcol < Iend) {
+                  d_nnzrow[irow - Istart] += 1 ;
+                } else {
+                  o_nnzrow[irow - Istart] += 1 ;
+                }
+              }
+            }
+          }
+        }
+      }
+  
+      Element_FreeBufferFrom(el,row) ;
+    }
+  }
+
+  return(d_nnzrow) ;
+}
+
+
+
 
 /* Intern functions */
 

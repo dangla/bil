@@ -24,7 +24,7 @@ extern void        (Material_ScanProperties2) (Material_t*,FILE*,Model_ComputePr
 
 
 
-#define Material_MaxLengthOfKeyWord            (30)
+#define Material_MaxLengthOfKeyWord            (50)
 #define Material_MaxLengthOfTextLine           (500)
 
 #define Material_MaxNbOfCurves                 (20)     /* Max nb of curves per mat */

@@ -78,7 +78,7 @@ void PlasticityBBM_SP(Plasticity_t* plasty,...)
       //Plasticity_GetHardeningVariable(plasty)[0] = pc ;
       Plasticity_GetHardeningVariable(plasty)[0] = log(pc) ;
       
-      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6 ;
+      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6*log(pc) ;
       Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[1] = 1.e-6*pc ;
       Plasticity_GetTypicalSmallIncrementOfStress(plasty) = 1.e-6*pc ;
     }
@@ -454,9 +454,9 @@ double* (PlasticityBBM_YF)(Plasticity_t* plasty,const double* stress,const doubl
   double pc    = exp(lnpc) ;
   double m2    = m*m ;
   double p     = (stress[0] + stress[4] + stress[8])/3. ;
-  double q     = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
+  double q2    = 3*Math_ComputeSecondDeviatoricStressInvariant(stress) ;
   
-  yield[0] = q*q/m2 + (p - ps)*(p + pc) ;
+  yield[0] = q2/m2 + (p - ps)*(p + pc) ;
 
   return(yield) ;
 }
@@ -521,12 +521,16 @@ double* (PlasticityBBM_FR)(Plasticity_t* plasty,const double* stress,const doubl
     dg/dstress_ij = 1/3 (2*p + pc - ps) delta_ij + beta*(3/m2) dev_ij 
   */
   {
+    Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+    double bulk    = Elasticity_GetBulkModulus(elasty) ;
+    double pc0 = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
+    double N  = 4/(pc0*pc0*bulk) ;
     int    i ;
     
     for(i = 0 ; i < 9 ; i++) {
       double dev = stress[i] - p*id[i] ;
 
-      flow[i] = (2*p + pc - ps)*id[i]/3 + 3*beta/m2*dev ;
+      flow[i] = N*((2*p + pc - ps)*id[i]/3 + 3*beta/m2*dev) ;
     }
   }
   
@@ -539,8 +543,9 @@ double* (PlasticityBBM_FR)(Plasticity_t* plasty,const double* stress,const doubl
    */
   {
     double v = 1./(lambda - kappa) ;
+    double h = flow[0] + flow[4] + flow[8] ;
 
-    flow[9]  = - (1 + e0)*v*(2*p + pc - ps) ;
+    flow[9]  = - (1 + e0)*v*h ;
     flow[10] = 0 ;
   }
   

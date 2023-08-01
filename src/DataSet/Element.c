@@ -1008,12 +1008,13 @@ int* (Element_ComputeMatrixRowAndColumnIndices)(Element_t* el)
 
 int* (Element_ComputeSelectedMatrixRowAndColumnIndices)(Element_t* el,const int imatrix)
 {
-  int  nn  = Element_GetNbOfNodes(el) ;
-  int  neq = Element_GetNbOfEquations(el) ;
+  int nn   = Element_GetNbOfNodes(el) ;
+  int neq  = Element_GetNbOfEquations(el) ;
+  int ndof = nn*neq ;
   
   size_t SizeNeeded = 2*nn*neq*sizeof(int) ;
   int* rowind = (int*) Element_AllocateInBuffer(el,SizeNeeded) ;
-  int* colind = rowind + nn*neq ;
+  int* colind = rowind + ndof ;
   int  i ;
     
   for(i = 0 ; i < nn ; i++) {

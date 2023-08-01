@@ -15,6 +15,7 @@ extern Residu_t*   (Residu_Create)(Mesh_t*,Options_t*,const int,const int) ;
 extern void        (Residu_Delete)(void*) ;
 extern void        (Residu_AssembleElementResidu)(Residu_t*,Element_t*,double*) ;
 extern void        (Residu_PrintResidu)(Residu_t*,const char*) ;
+extern void        (Residu_SetValuesToZero)(Residu_t*) ;
 
 
 
@@ -59,6 +60,7 @@ extern void        (Residu_PrintResidu)(Residu_t*,const char*) ;
         
         
 /* Initialize the residu */
+#if 0
 #define Residu_SetValuesToZero(RS) \
         do { \
           unsigned int Residu_n = Residu_GetNbOfRHS(RS)*Residu_GetLengthOfRHS(RS) ; \
@@ -68,6 +70,7 @@ extern void        (Residu_PrintResidu)(Residu_t*,const char*) ;
             Residu_d[Residu_k] = 0. ; \
           } \
         } while(0)
+#endif
 
 
 

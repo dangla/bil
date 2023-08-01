@@ -29,7 +29,7 @@ MatrixStorageFormat_t* (MatrixStorageFormat_Create)(Options_t* options)
       MatrixStorageFormat_GetType(msf) = MatrixStorageFormat_Type(Coordinate) ;
 
     } else if(Options_ResolutionMethodIsPetscKSP(options)) {
-      MatrixStorageFormat_GetType(msf) = MatrixStorageFormat_Type(PETSCAIJ) ;
+      MatrixStorageFormat_GetType(msf) = MatrixStorageFormat_Type(PetscAIJ) ;
     
     } else {
       arret("MatrixStorageFormat_Create: method not available") ;

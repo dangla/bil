@@ -697,7 +697,7 @@ void (Math_PrintMatrix)(const double* c,const int n)
 /** Print a matrix of rank n.
  **/
 {
-  {
+  if(n) {
     int i ;
     
     for(i = 0 ; i < n ; i++) {
@@ -721,9 +721,7 @@ void (Math_PrintVector)(const double* c,const int n)
 /** Print a vector of rank n.
  **/
 {
-  {
-    
-    {
+    if(n) {
       int j ;
         
       printf("V(1-%d): (",n) ;
@@ -734,7 +732,6 @@ void (Math_PrintVector)(const double* c,const int n)
         
       printf(")\n") ;
     }
-  }
 }
 
 

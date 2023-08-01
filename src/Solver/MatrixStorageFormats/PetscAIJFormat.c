@@ -28,19 +28,54 @@ PetscAIJFormat_t* (PetscAIJFormat_Create)(Mesh_t* mesh,const int imatrix)
 {
   PetscAIJFormat_t* petscaij = (PetscAIJFormat_t*) Mry_New(PetscAIJFormat_t) ;
   Mat* aij = (Mat*) Mry_New(Mat) ;
-  PetscInt ierror = MatCreate(PETSC_COMM_WORLD,aij)  ;
-  
-  /* undefined ref to PetscCall ??? */
-  //PetscCall(ierror)  ;
   
   PetscAIJFormat_GetStorage(petscaij) = aij ;
   
+  /* Create the matrix */
   {
     int n = Mesh_GetNbOfMatrixColumns(mesh)[imatrix] ;
     
+    MatCreate(PETSC_COMM_WORLD,aij)  ;
     MatSetSizes(*aij,PETSC_DECIDE,PETSC_DECIDE,n,n) ;
+    MatSetFromOptions(*aij) ;
+    MatSetType(*aij,MATAIJ) ;
   }
-  
+
+  /* Preallocate the seq matrix aij */
+  {
+    int* nnzrow = Mesh_ComputeNbOfMatrixNonzerosPerRowAndColumn(mesh,imatrix) ;
+    
+    MatSeqAIJSetPreallocation(*aij,0,nnzrow) ;
+    free(nnzrow) ;
+  }
+    
+  /* The nb of processes and the rank of the calling process */
+  {
+    PetscMPIInt rank ;
+    PetscMPIInt size ;
+      
+    MPI_Comm_size(PETSC_COMM_WORLD,&size);
+    MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+    PetscPrintf(PETSC_COMM_WORLD,"Number of processors = %d, rank = %d\n", size, rank);
+  }
+    
+  /* Preallocate the MPI matrix aij */
+  {
+    PetscInt Istart ;
+    PetscInt Iend ;
+      
+    MatGetOwnershipRange(*aij,&Istart,&Iend) ;
+    
+    {
+      int nlocalrows = Iend - Istart ;
+      int* d_nnzrow = Mesh_ComputeNbOfSubmatrixNonzerosPerRow(mesh,imatrix,Istart,Iend) ;
+      int* o_nnzrow = d_nnzrow + nlocalrows ;
+        
+      MatMPIAIJSetPreallocation(*aij,0,d_nnzrow,0,o_nnzrow) ;
+      free(d_nnzrow) ;
+    }
+  }
+   
   /* Nb of entries */
   {
     int nnz = Mesh_ComputeNbOfSelectedMatrixEntries(mesh,imatrix) ;
@@ -48,7 +83,7 @@ PetscAIJFormat_t* (PetscAIJFormat_Create)(Mesh_t* mesh,const int imatrix)
     PetscAIJFormat_GetNbOfNonZeroValues(petscaij) = nnz ;
   }
   
-  return(aij) ;
+  return(petscaij) ;
 }
 
 
@@ -60,8 +95,10 @@ void (PetscAIJFormat_Delete)(void* self)
   {
     Mat* aij = PetscAIJFormat_GetStorage(petscaij) ;
     
-    MatDestroy(aij) ;
-    free(aij) ;
+    if(aij) {
+      MatDestroy(aij) ;
+      free(aij) ;
+    }
   }
 }
 

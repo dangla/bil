@@ -16,6 +16,7 @@ extern Matrix_t*   (Matrix_Create)                (Mesh_t*,Options_t*,const int)
 extern void        (Matrix_Delete)                (void*) ;
 extern void        (Matrix_AssembleElementMatrix) (Matrix_t*,Element_t*,double*) ;
 extern void        (Matrix_PrintMatrix)           (Matrix_t*,const char* keyword) ;
+extern void        (Matrix_SetValuesToZero)       (Matrix_t*) ;
 
 
 #define Matrix_GetMatrixIndex(MAT)               ((MAT)->index)
@@ -76,17 +77,25 @@ extern void        (Matrix_PrintMatrix)           (Matrix_t*,const char* keyword
         
 
 
-
+#if 0
 /* Initialize the matrix */
 #define Matrix_SetValuesToZero(MAT) \
         do { \
-          unsigned int Matrix_k ; \
-          for(Matrix_k = 0 ; Matrix_k < Matrix_GetNbOfNonZeroValues(MAT) ; Matrix_k++) { \
-            Matrix_GetNonZeroValue(MAT)[Matrix_k] = 0. ; \
+          if(0) { \
+          } else if(Matrix_StorageFormatIs(MAT,PetscAIJ)) { \
+            PetscAIJFormat_t* petscaij = (PetscAIJFormat_t*) Matrix_GetStorage(MAT) ;
+            Mat* A = (Mat*) PetscAIJFormat_GetStorage(petscaij) ;
+            MatZeroEntries(*A) ; \
+          } else {
+            unsigned int Matrix_k ; \
+            for(Matrix_k = 0 ; Matrix_k < Matrix_GetNbOfNonZeroValues(MAT) ; Matrix_k++) { \
+              Matrix_GetNonZeroValue(MAT)[Matrix_k] = 0. ; \
+            } \
           } \
           Matrix_GetNbOfEntries(MAT) = 0 ; \
           Matrix_SetToUnfactorizedState(MAT) ; \
         } while(0)
+#endif
 
 
 

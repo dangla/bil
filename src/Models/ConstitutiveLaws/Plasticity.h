@@ -55,6 +55,7 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 #define Plasticity_GetBuffers(PL)                    ((PL)->buffers)
 #define Plasticity_GetNbOfCriteria(PL)               ((PL)->ncriteria)
 #define Plasticity_GetNbOfHardeningVariables(PL)     ((PL)->nhardv)
+#define Plasticity_GetNbOfNonHardeningVariables(PL)  ((PL)->nnhardv)
 #define Plasticity_GetTypicalSmallIncrementOfHardeningVariable(PL)   ((PL)->dhardv)
 #define Plasticity_GetTypicalSmallIncrementOfStress(PL)              ((PL)->dstress)
 #define Plasticity_GetGenericData(PL)                ((PL)->genericdata)
@@ -217,6 +218,7 @@ struct Plasticity_s {
   double  dstress ; /** Typical small increment of stress */
   int     ncriteria ;  /** Nb of criteria */
   int     nhardv ;  /** Nb of hardening variables */
+  int     nnhardv ;  /** Nb of non hardening variables */
   double* hardm ;  /** Hardening modulus */
   double* criterion ; /** Value of the yield function criterion */
   double* fc ;     /** fc(k,l) = dfsds(j,i) * C(i,j,k,l) */

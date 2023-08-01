@@ -171,7 +171,7 @@ extern char*       (String_RemoveComments)       (char*,char*) ;
         " \f\n\r\t\v"
 
 #define String_BlankChars \
-        " \t "
+        " \t\r"
 
 
 #define String_SkipAnyChars(STR,Cs) \

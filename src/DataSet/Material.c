@@ -371,11 +371,17 @@ void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(co
     
     if(!line) break ;
     
-    //String_ScanStringUntil(line,mot,"=") ;
-    //String_Scan(line,"%*[ ]%[^=]",mot) ;
-    //sscanf(line," %*[ ]%[^=]",mot) ;
-    String_Scan(line," %[^= ]",mot) ;
-    //String_Scan(line,"%*[ ]%[^=]",mot) ;
+    {
+      //String_ScanStringUntil(line,mot,"=") ;
+      //String_Scan(line,"%*[ ]%[^=]",mot) ;
+      //sscanf(line," %*[ ]%[^=]",mot) ;
+      int n = String_Scan(line," %[^= ]",mot) ;
+      //String_Scan(line,"%*[ ]%[^=]",mot) ;
+      
+      if(n > Material_MaxLengthOfKeyWord) {
+        arret("Material_ScanProperties: too many characters") ;
+      }
+    }
 
     /* Reading some curves */
     if(String_Is(mot,"Courbes",6) || String_Is(mot,"Curves",5)) {

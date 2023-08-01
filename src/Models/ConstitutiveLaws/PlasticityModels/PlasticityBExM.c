@@ -45,10 +45,10 @@ static Plasticity_SetModelProp_t                     PlasticityBExM_SetModelProp
 #define Plasticity_GetLoadingCollapseFactorCurve(PL) \
         Curves_GetCurve(Plasticity_GetCurves(PL))
         
-#define Plasticity_GetSuctionIncreasingFactor(PL) \
+#define Plasticity_GetSuctionIncreasingFactorCurve(PL) \
         (Curves_GetCurve(Plasticity_GetCurves(PL)) + 1)
         
-#define Plasticity_GetSuctionDecreasingFactor(PL) \
+#define Plasticity_GetSuctionDecreasingFactorCurve(PL) \
         (Curves_GetCurve(Plasticity_GetCurves(PL)) + 2)
         
 #define Plasticity_GetSaturationDegreeCurve(PL) \
@@ -91,8 +91,8 @@ void PlasticityBExM_SP(Plasticity_t* plasty,...)
     Plasticity_GetSuctionCohesionCoefficient(plasty)      = va_arg(args,double) ;
     Plasticity_GetReferenceConsolidationPressure(plasty)  = va_arg(args,double) ;
     Plasticity_GetAlphaMicrostructure(plasty)             = va_arg(args,double) ;
-    Plasticity_GetInitialSuctionDecreaseHardening(plasty) = va_arg(args,double) ;
     Plasticity_GetInitialSuctionIncreaseHardening(plasty) = va_arg(args,double) ;
+    Plasticity_GetInitialSuctionDecreaseHardening(plasty) = va_arg(args,double) ;
     Plasticity_GetMicroElasticStiffnessEffectivePressureChanges(plasty) = va_arg(args,double) ;
     Curve_t* lc                                           = va_arg(args,Curve_t*) ;
     Curve_t* fi                                           = va_arg(args,Curve_t*) ;
@@ -132,10 +132,10 @@ void PlasticityBExM_SP(Plasticity_t* plasty,...)
       Plasticity_GetHardeningVariable(plasty)[2] = sd ;
       
       Plasticity_GetTypicalSmallIncrementOfStress(plasty) = 1.e-6*pc ;
-      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6*pc ;
+      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6*log(pc) ;
       Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[1] = 1.e-6*si ;
       Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[2] = 1.e-6*sd ;
-      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[3] = 1 ;
+      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[3] = 1.e-6*pc ;
     }
   }
 
@@ -191,10 +191,11 @@ double* (PlasticityBExM_YF)(Plasticity_t* plasty,const double* stress,const doub
   double pc    = exp(lnpc) ;
   double m2    = m*m ;
   double p     = (stress[0] + stress[4] + stress[8])/3. ;
-  double q     = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
+  //double q     = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
+  double q2    = 3*Math_ComputeSecondDeviatoricStressInvariant(stress) ;
   double peff  = p - pow(sl_s,alpha)*s ;
   
-  yield[0] = q*q/m2 + (p - ps)*(p + pc) ;
+  yield[0] = q2/m2 + (p - ps)*(p + pc) ;
   yield[1] = fabs(peff + 0.5*(si + sd)) - 0.5*(si + sd) ;
 
   return(yield) ;
@@ -234,8 +235,8 @@ double* (PlasticityBExM_FR)(Plasticity_t* plasty,const double* stress,const doub
   double kappa_m = Plasticity_GetMicroElasticStiffnessEffectivePressureChanges(plasty) ;
   Curve_t* lc    = Plasticity_GetLoadingCollapseFactorCurve(plasty) ;
   Curve_t* sl    = Plasticity_GetSaturationDegreeCurve(plasty) ;
-  Curve_t* fi    = Plasticity_GetSuctionIncreasingFactor(plasty) ;
-  Curve_t* fd    = Plasticity_GetSuctionDecreasingFactor(plasty) ;
+  Curve_t* fi    = Plasticity_GetSuctionIncreasingFactorCurve(plasty) ;
+  Curve_t* fd    = Plasticity_GetSuctionDecreasingFactorCurve(plasty) ;
   double lnpc0   = hardv[0] ;
   double si      = hardv[1] ;
   double sd      = hardv[2] ;
@@ -248,79 +249,92 @@ double* (PlasticityBExM_FR)(Plasticity_t* plasty,const double* stress,const doub
   double pc      = exp(lnpc) ;
   double m2      = m*m ;
   double p       = (stress[0] + stress[4] + stress[8])/3. ;
-  double q       = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
+  //double q       = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
+  double q2      = 3*Math_ComputeSecondDeviatoricStressInvariant(stress) ;
   double peff    = p - pow(sl_s,alpha)*s ;
-  double pstar   = - p - q*q/(m2*(p - ps)) ;
+  double pstar   = - p - q2/(m2*(p - ps)) ;
   double fi_p    = Curve_ComputeValue(fi,pstar/pc) ;
   double fd_p    = Curve_ComputeValue(fd,pstar/pc) ;
   double beta    = 1 ;
   double id[9]   = {1,0,0,0,1,0,0,0,1} ;
+  double* flow2  = flow + 9 + 4 ;
   
   /*
-    Potential function: g = beta*q*q/m2 + (p - ps)*(p + pc)
+    Potential functions: g = beta*q*q/m2 + (p - ps)*(p + pc)
+      g1 = beta*q*q/m2 + (p - ps)*(p + pc) ;
+      g2 = 0.5(peff + 0.5*(si + sd))^2 ;
   */
   
   /*
-    Plastic strain: deps^p_ij = dl * dg/dstress_ij
-    ----------------------------------------------
+    Direction of the plastic strains:
+    ---------------------------------
+    
+    deps1^p_ij = dl1 * dg1/dstress_ij
+    deps2^p_ij = dl2 * dg2/dstress_ij
+    
     dp/dstress_ij = 1/3 delta_ij
     dq/dstress_ij = 3/2 dev_ij/q 
-    dg/dstress_ij = 1/3 (dg/dp) delta_ij + 3/2 (dg/dq) dev_ij/q 
-    dg/dp      = 2*p + pc - ps
-    dg/dq      = beta*2*q/m2
     
-    dg/dstress_ij = 1/3 (2*p + pc - ps) delta_ij + beta*(3/m2) dev_ij 
+    dg1/dstress_ij = 1/3 (dg1/dp) delta_ij + 3/2 (dg1/dq) dev_ij/q 
+    dg2/dstress_ij = 1/3 (dg2/dp) delta_ij
+    
+    dg1/dp      = 2*p + pc - ps
+    dg1/dq      = beta*2*q/m2
+    dg2/dp      = peff + 0.5*(si + sd)
+    
+    dg1/dstress_ij = 1/3 (2*p + pc - ps) delta_ij + beta*(3/m2) dev_ij 
+    dg2/dstress_ij = 1/3 (peff + 0.5*(si + sd)) delta_ij
   */
   {
+    Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+    double bulk    = Elasticity_GetBulkModulus(elasty) ;
+    double pc0 = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
+    double si0 = Plasticity_GetInitialSuctionIncreaseHardening(plasty) ;
+    double N  = 4/(pc0*pc0*bulk) ;
+    double N2 = 2/(si0*bulk) ;
     int    i ;
     
     for(i = 0 ; i < 9 ; i++) {
       double dev = stress[i] - p*id[i] ;
 
-      flow[i] = (2*p + pc - ps)*id[i]/3 + 3*beta/m2*dev ;
+      flow[i]  = N*((2*p + pc - ps)*id[i]/3 + 3*beta/m2*dev) ;
+      flow2[i] = N2*((peff + 0.5*(si + sd))*id[i]/3) ;
     }
   }
   
   /*
-    The hardening flow: d(ln(pc0)) = - (1 + eM0)*v*deps_p
-   * --------------------------------------------------
-   * Using a = ln(pc0) as hardening variable.
-   * d(a) = - dl * (1 + eM0) * v * (dg/dp)
-   * So h(p,a) = - (1 + eM0) * v * (2*p + pc(a) - ps)
+    The hardening flows:
+   * -------------------
+   * Using a = ln(pc0) as hardening variable:
+   * d(a)  = - (1 + eM0)*v*deps_p
+   * d(si) = - Km/fi * deps2_p
+   * d(sd) = - Km/fd * deps2_p
+   * 
+   * d(a) = - (1 + eM0) * v * (dl1 * (dg1/dp) + dl2 * (dg2/dp))
+   * d(si) = - Km/fi * dl2 * (dg2/dp)
+   * d(sd) = - Km/fd * dl2 * (dg2/dp)
    */
   {
     double v = 1./(lambda - kappa) ;
-
-    flow[9]  = - (1 + eM0)*v*(2*p + pc - ps) ;
-    flow[10] = 0 ;
-    flow[11] = 0 ;
-    flow[12] = 0 ;
-  }
-  
-  {
-    double* flow2 = flow + 9 + 4 ;
-    int    i ;
-    
-    for(i = 0 ; i < 9 ; i++) {
-      flow2[i] = (peff + 0.5*(si + sd))*id[i]/3 ;
-    }
-  }
-  
-  {
-    double* flow2 = flow + 9 + 4 ;
-    double v = 1./(lambda - kappa) ;
-    double hm = (peff + 0.5*(si + sd)) ;
-    double km = (1 + em0)/kappa_m *(-peff) ;
+    double hM = flow[0] + flow[4] + flow[8] ;
+    double hm = flow2[0] + flow2[4] + flow2[8] ;
+    double km = (1 + em0)/kappa_m * (-peff) ;
     
     if(km < 0) {
-      arret("") ;
+      arret("PlasticityBExM_FR: negative coefficient") ;
     }
 
+    flow[9]   = - (1 + eM0)*v*hM ;
+    flow[10]  = 0 ;
+    flow[11]  = 0 ;
+    flow[12]  = 0 ;
+    
     flow2[9]  = - (1 + eM0)*v*hm ;
     flow2[10] = - km/fi_p * hm ;
     flow2[11] = - km/fd_p * hm ;
     flow2[12] = 0 ;
   }
+
   
   return(flow) ;
 }
@@ -340,5 +354,5 @@ double* (PlasticityBExM_FR)(Plasticity_t* plasty,const double* stress,const doub
 #undef Plasticity_GetMicroElasticStiffnessEffectivePressureChanges
 #undef Plasticity_GetLoadingCollapseFactorCurve
 #undef Plasticity_GetSaturationDegreeCurve
-#undef Plasticity_GetSuctionIncreasingFactor
-#undef Plasticity_GetSuctionDecreasingFactor
+#undef Plasticity_GetSuctionIncreasingFactorCurve
+#undef Plasticity_GetSuctionDecreasingFactorCurve

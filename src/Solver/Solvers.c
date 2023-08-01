@@ -7,9 +7,13 @@
 #include "Mry.h"
 #include "Solvers.h"
 #include "Message.h"
+#include "BilExtraLibs.h"
 
 
 
+#if defined (PETSCLIB)
+  #include <petsc.h>
+#endif
 
 /*
   Extern functions
@@ -55,5 +59,18 @@ void  (Solvers_Delete)(void* self)
       free(solver) ;
       Solvers_GetSolver(solvers) = NULL ;
     }
+  
+    #if defined (PETSCLIB)
+    if(solver) {
+      PetscBool isfinalized ;
+      
+      PetscFinalized(&isfinalized) ;
+      
+      if(!isfinalized) {
+        PetscInitialize(NULL,NULL,NULL,NULL) ;
+        PetscFinalize() ;
+      }
+    }
+    #endif
   }
 }

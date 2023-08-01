@@ -75,13 +75,15 @@ int Curves_Append(Curves_t* curves, Curve_t* cv)
     int NbOfCurves = Curves_GetNbOfCurves(curves) ;
     Curve_t* curve = Curves_GetCurve(curves) ;
     
-    if(Curves_CannotAppendCurves(curves,1)) {
-      arret("Curves_Append") ;
+    if(cv) {
+      if(Curves_CannotAppendCurves(curves,1)) {
+        arret("Curves_Append") ;
+      }
+    
+      curve[NbOfCurves] = cv[0] ;
+    
+      Curves_GetNbOfCurves(curves) += 1 ;
     }
-    
-    curve[NbOfCurves] = cv[0] ;
-    
-    Curves_GetNbOfCurves(curves) += 1 ;
     
     return(NbOfCurves) ;
 }

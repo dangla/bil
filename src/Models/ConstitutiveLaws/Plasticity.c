@@ -182,7 +182,8 @@ Plasticity_t*  (Plasticity_Create)(void)
   
   /* Default values */
   Plasticity_GetNbOfCriteria(plasty) = 1 ;
-  Plasticity_GetNbOfHardeningVariables(plasty) = 1 ;
+  Plasticity_GetNbOfHardeningVariables(plasty) = 0 ;
+  Plasticity_GetNbOfNonHardeningVariables(plasty) = 0 ;
   
   return(plasty) ;
 }
@@ -550,12 +551,14 @@ double* (Plasticity_DerivativeOfYieldFunction)(Plasticity_t* plasty,double* (*yi
   double dstress = Plasticity_GetTypicalSmallIncrementOfStress(plasty) ;
   double* dhardv = Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty) ;
   int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
+  int nnhardv = Plasticity_GetNbOfNonHardeningVariables(plasty) ;
+  int nthardv = nhardv + nnhardv ;
   int ncrit  = Plasticity_GetNbOfCriteria(plasty) ;
   int nflows = 9 + nhardv ;
   size_t SizeNeeded = nflows*ncrit*(sizeof(double)) ;
   double* dyield = (double*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
   
-  if(nhardv > Plasticity_MaxNbOfHardeningVariables) {
+  if(nthardv > Plasticity_MaxNbOfHardeningVariables) {
     arret("Plasticity_DerivativeOfYieldFunction") ;
   }
   
@@ -567,6 +570,7 @@ double* (Plasticity_DerivativeOfYieldFunction)(Plasticity_t* plasty,double* (*yi
     arret("Plasticity_DerivativeOfYieldFunction") ;
   }
   
+  /* k ranges from 0 to ncrit-1 (index of the yield function) */
   #define DYIELD(k)          (dyield + nflows*(k))
   #define DYIELD_STRESS(k)   (DYIELD(k))
   #define DYIELD_HARDV(k)    (DYIELD(k) + 9)
@@ -576,7 +580,7 @@ double* (Plasticity_DerivativeOfYieldFunction)(Plasticity_t* plasty,double* (*yi
     double hardv1[Plasticity_MaxNbOfHardeningVariables] ;
     int i ;
     
-    for(i = 0 ; i < nhardv ; i++) {
+    for(i = 0 ; i < nthardv ; i++) {
       hardv1[i] = hardv[i] ;
     }
     
@@ -665,13 +669,15 @@ double* (Plasticity_DerivativeOfFlowRules)(Plasticity_t* plasty,double* (*flowru
   double dstress = Plasticity_GetTypicalSmallIncrementOfStress(plasty) ;
   double* dhardv = Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty) ;
   int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
+  int nnhardv = Plasticity_GetNbOfNonHardeningVariables(plasty) ;
+  int nthardv = nhardv + nnhardv ;
   int ncrit  = Plasticity_GetNbOfCriteria(plasty) ;
   int nflows = 9 + nhardv ;
   int nflows2 = nflows*nflows ;
   size_t SizeNeeded = nflows2*ncrit*(sizeof(double)) ;
   double* dflow = (double*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
   
-  if(nhardv > Plasticity_MaxNbOfHardeningVariables) {
+  if(nthardv > Plasticity_MaxNbOfHardeningVariables) {
     arret("Plasticity_DerivativeOfFlowRules") ;
   }
   
@@ -682,7 +688,8 @@ double* (Plasticity_DerivativeOfFlowRules)(Plasticity_t* plasty,double* (*flowru
   if(dstress == 0) {
     arret("Plasticity_DerivativeOfFlowRules") ;
   }
-  
+    
+  /* k ranges from 0 to ncrit-1 (index of the yield mechanism) */
   #define DFLOW(k)                (dflow + nflows2*(k))
   #define DFLOWSTRAIN_STRESS(k)   (DFLOW(k))
   #define DFLOWSTRAIN_HARDV(k)    (DFLOW(k) + 81)
@@ -694,7 +701,7 @@ double* (Plasticity_DerivativeOfFlowRules)(Plasticity_t* plasty,double* (*flowru
     double hardv1[Plasticity_MaxNbOfHardeningVariables] ;
     int i ;
     
-    for(i = 0 ; i < nhardv ; i++) {
+    for(i = 0 ; i < nthardv ; i++) {
       hardv1[i] = hardv[i] ;
     }
     
@@ -799,6 +806,8 @@ double* (Plasticity_ResidusOfGenericReturnMappingAlgorithm)(Plasticity_t* plasty
   Plasticity_YieldFunction_t* yieldfunction = Plasticity_GetYieldFunction(plasty) ;
   Plasticity_FlowRules_t* flowrules = Plasticity_GetFlowRules(plasty) ;
   int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
+  int nnhardv = Plasticity_GetNbOfNonHardeningVariables(plasty) ;
+  int nthardv = nhardv + nnhardv ;
   int ncrit  = Plasticity_GetNbOfCriteria(plasty) ;
   int nflows = 9 + nhardv ;
   
@@ -810,7 +819,7 @@ double* (Plasticity_ResidusOfGenericReturnMappingAlgorithm)(Plasticity_t* plasty
     arret("Plasticity_ResidusOfGenericReturnMappingAlgorithm") ;
   }
   
-  if(nhardv > Plasticity_MaxNbOfHardeningVariables) {
+  if(nthardv > Plasticity_MaxNbOfHardeningVariables) {
     arret("Plasticity_ResidusOfGenericReturnMappingAlgorithm") ;
   }
   
@@ -821,7 +830,8 @@ double* (Plasticity_ResidusOfGenericReturnMappingAlgorithm)(Plasticity_t* plasty
   
   {
     double* invc = Elasticity_GetComplianceTensor(elasty) ;
-    
+      
+    /* k ranges from 0 to ncrit-1 (index of the yield mechanism) */
     #define FLOW(k)                   (flow + nflows*(k))
     #define FLOWSTRAIN(k)             (FLOW(k))
     #define FLOWHARDV(k)              (FLOW(k) + 9)
@@ -957,6 +967,8 @@ double* (Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm)(Plasticity_t*
   Plasticity_YieldFunction_t* yieldfunction = Plasticity_GetYieldFunction(plasty) ;
   Plasticity_FlowRules_t* flowrules = Plasticity_GetFlowRules(plasty) ;
   int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
+  int nnhardv = Plasticity_GetNbOfNonHardeningVariables(plasty) ;
+  int nthardv = nhardv + nnhardv ;
   int ncrit  = Plasticity_GetNbOfCriteria(plasty) ;
   int nflows = 9 + nhardv ;
   int nflows2 = nflows*nflows ;
@@ -969,7 +981,7 @@ double* (Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm)(Plasticity_t*
     arret("Plasticity_GenericMatrixOfReturnMappingAlgorithm") ;
   }
   
-  if(nhardv > Plasticity_MaxNbOfHardeningVariables) {
+  if(nthardv > Plasticity_MaxNbOfHardeningVariables) {
     arret("Plasticity_GenericMatrixOfReturnMappingAlgorithm") ;
   }
   
@@ -977,7 +989,8 @@ double* (Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm)(Plasticity_t*
     arret("Plasticity_GenericMatrixOfReturnMappingAlgorithm") ;
   }
   
-  
+        
+  /* k ranges from 0 to ncrit-1 (index of the yield mechanism) */
   {
     #define DYIELD(k)                 (dyield + nflows*(k))
     #define FLOW(k)                   (flow + nflows*(k))
@@ -989,7 +1002,7 @@ double* (Plasticity_JacobianMatrixOfGenericReturnMappingAlgorithm)(Plasticity_t*
     #define DFLOWSTRAIN_STRESS(k)     (DFLOW(k))
     #define DFLOWSTRAIN_HARDV(k)      (DFLOW(k) + 81)
     #define DFLOWHARDV_STRESS(k)      (DFLOW(k) + 9*nflows)
-    #define DFLOWHARDV_HARDV(i)       (DFLOW(k) + 9*nflows + 9)
+    #define DFLOWHARDV_HARDV(k)       (DFLOW(k) + 9*nflows + 9)
     #define MATRIX(i,j)               matrix[(i)*nmat+(j)]
     {
       double* dyield = Plasticity_DerivativeOfYieldFunction(plasty,yieldfunction,stress,hardv) ;
@@ -1245,10 +1258,12 @@ double* (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,do
 {
   double* crit  = Plasticity_GetCriterionValue(plasty) ;
   int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
+  int nnhardv = Plasticity_GetNbOfNonHardeningVariables(plasty) ;
+  int nthardv = nhardv + nnhardv ;
   int ncrit  = Plasticity_GetNbOfCriteria(plasty) ;
   int nflows = 9 + nhardv ;
   
-  if(nhardv > Plasticity_MaxNbOfHardeningVariables) {
+  if(nthardv > Plasticity_MaxNbOfHardeningVariables) {
     arret("Plasticity_GenericReturnMapping") ;
   }
   
@@ -1271,7 +1286,7 @@ double* (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,do
         stress_t[i] = stress[i] ;
       }
     
-      for(i = 0 ; i < nhardv ; i++) {
+      for(i = 0 ; i < nthardv ; i++) {
         hardv_n[i] = hardv[i] ;
       }
     
@@ -1293,12 +1308,16 @@ double* (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,do
 
       #if 0
       {
-        int i ;
-        
         printf("\n") ;
         printf("=========\n") ;
         printf("iter = %d\n",iter) ;
         printf("=========\n") ;
+      }
+      #endif
+
+      #if 0
+      {
+        int i ;
         
         printf("\n") ;
         printf("jacobian matrix of the residus:\n") ;
@@ -1375,13 +1394,18 @@ double* (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,do
       {
         int i ;
         
+        printf("\n") ;
+        printf("solution:\n") ;
+        
         printf("stress tensor:\n") ;
         Math_PrintStressTensor(stress) ;
         
-        for(i = 0 ; i < nhardv ; i++) {
+        printf("hardening and non-hardening variables:\n") ;
+        for(i = 0 ; i < nthardv ; i++) {
           printf("hardv[%d] = %e\n",i,hardv[i]) ;
         }
         
+        printf("zeta variables:\n") ;
         for(i = 0 ; i < ncrit ; i++) {
           printf("zeta = %e\n",zeta[i]) ;
         }
@@ -1458,9 +1482,11 @@ double* (Plasticity_GenericTangentStiffnessTensor)(Plasticity_t* plasty,const do
   double* c = Plasticity_GetTangentStiffnessTensor(plasty) ;
   double* crit   = Plasticity_GetCriterionValue(plasty) ;
   int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
+  int nnhardv = Plasticity_GetNbOfNonHardeningVariables(plasty) ;
+  int nthardv = nhardv + nnhardv ;
   int ncrit  = Plasticity_GetNbOfCriteria(plasty) ;
   
-  if(nhardv > Plasticity_MaxNbOfHardeningVariables) {
+  if(nthardv > Plasticity_MaxNbOfHardeningVariables) {
     arret("Plasticity_GenericTangentStiffnessTensor") ;
   }
   
@@ -1521,7 +1547,7 @@ double* (Plasticity_GenericTangentStiffnessTensor)(Plasticity_t* plasty,const do
 
 
 
-#if 1
+#if 0
 double* (Plasticity_GenericTangentStiffnessTensor1)(Plasticity_t* plasty,const double* stress,const double* hardv,const double* plambda)
 /** Compute the consistent tangent stiffness tensor in a generic way
  * 
@@ -1550,6 +1576,8 @@ double* (Plasticity_GenericTangentStiffnessTensor1)(Plasticity_t* plasty,const d
   double* dgsds  = Plasticity_GetPotentialFunctionGradient(plasty) ;
   double* hm     = Plasticity_GetHardeningModulus(plasty) ;
   int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
+  int nnhardv = Plasticity_GetNbOfNonHardeningVariables(plasty) ;
+  int nthardv = nhardv + nnhardv ;
   int nflows  = 9 + nhardv ;
   double lambda = (plambda) ? plambda[0] : 0 ;
   
@@ -1561,7 +1589,7 @@ double* (Plasticity_GenericTangentStiffnessTensor1)(Plasticity_t* plasty,const d
     arret("Plasticity_GenericTangentStiffnessTensor") ;
   }
   
-  if(nhardv > Plasticity_MaxNbOfHardeningVariables) {
+  if(nthardv > Plasticity_MaxNbOfHardeningVariables) {
     arret("Plasticity_GenericTangentStiffnessTensor") ;
   }
 
@@ -1742,8 +1770,9 @@ double* (Plasticity_GenericTangentStiffnessTensor1)(Plasticity_t* plasty,const d
 
 
 #if 0
-static int Plasticity_TestMatrix(Plasticity_t*,const double*) ;
-static int Plasticity_TestReturnMapping(Plasticity_t*,const double*) ;
+static Plasticity_t* Plasticity_DataElasticity(int,char**) ;
+static int Plasticity_TestMatrix(Plasticity_t*,const double*,const double*) ;
+static int Plasticity_TestReturnMapping(Plasticity_t*,const double*,const double*) ;
 
 #include <time.h>
 #include "Math_.h"
@@ -1832,9 +1861,8 @@ Plasticity_t* Plasticity_DataElasticity(int argc,char** argv)
 }
 
 
-double* Plasticity_DataCamclay(Plasticity_t* plasty)
+double* Plasticity_DataCamclay(Plasticity_t* plasty,double* stress,double* hardv)
 {
-  double* stress = (double*) Mry_New(double[9]) ;
   
   {
     double lambda = 0.037 ;
@@ -1867,6 +1895,8 @@ double* Plasticity_DataCamclay(Plasticity_t* plasty)
       stress[6] = sxz ;
       stress[7] = syz ;
       stress[8] = szz ;
+      
+      hardv[0] = Plasticity_GetHardeningVariable(plasty)[0] ;
     }
   }
   
@@ -1874,9 +1904,8 @@ double* Plasticity_DataCamclay(Plasticity_t* plasty)
 }
 
 
-double* Plasticity_DataCamclayOffset(Plasticity_t* plasty)
+double* Plasticity_DataCamclayOffset(Plasticity_t* plasty,double* stress,double* hardv)
 {
-  double* stress = (double*) Mry_New(double[9]) ;
   
   {
     double lambda = 0.037 ;
@@ -1911,7 +1940,8 @@ double* Plasticity_DataCamclayOffset(Plasticity_t* plasty)
       stress[7] = syz ;
       stress[8] = szz ;
       
-      Plasticity_GetHardeningVariable(plasty)[1] = ps ;
+      hardv[0] = Plasticity_GetHardeningVariable(plasty)[0] ;
+      hardv[1] = ps ;
     }
   }
   
@@ -1919,9 +1949,8 @@ double* Plasticity_DataCamclayOffset(Plasticity_t* plasty)
 }
 
 
-double* Plasticity_DataBBM(Plasticity_t* plasty)
+double* Plasticity_DataBBM(Plasticity_t* plasty,double* stress,double* hardv)
 {
-  double* stress = (double*) Mry_New(double[9]) ;
   
   {
     double lambda = 0.037 ;
@@ -1940,8 +1969,7 @@ double* Plasticity_DataBBM(Plasticity_t* plasty)
     Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0,coh,p_ref,curvelc) ;
   
     {
-      double* hardv = Plasticity_GetHardeningVariable(plasty) ;
-      double lnpc0 = hardv[0] ;
+      double lnpc0 = Plasticity_GetHardeningVariable(plasty)[0] ;
       double s     = 100.e3 ;
       double ps    = coh*s ;
       double lc_s  = Curve_ComputeValue(curvelc,s) ;
@@ -1968,7 +1996,8 @@ double* Plasticity_DataBBM(Plasticity_t* plasty)
       stress[7] = syz ;
       stress[8] = szz ;
       
-      Plasticity_GetHardeningVariable(plasty)[1] = s ;
+      hardv[0] = Plasticity_GetHardeningVariable(plasty)[0] ;
+      hardv[1] = s ;
     }
   }
   
@@ -1976,9 +2005,8 @@ double* Plasticity_DataBBM(Plasticity_t* plasty)
 }
 
 
-double* Plasticity_DataBExM(Plasticity_t* plasty)
+double* Plasticity_DataBExM(Plasticity_t* plasty,double* stress,double* hardv)
 {
-  double* stress = (double*) Mry_New(double[9]) ;
   
   {
     double lambda = 0.016 ;
@@ -1990,7 +2018,8 @@ double* Plasticity_DataBExM(Plasticity_t* plasty)
     double p_ref = 42.e3 ;
     double coh = 0.0073 ;
     double alpha = 2 ;
-    double s_d = 3660.e3 ;
+    //double s_d = 3660.e3 ;
+    double s_d = 60.e3 ;
     double s_i = s_d + 25.e3 ;
     double kappa_m = 0.01 ;
     Curves_t* curves = Curves_Create(5) ;
@@ -2007,7 +2036,7 @@ double* Plasticity_DataBExM(Plasticity_t* plasty)
     Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,eM0,em0,coh,p_ref,alpha,s_i,s_d,kappa_m,curvelc,curvefi,curvefd,curvesl) ;
   
     {
-      double lnpc0 = log(pc0) ;
+      double lnpc0 = Plasticity_GetHardeningVariable(plasty)[0] ;
       double s     = 100.e3 ;
       double ps    = coh*s ;
       double lc_s  = Curve_ComputeValue(curvelc,s) ;
@@ -2036,7 +2065,10 @@ double* Plasticity_DataBExM(Plasticity_t* plasty)
       stress[7] = syz ;
       stress[8] = szz ;
       
-      Plasticity_GetHardeningVariable(plasty)[3] = s ;
+      hardv[0] = Plasticity_GetHardeningVariable(plasty)[0] ;
+      hardv[1] = Plasticity_GetHardeningVariable(plasty)[1] ;
+      hardv[2] = Plasticity_GetHardeningVariable(plasty)[2] ;
+      hardv[3] = s ;
     }
   }
   
@@ -2044,26 +2076,29 @@ double* Plasticity_DataBExM(Plasticity_t* plasty)
 }
 
 
-int Plasticity_TestMatrix(Plasticity_t* plasty,const double* stress)
+int Plasticity_TestMatrix(Plasticity_t* plasty,const double* stress,const double* hardv)
 {
   
   {
-    int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
+    //int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
     int ncrit  = Plasticity_GetNbOfCriteria(plasty) ;
     double* c = Plasticity_GetTangentStiffnessTensor(plasty) ;
     double* dfsds  = Plasticity_GetYieldFunctionGradient(plasty) ;
     double* dgsds  = Plasticity_GetPotentialFunctionGradient(plasty) ;
     double* hm     = Plasticity_GetHardeningModulus(plasty) ;
-    double* hardv =  Plasticity_GetHardeningVariable(plasty) ;
+    //double* hardv =  Plasticity_GetHardeningVariable(plasty) ;
+    //double*  dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
     double  dlambda[Plasticity_MaxNbOfCriteria] ;
     
+    #if 1
     {
       int i ;
       
-      for(i = 0 ; i < Plasticity_MaxNbOfCriteria ; i++) {
+      for(i = 0 ; i < ncrit ; i++) {
         dlambda[i] = 1 ;
       }
     }
+    #endif
     
     {
       double* crit = Plasticity_ComputeTangentStiffnessTensor(plasty,stress,hardv,dlambda) ;
@@ -2107,19 +2142,20 @@ int Plasticity_TestMatrix(Plasticity_t* plasty,const double* stress)
 
 
 
-int Plasticity_TestReturnMapping(Plasticity_t* plasty,const double* stress_t)
+int Plasticity_TestReturnMapping(Plasticity_t* plasty,const double* stress_t,const double* hardv_n)
 {
   
   {
-    int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
     int ncrit  = Plasticity_GetNbOfCriteria(plasty) ;
-    double* hardv_n = Plasticity_GetHardeningVariable(plasty) ;
+    int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
+    int nnhardv = Plasticity_GetNbOfNonHardeningVariables(plasty) ;
+    int nthardv = nhardv + nnhardv ;
     
     printf("Trial stress tensor:\n") ;
     Math_PrintStressTensor(stress_t) ;
     
-    printf("Hardening variables:\n") ;
-    Math_PrintVector(hardv_n,nhardv) ;
+    printf("Hardening and non-hardening variables:\n") ;
+    Math_PrintVector(hardv_n,nthardv) ;
     
     printf("yield functions:\n") ;
     {
@@ -2137,7 +2173,7 @@ int Plasticity_TestReturnMapping(Plasticity_t* plasty,const double* stress_t)
         
         for(i = 0 ; i < 9 ; i++) stress[i] = stress_t[i] ;
         
-        for(i = 0 ; i < nhardv ; i++) hardv[i] = hardv_n[i] ;
+        for(i = 0 ; i < nthardv ; i++) hardv[i] = hardv_n[i] ;
       }
       
       printf("\n") ;
@@ -2151,8 +2187,8 @@ int Plasticity_TestReturnMapping(Plasticity_t* plasty,const double* stress_t)
         printf("stress tensor:\n") ;
         Math_PrintStressTensor(stress) ;
     
-        printf("Hardening variables:\n") ;
-        Math_PrintVector(hardv,nhardv) ;
+        printf("Hardening and non-hardening variables:\n") ;
+        Math_PrintVector(hardv,nthardv) ;
       
         printf("Plastic strain:\n") ;
         Math_PrintStressTensor(strain_p) ;
@@ -2175,7 +2211,7 @@ int Plasticity_TestReturnMapping(Plasticity_t* plasty,const double* stress_t)
         
         for(i = 0 ; i < 9 ; i++) stress[i] = stress_t[i] ;
         
-        for(i = 0 ; i < nhardv ; i++) hardv[i] = hardv_n[i] ;
+        for(i = 0 ; i < Plasticity_MaxNbOfHardeningVariables ; i++) hardv[i] = hardv_n[i] ;
       }
     
       printf("\n") ;
@@ -2189,8 +2225,8 @@ int Plasticity_TestReturnMapping(Plasticity_t* plasty,const double* stress_t)
         printf("stress tensor:\n") ;
         Math_PrintStressTensor(stress) ;
     
-        printf("Hardening variables:\n") ;
-        Math_PrintVector(hardv,nhardv) ;
+        printf("Hardening and non-hardening variables:\n") ;
+        Math_PrintVector(hardv,nthardv) ;
       
         printf("Plastic strain:\n") ;
         Math_PrintStressTensor(strain_p) ;
@@ -2201,6 +2237,98 @@ int Plasticity_TestReturnMapping(Plasticity_t* plasty,const double* stress_t)
         printf("Plastic multipliers:\n") ;
         Math_PrintVector(lambda,ncrit) ;
       }
+    }
+  }
+  
+  return(0) ;
+}
+
+
+
+int Plasticity_Tests(Plasticity_t* plasty,const double* stress_t,const double* hardv_n,double* (*ReturnMapping)(Plasticity_t*,double*,double*,double*),double* (*ComputeTangentStiffnessTensor)(Plasticity_t*,const double*,const double*,const double*))
+{
+  int ncrit  = Plasticity_GetNbOfCriteria(plasty) ;
+  int nhardv = Plasticity_GetNbOfHardeningVariables(plasty) ;
+  int nnhardv = Plasticity_GetNbOfNonHardeningVariables(plasty) ;
+  int nthardv = nhardv + nnhardv ;
+  double stress[9] ;
+  double hardv[Plasticity_MaxNbOfHardeningVariables] ;
+  
+  
+  printf("Return mapping algorithm:\n") ;
+  printf("------------------------\n") ;
+  
+  {
+    
+    printf("Trial stress tensor:\n") ;
+    Math_PrintStressTensor(stress_t) ;
+    
+    printf("Hardening and non-hardening variables:\n") ;
+    Math_PrintVector(hardv_n,nthardv) ;
+    
+    printf("yield functions:\n") ;
+    {
+      double* yield = Plasticity_YieldFunction(plasty,stress_t,hardv_n) ;
+      Math_PrintVector(yield,ncrit) ;
+    }
+    
+    {
+      double strain_p[9] = {0,0,0,0,0,0,0,0,0} ;
+      
+      {
+        int i ;
+        
+        for(i = 0 ; i < 9 ; i++) stress[i] = stress_t[i] ;
+        
+        for(i = 0 ; i < nthardv ; i++) hardv[i] = hardv_n[i] ;
+      }
+      
+      {
+        double* yield = ReturnMapping(plasty,stress,strain_p,hardv) ;
+        double* lambda = Plasticity_GetPlasticMultiplier(plasty) ;
+        
+        printf("stress tensor:\n") ;
+        Math_PrintStressTensor(stress) ;
+    
+        printf("Hardening and non-hardening variables:\n") ;
+        Math_PrintVector(hardv,nthardv) ;
+      
+        printf("Plastic strain:\n") ;
+        Math_PrintStressTensor(strain_p) ;
+      
+        printf("yield criteria:\n") ;
+        Math_PrintVector(yield,ncrit) ;
+      
+        printf("Plastic multipliers:\n") ;
+        Math_PrintVector(lambda,ncrit) ;
+      }
+    }
+  }
+  
+  
+  printf("Consistent matrix:\n") ;
+  printf("-----------------\n") ;
+  
+  {
+    double* c = Plasticity_GetTangentStiffnessTensor(plasty) ;
+    double* dfsds  = Plasticity_GetYieldFunctionGradient(plasty) ;
+    double* dgsds  = Plasticity_GetPotentialFunctionGradient(plasty) ;
+    double* hm     = Plasticity_GetHardeningModulus(plasty) ;
+    double* dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
+    
+    {
+      double* crit = ComputeTangentStiffnessTensor(plasty,stress,hardv,dlambda) ;
+      
+      printf("tangent stiffness tensor:\n") ;
+      Math_PrintStiffnessTensor(c) ;
+      
+      printf("yield function gradient:\n") ;
+      Math_PrintStressTensor(dfsds) ;
+      printf("potential function gradient:\n") ;
+      Math_PrintStressTensor(dgsds) ;
+      
+      printf("hardening moduli:\n") ;
+      Math_PrintMatrix(hm,ncrit) ;
     }
   }
   
@@ -2220,18 +2348,40 @@ int main(int argc, char** argv)
   
   {
     Plasticity_t* plasty = Plasticity_DataElasticity(argc,argv) ;
-    //double* stress = Plasticity_DataCamclay(plasty) ;
-    //double* stress = Plasticity_DataCamclayOffset(plasty) ;
-    //double* stress = Plasticity_DataBBM(plasty) ;
-    double* stress = Plasticity_DataBExM(plasty) ;
+    double stress[9] ;
+    double hardv[Plasticity_MaxNbOfHardeningVariables] ;
+    
+    //Plasticity_DataCamclay(plasty,stress,hardv) ;
+    //Plasticity_DataCamclayOffset(plasty,stress,hardv) ;
+    //Plasticity_DataBBM(plasty,stress,hardv) ;
+    Plasticity_DataBExM(plasty,stress,hardv) ;
   
-    printf("Test on the consistent matrix\n") ;
-    printf("=============================\n") ;
-    Plasticity_TestMatrix(plasty,stress) ;
+    #if 0
+    {
+      printf("Test on the consistent matrix\n") ;
+      printf("=============================\n") ;
+      Plasticity_TestMatrix(plasty,stress,hardv) ;
   
-    printf("Test on the return mapping algorithm\n") ;
-    printf("====================================\n") ;
-    Plasticity_TestReturnMapping(plasty,stress) ;
+      printf("Test on the return mapping algorithm\n") ;
+      printf("====================================\n") ;
+      Plasticity_TestReturnMapping(plasty,stress,hardv) ;
+    }
+    #endif
+    
+    {
+      
+      printf("\n") ;
+      printf("native approach\n") ;
+      printf("===============\n") ;
+      
+      Plasticity_Tests(plasty,stress,hardv,Plasticity_GetReturnMapping(plasty),Plasticity_GetComputeTangentStiffnessTensor(plasty)) ;
+    
+      printf("\n") ;
+      printf("generic approach\n") ;
+      printf("================\n") ;
+      
+      Plasticity_Tests(plasty,stress,hardv,Plasticity_GenericReturnMapping,Plasticity_GenericTangentStiffnessTensor) ;
+    }
   }
   
   Session_Close() ;

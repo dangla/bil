@@ -26,6 +26,10 @@
   #include "superludist.h"
 #endif
 
+#ifdef PETSCLIB
+  #include <petsc.h>
+#endif
+
 
 static void      (GenericData_DeleteData)(TypeId_t*,void*) ;
 
@@ -170,8 +174,13 @@ void  (GenericData_DeleteData)(TypeId_t* typ,void* self)
     case TypeId_IdNumber(dScalePermstruct_t): dScalePermstructFree(self); return ;
     case TypeId_IdNumber(dLUstruct_t)     : dLUstructFree(self); return ;
     case TypeId_IdNumber(gridinfo_t)      : superlu_gridexit(self); return ;
-    default                               : break ;
     #endif
+    /* from Petsc */
+    #ifdef PETSCLIB
+    case TypeId_IdNumber(KSP)             : KSPDestroy(self); return;
+    case TypeId_IdNumber(PC)              : PCDestroy(self); return;
+    #endif
+    default                               : break ;
   }
   
   Message_FatalError("GenericData_DeleteData: unknown type") ;

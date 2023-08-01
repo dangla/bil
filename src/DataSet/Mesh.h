@@ -43,6 +43,8 @@ extern int      (Mesh_ComputeExplicitTerms)(Mesh_t*,double) ;
 extern int      (Mesh_ComputeMatrix)(Mesh_t*,Matrix_t*,double,double) ;
 extern void     (Mesh_ComputeResidu)(Mesh_t*,Residu_t*,Loads_t*,double,double) ;
 extern int      (Mesh_ComputeImplicitTerms)(Mesh_t*,double,double) ;
+extern int*     (Mesh_ComputeNbOfMatrixNonzerosPerRowAndColumn)(Mesh_t*,const int) ;
+extern int*     (Mesh_ComputeNbOfSubmatrixNonzerosPerRow)(Mesh_t*,const int,const int,const int) ;
 
 
 

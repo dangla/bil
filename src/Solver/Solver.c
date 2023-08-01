@@ -31,6 +31,7 @@
 
 #if defined (PETSCLIB)
   #include "PetscKSPMethod.h"
+  #include "PetscAIJFormat.h"
   #include <petsc.h>
 #endif
 
@@ -237,13 +238,8 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
       Solver_GetSolve(solver) = PetscKSPMethod_Solve ;
       
       /* Initialization */
-        
-      PetscFunctionBeginUser;
-        
       {
-        ResolutionMethod_t* rm = Solver_GetResolutionMethod(solver) ;
-        Options_t* opt = ResolutionMethod_GetOptions(rm) ;
-        Context_t* ctx = Options_GetContext(opt) ;
+        Context_t* ctx = Options_GetContext(options) ;
         CommandLine_t* cmd = Context_GetCommandLine(ctx) ;
         int argc = CommandLine_GetNbOfArg(cmd) ;
         char** argv = CommandLine_GetArg(cmd) ;
@@ -251,24 +247,52 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
         PetscInitialize(&argc,&argv,NULL,NULL) ;
       }
       
-      /*  Create the solver KSP and the preconditioner PC */
+      /*  Create the solver KSP */
       {
-        Mat* A = (Mat*) Matrix_GetStorage(matrix) ;
         KSP* ksp = (KSP*) Mry_New(KSP) ;
-        PC*  pc = (PC*) Mry_New(PC) ;
-        
-        KSPCreate(PETSC_COMM_SELF,ksp) ;
-        
-        KSPSetOperators(*ksp,*A,*A) ;
-        KSPGetPC(*ksp,pc) ;
-        PCSetType(*pc,PCJACOBI) ;
-        
         GenericData_t* gksp = GenericData_Create(1,ksp,KSP,"ksp") ;
-        GenericData_t* gpc = GenericData_Create(1,pc,PC,"pc") ;
+        
+        KSPCreate(PETSC_COMM_WORLD,ksp) ;
+        
+        /* Set the method from the command line "-ksp_type <method>" 
+         * where "method" is one of the following options: 
+         * richardson, chebyshev, cg, gmres, tcqmr, bcgs, cgs, tfqmr, 
+         * cr, lsqr, bicg, preonly ...
+         * with gmres by default. 
+         * Set the relative, absolute, divergence tolerance from the
+         * command line: 
+         * "ksp_rtol <rtol>", "ksp_atol <atol>", "ksp_dtol <dtol>
+         **/
+        {
+          int n = Solver_GetNbOfColumns(solver) ;
+          
+          //KSPSetTolerances(*ksp,1.e-2/n,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT) ;
+          KSPSetTolerances(*ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT) ;
+          KSPSetFromOptions(*ksp) ;
+          //KSPSetUp(*ksp) ;
+        }
         
         Solver_AppendGenericWorkSpace(solver,gksp) ;
-        Solver_AppendGenericWorkSpace(solver,gpc) ;
       }
+      
+      /* Sets the preconditioner options */
+      #if 1
+      {
+        GenericData_t* gw = Solver_GetGenericWorkSpace(solver) ;
+        KSP* ksp = GenericData_FindData(gw,KSP,"ksp") ;
+        PC*  pc ;
+
+        /* Set the method from the command line "-pc_type <method>"
+         * wher "method" is on eof the following options:
+         * none, jacobi, sor, ilu, icc ...
+         **/
+        {
+          KSPGetPC(*ksp,pc) ;
+          PCSetFromOptions(*pc) ;
+          //PCSetUp(*pc) ;
+        }
+      }
+      #endif
     #endif
     
     } else {
@@ -306,22 +330,22 @@ void  (Solver_Delete)(void* self)
   }
   
   {
-    ResolutionMethod_t* rm = Solver_GetResolutionMethod(solver) ;
-    
-    if(rm) {
-      ResolutionMethod_Delete(rm) ;
-      free(rm) ;
-      Solver_GetResolutionMethod(solver) = NULL ;
-    }
-  }
-  
-  {
     GenericData_t* genericwork = Solver_GetGenericWorkSpace(solver) ;
     
     if(genericwork) {
       GenericData_Delete(genericwork) ;
       free(genericwork) ;
       Solver_GetGenericWorkSpace(solver) = NULL ;
+    }
+  }
+  
+  {
+    ResolutionMethod_t* rm = Solver_GetResolutionMethod(solver) ;
+    
+    if(rm) {
+      ResolutionMethod_Delete(rm) ;
+      free(rm) ;
+      Solver_GetResolutionMethod(solver) = NULL ;
     }
   }
 }

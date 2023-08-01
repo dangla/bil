@@ -101,14 +101,58 @@ void (Context_Initialize)(Context_t* ctx)
         Message_FatalError("Missing solver") ;
       }
       
-      /* Skip two more entries if the following entry is "-ff" 
-       * i.e. an input for a Fill Factor for multi-frontal methods */
+      /* 
+       * Skip two more entries if the following entry is either:
+       * "-ff <factor>": the fill factor for multi-frontal methods
+       **/
       {
         if(String_Is(argv[i + 1],"-ff")) {
           if(i + 2 < argc) {
             i += 2 ;
           } else {
             Message_FatalError("Missing fill factor") ;
+          }
+        }
+      }
+      
+      /* 
+       * Skip two more entries if the following entry is either:
+       * "-ksp_XXX" <YYY>: option for PetscKSP methods
+       **/
+      {
+        while(String_Is(argv[i + 1],"-ksp_")) {
+          if(i + 2 < argc) {
+            i += 2 ;
+          } else {
+            Message_FatalError("Missing value for ksp option") ;
+          }
+        }
+      }
+      
+      /* 
+       * Skip two more entries if the following entry is either:
+       * "-pc_XXX" <YYY>: option for PetscKSP methods
+       **/
+      {
+        while(String_Is(argv[i + 1],"-pc_")) {
+          if(i + 2 < argc) {
+            i += 2 ;
+          } else {
+            Message_FatalError("Missing value for pc option") ;
+          }
+        }
+      }
+      
+      /* 
+       * Skip two more entries if the following entry is either:
+       * "-mat_XXX" <YYY>: option for PetscKSP methods
+       **/
+      {
+        while(String_Is(argv[i + 1],"-mat_")) {
+          if(i + 2 < argc) {
+            i += 2 ;
+          } else {
+            Message_FatalError("Missing value for mat option") ;
           }
         }
       }

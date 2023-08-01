@@ -30,7 +30,7 @@ VectorStorageFormat_t* (VectorStorageFormat_Create)(Options_t* options)
       VectorStorageFormat_GetType(vsf) = VectorStorageFormat_Type(Array) ;
 
     } else if(Options_ResolutionMethodIsPetscKSP(options)) {
-      VectorStorageFormat_GetType(vsf) = VectorStorageFormat_Type(PETSCVEC) ;
+      VectorStorageFormat_GetType(vsf) = VectorStorageFormat_Type(PetscVec) ;
     
     } else {
       arret("VectorStorageFormat_Create: method not available") ;

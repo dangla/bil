@@ -5,7 +5,7 @@
 
 enum VectorStorageFormat_e {        /* format of the vector to be stored */
   VectorStorageFormat_Array,        /* Array of doubles */
-  VectorStorageFormat_PETSCVEC,     /* PETSc Vec format */
+  VectorStorageFormat_PetscVec,     /* PETSc Vec format */
   VectorStorageFormat_NULL
 } ;
 

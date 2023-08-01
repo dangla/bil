@@ -59,7 +59,7 @@ void PlasticityCamClayOffset_SP(Plasticity_t* plasty,...)
       //Plasticity_GetHardeningVariable(plasty)[0] = pc ;
       Plasticity_GetHardeningVariable(plasty)[0] = log(pc) ;
       
-      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6 ;
+      Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[0] = 1.e-6*log(pc) ;
       Plasticity_GetTypicalSmallIncrementOfHardeningVariable(plasty)[1] = 1.e-6*pc ;
       Plasticity_GetTypicalSmallIncrementOfStress(plasty) = 1.e-6*pc ;
     }

@@ -49,16 +49,36 @@ Residu_t*   (Residu_Create)(Mesh_t* mesh,Options_t* options,const int n_res,cons
 
   #if defined (PETSCLIB)
   {
-    if(Residu_StorageFormatIs(residu,PETSCVEC)) {
+    if(Residu_StorageFormatIs(residu,PetscVec)) {
+      
+      /* Initialization */
+      {
+        Context_t* ctx = Options_GetContext(options) ;
+        CommandLine_t* cmd = Context_GetCommandLine(ctx) ;
+        int argc = CommandLine_GetNbOfArg(cmd) ;
+        char** argv = CommandLine_GetArg(cmd) ;
+        
+        PetscInitialize(&argc,&argv,NULL,NULL) ;
+      }
 
       /* The rhs */
       {
         double* rhs = (double*) Residu_GetRHS(residu) ;
         Vec* B = (Vec*) Mry_New(Vec) ;
-        PetscInt n = n_res*n_col ;
+        PetscInt n = n_col ;
         
-        VecCreateMPIWithArray(PETSC_COMM_WORLD,1,n,n,rhs,B) ;
+        VecCreate(PETSC_COMM_WORLD,B) ;
+        VecSetType(*B,VECSTANDARD) ;
+        VecSetSizes(*B,PETSC_DECIDE,n) ;
         VecSetOption(*B,VEC_IGNORE_NEGATIVE_INDICES,PETSC_TRUE) ;
+        VecSetFromOptions(*B) ;
+        
+        /* Create a preallocated seq vector */
+        //VecCreateSeqWithArray(PETSC_COMM_WORLD,1,n,rhs,B) ;
+        /* Create a preallocated MPI vector */
+        //VecCreateMPIWithArray(PETSC_COMM_WORLD,1,n,n,rhs,B) ;
+        
+        VecPlaceArray(*B,rhs) ;
         
         Residu_GetStoragOfRHS(residu) = B ;
       }
@@ -66,10 +86,14 @@ Residu_t*   (Residu_Create)(Mesh_t* mesh,Options_t* options,const int n_res,cons
       /* The solutions */
       {
         double* sol = (double*) Residu_GetSolution(residu) ;
+        Vec* B = Residu_GetStoragOfRHS(residu) ;
         Vec* X = (Vec*) Mry_New(Vec) ;
-        PetscInt n = n_res*n_col ;
+        PetscInt n = n_col ;
         
-        VecCreateMPIWithArray(PETSC_COMM_WORLD,1,n,n,sol,X) ;
+        VecDuplicate(*B,X);
+        //VecCreateSeqWithArray(PETSC_COMM_WORLD,1,n,sol,X) ;
+        
+        VecPlaceArray(*X,sol) ;
         
         Residu_GetStoragOfSolution(residu) = X ;
       }
@@ -87,27 +111,9 @@ void (Residu_Delete)(void* self)
 {
   Residu_t* residu = (Residu_t*) self ;
   
-  {
-    void* rhs = Residu_GetRHS(residu) ;
-    
-    if(rhs) {
-      free(rhs) ;
-      Residu_GetRHS(residu) = NULL ;
-    }
-  }
-  
-  {
-    void* sol = Residu_GetSolution(residu) ;
-    
-    if(sol) {
-      free(sol) ;
-      Residu_GetSolution(residu) = NULL ;
-    }
-  }
-  
   #if defined (PETSCLIB)
   {
-    if(Residu_StorageFormatIs(residu,PETSCVEC)) {
+    if(Residu_StorageFormatIs(residu,PetscVec)) {
       
       {
         Vec* B = Residu_GetStoragOfRHS(residu) ;
@@ -129,6 +135,24 @@ void (Residu_Delete)(void* self)
     }
   }
   #endif
+  
+  {
+    void* rhs = Residu_GetRHS(residu) ;
+    
+    if(rhs) {
+      free(rhs) ;
+      Residu_GetRHS(residu) = NULL ;
+    }
+  }
+  
+  {
+    void* sol = Residu_GetSolution(residu) ;
+    
+    if(sol) {
+      free(sol) ;
+      Residu_GetSolution(residu) = NULL ;
+    }
+  }
 }
 
 
@@ -143,9 +167,7 @@ void (Residu_AssembleElementResidu)(Residu_t* residu,Element_t* el,double* re)
   int* col = row + ndof ;
             
   if(Element_GetMaterial(el)) {
-    if(!Residu_StorageFormatIs(residu,PETSCVEC)) {
-      //int  nn  = Element_GetNbOfNodes(el) ;
-      //int  neq = Element_GetNbOfEquations(el) ;
+    if(!Residu_StorageFormatIs(residu,PetscVec)) {
       double* r = (double*) Residu_GetRHS(residu) ;
       int i ;
       
@@ -174,7 +196,7 @@ void (Residu_AssembleElementResidu)(Residu_t* residu,Element_t* el,double* re)
     
     #ifdef PETSCLIB
     /* format used in Petsc */
-    } else if(Residu_StorageFormatIs(residu,PETSCVEC)) {
+    } else if(Residu_StorageFormatIs(residu,PetscVec)) {
       Vec* B = Residu_GetStoragOfRHS(residu) ;
         
       VecSetValues(*B,ndof,col,re,ADD_VALUES) ;
@@ -192,7 +214,7 @@ void (Residu_AssembleElementResidu)(Residu_t* residu,Element_t* el,double* re)
 
 void Residu_PrintResidu(Residu_t* residu,const char* keyword)
 {
-  if(!Residu_StorageFormatIs(residu,PETSCVEC)) {
+  if(!Residu_StorageFormatIs(residu,PetscVec)) {
     double*  rhs = (double*) Residu_GetRHS(residu) ;
     int n_col = Residu_GetLengthOfRHS(residu) ;
     int i ;
@@ -207,10 +229,10 @@ void Residu_PrintResidu(Residu_t* residu,const char* keyword)
     
   #ifdef PETSCLIB
   /* format used in Petsc */
-  } else if(Residu_StorageFormatIs(residu,PETSCVEC)) {
-    Vec* B = Residu_GetStoragOfRHS(residu) ;
+  } else if(Residu_StorageFormatIs(residu,PetscVec)) {
+    Vec* b = Residu_GetStoragOfRHS(residu) ;
     
-    VecView(*B,PETSC_VIEWER_STDOUT_WORLD) ;
+    VecView(*b,PETSC_VIEWER_STDOUT_WORLD) ;
   #endif
 
   } else {
@@ -218,4 +240,27 @@ void Residu_PrintResidu(Residu_t* residu,const char* keyword)
   }
 
   fflush(stdout) ;
+}
+
+
+
+void (Residu_SetValuesToZero)(Residu_t* residu)
+/** zeros each element of the residu */
+{
+  if(0) {
+  #ifdef PETSCLIB
+  } else if(Residu_StorageFormatIs(residu,PetscVec)) {
+    Vec* b = Residu_GetStoragOfRHS(residu) ;
+    
+    VecZeroEntries(*b) ;
+  #endif
+  } else {
+    unsigned int n = Residu_GetNbOfRHS(residu)*Residu_GetLengthOfRHS(residu) ;
+    double* rhs = (double*) Residu_GetRHS(residu) ;
+    unsigned int k ;
+          
+    for(k = 0 ; k < n ; k++) {
+      rhs[k] = 0. ;
+    }
+  }
 }

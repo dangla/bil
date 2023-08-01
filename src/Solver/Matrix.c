@@ -22,6 +22,7 @@
 #endif
 
 #if defined (PETSCLIB)
+  #include "PetscAIJFormat.h"
   #include <petsc.h>
 #endif
 
@@ -108,20 +109,25 @@ Matrix_t*   (Matrix_Create)(Mesh_t* mesh,Options_t* options,const int imatrix)
       Matrix_GetNonZeroValue(a) = CoordinateFormat_GetNonZeroValue(ac) ;
 
     #ifdef PETSCLIB
-    } else if(Matrix_StorageFormatIs(a,PETSCAIJ)) {
-      //PETSCAIJFormat_t* petscaij = PETSCAIJFormat_Create(mesh,imatrix) ;
-      Mat* aij = (Mat*) Mry_New(Mat) ;
-      PetscInt ierror = MatCreate(PETSC_COMM_WORLD,aij)  ;
-  
-      /* undefined ref to PetscCall ??? */
-      //PetscCall(ierror)  ;
-    
-      Matrix_GetStorage(a) = (void*) aij ;
-  
+    } else if(Matrix_StorageFormatIs(a,PetscAIJ)) {
+      
+      /* Initialization */
+
       {
-        int n = Mesh_GetNbOfMatrixColumns(mesh)[imatrix] ;
+        Context_t* ctx = Options_GetContext(options) ;
+        CommandLine_t* cmd = Context_GetCommandLine(ctx) ;
+        int argc = CommandLine_GetNbOfArg(cmd) ;
+        char** argv = CommandLine_GetArg(cmd) ;
+        const char help[] = "Matrix storage format\n\n" ;
+        
+        PetscInitialize(&argc,&argv,NULL,help) ;
+      }
     
-        MatSetSizes(*aij,PETSC_DECIDE,PETSC_DECIDE,n,n) ;
+      {
+        PetscAIJFormat_t* petscaij = PetscAIJFormat_Create(mesh,imatrix) ;
+    
+        Matrix_GetStorage(a) = (void*) petscaij ;
+        Matrix_GetNbOfNonZeroValues(a) = PetscAIJFormat_GetNbOfNonZeroValues(petscaij) ;
       }
     #endif
 
@@ -200,12 +206,12 @@ void (Matrix_Delete)(void* self)
       }
 
     #ifdef PETSCLIB
-    } else if(Matrix_StorageFormatIs(a,PETSCAIJ)) {
-      Mat* aij = (Mat*) storage ;
+    } else if(Matrix_StorageFormatIs(a,PetscAIJ)) {
+      PetscAIJFormat_t* petscaij = (PetscAIJFormat_t*) storage ;
     
-      if(aij) {
-        MatDestroy(aij) ;
-        free(aij) ;
+      if(petscaij) {
+        PetscAIJFormat_Delete(petscaij) ;
+        free(petscaij) ;
       }
     #endif
 
@@ -272,8 +278,27 @@ void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
     
 #ifdef PETSCLIB
   /* format used in Petsc */
-  } else if(Matrix_StorageFormatIs(a,PETSCAIJ)) {
-      Mat* aij = (Mat*) Matrix_GetStorage(a) ;
+  } else if(Matrix_StorageFormatIs(a,PetscAIJ)) {
+      PetscAIJFormat_t* petscaij = (PetscAIJFormat_t*) Matrix_GetStorage(a) ;
+      Mat* aij = (Mat*) PetscAIJFormat_GetStorage(petscaij) ;
+      PetscInt Istart ;
+      PetscInt Iend ;
+      
+      MatGetOwnershipRange(*aij,&Istart,&Iend) ;
+      
+      {
+        int i ;
+        
+        for(i = 0 ; i < ndof ; i++) {
+          int rowi = row[i] ;
+          
+          if(rowi < 0) continue ;
+          
+          if(rowi < Istart || rowi >= Iend) {
+            row[i] = -1 ;
+          }
+        }
+      }
       
       MatSetValues(*aij,ndof,row,ndof,col,ke,ADD_VALUES) ;
 #endif
@@ -317,8 +342,13 @@ void Matrix_PrintMatrix(Matrix_t* a,const char* keyword)
     
   #ifdef PETSCLIB
   /* format used in Petsc */
-  } else if(Matrix_StorageFormatIs(a,PETSCAIJ)) {
-    Mat* aij = (Mat*) Matrix_GetStorage(a) ;
+  } else if(Matrix_StorageFormatIs(a,PetscAIJ)) {
+    PetscAIJFormat_t* petscaij = (PetscAIJFormat_t*) Matrix_GetStorage(a) ;
+    Mat* aij = (Mat*) PetscAIJFormat_GetStorage(petscaij) ;
+    
+    
+    MatAssemblyBegin(*aij,MAT_FINAL_ASSEMBLY) ;
+    MatAssemblyEnd(*aij,MAT_FINAL_ASSEMBLY) ;
     
     MatView(*aij,PETSC_VIEWER_STDOUT_WORLD) ;
   #endif
@@ -328,4 +358,28 @@ void Matrix_PrintMatrix(Matrix_t* a,const char* keyword)
   }
 
   fflush(stdout) ;
+}
+        
+
+
+
+void (Matrix_SetValuesToZero)(Matrix_t* a)
+/** Zeros all entries of the matrix */
+{
+  if(0) {
+  #ifdef PETSCLIB
+  } else if(Matrix_StorageFormatIs(a,PetscAIJ)) {
+    PetscAIJFormat_t* petscaij = (PetscAIJFormat_t*) Matrix_GetStorage(a) ;
+    Mat* aij = (Mat*) PetscAIJFormat_GetStorage(petscaij) ;
+    
+    MatZeroEntries(*aij) ;
+  #endif
+  } else {
+    unsigned int k ;
+    for(k = 0 ; k < Matrix_GetNbOfNonZeroValues(a) ; k++) {
+      Matrix_GetNonZeroValue(a)[k] = 0. ;
+    }
+  }
+  Matrix_GetNbOfEntries(a) = 0 ;
+  Matrix_SetToUnfactorizedState(a) ;
 }
