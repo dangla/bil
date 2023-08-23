@@ -56,7 +56,7 @@ if __name__=="__main__":
             remove = True
 
     if(not "file_name" in locals()):
-        print 'Error: Must specify a file with -f'
+        print('Error: Must specify a file with -f')
         sys.exit(1)
 
     s = String()

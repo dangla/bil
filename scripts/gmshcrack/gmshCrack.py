@@ -39,7 +39,7 @@ def main():
 
 
     if(not "file_name" in locals()):
-        print 'Error: Must specify mesh file with -f'
+        print('Error: Must specify mesh file with -f')
         sys.exit(1)
 
 
@@ -56,7 +56,7 @@ def main():
         if(not "phys_id" in locals()): phys_id = -1
         M1 = M.makebrokenmesh(phys_id, region_id)
     else:
-        print 'Error: Must specify crack ID with -c or region ID with -r'
+        print('Error: Must specify crack ID with -c or region ID with -r')
         sys.exit(1)
     
 
@@ -65,40 +65,40 @@ def main():
 
 #===============================================================================
 def usage():
-    print 'Usages:'
-    print 'python %s -f<filename> -c<crack_id> -t<cracktip_id> -s<oneside_id>' % os.path.basename(sys.argv[0])
+    print('Usages:')
+    print('python %s -f<filename> -c<crack_id> -t<cracktip_id> -s<oneside_id>' % os.path.basename(sys.argv[0]))
     print('or')
-    print 'python %s -f<filename> -r<region_ids> -p<physical_id>' % os.path.basename(sys.argv[0])
+    print('python %s -f<filename> -r<region_ids> -p<physical_id>' % os.path.basename(sys.argv[0]))
     
-    print '\n'
+    print('\n')
     
-    print 'In the first usage, 1D meshes in 2D or 2D meshes in 3D,'
-    print 'denoted as cracks below, should exist in the mesh (filename).'
+    print('In the first usage, 1D meshes in 2D or 2D meshes in 3D,')
+    print('denoted as cracks below, should exist in the mesh (filename).')
     
-    print '\n'
+    print('\n')
 
-    print 'Options:'
-    print '-c, --crack:      Comma separated elementary IDs of cracks in .msh file.'
-    print '-t, --tip_crack:  Comma separated elementary IDs of crack tips in .msh file.'
-    print '-s, --side_crack: Comma separated elementary IDs of elements touching the'
-    print '                  cracks on one side so that their nodes are changed to the'
-    print '                  created overlapping nodes of the zero-thickness elements.'
-    print '                  So these elements must touch the opposite side of the'
-    print '                  zero-thickness elements in the orientation given by the'
-    print '                  numbering of the surface element.'
-    print '-r, --region:     Comma separated elementary IDs of elements to be cracked.'
-    print '-p, --physical:   Physical ID of the created zero-thickness elements.'
-    print '-f, --file:       Mesh file name.'
-    print '-h, --help:       Display this help message.'
+    print('Options:')
+    print('-c, --crack:      Comma separated elementary IDs of cracks in .msh file.')
+    print('-t, --tip_crack:  Comma separated elementary IDs of crack tips in .msh file.')
+    print('-s, --side_crack: Comma separated elementary IDs of elements touching the')
+    print('                  cracks on one side so that their nodes are changed to the')
+    print('                  created overlapping nodes of the zero-thickness elements.')
+    print('                  So these elements must touch the opposite side of the')
+    print('                  zero-thickness elements in the orientation given by the')
+    print('                  numbering of the surface element.')
+    print('-r, --region:     Comma separated elementary IDs of elements to be cracked.')
+    print('-p, --physical:   Physical ID of the created zero-thickness elements.')
+    print('-f, --file:       Mesh file name.')
+    print('-h, --help:       Display this help message.')
 
-    print '\n'
+    print('\n')
 
-    print 'Restriction:'
-    print 'Use options (-c -t -s) or (-r -p) but do not mix them.'
-    print 'Examples:'
-    print 'python %s -f filename -c crack_id -t cracktip_id -s oneside_id'
-    print 'or'
-    print 'python %s -f filename -r region_id -p physical_id' % os.path.basename(sys.argv[0])
+    print('Restriction:')
+    print('Use options (-c -t -s) or (-r -p) but do not mix them.')
+    print('Examples:')
+    print('python %s -f filename -c crack_id -t cracktip_id -s oneside_id')
+    print('or')
+    print('python %s -f filename -r region_id -p physical_id' % os.path.basename(sys.argv[0]))
 
     
 #===============================================================================

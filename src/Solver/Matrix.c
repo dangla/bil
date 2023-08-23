@@ -281,21 +281,24 @@ void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
   } else if(Matrix_StorageFormatIs(a,PetscAIJ)) {
       PetscAIJFormat_t* petscaij = (PetscAIJFormat_t*) Matrix_GetStorage(a) ;
       Mat* aij = (Mat*) PetscAIJFormat_GetStorage(petscaij) ;
-      PetscInt Istart ;
-      PetscInt Iend ;
-      
-      MatGetOwnershipRange(*aij,&Istart,&Iend) ;
       
       {
-        int i ;
+        PetscInt Istart ;
+        PetscInt Iend ;
+      
+        MatGetOwnershipRange(*aij,&Istart,&Iend) ;
+      
+        {
+          int i ;
         
-        for(i = 0 ; i < ndof ; i++) {
-          int rowi = row[i] ;
+          for(i = 0 ; i < ndof ; i++) {
+            int rowi = row[i] ;
           
-          if(rowi < 0) continue ;
+            if(rowi < 0) continue ;
           
-          if(rowi < Istart || rowi >= Iend) {
-            row[i] = -1 ;
+            if(rowi < Istart || rowi >= Iend) {
+              row[i] = -1 ;
+            }
           }
         }
       }

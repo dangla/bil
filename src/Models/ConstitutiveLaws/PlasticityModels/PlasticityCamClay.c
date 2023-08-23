@@ -136,22 +136,21 @@ double* (PlasticityCamClay_CT)(Plasticity_t* plasty,const double* sig,const doub
   }
   
   /* The hardening modulus */
-  /* df = (df/dsig_ij)*dsig_ij + (df/da)*da
-   * given da = dl*h then df = (df/dsig_ij)*dsig_ij - dl*H
-   * with H the hardening modulus: H = - (df/da) * h
-   * On the other hand with a = ln(pc)
-   * d(a) = - (1 + e0)*v*deps_p = - (1 + e0)*v*dl*(dg/dp)
-   * i.e. h = - (1 + e0)*v*(dg/dp)
+  /* df = (df/dsig_ij)*dsig_ij + (df/dpc)*dpc
+   * df = (df/dsig_ij)*dsig_ij - dl*H
+   * with H the hardening modulus: H = - (df/dpc) * dpc / dl
+   * On the other hand
+   * d(lnpc) = - (1 + e0)*v*deps_p = - (1 + e0)*v*dl*(dg/dp)
+   * i.e. dpc = - pc * (1 + e0)*v*(dg/dp) * dl
+   * The H = (df/dpc) * pc * (1 + e0)*v*(dg/dp)
    */
   {
     double v = 1./(lambda - kappa) ;
     double v1 = (1 + e0)*v ;
-    double h = - v1*(2*p + pc) ;
-    double dpcda    = pc ;
-    double dfda     = p*dpcda ;
+    double dg_dp  = (2*p + pc) ;
+    double df_dpc = p ;
     
-    hm[0] = - dfda * h ;
-    //hm[0] = (1 + e0)*v*p*(2*p + pc)*pc ;
+    hm[0] = df_dpc * pc * v1 * dg_dp ;
   }
   
   /*
@@ -465,10 +464,11 @@ double* (PlasticityCamClay_FR)(Plasticity_t* plasty,const double* stress,const d
    */
   {
     double v = 1./(lambda - kappa) ;
+    double v1  = (1+e0)*v ;
     double h = flow[0] + flow[4] + flow[8] ;
     
-    //flow[9] = - (1 + e0)*v*(2*p + pc)*pc ;
-    flow[9] = - (1 + e0)*v*h ;
+    //flow[9] = - v1*h*pc ;
+    flow[9] = - v1*h ;
   }
   
   return(flow) ;

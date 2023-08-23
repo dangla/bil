@@ -12,6 +12,8 @@
 #include "Plasticity.h"
 #include "BilExtraLibs.h"
 
+#define DEBUGGENERICRETURNMAPPING 0
+
 
 static double* (Plasticity_DerivativeOfFlowRules)(Plasticity_t*,Plasticity_FlowRules_t*,const double*,const double*) ;
 
@@ -1306,7 +1308,7 @@ double* (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,do
 
       Plasticity_ResidusOfGenericReturnMappingAlgorithm(plasty,stress,hardv,stress_t,hardv_n,zeta,residu+3) ;
 
-      #if 0
+      #if DEBUGGENERICRETURNMAPPING
       {
         printf("\n") ;
         printf("=========\n") ;
@@ -1315,7 +1317,7 @@ double* (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,do
       }
       #endif
 
-      #if 0
+      #if DEBUGGENERICRETURNMAPPING
       {
         int i ;
         
@@ -1390,7 +1392,7 @@ double* (Plasticity_GenericReturnMapping)(Plasticity_t* plasty,double* stress,do
         }
       }
       
-      #if 0
+      #if DEBUGGENERICRETURNMAPPING
       {
         int i ;
         

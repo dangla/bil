@@ -17,7 +17,7 @@
 /* Nb of equations */
 #define NEQ     (1+dim)
 /* Nb of (im/ex)plicit terms and constant terms */
-#define NVI     (28)
+#define NVI     (29)
 #define NVE     (1)
 #define NV0     (0)
 
@@ -47,6 +47,9 @@
 
 #define CRIT          (vim   + 26)[0]
 #define DLAMBDA       (vim   + 27)[0]
+
+#define EPSVR_P       (vim   + 28)[0]
+#define EPSVR_P_n     (vim_n + 28)[0]
 
 
 /* We define some names for explicit terms */
@@ -132,6 +135,7 @@ enum {
   I_GRD_P_L,
   I_GRD_P_L2 = I_GRD_P_L + 2,
   I_DLAMBDA,
+  I_EPSVR_P,
   I_Last
 } ;
 
@@ -435,6 +439,7 @@ int ComputeInitialState(Element_t* el)
       }
       
       for(i = 0 ; i < 9 ; i++) EPS_P[i]  = 0 ;
+      EPSVR_P = 0 ;
     }
   }
   
@@ -462,6 +467,7 @@ int ComputeInitialState(Element_t* el)
       CRIT = x[I_CRIT] ;
       HARDV = x[I_HARDV] ;
       DLAMBDA = x[I_DLAMBDA] ;
+      EPSVR_P = x[I_EPSVR_P] ;
     }
     
     
@@ -569,6 +575,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
       CRIT = x[I_CRIT] ;
       HARDV = x[I_HARDV] ;
       DLAMBDA = x[I_DLAMBDA] ;
+      EPSVR_P = x[I_EPSVR_P] ;
     }
   }
   
@@ -780,7 +787,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 /** Compute the outputs (r) */
 {
-  int NbOfOutputs = 8 ;
+  int NbOfOutputs = 10 ;
   double* vex0  = Element_GetExplicitTerm(el) ;
   double* vim0  = Element_GetCurrentImplicitTerm(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
@@ -824,6 +831,8 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double sig[9] = {0,0,0,0,0,0,0,0,0} ;
     double hardv = 0 ;
     double k_h = 0 ;
+    double strainrate = 0 ;
+    double crit = 0 ;
     int    i ;
     
     for(i = 0 ; i < dim ; i++) {
@@ -848,6 +857,10 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       hardv += HARDV/np ;
       
       k_h += K_L/np ;
+      
+      strainrate += EPSVR_P/np ;
+      
+      crit += CRIT/np ;
     }
     
     tre = eps[0] + eps[4] + eps[8] ;
@@ -862,6 +875,10 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     Result_Store(r + i++,&e       ,"Void_ratio_variation",1) ;
     Result_Store(r + i++,eps_p    ,"Plastic_strains",9) ;
     Result_Store(r + i++,&hardv   ,"Hardening_variable",1) ;
+    Result_Store(r + i++,&strainrate   ,"Plastic_strain_rate",1) ;
+    Result_Store(r + i++,&crit    ,"Yield_function_value",1) ;
+      
+    if(i != NbOfOutputs) arret("ComputeOutputs") ;
   }
   
   return(NbOfOutputs) ;
@@ -954,7 +971,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
           /* Criterion */
           if(crit >= 0.) {
             double p_co  = HARDV ;
-            double hardv[3] = {p_co,pc,dt} ;
+            double hardv[4] = {p_co,pc,dt,EPSVR_P} ;
             
           /* Continuum tangent stiffness matrix */
             //ComputeTangentStiffnessTensor(sig,hardv) ;
@@ -1132,6 +1149,7 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
       }
       
       x_n[I_HARDV] = HARDV_n ;
+      x_n[I_EPSVR_P] = EPSVR_P_n ;
       
       FEM_FreeBufferFrom(fem,eps_n) ;
     }
@@ -1220,13 +1238,21 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       /* Return mapping */
       {
         double p_con = x_n[I_HARDV] ; /* pre-consolidation pressure at 0 suction at the previous time step */
-        double hardv[3] = {p_con,pc,dt} ;
+        double epsvr_pn = x_n[I_EPSVR_P] ;
+        double hardv[4] = {p_con,pc,dt,epsvr_pn} ;
         double* crit  = ReturnMapping(sig,eps_p,hardv) ;
         double* dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
         
         x[I_CRIT]  = crit[0] ;
         x[I_HARDV] = hardv[0] ;
         x[I_DLAMBDA] = dlambda[0] ;
+        
+        {
+          double epsv_pn = eps_pn[0] + eps_pn[4] + eps_pn[8] ;
+          double epsv_p = eps_p[0] + eps_p[4] + eps_p[8] ;
+          
+          x[I_EPSVR_P] = (dt > 0) ? (epsv_p - epsv_pn)/dt : 0 ;
+        }
       }
     
       /* Total stresses */

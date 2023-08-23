@@ -66,7 +66,7 @@ class Mesh:
     def read(self,fname):
 
         if not fname:
-            print 'Error: Must specify mesh file'
+            print('Error: Must specify mesh file')
             sys.exit(1)
 
         nodes = self.nodes
@@ -151,9 +151,13 @@ class Mesh:
                 self.nodes[ni-1].elements.append(e.ID)
 
 
-    def makecrackedmesh(self, crack_id, oneside_id, cracktip_id=None):
+    def cracknodes(self, crack_id, cracktip_id=None):
+        # Return the set of node IDs for nodes belonging to elements 
+        # (curves in 2D, surfaces in 3D) of physical IDs in the list
+        # "crack_id[]" but excluding those belonging to elements 
+        # (points in 2D, curves in 3D) of physical IDs in the list
+        # "cracktip_id[]".
     
-        # make set of node IDs for nodes on crack
         crack_nodes = []
         for e in self.elements:
             if (e.elem_ID in crack_id):
@@ -169,6 +173,14 @@ class Mesh:
 
         # remove duplicates
         crack_nodes = [n for n in set(crack_nodes)]
+    
+        return crack_nodes
+
+
+    def makecrackedmesh(self, crack_id, oneside_id, cracktip_id=None):
+    
+        # make set of node IDs for nodes on crack
+        crack_nodes = self.cracknodes(crack_id,cracktip_id)
         
         # add overlapping nodes
         new_nodes = []
@@ -219,7 +231,8 @@ class Mesh:
         # Break apart the elements of the mesh and 
         # thus build unconnected set of elements with
         # new connectivity and new nodes created.
-        # Make this for elementary ID in elem_ID only.
+        # Make this for element IDs in the list "elem_ID[]" only.
+        # If "elem_Id[]" is empty consider all elements.
         # Return a mapping for overlapping nodes.
 
         if elem_ID is None: elem_ID = self.allelem_ID()
@@ -334,9 +347,9 @@ class Mesh:
                     sk = overlapping_nodes_map[n_ij].intersection(set(e_k.nodes))
                     sl = overlapping_nodes_map[n_ij].intersection(set(e_l.nodes))
                     if(len(sk) != 1 and len(sl) != 1):
-                        print 'nodes of e_k: ',e_k.nodes
-                        print 'nodes of e_l: ',e_l.nodes
-                        print 'overlapping nodes for node ',n_ij,': ',overlapping_nodes_map[n_ij]
+                        print('nodes of e_k: ',e_k.nodes)
+                        print('nodes of e_l: ',e_l.nodes)
+                        print('overlapping nodes for node ',n_ij,': ',overlapping_nodes_map[n_ij])
                         sys.exit(1)
                     nk = sk.pop()
                     nl = sl.pop()
@@ -410,7 +423,7 @@ if __name__=="__main__":
 
 
     if(not "file_name" in locals()):
-        print 'Error: Must specify mesh file with -f'
+        print('Error: Must specify mesh file with -f')
         sys.exit(1)
 
 
@@ -427,21 +440,21 @@ if __name__=="__main__":
     elif("region_id" in locals()):
         if(not "phys_id" in locals()): phys_id = -1
     
-        #print '\ninitial mesh:'
-        #print 'nb of initial nodes: ',M.nNodes()
+        #print('\ninitial mesh:')
+        #print('nb of initial nodes: ',M.nNodes())
 
-        #print '\nsmashed mesh:'
+        #print('\nsmashed mesh:')
         #nodes_map = M.smash(region_id)
-        #print 'nb of nodes of the smashed mesh: ',M.nNodes()
+        #print('nb of nodes of the smashed mesh: ',M.nNodes())
         #M.write()
         #for i in nodes_map.keys():
-        #    print 'overlapping nodes for node ',i,': ',nodes_map[i]
+        #    print('overlapping nodes for node ',i,': ',nodes_map[i])
 
-        print '\nbroken mesh:'
+        print('\nbroken mesh:')
         M1 = M.makebrokenmesh(phys_id, region_id)
         M1.setnodeconnectivities()
         M1.write()
     else:
-        print 'Error: Must specify crack ID with -c or region ID with -r'
+        print('Error: Must specify crack ID with -c or region ID with -r')
         sys.exit(1)
     
