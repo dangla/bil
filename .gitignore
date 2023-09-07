@@ -31,3 +31,4 @@ BilVersion.h
 build
 
 # Specific files
+._sync_*

@@ -31,7 +31,7 @@ DFLAGS = -iquote${BIL_PATH} -D '__BASEFILE__=${basename ${notdir $@}}'
 #-------------------
 IFLAGS-SRC = -iprefix ${BIL_PATH}/src/ -iwithprefix . -iwithprefix Common -iwithprefix DataSet -iwithprefix Help -iwithprefix Libraries -iwithprefix Macros -iwithprefix Main -iwithprefix Models -iwithprefix Modules -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools -iwithprefix Parser -iwithprefix MultiThreading
 
-IFLAGS-SOLVER = -iprefix ${BIL_PATH}/src/Solver/ -iwithprefix MatrixStorageFormats -iwithprefix ResolutionMethods
+IFLAGS-SOLVER = -iprefix ${BIL_PATH}/src/Solver/ -iwithprefix MatrixStorageFormats -iwithprefix ResolutionMethods -iwithprefix VectorStorageFormats
 
 # Additional flags for models
 IFLAGS-MODELS = -iprefix ${BIL_PATH}/src/Models/ -iwithprefix .  -iwithprefix DataBases  -iwithprefix Libraries  -iwithprefix Methods  -iwithprefix ConstitutiveLaws

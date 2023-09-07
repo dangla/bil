@@ -79,6 +79,16 @@ ifdef BLAS
 endif
 
 
+# Do you use the library Petsc?
+# -----------------------------
+ifdef PETSC
+  ifeq (${shell test -f ${PETSC} && echo -n yes},yes)
+    PETSC_DIR = ${shell dirname ${PETSC}}
+    BIL_EXTRALIBS += -Wl,-rpath=${PETSC_DIR} ${PETSC}
+  endif
+endif
+
+
 
 
 #welcome:

@@ -256,6 +256,9 @@ lib:
 	if [ -n "${GSL_DIR}" ]; then \
 	  echo "#define GSLLIB  ${GSL_DIR}" >> ${BILEXTRALIBS_H} ; \
 	fi
+	if [ -n "${PETSC_DIR}" ]; then \
+	  echo "#define PETSCLIB  ${GSL_DIR}" >> ${BILEXTRALIBS_H} ; \
+	fi
 	echo "#endif"    >>  ${BILEXTRALIBS_H}
 
 

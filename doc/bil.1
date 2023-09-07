@@ -117,14 +117,14 @@ use the fill factor \fIN\fR for the multi-frontal methods SuperLU (default \fIN\
 
 .TP 4
 .B \-ksp_type \fImethod\fR
-use the KSP method \fImethod\fR for the KSP solver (default is gmres). This option must follow the option \fB-solver\fR \fIpetscksp\fR. Available methods are:
+use the KSP method \fImethod\fR for the KSP solver (default is gmres). This option must follow the option \fB-solver petscksp\fR. Available methods are:
 .RS
 \fBrichardson, chebyshev, cg, gmres, tcqmr, bcgs, cgs, tfqmr, cr, lsqr, bicg, preonly ...\fR (see the Petsc documentation for more details at https://petsc.org).
 .RE
 
 .TP 4
 .B \-pc_type \fImethod\fR
-use the preconditoner method \fImethod\fR for the KSP solver (default is ilu for gmres). This option must follow the option \fB-solver\fR \fIpetscksp\fR. Available methods are:
+use the preconditoner method \fImethod\fR for the KSP solver (default is ilu for gmres). This option must follow the option \fB-solver petscksp\fR. Available methods are:
 .RS
 \fBnone, jacobi, sor, ilu, icc ...\fR (see the Petsc documentation for more details at https://petsc.org).
 .RE

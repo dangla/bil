@@ -375,8 +375,13 @@ double* PlasticityNSFS_RM(Plasticity_t* plasty, double* sig, double* eps_p, doub
             double dqsdp = -q * 6 * mu / (m2 + 6 * mu * dl) * ddlsdp;
 
             double df = dfsdp + dfsdq * dqsdp + dfsdpc_p * dpc_psdp;
+            
+            /* Under-relaxation */
+            double relax = 0.5 ;
+            
+            double dp = (fabs(df) > 0) ? - relax * fcrit / df : 0 ;
 
-            p -= fcrit / df;
+            p += dp;
 
             /* Variables (pc,dl,q) are explicit in p */
             /* Plastic multiplier (dl):
@@ -446,7 +451,7 @@ double* PlasticityNSFS_RM(Plasticity_t* plasty, double* sig, double* eps_p, doub
             }
             #endif
 
-            if (nf++ > 20) {
+            if (nf++ > 30) {
                 Message_FatalError("PlasticityNSFS_RM: no convergence");
             }
         }
