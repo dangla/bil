@@ -39,6 +39,7 @@ PetscAIJFormat_t* (PetscAIJFormat_Create)(Mesh_t* mesh,const int imatrix)
     MatSetSizes(*aij,PETSC_DECIDE,PETSC_DECIDE,n,n) ;
     MatSetFromOptions(*aij) ;
     MatSetType(*aij,MATAIJ) ;
+    MatSetUp(*aij) ; // Do I need to do this?
   }
 
   /* Preallocate the seq matrix aij */
@@ -56,7 +57,8 @@ PetscAIJFormat_t* (PetscAIJFormat_Create)(Mesh_t* mesh,const int imatrix)
       
     MPI_Comm_size(PETSC_COMM_WORLD,&size);
     MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
-    PetscPrintf(PETSC_COMM_WORLD,"Number of processors = %d, rank = %d\n", size, rank);
+    //PetscPrintf(PETSC_COMM_WORLD,"Number of processors = %d, rank = %d\n", size, rank);
+    Message_Direct("Number of processors = %d, rank = %d\n", size, rank);
   }
     
   /* Preallocate the MPI matrix aij */
@@ -100,6 +102,67 @@ void (PetscAIJFormat_Delete)(void* self)
       free(aij) ;
     }
   }
+}
+
+
+
+int (PetscAIJFormat_AssembleElementMatrix)(PetscAIJFormat_t* a,double* ke,int* col,int* row,int ndof)
+/** Assemble the local matrix ke into the global matrix a 
+ *  Return the nb of entries */
+{
+  Mat* aij = (Mat*) PetscAIJFormat_GetStorage(a) ;
+  int nrow = ndof ;
+  int ncol = ndof ;
+  int len = 0 ;
+
+  {
+    PetscInt Istart ;
+    PetscInt Iend ;
+      
+    MatGetOwnershipRange(*aij,&Istart,&Iend) ;
+      
+    {
+      int i ;
+        
+      for(i = 0 ; i < nrow ; i++) {
+        int rowi = row[i] ;
+          
+        if(rowi < 0) continue ;
+          
+        if(rowi < Istart || rowi >= Iend) {
+          row[i] = -1 ;
+        } else {
+          int j ;
+        
+          for(j = 0 ; j < ncol ; j++) {
+            int colj = col[j] ;
+          
+            if(colj < 0) continue ;
+          
+            len += 1 ;
+          }
+        }
+      }
+    }
+  }
+      
+  if(ke) {
+    MatSetValues(*aij,nrow,row,ncol,col,ke,ADD_VALUES) ;
+  }
+
+  return(len) ;
+}
+
+
+
+void (PetscAIJFormat_PrintMatrix)(PetscAIJFormat_t* a,const char* keyword)
+{
+    Mat* aij = (Mat*) PetscAIJFormat_GetStorage(a) ;
+
+    MatAssemblyBegin(*aij,MAT_FINAL_ASSEMBLY) ;
+    MatAssemblyEnd(*aij,MAT_FINAL_ASSEMBLY) ;
+    
+    MatView(*aij,PETSC_VIEWER_STDOUT_WORLD) ;
 }
 
 #endif

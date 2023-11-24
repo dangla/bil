@@ -17,12 +17,12 @@
 
 #ifdef SUPERLUMTLIB
   #include "SuperLUMTMethod.h"
-  #include "superlumt.h"
+  #include "superlu.h"
 #endif
 
 #ifdef SUPERLUDISTLIB
   #include "SuperLUDistMethod.h"
-  #include "superludist.h"
+  #include "superlu.h"
 #endif
 
 #if defined (BLASLIB) && defined (LAPACKLIB)
@@ -243,8 +243,9 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
         CommandLine_t* cmd = Context_GetCommandLine(ctx) ;
         int argc = CommandLine_GetNbOfArg(cmd) ;
         char** argv = CommandLine_GetArg(cmd) ;
+        const char help[] = "Solver KSP\n\n" ;
         
-        PetscInitialize(&argc,&argv,NULL,NULL) ;
+        PetscInitialize(&argc,&argv,NULL,help) ;
       }
       
       /*  Create the solver KSP */
@@ -269,7 +270,7 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
           //KSPSetTolerances(*ksp,1.e-2/n,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT) ;
           KSPSetTolerances(*ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT) ;
           KSPSetFromOptions(*ksp) ;
-          //KSPSetUp(*ksp) ;
+          KSPSetUp(*ksp) ;
         }
         
         Solver_AppendGenericWorkSpace(solver,gksp) ;
@@ -280,7 +281,8 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
       {
         GenericData_t* gw = Solver_GetGenericWorkSpace(solver) ;
         KSP* ksp = GenericData_FindData(gw,KSP,"ksp") ;
-        PC*  pc ;
+        PC*  pc = (PC*) Mry_New(PC) ;
+        GenericData_t* gpc = GenericData_Create(1,pc,PC,"pc") ;
 
         /* Set the method from the command line "-pc_type <method>"
          * wher "method" is on eof the following options:

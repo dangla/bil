@@ -57,8 +57,9 @@ Residu_t*   (Residu_Create)(Mesh_t* mesh,Options_t* options,const int n_res,cons
         CommandLine_t* cmd = Context_GetCommandLine(ctx) ;
         int argc = CommandLine_GetNbOfArg(cmd) ;
         char** argv = CommandLine_GetArg(cmd) ;
+        const char help[] = "Vector storage format\n\n" ;
         
-        PetscInitialize(&argc,&argv,NULL,NULL) ;
+        PetscInitialize(&argc,&argv,NULL,help) ;
       }
 
       /* The rhs */

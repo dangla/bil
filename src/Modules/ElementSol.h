@@ -13,6 +13,7 @@ extern void          (ElementSol_Delete)(void*) ;
 extern void          (ElementSol_AllocateMemoryForImplicitTerms)(ElementSol_t*) ;
 extern void          (ElementSol_AllocateMemoryForExplicitTerms)(ElementSol_t*) ;
 extern void          (ElementSol_AllocateMemoryForConstantTerms)(ElementSol_t*) ;
+extern void          (ElementSol_Copy)(ElementSol_t*,ElementSol_t*) ;
 
 
 //#define ElementSol_GetPreviousElementSol(ES)    ((ES)->prev)

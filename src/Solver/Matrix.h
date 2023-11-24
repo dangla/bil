@@ -14,7 +14,7 @@ struct Matrix_s       ; typedef struct Matrix_s       Matrix_t ;
 //extern Matrix_t*   (Matrix_Create)                (Mesh_t*,Options_t*) ;
 extern Matrix_t*   (Matrix_Create)                (Mesh_t*,Options_t*,const int) ;
 extern void        (Matrix_Delete)                (void*) ;
-extern void        (Matrix_AssembleElementMatrix) (Matrix_t*,Element_t*,double*) ;
+extern int         (Matrix_AssembleElementMatrix) (Matrix_t*,Element_t*,double*) ;
 extern void        (Matrix_PrintMatrix)           (Matrix_t*,const char* keyword) ;
 extern void        (Matrix_SetValuesToZero)       (Matrix_t*) ;
 

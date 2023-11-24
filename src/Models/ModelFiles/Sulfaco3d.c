@@ -102,7 +102,7 @@ enum {
 #define U_LogC_K    U_Potassium
 
 /* Aluminium:
- * - U_ZN_Al_S: dissolution kinetics of AH3; Cc at equilibrium
+ * - U_ZN_Al_S: dissolution kinetics of AH3; Cc at equilibrium */
 //#define U_C_Al       U_Aluminium
 //#define U_LogC_Al    U_Aluminium
 #define U_ZN_Al_S    U_Aluminium
@@ -768,7 +768,8 @@ void GetProperties(Element_t* el)
     double poisson = GetProperty("poisson") ;
     
     K_bulk = young / (3 - 6*poisson) ;
-    cijkl   = Damage_GetTangentStiffnessTensor(damage) ;
+    //cijkl   = Damage_GetTangentStiffnessTensor(damage) ;
+    cijkl   = Damage_GetDamagedStiffnessTensor(damage) ;
     hardv0  = Damage_GetHardeningVariable(damage)[0] ;
   }
   

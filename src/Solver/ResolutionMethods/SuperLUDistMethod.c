@@ -15,7 +15,7 @@
 #include "SuperLUDistMethod.h"
 #include "SuperLUFormat.h"
 
-#include "superludist.h"
+#include "superlu.h"
 
 
 int   SuperLUDistMethod_Solve(Solver_t* solver)

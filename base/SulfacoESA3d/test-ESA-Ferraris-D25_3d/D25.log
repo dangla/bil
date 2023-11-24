@@ -1,0 +1,133 @@
+
+Info: Started on Sun Oct 29 08:59:04 2023
+
+Reading D25
+Enter in Units
+Enter in Geometry
+Enter in Fields
+Enter in Field 1
+Enter in Functions
+Enter in Function 1
+Enter in Function 2
+Enter in Function 3
+Enter in Function 4
+Enter in Function 5
+Enter in Materials
+Enter in Material 1
+
+Info: Started on Sun Oct 29 08:59:04 2023
+
+Reading D25
+Enter in Units
+Enter in Geometry
+Enter in Fields
+Enter in Field 1
+Enter in Functions
+Enter in Function 1
+Enter in Function 2
+Enter in Function 3
+Enter in Function 4
+Enter in Function 5
+Enter in Materials
+Enter in Material 1
+Enter in Mesh
+Enter in Initial Conditions
+Enter in Initial Condition 1
+Enter in Initial Condition 2
+Enter in Initial Condition 3
+Enter in Initial Condition 4
+Enter in Initial Condition 5
+Enter in Initial Condition 6
+Enter in Loads
+Enter in Boundary Conditions
+Enter in Boundary Condition 1
+Enter in Boundary Condition 2
+Enter in Boundary Condition 3
+Enter in Boundary Condition 4
+Enter in Boundary Condition 5
+Enter in Points
+Enter in Point 1
+Enter in Point 2
+Enter in Dates
+Enter in Objective Variations
+Enter in Time Steps
+Enter in Iterative Process
+End of reading D25
+
+Calculation of D25
+Enter in Monolithic
+Enter in Mesh
+Enter in Initial Conditions
+Enter in Initial Condition 1
+Enter in Initial Condition 2
+Enter in Initial Condition 3
+Enter in Initial Condition 4
+Enter in Initial Condition 5
+Enter in Initial Condition 6
+Enter in Loads
+Enter in Boundary Conditions
+Enter in Boundary Condition 1
+Enter in Boundary Condition 2
+Enter in Boundary Condition 3
+Enter in Boundary Condition 4
+Enter in Boundary Condition 5
+Enter in Points
+Enter in Point 1
+Enter in Point 2
+Enter in Dates
+Enter in Objective Variations
+Enter in Time Steps
+Enter in Iterative Process
+End of reading D25
+
+Calculation of D25
+Enter in Monolithic
+Number of processors = 2, rank = 0
+Step 1  t = 1.000000e+00 (dt = 1.00e+00)Step 1  t = 1.000000e+00 (dt = 1.00e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 2  t = 2.500000e+00 (dt = 1.50e+00)(logc_so4[2])Step 2  t = 2.500000e+00 (dt = 1.50e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 3  t = 4.750000e+00 (dt = 2.25e+00)(logc_so4[2])Step 3  t = 4.750000e+00 (dt = 2.25e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 4  t = 7.258711e+00 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 5  t = 9.767422e+00 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 6  t = 1.227613e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 7  t = 1.478484e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 8  t = 1.729355e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 4  t = 7.258711e+00 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 5  t = 9.767422e+00 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 6  t = 1.227613e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 7  t = 1.478484e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 8  t = 1.729355e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 9  t = 1.980226e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 9  t = 1.980226e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 10  t = 2.231098e+01 (dt = 2.51e+00)(logc_so4[2])Step 10  t = 2.231098e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 11  t = 2.481969e+01 (dt = 2.51e+00)(logc_so4[2])Step 11  t = 2.481969e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 12  t = 2.732840e+01 (dt = 2.51e+00)(logc_so4[2])Step 12  t = 2.732840e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 13  t = 2.983711e+01 (dt = 2.51e+00)(logc_so4[2])Step 13  t = 2.983711e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 14  t = 3.234582e+01 (dt = 2.51e+00)(logc_so4[2])Step 14  t = 3.234582e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 15  t = 3.485453e+01 (dt = 2.51e+00)(logc_so4[2])Step 15  t = 3.485453e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 16  t = 3.736324e+01 (dt = 2.51e+00)(logc_so4[2])Step 16  t = 3.736324e+01 (dt = 2.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 17  t = 3.807200e+01 (dt = 7.09e-01)(logc_so4[2])Step 17  t = 3.807200e+01 (dt = 7.09e-01)  (z_al[2])Error = 0.00e+00 (1 iters)
+  (z_al[2])Error = 0.00e+00 (1 iters)
+Step 18  t = 3.907200e+01 (dt = 1.00e+00)Step 18  t = 3.907200e+01 (dt = 1.00e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 19  t = 4.058000e+01 (dt = 1.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+(logc_so4[2])Step 19  t = 4.058000e+01 (dt = 1.51e+00)  (z_al[2])Error = 0.00e+00 (1 iters)
+D25.sto has been replaced
+D25.sto has been replaced
+End of calculation
+End of calculation
+
+Info: CPU time 0.063374 seconds
+
+
+Info: CPU time 0.060565 seconds
+

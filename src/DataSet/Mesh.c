@@ -21,7 +21,8 @@
 #include "String_.h"
 #include "Mry.h"
 #include "Mesh.h"
-#include "Threads.h"
+#include "SharedMS.h"
+#include "DistributedMS.h"
 
 
 #if defined(__cplusplus)
@@ -1443,7 +1444,7 @@ int (Mesh_ComputeInitialState)(Mesh_t* mesh,double t)
 
 
 
-#if Threads_APIis(OpenMP)
+#if SharedMS_APIis(OpenMP)
 int (Mesh_ComputeExplicitTerms)(Mesh_t* mesh,double t)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
@@ -1509,7 +1510,7 @@ int (Mesh_ComputeExplicitTerms)(Mesh_t* mesh,double t)
 
 
 
-#if Threads_APIis(OpenMP)
+#if SharedMS_APIis(OpenMP)
 int (Mesh_ComputeMatrix)(Mesh_t* mesh,Matrix_t* a,double t,double dt)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
@@ -1526,10 +1527,13 @@ int (Mesh_ComputeMatrix)(Mesh_t* mesh,Matrix_t* a,double t,double dt)
       Material_t* mat = Element_GetMaterial(el + ie) ;
     
       if(mat) {
-#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+        #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
         double ke[NE*NE] ;
-#undef NE
+        #undef NE
         int    i ;
+        int len = Matrix_AssembleElementMatrix(a,el+ie,NULL) ;
+      
+        if(len == 0) continue ;
       
         Element_FreeBuffer(el + ie) ;
         i = Element_ComputeMatrix(el + ie,t,dt,ke) ;
@@ -1562,16 +1566,27 @@ int (Mesh_ComputeMatrix)(Mesh_t* mesh,Matrix_t* a,double t,double dt)
   
   {
     unsigned int    ie ;
+    int rank = 0 ;
+    int size = 1 ;
+      
+    #if DistributedMS_APIis(MPI)
+    //MPI_Comm_size(MPI_COMM_WORLD,&size);
+    //MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+    #endif
   
     for(ie = 0 ; ie < n_el ; ie++) {
+    //for(ie = rank ; ie < n_el ; ie += size) {
       Material_t* mat = Element_GetMaterial(el + ie) ;
     
       if(mat) {
-#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+        #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
         double ke[NE*NE] ;
-#undef NE
+        #undef NE
         int    i ;
+        int len = Matrix_AssembleElementMatrix(a,el+ie,NULL) ;
       
+        if(len == 0) continue ;
+        
         Element_FreeBuffer(el + ie) ;
         i = Element_ComputeMatrix(el + ie,t,dt,ke) ;
         if(i != 0) {
@@ -1583,6 +1598,10 @@ int (Mesh_ComputeMatrix)(Mesh_t* mesh,Matrix_t* a,double t,double dt)
       }
     }
   }
+      
+  #if DistributedMS_APIis(MPI)
+  //MPI_Barrier(MPI_COMM_WORLD);
+  #endif
   
   return(flag) ;
 }
@@ -1590,7 +1609,7 @@ int (Mesh_ComputeMatrix)(Mesh_t* mesh,Matrix_t* a,double t,double dt)
 
 
 
-#if Threads_APIis(OpenMP)
+#if SharedMS_APIis(OpenMP)
 void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,double dt)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
@@ -1607,9 +1626,9 @@ void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,doubl
       Material_t* mat = Element_GetMaterial(el + ie) ;
     
       if(mat) {
-#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+        #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
         double re[NE] ;
-#undef NE
+        #undef NE
       
         Element_FreeBuffer(el + ie) ;
         Element_ComputeResidu(el + ie,t,dt,re) ;
@@ -1638,9 +1657,9 @@ void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,doubl
             Material_t* mat = Element_GetMaterial(el + ie) ;
     
             if(mat) {
-#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+              #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
               double re[NE] ;
-#undef NE
+              #undef NE
         
               Element_FreeBuffer(el + ie) ;
               Element_ComputeLoads(el + ie,t,dt,cg + i_cg,re) ;
@@ -1672,9 +1691,9 @@ void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,doubl
       Material_t* mat = Element_GetMaterial(el + ie) ;
     
       if(mat) {
-#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+        #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
         double re[NE] ;
-#undef NE
+        #undef NE
       
         Element_FreeBuffer(el + ie) ;
         Element_ComputeResidu(el + ie,t,dt,re) ;
@@ -1701,9 +1720,9 @@ void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,doubl
             Material_t* mat = Element_GetMaterial(el + ie) ;
     
             if(mat) {
-#define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
+              #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
               double re[NE] ;
-#undef NE
+              #undef NE
         
               Element_FreeBuffer(el + ie) ;
               Element_ComputeLoads(el + ie,t,dt,cg + i_cg,re) ;
@@ -1720,7 +1739,7 @@ void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,doubl
 
 
 
-#if Threads_APIis(OpenMP)
+#if SharedMS_APIis(OpenMP)
 int (Mesh_ComputeImplicitTerms)(Mesh_t* mesh,double t,double dt)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
@@ -1750,12 +1769,12 @@ int (Mesh_ComputeImplicitTerms)(Mesh_t* mesh,double t,double dt)
       
       #if 0
       {
-        int id = Threads_CurrentThreadId ;
+        int id = SharedMS_CurrentThreadId ;
         
         printf("Element: %d\n",ie) ;
         
         if(id == 0) {
-          int nthreads = Threads_GetTheNbOfThreads() ;
+          int nthreads = SharedMS_GetTheNbOfThreads() ;
           
           printf("Actual number of threads: %d\n",nthreads) ;
         }

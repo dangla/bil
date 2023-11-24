@@ -20,13 +20,40 @@
 #include "Session.h"
 #include "Mry.h"
 #include "TypeId.h"
-#include "Threads.h"
+#include "SharedMS.h"
+#include "DistributedMS.h"
+
+#include "BilExtraLibs.h"
+
+#ifdef PETSCLIB
+  #include <petsc.h>
+#endif
 
 
 
 static void   (Entry_PrintUsage)(char*) ;
 static void   (Entry_PrintInfo)(void) ;
 static void   (Entry_CLI)(Entry_t*) ;
+
+
+int (Entry_Main)(int argc,char** argv)
+{
+  #ifdef PETSCLIB
+    MPI_Init(&argc,&argv) ;
+  #endif
+  {
+    Entry_t* entry = Entry_Create(argc,argv) ;
+  
+    Entry_Execute(entry) ;
+  
+    Entry_Delete(entry) ;
+  }
+  #ifdef PETSCLIB
+    MPI_Finalize() ;
+  #endif
+  
+  return(0) ;
+}
 
 
 
@@ -325,13 +352,13 @@ void Entry_CLI(Entry_t* entry)
     DataSet_t* dataset =  DataSet_Create(filename,options) ;
     Module_t* module = DataSet_GetModule(dataset) ;
 
-    #if Threads_APIisNot(None)
+    #if SharedMS_APIisNot(None)
     {
       int nthreads = Options_NbOfThreads(options) ;
       
-      Threads_SetTheNbOfThreads(nthreads) ;
+      SharedMS_SetTheNbOfThreads(nthreads) ;
       Message_Direct("Nb of requested threads: %d\n",nthreads) ;
-      Message_Direct("Multithreading API: "Utils_STR(Threads_API)"\n") ;
+      Message_Direct("Multithreading API: "Utils_STR(SharedMS_API)"\n") ;
     }
     #endif
   
@@ -458,9 +485,9 @@ void Entry_PrintInfo(void)
   char bil_packager[]  = "Packager          : " BIL_PACKAGER ;
   char bil_url[]       = "Web site          : " BIL_URL ;
   char bil_email[]     = "Contact           : " BIL_EMAIL ;
-  char bil_mtapi[]     = "Multithreading API: " Utils_STR(Threads_API) ;
+  char bil_mtapi[]     = "Multithreading API: " Utils_STR(SharedMS_API) ;
   char bil_nthreads[]  = "Nb of CPU threads : " ;
-  int nthreads = Threads_NbOfLogicalCores ;
+  int nthreads = SharedMS_NbOfLogicalCores ;
   
   Message_Direct("%s\n", bil_progname) ;
   Message_Direct("%s\n", bil_copyright) ;

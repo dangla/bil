@@ -19,11 +19,11 @@
 #endif
 
 #ifdef SUPERLUMTLIB
-#include "superlumt.h"
+#include "superlu.h"
 #endif
 
 #ifdef SUPERLUDISTLIB
-#include "superludist.h"
+#include "superlu.h"
 #endif
 
   

@@ -18,27 +18,30 @@ typedef void     FVM_ComputeFluxes_t(FVM_t*,double*,double*,int,int) ;
 extern FVM_t*     (FVM_GetInstance)(Element_t*) ;
 extern void       (FVM_Delete)(void*) ;
 
-extern double*    FVM_ComputeMassMatrix(FVM_t*,double*,int) ;
-extern double*    FVM_ComputeIsotropicConductionMatrix(FVM_t*,double*,int) ;
-extern double*    FVM_ComputeMassAndIsotropicConductionMatrix(FVM_t*,double*,int) ;
+extern double*    (FVM_ComputeMassMatrix)(FVM_t*,double*,int) ;
+extern double*    (FVM_ComputeIsotropicConductionMatrix)(FVM_t*,double*,int) ;
+extern double*    (FVM_ComputeMassAndIsotropicConductionMatrix)(FVM_t*,double*,int) ;
 
-extern double*    FVM_ComputeSurfaceLoadResidu(FVM_t*,Load_t*,double,double) ;
-extern double*    FVM_ComputeBodyForceResidu(FVM_t*,double*) ;
-extern double*    FVM_ComputeFluxResidu(FVM_t*,double*) ;
-extern double*    FVM_ComputeMassAndFluxResidu(FVM_t*,double*) ;
-extern double*    FVM_ComputeMassBalanceEquationResidu(FVM_t*,double*,double*,double) ;
-
-
-extern double*    FVM_ComputeCellVolumes(FVM_t*) ;
-extern double*    FVM_ComputeCellSurfaceAreas(FVM_t*) ;
-extern double*    FVM_ComputeCellVolumesAndSurfaceAreas(FVM_t*) ;
-extern short int  FVM_FindLocalCellIndex(FVM_t*,double*) ;
-extern double*    FVM_ComputeIntercellDistances(FVM_t*) ;
+extern double*    (FVM_ComputeSurfaceLoadResidu)(FVM_t*,Load_t*,double,double) ;
+extern double*    (FVM_ComputeBodyForceResidu)(FVM_t*,double*) ;
+extern double*    (FVM_ComputeFluxResidu)(FVM_t*,double*) ;
+extern double*    (FVM_ComputeMassAndFluxResidu)(FVM_t*,double*) ;
+extern double*    (FVM_ComputeMassBalanceEquationResidu)(FVM_t*,double*,double*,double) ;
 
 
-extern double*    FVM_ComputeVariableFluxes(FVM_t*,FVM_ComputeFluxes_t*,int,int) ;
+extern double*    (FVM_ComputeCellVolumes)(FVM_t*) ;
+extern double*    (FVM_ComputeCellSurfaceAreas)(FVM_t*) ;
+extern double*    (FVM_ComputeCellVolumesAndSurfaceAreas)(FVM_t*) ;
+extern short int  (FVM_FindLocalCellIndex)(FVM_t*,double*) ;
+extern double*    (FVM_ComputeIntercellDistances)(FVM_t*) ;
 
-extern double*    FVM_ComputeTheNodalFluxVector(FVM_t*,double*) ;
+
+extern double*    (FVM_ComputeVariableFluxes)(FVM_t*,FVM_ComputeFluxes_t*,int,int) ;
+
+extern double*    (FVM_ComputeTheNodalFluxVector)(FVM_t*,double*) ;
+
+extern double     (FVM_AverageCurrentImplicitTerm)(Mesh_t*,const char*,const int,const int) ;
+extern double     (FVM_AveragePreviousImplicitTerm)(Mesh_t*,const char*,const int,const int) ;
 
 
 
@@ -86,7 +89,7 @@ extern double*    FVM_ComputeTheNodalFluxVector(FVM_t*,double*) ;
 
 
 
-#include "Buffer.h"
+#include "Buffers.h"
 #include "GenericObject.h"
 
 struct FVM_s {                /* Finite Volume Method */

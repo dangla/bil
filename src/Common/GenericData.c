@@ -23,7 +23,7 @@
 
 #include "BilExtraLibs.h"
 #ifdef SUPERLUDISTLIB
-  #include "superludist.h"
+  #include "superlu.h"
 #endif
 
 #ifdef PETSCLIB

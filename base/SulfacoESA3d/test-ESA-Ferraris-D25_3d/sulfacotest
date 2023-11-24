@@ -1,0 +1,114 @@
+Units
+Length = decimeter
+Time   = second
+Mass   = hectogram
+
+
+
+Geometry
+Dimension = 1  plan
+
+
+
+Mesh
+4
+0. 0. 1 1
+0.01
+1 100 1
+1 1 1
+
+
+
+Material
+Model = Sulfaco
+porosity = 0.23
+N_CH     = 1.53
+N_CSH    = 1.393
+N_AH3    = 1.e-6
+N_CSH2   = 0
+N_AFm    = 0
+N_AFt    = 0
+N_C3AH6  = 0.2
+R_CSH2   = 1.e-12
+R_AFm    = 1.e-6
+R_C3AH6  = 1.e-6
+Curves_log = Sat  r = Range{r1 = 1.e-8 , r2 = 1.e-3 , n = 1000} S_r = Expressions(1){r0=155.82e-8; m = 0.2516 ; S_r = (1 + (r0/r)**(1/(1-m)))**(-m)}
+A_i = 0 # 9e-9
+A_p = 0 # 1.1e-9
+K_bulk = 20.e9
+Biot = 0.54
+Strain0 = 6e-4
+Strainf = 3.9e-3
+
+
+Fields
+1
+Value = 1       Gradient = 0 0 0      Point = 0 0 0
+
+
+Initialization
+6
+Region = 2 Unknown = logc_so4    Field = 1 Function = 1
+Region = 2 Unknown = psi         Field = 1 Function = 6
+Region = 2 Unknown = z_ca        Field = 1 Function = 4
+Region = 2 Unknown = z_al        Field = 1 Function = 3
+Region = 2 Unknown = logc_k      Field = 1 Function = 2
+Region = 2 Unknown = logc_oh     Field = 1 Function = 5
+
+
+Functions
+6
+N = 2 F(0) = -9                      F(1) = -9     # logc_so4
+N = 2 F(0) = -9                      F(1) = -9     # logc_k
+N = 2 F(0) = -9                      F(1) = -9     # z_al
+N = 2 F(0) =  1                      F(1) = 1      # z_ca
+N = 2 F(0) = -1.834                  F(1) = -1.834     # logc_oh
+N = 2 F(0) = 0                       F(1) = 1     # psi
+
+
+
+Boundary Conditions
+6
+Region = 2 Unknown = logc_so4   Field = 1 Function = 1
+Region = 1 Unknown = psi        Field = 0 Function = 6
+Region = 3 Unknown = psi        Field = 1 Function = 6
+Region = 2 Unknown = z_ca       Field = 1 Function = 4
+Region = 2 Unknown = z_al       Field = 1 Function = 3
+Region = 2 Unknown = logc_k     Field = 1 Function = 2
+#Region = 1 Unknown = logc_oh    Field = 1 Function = 5
+
+
+Loads
+0
+
+
+Points
+2
+Regon = 2 Coord = 0.
+Regon = 2 Coord = 1.
+
+
+Dates
+2
+0. 3.5e6 
+
+
+Objective Variations
+logc_so4     = 1.e-3
+z_ca         = 1.e-1
+psi          = 1.
+logc_k       = 1.e-1
+z_al         = 1.e-1
+logc_oh      = 1.e-3
+
+
+Iterative Process
+Iter = 2 
+Tol = 1.e-4
+Repetition = 0
+
+
+Time Steps
+Dtini = 1
+Dtmax = 1.e6
+Dtmin = 1

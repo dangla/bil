@@ -14,14 +14,14 @@ extern void        (Buffers_Delete)(void*) ;
 #define Buffers_GetNbOfBuffers(BFS)   ((BFS)->nbofbuffers)
 #define Buffers_GetBuffer(BFS)        ((BFS)->buffer)
 
-#include "Threads.h"
+#include "SharedMS.h"
 
-#define Buffers_MaxNbOfBuffers   Threads_MaxNbOfThreads
+#define Buffers_MaxNbOfBuffers   SharedMS_MaxNbOfThreads
 
 
 #define Buffers_GetBufferOfCurrentThread(BFS) \
-        ((Threads_CurrentThreadId < Buffers_GetNbOfBuffers(BFS)) ? \
-        (Buffers_GetBuffer(BFS) + Threads_CurrentThreadId) : \
+        ((SharedMS_CurrentThreadId < Buffers_GetNbOfBuffers(BFS)) ? \
+        (Buffers_GetBuffer(BFS) + SharedMS_CurrentThreadId) : \
         NULL)
 
 

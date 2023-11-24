@@ -337,13 +337,14 @@ void  (Elements_DefineProperties)(Elements_t* elements)
        * of nodes (e.g. vertex nodes), cancel
        * equations and unknowns at the other nodes */
        
-      /* To do so, proceed as follows in the model :
-       * Element_GetUnknownPosition(el)  = -1
-       * Element_GetEquationPosition(el) = -1 */
+      /* To do so, proceed as follows in the model
+       * (to cancel unknown/equation j at node i):
+       * Element_GetUnknownPosition(el)[i*neq+j] = -1
+       * Element_GetEquationPosition(el)[i*neq+j] = -1 */
         
       Element_DefineProperties(el,intfcts,shapefcts) ;
       
-      /* Update the size of tables in all the elementsol of the linked list */
+      /* Update the size of tables in all the elementsol of the circularly linked list */
       {
         int ni = Element_GetNbOfImplicitTerms(el) ;
         int ne = Element_GetNbOfExplicitTerms(el) ;

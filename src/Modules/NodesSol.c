@@ -59,7 +59,7 @@ void (NodesSol_Delete)(void* self)
 
 
 
-void NodesSol_Copy(NodesSol_t* nodessol_dest,NodesSol_t* nodessol_src)
+void (NodesSol_Copy)(NodesSol_t* nodessol_dest,NodesSol_t* nodessol_src)
 /** Copy the nodal unknowns from nodessol_src to nodessol_dest */
 {
   Nodes_t* nodes = NodesSol_GetNodes(nodessol_src) ;
@@ -91,7 +91,7 @@ void NodesSol_Copy(NodesSol_t* nodessol_dest,NodesSol_t* nodessol_src)
 
 
 
-void NodesSol_CopySelectedSequentialUnknowns(NodesSol_t* nodessol_dest,NodesSol_t* nodessol_src,const int sequentialindex)
+void (NodesSol_CopySelectedSequentialUnknowns)(NodesSol_t* nodessol_dest,NodesSol_t* nodessol_src,const int sequentialindex)
 /** Copy the nodal unknowns of given sequential index 
  * ("sequentialindex") from nodessol_src to nodessol_dest. */
 {

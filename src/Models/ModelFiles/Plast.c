@@ -78,7 +78,7 @@ static double  macrostrain[9] ;
 static double* cijkl ;
 static Plasticity_t* plasty ;
 static int     plasticmodel ;
-#if Threads_APIis(OpenMP)
+#if SharedMS_APIis(OpenMP)
   #pragma omp threadprivate(gravity,rho_s,sig0,hardv0,macrogradient,macrostrain,cijkl,plasty,plasticmodel)
 #endif
 
@@ -120,7 +120,7 @@ I_Last
 static double  Variable[NbOfVariables] ;
 static double  Variable_n[NbOfVariables] ;
 //static double dVariable[NbOfVariables] ;
-#if Threads_APIis(OpenMP)
+#if SharedMS_APIis(OpenMP)
   #pragma omp threadprivate(Variable,Variable_n)
 #endif
 
@@ -260,7 +260,7 @@ void GetProperties(Element_t* el,double t)
   //hardv0  = GetProperty("hardv0") ;
   
   {
-    int id = Threads_CurrentThreadId ;
+    int id = SharedMS_CurrentThreadId ;
     GenericData_t* gdat = Element_FindMaterialGenericData(el,Plasticity_t,"Plasticity") ;
     int n = (gdat) ? GenericData_GetNbOfData(gdat) : 0 ;
     
@@ -320,10 +320,10 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
  *  Return the nb of (scalar) properties of the model */
 {
   int NbOfProp = 36 ;
-  #if Threads_APIis(None)
+  #if SharedMS_APIis(None)
     int nthreads = 1 ;
   #else
-    int nthreads = Threads_MaxNbOfThreads ;
+    int nthreads = SharedMS_MaxNbOfThreads ;
   #endif
   int i ;
 

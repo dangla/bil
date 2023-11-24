@@ -40,3 +40,21 @@ void (NodeSol_Delete)(void* self)
     }
   }
 }
+
+
+
+void (NodeSol_Copy)(NodeSol_t* nodesol_d,NodeSol_t* nodesol_s)
+/** Copy the nodal unknowns from nodesol_src to nodesol_dest */
+{
+  /* Nodal values */
+  {
+    double* u_s = NodeSol_GetUnknown(nodesol_s) ;
+    double* u_d = NodeSol_GetUnknown(nodesol_d) ;
+    unsigned int nu = NodeSol_GetNbOfUnknowns(nodesol_s) ;
+    unsigned int i ;
+        
+    for(i = 0 ; i < nu ; i++) {
+      u_d[i] = u_s[i] ;
+    }
+  }
+}

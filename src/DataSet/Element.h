@@ -44,6 +44,7 @@ extern void     (Element_MakeUnknownContinuousAcrossZeroThicknessElement)(Elemen
 extern void     (Element_MakeEquationContinuousAcrossZeroThicknessElement)(Element_t*,const char*);
 extern int      (Element_FindNodeIndex)                         (Element_t*,const Node_t*) ;
 extern double*  (Element_ComputeCoordinateVector)               (Element_t*,double*) ;
+extern void     (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t*) ;
 
 /* Synonyms */
 #define  Element_ComputePointerToNodalUnknowns \

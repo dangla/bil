@@ -116,10 +116,14 @@ void (Context_Initialize)(Context_t* ctx)
       }
       
       /* 
-       * Skip two more entries if the following entry is either:
-       * "-ksp_XXX" <YYY>: option for PetscKSP methods
+       * Skip some more entries for PetscKSP methods
        **/
-      {
+      if(String_Is(argv[i],"petscksp",strlen(argv[i]))) {
+      
+        /* 
+         * Skip two more entries if the following entry is either:
+         * "-ksp_XXX" <YYY>: option for PetscKSP methods
+         **/
         while(String_Is(argv[i + 1],"-ksp_")) {
           if(i + 2 < argc) {
             i += 2 ;
@@ -127,13 +131,13 @@ void (Context_Initialize)(Context_t* ctx)
             Message_FatalError("Missing value for ksp option") ;
           }
         }
-      }
       
-      /* 
-       * Skip two more entries if the following entry is either:
-       * "-pc_XXX" <YYY>: option for PetscKSP methods
-       **/
-      {
+      
+        /* 
+         * Skip two more entries if the following entry is either:
+         * "-pc_XXX" <YYY>: option for PetscKSP methods
+         **/
+      
         while(String_Is(argv[i + 1],"-pc_")) {
           if(i + 2 < argc) {
             i += 2 ;
@@ -141,19 +145,43 @@ void (Context_Initialize)(Context_t* ctx)
             Message_FatalError("Missing value for pc option") ;
           }
         }
-      }
       
-      /* 
-       * Skip two more entries if the following entry is either:
-       * "-mat_XXX" <YYY>: option for PetscKSP methods
-       **/
-      {
+      
+        /* 
+         * Skip two more entries if the following entry is either:
+         * "-mat_XXX" <YYY>: option for PetscKSP methods
+         **/
+      
         while(String_Is(argv[i + 1],"-mat_")) {
           if(i + 2 < argc) {
             i += 2 ;
           } else {
             Message_FatalError("Missing value for mat option") ;
           }
+        }
+      
+      
+        /* 
+         * Skip two more entries if the following entry is either:
+         * "-log_XXX" <YYY>: option for PetscKSP methods
+         **/
+      
+        while(String_Is(argv[i + 1],"-log_")) {
+          if(i + 2 < argc) {
+            i += 2 ;
+          } else {
+            Message_FatalError("Missing value for log option") ;
+          }
+        }
+      
+      
+        /* 
+         * Skip one more entry if the following entry is:
+         * "-mpi_linear_solver_server": option for PetscKSP methods
+         **/
+      
+        while(String_Is(argv[i + 1],"-mpi_linear_solver_server")) {
+          i += 1 ;
         }
       }
     

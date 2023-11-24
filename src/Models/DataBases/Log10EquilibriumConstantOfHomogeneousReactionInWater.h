@@ -9,7 +9,7 @@ extern void Log10EquilibriumConstantOfHomogeneousReactionInWater_Print(double) ;
         (Log10EquilibriumConstantOfHomogeneousReactionInWater_##R(T))
 
 
-#include "Log10EquilibriumConstantOfHomogeneousReactionInWater_DEFAULT.h"
+#include "Log10EquilibriumConstantOfHomogeneousReactionInWater_DEFAULT.h.in"
 
 
 #endif

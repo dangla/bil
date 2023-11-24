@@ -2078,6 +2078,64 @@ double* Plasticity_DataBExM(Plasticity_t* plasty,double* stress,double* hardv)
 }
 
 
+double* Plasticity_DataNSFS(Plasticity_t* plasty,double* stress,double* hardv)
+{
+  
+  {
+    double lambda = 0.03 ;
+    double M = 1.3 ;
+    double pc0 = 15.e6 ;
+    double phi0 = 0.15 ;
+    double e0 = phi0/(1 - phi0) ;
+    double kappa = 0.005 ;
+    double p_ref = 1.e6 ;
+    double coh = 0.8 ;
+    double refstrainrate = 1.e-10 ;
+    double viscexp = 0 ; // 0.03
+    Curves_t* curves = Curves_Create(4) ;
+    int n = Curves_ReadCurves(curves,"Curves = wrc   pc = Range{x1 = 0 , x2 = 1.e9, n = 1000}  sl = Expressions(1){p0 = 50e6 ; m = 0.5 ; sl = (1 + (pc/p0)**(1/(1-m)))**(-m)}  kl = Expressions(1){p0 = 50e6 ; m = 0.5 ; A = 2 ; kl = ((1 + (pc/p0)**(1/(1-m)))**(-m))**A} kg = Expressions(1){kg = 1}") ;
+    int n1 = Curves_ReadCurves(curves,"Curves = lc   pc = Range{x1 = 0 , x2 = 1.e9, n = 1000}  lc = Expressions(1){l0 = 0.03 ; k = 0.005 ; beta = 0.217e-6 ; r = 0.316 ; lc = (l0 - k)/(l0*((1-r)*exp(-beta*pc) + r) - k)}") ;
+    Curve_t* curvesl   = Curves_FindCurve(curves,"sl") ;
+    Curve_t* curvelc   = Curves_FindCurve(curves,"lc") ;
+    
+    Plasticity_SetTo(plasty,NSFS) ;
+    Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0,coh,p_ref,refstrainrate,viscexp,curvelc,curvesl) ;
+  
+    {
+      double s = 0 ;
+      int rmax = RAND_MAX / 2 ;
+      double p = - 13.e6 ;
+      double q = 16.7e6 ;
+      double sxx = p - q/3 ;
+      double syy = sxx ;
+      double szz = p + 2*q/3 ;
+      double sxy = 0 ; //((double) (rand() - rmax))/rmax*q ;
+      double sxz = 0 ; //((double) (rand() - rmax))/rmax*q ;
+      double syz = 0 ; //((double) (rand() - rmax))/rmax*q ;
+      double dt  = 4.e3 ;
+      double strainrate = 0 ;
+    
+      stress[0] = sxx ;
+      stress[1] = sxy ;
+      stress[2] = sxz ;
+      stress[3] = sxy ;
+      stress[4] = syy ;
+      stress[5] = syz ;
+      stress[6] = sxz ;
+      stress[7] = syz ;
+      stress[8] = szz ;
+      
+      hardv[0] = Plasticity_GetHardeningVariable(plasty)[0] ;
+      hardv[1] = s ;
+      hardv[2] = dt ;
+      hardv[3] = strainrate ;
+    }
+  }
+  
+  return(stress) ;
+}
+
+
 int Plasticity_TestMatrix(Plasticity_t* plasty,const double* stress,const double* hardv)
 {
   
@@ -2356,8 +2414,9 @@ int main(int argc, char** argv)
     //Plasticity_DataCamclay(plasty,stress,hardv) ;
     //Plasticity_DataCamclayOffset(plasty,stress,hardv) ;
     //Plasticity_DataBBM(plasty,stress,hardv) ;
-    Plasticity_DataBExM(plasty,stress,hardv) ;
-  
+    //Plasticity_DataBExM(plasty,stress,hardv) ;
+    Plasticity_DataNSFS(plasty,stress,hardv) ;
+
     #if 0
     {
       printf("Test on the consistent matrix\n") ;

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#if 0
 
 /* T stands for a type */
 extern void* Object_New_(const int = 1) ;
@@ -16,7 +17,8 @@ template <typename T> inline void* Object_New_(const int n)
 }
 #define Object_New(T, ...) \
         Object_New_<T>(__VA_ARGS__)
-
+        
+#endif
 
 /* OBJ stands for a pointer to an object. 
  * (OBJ)->delete should point to a function which is expected 

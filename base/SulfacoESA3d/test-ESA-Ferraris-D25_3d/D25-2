@@ -1,0 +1,117 @@
+Units
+Length = decimeter
+Time   = second
+Mass   = hectogram
+
+
+Geometry
+Dimension = 1  plan
+
+
+Mesh
+3
+0. 0. 1
+0.01
+1 100
+1 1
+
+
+
+Material
+Model = SulfacoESA3d
+porosity = 0.23
+N_CH     = 1.53
+N_CSH    = 1.393
+N_AH3    = 1.e-6
+N_CSH2   = 0
+N_AFm    = 0
+N_AFt    = 0
+N_C3AH6  = 0.2
+R_CSH2   = 1.e-12
+R_AFm    = 1.e-6
+R_C3AH6  = 1.e-6
+Curves_log = Sat  r = Range{r1 = 1.e-8 , r2 = 1.e-3 , n = 1000} S_r = Expressions(1){r0=155.82e-8; m = 0.2516 ; S_r = (1 + (r0/r)**(1/(1-m)))**(-m)}
+A_i = 8.4e-8
+A_p = 4.4e-9
+B_i = 0 # 8.4e-6
+B_p = 0 # 4.4e-7
+young = 30.1e9
+poisson = 0.26
+Biot = 0.54
+uniaxial_tensile_strength = 3.1e6    # ft = E*kappa_0  kappa_0 = 1.e-4
+fracture_energy = 25.e3
+crack_band_width = 1
+#Strain0 = 1.e-4
+#Strainf = 8.115e-3
+
+
+Fields
+1
+Value = 1       Gradient = 0 0 0      Point = 0 0 0
+
+
+Initialization
+6
+Region = 2 Unknown = logc_so4    Field = 1 Function = 1
+Region = 2 Unknown = psi         Field = 0 Function = 0
+Region = 2 Unknown = z_ca        Field = 1 Function = 4
+Region = 2 Unknown = z_al        Field = 1 Function = 3
+Region = 2 Unknown = logc_k      Field = 1 Function = 2
+Region = 2 Unknown = logc_oh     Field = 1 Function = 5
+
+
+Functions
+5
+N = 5 F(0) = -6        F(8640) = -2.556        F(86400) = -1.556        F(345600) = -0.954        F(864000) = -0.456
+N = 5 F(0) = -5.7      F(8640) = -2.256        F(86400) = -1.256        F(345600) = -0.654        F(864000) = -0.156
+N = 2 F(0) = -7.32     F(86400) = -6.32
+N = 2 F(0) = 1         F(86400) = 1
+N = 2 F(0) = -2        F(86400) = -2    # pH(10) = -4; pH(11) = -3; pH(12) = -2
+#N = 2 F(0) = -8        F(86400) = -0.456
+
+
+Boundary Conditions
+4
+Region = 2 Unknown = u_1        Field = 0 Function = 0
+Region = 1 Unknown = logc_so4   Field = 1 Function = 1
+Region = 1 Unknown = psi        Field = 0 Function = 0
+#Region = 1 Unknown = z_ca       Field = 1 Function = 4
+#Region = 1 Unknown = z_al       Field = 1 Function = 3
+Region = 1 Unknown = logc_k     Field = 1 Function = 2
+#Region = 1 Unknown = logc_oh    Field = 1 Function = 5
+
+
+Loads
+0
+
+
+Points
+2
+Regon = 2 Coord = 0.
+Regon = 2 Coord = 1.
+
+
+Dates
+2
+0. 3.5e6 
+
+
+Objective Variations
+u_1          = 1.e-4
+logc_so4     = 1.e-3
+z_ca         = 1.e-3
+psi          = 1.e-3
+logc_k       = 1.e-2
+z_al         = 1.e-2
+logc_oh      = 1.e-2
+
+
+Iterative Process
+Iter = 20 
+Tol = 1.e-4
+Repetition = 0
+
+
+Time Steps
+Dtini = 1.e2
+Dtmax = 1.e6

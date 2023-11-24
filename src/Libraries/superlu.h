@@ -1,2 +1,13 @@
-//#include "./superlu/superlu-5.2.1/SRC/slu_ddefs.h"
-#include <superlu/slu_ddefs.h>
+#include "BilExtraLibs.h"
+
+#ifdef SUPERLULIB
+#include "superluseq.h.in"
+#endif
+
+#ifdef SUPERLUMTLIB
+#include "superlumt.h.in"
+#endif
+
+#ifdef SUPERLUDISTLIB
+#include "superludist.h.in"
+#endif

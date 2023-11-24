@@ -69,14 +69,15 @@ void (CoordinateFormat_Delete)(void* self)
 
 
 
-int CoordinateFormat_AssembleElementMatrix(CoordinateFormat_t* a,double* ke,int* col,int* row,int ndof,int nnz)
+int (CoordinateFormat_AssembleElementMatrix)(CoordinateFormat_t* a,double* ke,int* col,int* row,int ndof,int nnz)
 /** Assemble the local matrix ke into the global matrix a 
- *  Return the updated nb of entries */
+ *  Return the nb of entries */
 {
 #define KE(i,j) (ke[(i)*ndof+(j)])
   double*  val = CoordinateFormat_GetNonZeroValue(a) ;
   int*  colind = CoordinateFormat_GetColumnIndexOfValue(a) ;
   int*  rowind = CoordinateFormat_GetRowIndexOfValue(a) ;
+  int len = 0 ;
   
   
   {
@@ -94,18 +95,21 @@ int CoordinateFormat_AssembleElementMatrix(CoordinateFormat_t* a,double* ke,int*
         if(irow < 0) continue ;
       
         /* Row (and column) indices outside the range 1,nnz are ignored in ma38 */
-        if(KE(ie,je) == 0.) irow = -1 ;
+        if(ke) {
+          if(KE(ie,je) == 0.) irow = -1 ;
         
-        val[nnz]    = KE(ie,je) ;
-        colind[nnz] = jcol + 1 ;
-        rowind[nnz] = irow + 1 ;
+          val[nnz]    = KE(ie,je) ;
+          colind[nnz] = jcol + 1 ;
+          rowind[nnz] = irow + 1 ;
+          nnz++ ;
+        }
         
-        nnz++ ;
+        len += 1 ;
       }
     }
   }
   
-  return(nnz) ;
+  return(len) ;
 
 #undef KE
 }
@@ -113,7 +117,7 @@ int CoordinateFormat_AssembleElementMatrix(CoordinateFormat_t* a,double* ke,int*
 
 
 
-void CoordinateFormat_PrintMatrix(CoordinateFormat_t* a,const int n_col,const char* keyword)
+void (CoordinateFormat_PrintMatrix)(CoordinateFormat_t* a,const int n_col,const char* keyword)
 {
   double* val  = CoordinateFormat_GetNonZeroValue(a) ;
   int*  colind = CoordinateFormat_GetColumnIndexOfValue(a) ;

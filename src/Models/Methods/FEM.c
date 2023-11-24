@@ -10,7 +10,7 @@
 #include "Session.h"
 #include "GenericData.h"
 #include "Mry.h"
-#include "Threads.h"
+#include "SharedMS.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -123,7 +123,7 @@ FEM_t* (FEM_GetInstance0)(Element_t* el)
 #endif
 
 
-#if Threads_APIis(OpenMP)
+#if SharedMS_APIis(OpenMP)
 FEM_t*  (FEM_GetInstance)(Element_t* el)
 {
   {
@@ -132,7 +132,7 @@ FEM_t*  (FEM_GetInstance)(Element_t* el)
     if(!gdat) {
       #pragma omp critical
       if(!Session_FindGenericData(FEM_t,"FEM")) {
-        int n = Threads_MaxNbOfThreads ;
+        int n = SharedMS_MaxNbOfThreads ;
         FEM_t* fem = Mry_Create(FEM_t,n,FEM_Create()) ;
         //FEM_t* fem = FEM_Create() ;
         
@@ -143,7 +143,7 @@ FEM_t*  (FEM_GetInstance)(Element_t* el)
         assert(gdat == Session_FindGenericData(FEM_t,"FEM")) ;
         
         //Message_Direct("FEM_GetInstance: critical\n") ;
-        //Message_Direct("Thread id: %d\n",Threads_CurrentThreadId) ;
+        //Message_Direct("Thread id: %d\n",SharedMS_CurrentThreadId) ;
       }
     }
   }
@@ -153,7 +153,7 @@ FEM_t*  (FEM_GetInstance)(Element_t* el)
     
     if(gdat) {
       FEM_t* fem0 = ((FEM_t*) GenericData_GetData(gdat)) ;
-      int id = Threads_CurrentThreadId ;
+      int id = SharedMS_CurrentThreadId ;
       
       if(id < GenericData_GetNbOfData(gdat)) {
         FEM_t* fem = fem0 + id ;
@@ -163,7 +163,7 @@ FEM_t*  (FEM_GetInstance)(Element_t* el)
         FEM_FreeBuffer(fem) ;
         
         //Message_Direct("FEM_GetInstance: no critical\n") ;
-        //Message_Direct("Thread id: %d\n",Threads_CurrentThreadId) ;
+        //Message_Direct("Thread id: %d\n",SharedMS_CurrentThreadId) ;
   
         return(fem) ;
       } else {
@@ -964,7 +964,7 @@ double*  (FEM_ComputePoroelasticMatrix6)(FEM_t* fem,IntFct_t* fi,const double* c
  *  Neq  = nb of equations (= Dim + n_dif)
  *  Dim  = dimension of the problem
  * 
- *  The inputs are:
+ *  On inputs:
  * 
  *  n_dif = nb of Biot-like coupling terms (pressure, temperature, etc...)
  * 
@@ -984,12 +984,25 @@ double*  (FEM_ComputePoroelasticMatrix6)(FEM_t* fem,IntFct_t* fi,const double* c
  *   A0,B0 = Hydraulic-mechanic coupling terms
  *   Ai,Bj = Hydraulic terms
  * 
- *  The outputs is provided in an order depending on "idis".
+ *  On outputs:
+ *  the FE matrix k is provided in an order depending on "idis".
  *  The first displacement unknown U1 will be positionned at "idis".
- *  (0  ... idis ... Neq-1)
- *   |  ...  |   ...  |
- *   v       v        v
- *  (P1 ...  U1  ...  Pn)
+ * 
+ *  Below: I=idis , J=idis+D , N=n_dif+D , D=Dim
+ * 
+ *           0      ...  I      ...  J     ...   N
+ *           |           |           |           |
+ *           v           v           v           v
+ *        | A0(1x1) ... AI(1xD) ... AJ(1x1) ... AN(1x1) | P1
+ *        | ........................................... | .
+ *  Knm = | K0(Dx1) ... KI(DxD) ... KJ(Dx1) ... KN(Dx1) | U(D)
+ *        | B0(1x1) ... BI(1xD) ... BJ(1x1) ... BN(1x1) | PJ
+ *        | ..........................................  | .
+ *        | Z0(1x1) ... ZI(1xD) ... ZJ(1x1) ... ZN(1x1) | PN
+ * 
+ *       | K11 ... K1n |
+ *  k =  | ........... |  n = NN = nb of nodes
+ *       | Kn1 ... Knn |
  */
 {
 #define K(i,j)      (k[(i)*ndof + (j)])
@@ -1033,59 +1046,244 @@ double*  (FEM_ComputePoroelasticMatrix6)(FEM_t* fem,IntFct_t* fi,const double* c
   }
   
   /* 1.2 Biot-like coupling terms */
-  for(i = 0 ; i < n_dif ; i++) {
-    int I_h = I_H(i) ;
-    const double* c1 = c + 81 + i*9 ;
-    double* kb = FEM_ComputeBiotMatrix(fem,fi,c1,dec) ;
-    
-    #define KB(i,j)     (kb[(i)*nn + (j)])
-    
-    for(n = 0 ; n < nn ; n++) for(m = 0 ; m < nn ; m++) {
-      int j ;
-      
-      for(j = 0 ; j < dim ; j++) {
-        K(E_Mec + j + n*neq,I_h + m*neq) = KB(j + n*dim,m) ;
-      }
-    }
-    
-    #undef KB
-  }
-  
-
-  /* 2. Hydraulic equations */
-  for(i = 0 ; i < n_dif ; i++) {
-    int E_h = E_Hyd(i) ;
-    int j ;
-    
-    /* 2.1 Coupling terms */
-    {
-      const double* c1 = c + 81 + n_dif*9 + i*(9 + n_dif) ;
+  {
+    for(i = 0 ; i < n_dif ; i++) {
+      int I_h = I_H(i) ;
+      const double* c1 = c + 81 + i*9 ;
       double* kb = FEM_ComputeBiotMatrix(fem,fi,c1,dec) ;
     
       #define KB(i,j)     (kb[(i)*nn + (j)])
     
       for(n = 0 ; n < nn ; n++) for(m = 0 ; m < nn ; m++) {
+        int j ;
+      
         for(j = 0 ; j < dim ; j++) {
-          K(E_h + m*neq,I_U + j + n*neq) = KB(j + n*dim,m) ;
+          K(E_Mec + j + n*neq,I_h + m*neq) = KB(j + n*dim,m) ;
         }
       }
     
       #undef KB
     }
+  }
+  
+
+  /* 2. Hydraulic equations */
+  {
+    for(i = 0 ; i < n_dif ; i++) {
+      int E_h = E_Hyd(i) ;
+      int j ;
     
-    /* 2.2 Accumulations */
-    for(j = 0 ; j < n_dif ; j++) {
-      int I_h = I_H(j) ;
-      const double* c2 = c + 81 + n_dif*9 + i*(9 + n_dif) + 9 + j ;
-      double* ka = FEM_ComputeMassMatrix(fem,fi,c2,dec) ;
+      /* 2.1 Coupling terms */
+      {
+        const double* c1 = c + 81 + n_dif*9 + i*(9 + n_dif) ;
+        double* kb = FEM_ComputeBiotMatrix(fem,fi,c1,dec) ;
     
-      #define KA(i,j)     (ka[(i)*nn + (j)])
-      
-      for(n = 0 ; n < nn ; n++) for(m = 0 ; m < nn ; m++) {
-        K(E_h + n*neq,I_h + m*neq) = KA(n,m) ;
+        #define KB(i,j)     (kb[(i)*nn + (j)])
+    
+        for(n = 0 ; n < nn ; n++) for(m = 0 ; m < nn ; m++) {
+          for(j = 0 ; j < dim ; j++) {
+            K(E_h + m*neq,I_U + j + n*neq) = KB(j + n*dim,m) ;
+          }
+        }
+    
+        #undef KB
       }
     
-      #undef KA
+      /* 2.2 Accumulations */
+      {
+        for(j = 0 ; j < n_dif ; j++) {
+          int I_h = I_H(j) ;
+          const double* c2 = c + 81 + n_dif*9 + i*(9 + n_dif) + 9 + j ;
+          double* ka = FEM_ComputeMassMatrix(fem,fi,c2,dec) ;
+    
+          #define KA(i,j)     (ka[(i)*nn + (j)])
+      
+          for(n = 0 ; n < nn ; n++) for(m = 0 ; m < nn ; m++) {
+            K(E_h + n*neq,I_h + m*neq) = KA(n,m) ;
+          }
+    
+          #undef KA
+        }
+      }
+    }
+  }
+  
+  return(k) ;
+
+#undef K
+#undef E_Mec
+#undef I_U
+#undef E_Hyd
+#undef I_H
+}
+
+
+
+double*  (FEM_ComputePoroelasticMatrixBis)(FEM_t* fem,IntFct_t* fi,const double* c,const int dec,const int n_dif,const int idis)
+/** Return a pointer on a FE poroelastic matrix (Ndof x Ndof).
+ * 
+ *  Ndof = nb of degrees of freedom (= NN*Neq)
+ *  NN   = nb of nodes 
+ *  Neq  = nb of equations (= Dim + n_dif)
+ *  Dim  = dimension of the problem
+ * 
+ *  On inputs:
+ * 
+ *  n_dif = nb of Biot-like coupling terms (pressure, temperature, etc...)
+ * 
+ *  idis = position index:
+ *         of the first component of the displacement in the output matrix k.
+ *         and
+ *         of the first component of the strain tensor in the entry matrix c.
+ * 
+ *  c = the entry matrix which should be given in the order depending on idis:
+ * 
+ *  Below: I=idis , J=idis+9 , N=n_dif+9
+ * 
+ *         0      ...  I      ...  J     ...   N
+ *         |           |           |           |
+ *         v           v           v           v
+ *      | A0(1x1) ... AI(1x9) ... AJ(1x1) ... AN(1x1) | P1
+ *      | ........................................... | .
+ *  c = | K0(9x1) ... KI(9x9) ... KJ(9x1) ... KN(9x1) | Strain tensor(9)
+ *      | B0(1x1) ... BI(1x9) ... BJ(1x1) ... BN(1x1) | PJ
+ *      | ..........................................  | .
+ *      | Z0(1x1) ... ZI(1x9) ... ZJ(1x1) ... ZN(1x1) | PN
+ * 
+ *   KI    = Stiffness matrix
+ *   Kn    = Mechanic-hydraulic coupling terms
+ *   AI,BI,ZI = Hydraulic-mechanic coupling terms
+ *   An,Bn,Zn = Hydraulic terms
+ * 
+ *  On outputs:
+ *  the FE matrix k is provided in an order depending on "idis".
+ *  The first displacement unknown U1 will be positionned at "idis".
+ * 
+ *  Below: I=idis , J=idis+D , N=n_dif+D , D=Dim
+ * 
+ *           0      ...  I      ...  J     ...   N
+ *           |           |           |           |
+ *           v           v           v           v
+ *        | A0(1x1) ... AI(1xD) ... AJ(1x1) ... AN(1x1) | P1
+ *        | ........................................... | .
+ *  Knm = | K0(Dx1) ... KI(DxD) ... KJ(Dx1) ... KN(Dx1) | U(D)
+ *        | B0(1x1) ... BI(1xD) ... BJ(1x1) ... BN(1x1) | PJ
+ *        | ..........................................  | .
+ *        | Z0(1x1) ... ZI(1xD) ... ZJ(1x1) ... ZN(1x1) | PN
+ * 
+ *       | K11 ... K1n |
+ *  k =  | ........... |  n = NN = nb of nodes
+ *       | Kn1 ... Knn |
+ */
+{
+#define K(i,j)      (k[(i)*ndof + (j)])
+#define E_Mec       indmec
+#define I_U         E_Mec
+#define E_Hyd(i)    (((i) < E_Mec) ? (i) : dim + (i))
+#define I_H(i)      E_Hyd(i)
+  int indmec = ((idis < 0) ? 0 : ((idis > n_dif) ? n_dif : idis)) ;
+  Element_t* el = FEM_GetElement(fem) ;
+  int dim = Element_GetDimensionOfSpace(el) ;
+  int nn  = Element_GetNbOfNodes(el) ;
+  int neq = dim + n_dif ;
+  int ndof = nn*neq ;
+  size_t SizeNeeded = ndof*ndof*(sizeof(double)) ;
+  double* k = (double*) FEM_AllocateInBuffer(fem,SizeNeeded) ;
+  int    i,n,m ;
+  double zero = 0. ;
+  
+  /* Initialization */
+  for(i = 0 ; i < ndof*ndof ; i++) k[i] = zero ;
+  
+
+  /* 
+  ** 1.  Mechanics
+  */
+  /* 1.1 Elasticity: KI */
+  {
+    const double* c0 = c + idis*(n_dif + 9) + idis*9 ;
+    double* kr = FEM_ComputeStiffnessMatrix(fem,fi,c0,dec) ;
+    
+    #define KR(i,j)     (kr[(i)*nn*dim + (j)])
+    
+    for(n = 0 ; n < nn ; n++) for(m = 0 ; m < nn ; m++) {
+      int j ;
+      
+      for(i = 0 ; i < dim ; i++) for(j = 0 ; j < dim ; j++) {
+        K(E_Mec + i + n*neq,I_U + j + m*neq) = KR(i + n*dim,j + m*dim) ;
+      }
+    }
+    
+    #undef KR
+  }
+  
+  /* 1.2 Mechanic-hydraulic coupling terms (Biot-like): Kn */
+  {
+    for(i = 0 ; i < n_dif ; i++) {
+      int I_h = I_H(i) ;
+      int ki = (i < idis) ? 0 : 81 ; 
+      const double* c1 = c + idis*(n_dif + 9) + i*9 + ki ;
+      //const double* c1 = c + 81 + i*9 ;
+      double* kb = FEM_ComputeBiotMatrix(fem,fi,c1,dec) ;
+    
+      #define KB(i,j)     (kb[(i)*nn + (j)])
+    
+      for(n = 0 ; n < nn ; n++) for(m = 0 ; m < nn ; m++) {
+        int j ;
+      
+        for(j = 0 ; j < dim ; j++) {
+          K(E_Mec + j + n*neq,I_h + m*neq) = KB(j + n*dim,m) ;
+        }
+      }
+    
+      #undef KB
+    }
+  }
+  
+
+  /* 2. Hydraulic equations */
+  {
+    for(i = 0 ; i < n_dif ; i++) {
+      int E_h = E_Hyd(i) ;
+      int j ;
+    
+      /* 2.1 Hydraulic-mechanics coupling terms: AI..BI..ZI */
+      {
+        int ki = (i < idis) ? 0 : 81 + n_dif*9 ;
+        const double* c1 = c + ki + i*(9 + n_dif) + idis ;
+        //const double* c1 = c + 81 + n_dif*9 + i*(9 + n_dif) ;
+        double* kb = FEM_ComputeBiotMatrix(fem,fi,c1,dec) ;
+    
+        #define KB(i,j)     (kb[(i)*nn + (j)])
+    
+        for(n = 0 ; n < nn ; n++) for(m = 0 ; m < nn ; m++) {
+          for(j = 0 ; j < dim ; j++) {
+            K(E_h + m*neq,I_U + j + n*neq) = KB(j + n*dim,m) ;
+          }
+        }
+    
+        #undef KB
+      }
+    
+      /* 2.2 Accumulations */
+      {
+        for(j = 0 ; j < n_dif ; j++) {
+          int I_h = I_H(j) ;
+          int ki = (i < idis) ? 0 : 81 + n_dif*9 ;
+          int kj = (j < idis) ? 0 : 9 ;
+          const double* c2 = c + ki + i*(9 + n_dif) + kj + j ;
+          //const double* c2 = c + 81 + n_dif*9 + i*(9 + n_dif) + 9 + j ;
+          double* ka = FEM_ComputeMassMatrix(fem,fi,c2,dec) ;
+    
+          #define KA(i,j)     (ka[(i)*nn + (j)])
+      
+          for(n = 0 ; n < nn ; n++) for(m = 0 ; m < nn ; m++) {
+            K(E_h + n*neq,I_h + m*neq) = KA(n,m) ;
+          }
+    
+          #undef KA
+        }
+      }
     }
   }
   
@@ -2113,6 +2311,100 @@ void   (FEM_AverageStresses)(Mesh_t* mesh,double* stress)
 
 
 
+double   (FEM_AverageCurrentImplicitTerm)(Mesh_t* mesh,const char* modelname,const int index,const int nvi)
+/** Average the value stored at the position "index" in the current 
+ *  implicit terms of the model "modelname".
+ *  Return the volume average over the elements of the model "modelname".
+ */
+{
+  unsigned int nel = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el0 = Mesh_GetElement(mesh) ;
+  double sum = 0 ;
+  double vol = 0 ;
+        
+  if(index >= nvi) {
+    arret("FEM_AverageCurrentImplicitTerm:") ;
+  }
+  
+  /* Integration */
+  {
+    unsigned int ie ;
+    
+    for(ie = 0 ; ie < nel ; ie++) {
+      Element_t* el = el0 + ie ;
+      Model_t* model = Element_GetModel(el) ;
+      char* codename = Model_GetCodeNameOfModel(model) ;
+    
+      if(Element_IsSubmanifold(el)) continue ;
+      
+      if(String_Is(codename,modelname)) {
+        double* vi = Element_GetCurrentImplicitTerm(el) ;
+        IntFct_t* intfct = Element_GetIntFct(el) ;
+        FEM_t*    fem    = FEM_GetInstance(el) ;
+        double one = 1 ;
+    
+        vol +=  FEM_IntegrateOverElement(fem,intfct,&one,0) ;
+        sum +=  FEM_IntegrateOverElement(fem,intfct,vi + index,nvi) ;
+      }
+    }
+    
+    if(vol <= 0) {
+      arret("FEM_AverageCurrentImplicitTerm:") ;
+    }
+  }
+
+  return(sum/vol) ;
+}
+
+
+
+double   (FEM_AveragePreviousImplicitTerm)(Mesh_t* mesh,const char* modelname,const int index,const int nvi)
+/** Average the value stored at the position "index" in the previous 
+ *  implicit terms of the model "modelname".
+ *  Return the volume average over the elements of the model "modelname".
+ */
+{
+  unsigned int nel = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el0 = Mesh_GetElement(mesh) ;
+  double sum = 0 ;
+  double vol = 0 ;
+        
+  if(index >= nvi) {
+    arret("FEM_AveragePreviousImplicitTerm:") ;
+  }
+  
+  /* Integration */
+  {
+    unsigned int ie ;
+    
+    for(ie = 0 ; ie < nel ; ie++) {
+      Element_t* el = el0 + ie ;
+      Model_t* model = Element_GetModel(el) ;
+      char* codename = Model_GetCodeNameOfModel(model) ;
+    
+      if(Element_IsSubmanifold(el)) continue ;
+      
+      if(String_Is(codename,modelname)) {
+        double* vi = Element_GetPreviousImplicitTerm(el) ;
+        IntFct_t* intfct = Element_GetIntFct(el) ;
+        FEM_t*    fem    = FEM_GetInstance(el) ;
+        double one = 1 ;
+    
+        vol +=  FEM_IntegrateOverElement(fem,intfct,&one,0) ;
+        sum +=  FEM_IntegrateOverElement(fem,intfct,vi + index,nvi) ;
+      }
+    }
+    
+    if(vol <= 0) {
+      arret("FEM_AveragePreviousImplicitTerm:") ;
+    }
+  }
+
+  return(sum/vol) ;
+}
+
+
+
 double   (FEM_ComputeVolume)(Mesh_t* mesh)
 {
   unsigned int nel = Mesh_GetNbOfElements(mesh) ;
@@ -2136,6 +2428,61 @@ double   (FEM_ComputeVolume)(Mesh_t* mesh)
   }
   
   return(vol) ;
+}
+
+
+
+void (FEM_AddAverageTerms)(FEM_t* fem,const int nvi,const int nve,const int nvc)
+/** Compute the volume average of the (im/ex)plicit and constant terms
+ *  over the element and add these values in the corresponding arrays 
+ *  after the interpolated points. Enough memory should have been allocated. 
+ *  So if np is the nb of interpolation points at least (np+1)*nvi, (np+1)*nve
+ *  and (np+1)*nvc doubles should been allocated for the implicit, explicit and
+ *  constant terms.
+ */
+{
+  Element_t* el = FEM_GetElement(fem) ;
+  IntFct_t*  intfct = Element_GetIntFct(el) ;
+  int np = IntFct_GetNbOfPoints(intfct) ;
+  double* ve0  = Element_GetExplicitTerm(el) ;
+  double* vi0  = Element_GetImplicitTerm(el) ;
+  double* vc0  = Element_GetConstantTerm(el) ;
+  double one = 1 ;
+  double vol = FEM_IntegrateOverElement(fem,intfct,&one,0) ;
+    
+  {
+    double* vi = vi0 + np*nvi ;
+    int i ;
+    
+    for(i = 0 ; i < nvi ; i++) {
+      double v =  FEM_IntegrateOverElement(fem,intfct,vi0 + i,nvi) ;
+      
+      vi[i] =  v/vol ;
+    }
+  }
+    
+  {
+    double* ve = ve0 + np*nve ;
+    int i ;
+    
+    for(i = 0 ; i < nve ; i++) {
+      double v =  FEM_IntegrateOverElement(fem,intfct,ve0 + i,nve) ;
+      
+      ve[i] =  v/vol ;
+    }
+  }
+    
+  {
+    double* vc = vc0 + np*nvc ;
+    int i ;
+    
+    for(i = 0 ; i < nvc ; i++) {
+      double v =  FEM_IntegrateOverElement(fem,intfct,vc0 + i,nvc) ;
+      
+      vc[i] =  v/vol ;
+    }
+  }
+
 }
 
 

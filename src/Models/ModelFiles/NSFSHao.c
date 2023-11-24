@@ -971,7 +971,8 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
           /* Criterion */
           if(crit >= 0.) {
             double p_co  = HARDV ;
-            double hardv[4] = {p_co,pc,dt,EPSVR_P} ;
+            //double hardv[4] = {p_co,pc,dt,EPSVR_P} ;
+            double hardv[4] = {p_co,pc,dt,EPSVR_P_n} ;
             
           /* Continuum tangent stiffness matrix */
             //ComputeTangentStiffnessTensor(sig,hardv) ;

@@ -15,7 +15,7 @@
 #include "SuperLUMTMethod.h"
 #include "SuperLUFormat.h"
 
-#include "superlumt.h"
+#include "superlu.h"
 
 
 #if 1

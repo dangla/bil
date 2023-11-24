@@ -83,8 +83,11 @@ extern void           (Damage_CopyDamagedStiffnessTensor)  (Damage_t*,double*) ;
 #define Damage_ComputeElasticTensor(D,...) \
         Elasticity_ComputeStiffnessTensor(Damage_GetElasticity(D),__VA_ARGS__)
         
-#define Damage_CopyElasticTensor(D,...) \
+#define Damage_CopyElasticStiffnessTensor(D,...) \
         Elasticity_CopyStiffnessTensor(Damage_GetElasticity(D),__VA_ARGS__)
+        
+#define Damage_CopyElasticTensor \
+        Damage_CopyElasticStiffnessTensor
 
 
 #define Damage_ComputeFunctionGradients \

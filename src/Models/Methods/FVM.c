@@ -285,7 +285,7 @@ double* (FVM_ComputeSurfaceLoadResidu)(FVM_t* fvm,Load_t* load,double t,double d
 
 
 
-double* FVM_ComputeBodyForceResidu(FVM_t* fvm,double* f)
+double* (FVM_ComputeBodyForceResidu)(FVM_t* fvm,double* f)
 /** Return the body force residu (r) */
 {
   Element_t* el = FVM_GetElement(fvm) ;
@@ -305,7 +305,7 @@ double* FVM_ComputeBodyForceResidu(FVM_t* fvm,double* f)
 
 
 
-double*  FVM_ComputeFluxResidu(FVM_t* fvm,double* w)
+double*  (FVM_ComputeFluxResidu)(FVM_t* fvm,double* w)
 /** Return the flux residu (r) */
 {
   Element_t* el = FVM_GetElement(fvm) ;
@@ -336,7 +336,7 @@ double*  FVM_ComputeFluxResidu(FVM_t* fvm,double* w)
 
 
 
-double* FVM_ComputeMassAndFluxResidu(FVM_t* fvm,double* c)
+double* (FVM_ComputeMassAndFluxResidu)(FVM_t* fvm,double* c)
 /** Return the body force and flux residu */
 {
   Element_t* el = FVM_GetElement(fvm) ;
@@ -357,7 +357,7 @@ double* FVM_ComputeMassAndFluxResidu(FVM_t* fvm,double* c)
 
 
 
-double* FVM_ComputeMassBalanceEquationResidu(FVM_t* fvm,double* f,double* f_n,double dt)
+double* (FVM_ComputeMassBalanceEquationResidu)(FVM_t* fvm,double* f,double* f_n,double dt)
 /** Return a mass balance equation residu */
 {
   Element_t* el = FVM_GetElement(fvm) ;
@@ -391,7 +391,7 @@ double* FVM_ComputeMassBalanceEquationResidu(FVM_t* fvm,double* f,double* f_n,do
 
 
 
-double* FVM_ComputeMassMatrix(FVM_t* fvm,double* c,int neq)
+double* (FVM_ComputeMassMatrix)(FVM_t* fvm,double* c,int neq)
 /** Return a pointer on a FV mass matrix  (Ndof*Ndof) with
  *  Ndof = nb of d.o.f. (N*Neq), 
  *  N    = nb of nodes and 
@@ -438,7 +438,7 @@ double* FVM_ComputeMassMatrix(FVM_t* fvm,double* c,int neq)
 
 
 
-double*  FVM_ComputeIsotropicConductionMatrix(FVM_t* fvm,double* c,int neq)
+double*  (FVM_ComputeIsotropicConductionMatrix)(FVM_t* fvm,double* c,int neq)
 /** Return a pointer on a FV conduction matrix (Ndof*Ndof) 
  *  for isotropic material, with
  *  Ndof = nb of d.o.f. (N*Neq), 
@@ -504,7 +504,7 @@ double*  FVM_ComputeIsotropicConductionMatrix(FVM_t* fvm,double* c,int neq)
 
 
 
-double*  FVM_ComputeMassAndIsotropicConductionMatrix(FVM_t* fvm,double* c,int neq)
+double*  (FVM_ComputeMassAndIsotropicConductionMatrix)(FVM_t* fvm,double* c,int neq)
 /** Mass and Conduction Matrix for isotropic material (k) */
 {
 #define K(i,j)     (k[(i)*ndof + (j)])
@@ -537,7 +537,7 @@ double*  FVM_ComputeMassAndIsotropicConductionMatrix(FVM_t* fvm,double* c,int ne
 
 
 
-double* FVM_ComputeCellVolumes(FVM_t* fvm)
+double* (FVM_ComputeCellVolumes)(FVM_t* fvm)
 {
   Element_t* el = FVM_GetElement(fvm) ;
   int dim = Element_GetDimension(el) ;
@@ -664,7 +664,7 @@ double* FVM_ComputeCellVolumes(FVM_t* fvm)
 }
 
 
-double* FVM_ComputeCellSurfaceAreas(FVM_t* fvm)
+double* (FVM_ComputeCellSurfaceAreas)(FVM_t* fvm)
 {
 #define AREA(i,j)     area[nn*(i) + (j)]
   Element_t* el = FVM_GetElement(fvm) ;
@@ -782,7 +782,7 @@ double* FVM_ComputeCellSurfaceAreas(FVM_t* fvm)
 }
 
 
-double* FVM_ComputeCellVolumesAndSurfaceAreas(FVM_t* fvm)
+double* (FVM_ComputeCellVolumesAndSurfaceAreas)(FVM_t* fvm)
 {
   Element_t* el = FVM_GetElement(fvm) ;
   int nn = Element_GetNbOfNodes(el) ;
@@ -798,7 +798,7 @@ double* FVM_ComputeCellVolumesAndSurfaceAreas(FVM_t* fvm)
 }
 
 
-short int   FVM_FindLocalCellIndex(FVM_t* fvm,double* s)
+short int   (FVM_FindLocalCellIndex)(FVM_t* fvm,double* s)
 {
   Element_t* el = FVM_GetElement(fvm) ;
   int nn = Element_GetNbOfNodes(el) ;
@@ -820,7 +820,7 @@ short int   FVM_FindLocalCellIndex(FVM_t* fvm,double* s)
 
 
 
-double* FVM_ComputeIntercellDistances(FVM_t* fvm)
+double* (FVM_ComputeIntercellDistances)(FVM_t* fvm)
 /** Compute the intercell distances */
 {
   Element_t* el = FVM_GetElement(fvm) ;
@@ -863,7 +863,7 @@ double* FVM_ComputeIntercellDistances(FVM_t* fvm)
 
 
 
-double* FVM_ComputeVariableFluxes(FVM_t* fvm,FVM_ComputeFluxes_t* computefluxes,int i,int j)
+double* (FVM_ComputeVariableFluxes)(FVM_t* fvm,FVM_ComputeFluxes_t* computefluxes,int i,int j)
 /** Compute the variable fluxes from cell i to cell j. 
  *  The variables at cell nodes should have been computed
  *  and stored in the specific locations of the model. */
@@ -915,7 +915,7 @@ double* FVM_ComputeVariableFluxes(FVM_t* fvm,FVM_ComputeFluxes_t* computefluxes,
 
 
 
-double* FVM_ComputeTheNodalFluxVector(FVM_t* fvm,double* w)
+double* (FVM_ComputeTheNodalFluxVector)(FVM_t* fvm,double* w)
 /** Return the flux vectors at nodes. "w" points to an
  *  array of NxN doubles where N is the number of nodes and where
  *  w[i*N + j] denotes the outflow rate from cell i to cell j. */
@@ -1030,12 +1030,114 @@ double* FVM_ComputeTheNodalFluxVector(FVM_t* fvm,double* w)
 
 
 
+double   (FVM_AverageCurrentImplicitTerm)(Mesh_t* mesh,const char* modelname,const int index,const int shift)
+/** Volume averaging, over the mesh, the value stored at node i and at the position
+ *  "index+i*shift" in the implicit terms of the model "modelname".
+ */
+{
+  unsigned int nel = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el0 = Mesh_GetElement(mesh) ;
+  double sum = 0 ;
+  double vol = 0 ;
+  
+    /* Integration */
+  {
+    unsigned int ie ;
+    
+    for(ie = 0 ; ie < nel ; ie++) {
+      Element_t* el = el0 + ie ;
+      Model_t* model = Element_GetModel(el) ;
+      char* codename = Model_GetCodeNameOfModel(model) ;
+    
+      if(Element_IsSubmanifold(el)) continue ;
+      
+      if(String_Is(codename,modelname)) {
+        double* vim = Element_GetCurrentImplicitTerm(el) ;
+        int ni = Element_GetNbOfImplicitTerms(el) ;
+        int nn = Element_GetNbOfNodes(el) ;
+        FVM_t*    fvm    = FVM_GetInstance(el) ;
+        double* volume = FVM_ComputeCellVolumes(fvm) ;
+        double* vi = vim + index ;
+        int i ; ;
+        
+        if(index + (nn-1)*shift >= ni) {
+          arret("FVM_AverageCurrentImplicitTerm:") ;
+        }
+          
+        for(i = 0 ; i < nn ; i++) {
+          vol +=  volume[i] ;
+          sum +=  vi[i*shift] ;
+        }
+      }
+    }
+    
+    if(vol <= 0) {
+      arret("FVM_AverageCurrentImplicitTerm:") ;
+    }
+  }
+
+  return(sum/vol) ;
+}
+
+
+
+double   (FVM_AveragePreviousImplicitTerm)(Mesh_t* mesh,const char* modelname,const int index,const int shift)
+/** Volume averaging, over the mesh, the value stored at node i and at the position
+ *  "index+i*shift" in the implicit terms of the model "modelname".
+ */
+{
+  unsigned int nel = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el0 = Mesh_GetElement(mesh) ;
+  double sum = 0 ;
+  double vol = 0 ;
+  
+    /* Integration */
+  {
+    unsigned int ie ;
+    
+    for(ie = 0 ; ie < nel ; ie++) {
+      Element_t* el = el0 + ie ;
+      Model_t* model = Element_GetModel(el) ;
+      char* codename = Model_GetCodeNameOfModel(model) ;
+    
+      if(Element_IsSubmanifold(el)) continue ;
+      
+      if(String_Is(codename,modelname)) {
+        double* vim = Element_GetPreviousImplicitTerm(el) ;
+        int ni = Element_GetNbOfImplicitTerms(el) ;
+        int nn = Element_GetNbOfNodes(el) ;
+        FVM_t*    fvm    = FVM_GetInstance(el) ;
+        double* volume = FVM_ComputeCellVolumes(fvm) ;
+        double* vi = vim + index ;
+        int i ; ;
+        
+        if(index + (nn-1)*shift >= ni) {
+          arret("FVM_AveragePreviousImplicitTerm:") ;
+        }
+          
+        for(i = 0 ; i < nn ; i++) {
+          vol +=  volume[i] ;
+          sum +=  vi[i*shift] ;
+        }
+      }
+    }
+    
+    if(vol <= 0) {
+      arret("FVM_AveragePreviousImplicitTerm:") ;
+    }
+  }
+
+  return(sum/vol) ;
+}
+
+
+
 
 /*
  * Intern Functions
  */
 
-int FVM_FindHalfSpace(FVM_t* fvm,int i1,int i2,double* s)
+int (FVM_FindHalfSpace)(FVM_t* fvm,int i1,int i2,double* s)
 {
   Element_t* el = FVM_GetElement(fvm) ;
   int dim = Element_GetDimensionOfSpace(el) ;
@@ -1060,13 +1162,13 @@ int FVM_FindHalfSpace(FVM_t* fvm,int i1,int i2,double* s)
  */
 
 #ifdef NOTDEFINED
-static double*    FVM_ComputeRelativeCellSurfaceAreas(FVM_t*) ;
-static double*    FVM_ComputeNormalGradientMatrix(FVM_t*,int,double*) ;
-static double*    FVM_ComputeOutFlowMatrix(FVM_t*,int,double*) ;
+static double*    (FVM_ComputeRelativeCellSurfaceAreas)(FVM_t*) ;
+static double*    (FVM_ComputeNormalGradientMatrix)(FVM_t*,int,double*) ;
+static double*    (FVM_ComputeOutFlowMatrix)(FVM_t*,int,double*) ;
 
 
 
-double* FVM_ComputeRelativeCellSurfaceAreas(FVM_t* fvm)
+double* (FVM_ComputeRelativeCellSurfaceAreas)(FVM_t* fvm)
 /** Compute the surface area gradients */
 {
   Element_t* el = FVM_GetElement(fvm) ;
@@ -1097,7 +1199,7 @@ double* FVM_ComputeRelativeCellSurfaceAreas(FVM_t* fvm)
 
 
 
-double* FVM_ComputeNormalGradientMatrix(FVM_t* fvm,int shift,double* c)
+double* (FVM_ComputeNormalGradientMatrix)(FVM_t* fvm,int shift,double* c)
 /** Compute the c gradients normal to the cell surfaces */
 {
   Element_t* el = FVM_GetElement(fvm) ;
@@ -1134,7 +1236,7 @@ double* FVM_ComputeNormalGradientMatrix(FVM_t* fvm,int shift,double* c)
 
 
 
-double* FVM_ComputeOutFlowMatrix(FVM_t* fvm,int shift,double* c)
+double* (FVM_ComputeOutFlowMatrix)(FVM_t* fvm,int shift,double* c)
 /** Compute the flow matrix from the cell values in c */
 {
   Element_t* el = FVM_GetElement(fvm) ;

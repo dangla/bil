@@ -242,19 +242,22 @@ void (Matrix_Delete)(void* self)
 }
 
 
-void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
-/** Assemble the element matrix ke in the global matrix a */
+int (Matrix_AssembleElementMatrix)(Matrix_t* a,Element_t* el,double* ke)
+/** Assemble the local matrix ke into the global matrix a
+ *  except in case ke points to NULL.
+ *  Return the nb of entries in any case.*/
 {
   int imatrix = Matrix_GetMatrixIndex(a) ;
   int  ndof = Element_GetNbOfDOF(el) ;
   int* row = Element_ComputeSelectedMatrixRowAndColumnIndices(el,imatrix) ;
   int* col = row + ndof ;
+  int len ;
 
   /* Skyline format */
   if(Matrix_StorageFormatIs(a,LDUSKL)) {
     LDUSKLFormat_t* askl = (LDUSKLFormat_t*) Matrix_GetStorage(a) ;
     
-    LDUSKLFormat_AssembleElementMatrix(askl,ke,col,row,ndof) ;
+    len = LDUSKLFormat_AssembleElementMatrix(askl,ke,col,row,ndof) ;
     
 #ifdef SUPERLU
   /* CCS format (or Harwell-Boeing format) used in SuperLU */
@@ -265,45 +268,25 @@ void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
     int*        rowptr = GenericData_FindData(gw,int,"rowptr") ;
     int         nrow = SuperLUFormat_GetNbOfRows(aslu) ;
     
-    NCFormat_AssembleElementMatrix(asluNC,ke,col,row,ndof,rowptr,nrow) ;
+    len = NCFormat_AssembleElementMatrix(asluNC,ke,col,row,ndof,rowptr,nrow) ;
 #endif
   
   } else if(Matrix_StorageFormatIs(a,Coordinate)) {
     CoordinateFormat_t* ac = (CoordinateFormat_t*) Matrix_GetStorage(a) ;
-    int len = Matrix_GetNbOfEntries(a) ;
+    int nen = Matrix_GetNbOfEntries(a) ;
     
-    len = CoordinateFormat_AssembleElementMatrix(ac,ke,col,row,ndof,len) ;
+    len = CoordinateFormat_AssembleElementMatrix(ac,ke,col,row,ndof,nen) ;
     
-    Matrix_GetNbOfEntries(a) = len ;
+    if(ke) {
+      Matrix_GetNbOfEntries(a) = nen + len ;
+    }
     
 #ifdef PETSCLIB
   /* format used in Petsc */
   } else if(Matrix_StorageFormatIs(a,PetscAIJ)) {
       PetscAIJFormat_t* petscaij = (PetscAIJFormat_t*) Matrix_GetStorage(a) ;
-      Mat* aij = (Mat*) PetscAIJFormat_GetStorage(petscaij) ;
       
-      {
-        PetscInt Istart ;
-        PetscInt Iend ;
-      
-        MatGetOwnershipRange(*aij,&Istart,&Iend) ;
-      
-        {
-          int i ;
-        
-          for(i = 0 ; i < ndof ; i++) {
-            int rowi = row[i] ;
-          
-            if(rowi < 0) continue ;
-          
-            if(rowi < Istart || rowi >= Iend) {
-              row[i] = -1 ;
-            }
-          }
-        }
-      }
-      
-      MatSetValues(*aij,ndof,row,ndof,col,ke,ADD_VALUES) ;
+      len = PetscAIJFormat_AssembleElementMatrix(petscaij,ke,col,row,ndof) ;
 #endif
     
   } else {
@@ -312,13 +295,13 @@ void Matrix_AssembleElementMatrix(Matrix_t* a,Element_t* el,double* ke)
   
   Element_FreeBufferFrom(el,row) ;
   
-  return ;
+  return(len) ;
 }
 
 
 
 
-void Matrix_PrintMatrix(Matrix_t* a,const char* keyword)
+void (Matrix_PrintMatrix)(Matrix_t* a,const char* keyword)
 {
   /* format Sky Line */
   if(Matrix_StorageFormatIs(a,LDUSKL)) {
@@ -347,13 +330,8 @@ void Matrix_PrintMatrix(Matrix_t* a,const char* keyword)
   /* format used in Petsc */
   } else if(Matrix_StorageFormatIs(a,PetscAIJ)) {
     PetscAIJFormat_t* petscaij = (PetscAIJFormat_t*) Matrix_GetStorage(a) ;
-    Mat* aij = (Mat*) PetscAIJFormat_GetStorage(petscaij) ;
     
-    
-    MatAssemblyBegin(*aij,MAT_FINAL_ASSEMBLY) ;
-    MatAssemblyEnd(*aij,MAT_FINAL_ASSEMBLY) ;
-    
-    MatView(*aij,PETSC_VIEWER_STDOUT_WORLD) ;
+    PetscAIJFormat_PrintMatrix(petscaij,keyword) ;
   #endif
 
   } else {

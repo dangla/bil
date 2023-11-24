@@ -8,7 +8,6 @@
 #include "Message.h"
 #include "Options.h"
 #include "Modules.h"
-#include "Threads.h"
 
 
 /* Global functions */

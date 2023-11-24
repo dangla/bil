@@ -154,3 +154,54 @@ void (ElementSol_AllocateMemoryForConstantTerms)(ElementSol_t* elementsol)
   GenericData_Initialize(gdat,n0,v0,double,"constant terms") ;
 }
 #endif
+
+
+
+
+void (ElementSol_Copy)(ElementSol_t* elementsol_d,ElementSol_t* elementsol_s)
+/** Copy the (im/ex)plicit and constant terms 
+ *  from elementsol_src to elementsol_dest */
+{
+  
+  /* Implicit terms */
+  {
+    double* vi_s = (double*) ElementSol_GetImplicitTerm(elementsol_s) ;
+    double* vi_d = (double*) ElementSol_GetImplicitTerm(elementsol_d) ;
+    int nvi = ElementSol_GetNbOfImplicitTerms(elementsol_s) ;
+    unsigned int i ;
+        
+    if(vi_d != vi_s) {
+      for(i = 0 ; i < nvi ; i++) {
+        vi_d[i] = vi_s[i] ;
+      }
+    }
+  }
+
+  /* Explicit terms */
+  {
+    double* ve_s = (double*) ElementSol_GetExplicitTerm(elementsol_s) ;
+    double* ve_d = (double*) ElementSol_GetExplicitTerm(elementsol_d) ;
+    int nve = ElementSol_GetNbOfExplicitTerms(elementsol_s) ;
+    unsigned int i ;
+      
+    if(ve_d != ve_s) {
+      for(i = 0 ; i < nve ; i++) {
+        ve_d[i] = ve_s[i] ;
+      }
+    }
+  }
+
+  /* Constant terms */
+  {
+    double* vc_s = (double*) ElementSol_GetConstantTerm(elementsol_s) ;
+    double* vc_d = (double*) ElementSol_GetConstantTerm(elementsol_d) ;
+    int nvc = ElementSol_GetNbOfConstantTerms(elementsol_s) ;
+    unsigned int i ;
+        
+    if(vc_d != vc_s) {
+      for(i = 0 ; i < nvc ; i++) {
+        vc_d[i] = vc_s[i] ;
+      }
+    }
+  }
+}

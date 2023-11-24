@@ -20,12 +20,13 @@ extern FEM_t*   (FEM_GetInstance)(Element_t*) ;
 extern void     (FEM_Delete)(void*) ;
 
 /* Matrices */
-extern double*  FEM_ComputeStiffnessMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
-extern double*  FEM_ComputeMassMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
-extern double*  FEM_ComputeConductionMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
-extern double*  FEM_ComputeBiotMatrix(FEM_t*,IntFct_t*,const double*,const int) ;
-extern double*  FEM_ComputePoroelasticMatrix6(FEM_t*,IntFct_t*,const double*,const int,const int,const int) ;
-extern void     FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t*,const int,const int,double*) ;
+extern double*  (FEM_ComputeStiffnessMatrix)(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  (FEM_ComputeMassMatrix)(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  (FEM_ComputeConductionMatrix)(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  (FEM_ComputeBiotMatrix)(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  (FEM_ComputePoroelasticMatrix6)(FEM_t*,IntFct_t*,const double*,const int,const int,const int) ;
+extern double*  (FEM_ComputePoroelasticMatrixBis)(FEM_t*,IntFct_t*,const double*,const int,const int,const int) ;
+extern void     (FEM_TransformMatrixFromDegree2IntoDegree1)(FEM_t*,const int,const int,double*) ;
 
 
 #define FEM_ComputeElasticMatrix(...) \
@@ -38,48 +39,51 @@ extern void     FEM_TransformMatrixFromDegree2IntoDegree1(FEM_t*,const int,const
         FEM_ComputePoroelasticMatrix6(__VA_ARGS__,0)
 
 /* Residus */
-extern double*  FEM_ComputeSurfaceLoadResidu(FEM_t*,IntFct_t*,Load_t*,const double,const double) ;
-extern double*  FEM_ComputeBodyForceResidu(FEM_t*,IntFct_t*,const double*,const int) ;
-extern double*  FEM_ComputeStrainWorkResidu(FEM_t*,IntFct_t*,const double*,const int) ;
-extern double*  FEM_ComputeFluxResidu(FEM_t*,IntFct_t*,const double*,const int) ;
-extern void     FEM_TransformResiduFromDegree2IntoDegree1(FEM_t*,const int,const int,double*) ;
-extern double*  FEM_ComputeMassResidu(FEM_t*,IntFct_t*,const double*,const double*,const int) ;
-extern double*  FEM_ComputeMassBalanceEquationResidu(FEM_t*,IntFct_t*,const double*,const double*,const double*,const double,const int) ;
+extern double*  (FEM_ComputeSurfaceLoadResidu)(FEM_t*,IntFct_t*,Load_t*,const double,const double) ;
+extern double*  (FEM_ComputeBodyForceResidu)(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  (FEM_ComputeStrainWorkResidu)(FEM_t*,IntFct_t*,const double*,const int) ;
+extern double*  (FEM_ComputeFluxResidu)(FEM_t*,IntFct_t*,const double*,const int) ;
+extern void     (FEM_TransformResiduFromDegree2IntoDegree1)(FEM_t*,const int,const int,double*) ;
+extern double*  (FEM_ComputeMassResidu)(FEM_t*,IntFct_t*,const double*,const double*,const int) ;
+extern double*  (FEM_ComputeMassBalanceEquationResidu)(FEM_t*,IntFct_t*,const double*,const double*,const double*,const double,const int) ;
 
 /* Compute Shape functions */
-extern double*  FEM_ComputeIsoShapeFctInActualSpace(FEM_t*,double*) ;
+extern double*  (FEM_ComputeIsoShapeFctInActualSpace)(FEM_t*,double*) ;
 
 
 /* Compute unknowns and unknown gradients: method 1 */
-extern double   FEM_ComputeCurrentUnknown(FEM_t*,double*,int,int) ;
-extern double   FEM_ComputePreviousUnknown(FEM_t*,double*,int,int) ;
+extern double   (FEM_ComputeCurrentUnknown)(FEM_t*,double*,int,int) ;
+extern double   (FEM_ComputePreviousUnknown)(FEM_t*,double*,int,int) ;
 
-extern double*  FEM_ComputeCurrentUnknownGradient(FEM_t*,double*,int,int) ;
-extern double*  FEM_ComputePreviousUnknownGradient(FEM_t*,double*,int,int) ;
+extern double*  (FEM_ComputeCurrentUnknownGradient)(FEM_t*,double*,int,int) ;
+extern double*  (FEM_ComputePreviousUnknownGradient)(FEM_t*,double*,int,int) ;
 
-extern double*  FEM_ComputeCurrentLinearStrainTensor(FEM_t*,double*,double*,int,int) ;
-extern double*  FEM_ComputePreviousLinearStrainTensor(FEM_t*,double*,double*,int,int) ;
-extern double*  FEM_ComputeIncrementalLinearStrainTensor(FEM_t*,double*,double*,int,int) ;
+extern double*  (FEM_ComputeCurrentLinearStrainTensor)(FEM_t*,double*,double*,int,int) ;
+extern double*  (FEM_ComputePreviousLinearStrainTensor)(FEM_t*,double*,double*,int,int) ;
+extern double*  (FEM_ComputeIncrementalLinearStrainTensor)(FEM_t*,double*,double*,int,int) ;
 
 
 /* Compute unknowns and unknown gradients: method 2 */
-extern double*  FEM_ComputeUnknowns(FEM_t*,IntFct_t*,double**,int) ;
-extern double*  FEM_ComputeUnknownGradients(FEM_t*,IntFct_t*,double**,int) ;
-extern double*  FEM_ComputeLinearStrainTensors(FEM_t*,IntFct_t*,double**,int) ;
+extern double*  (FEM_ComputeUnknowns)(FEM_t*,IntFct_t*,double**,int) ;
+extern double*  (FEM_ComputeUnknownGradients)(FEM_t*,IntFct_t*,double**,int) ;
+extern double*  (FEM_ComputeLinearStrainTensors)(FEM_t*,IntFct_t*,double**,int) ;
 
-extern double   FEM_ComputeUnknown(FEM_t*,double**,IntFct_t*,int,int) ;
-extern double*  FEM_ComputeUnknownGradient(FEM_t*,double**,IntFct_t*,int,int) ;
-extern double*  FEM_ComputeLinearStrainTensor(FEM_t*,double**,IntFct_t*,int,int) ;
-extern double*  FEM_ComputeDisplacementVector(FEM_t*,double**,IntFct_t*,int,int) ;
+extern double   (FEM_ComputeUnknown)(FEM_t*,double**,IntFct_t*,int,int) ;
+extern double*  (FEM_ComputeUnknownGradient)(FEM_t*,double**,IntFct_t*,int,int) ;
+extern double*  (FEM_ComputeLinearStrainTensor)(FEM_t*,double**,IntFct_t*,int,int) ;
+extern double*  (FEM_ComputeDisplacementVector)(FEM_t*,double**,IntFct_t*,int,int) ;
 
 
 /* Compute element integration */
-extern double   FEM_IntegrateOverElement(FEM_t*,IntFct_t*,double*,int) ;
+extern double   (FEM_IntegrateOverElement)(FEM_t*,IntFct_t*,double*,int) ;
 
 /* Averaging */
-extern void     FEM_AverageStresses(Mesh_t*,double*) ;
+extern void     (FEM_AverageStresses)(Mesh_t*,double*) ;
+extern double   (FEM_AverageCurrentImplicitTerm)(Mesh_t*,const char*,const int,const int) ;
+extern double   (FEM_AveragePreviousImplicitTerm)(Mesh_t*,const char*,const int,const int) ;
+extern void     (FEM_AddAverageTerms)(FEM_t*,const int,const int,const int) ;
 
-extern double   FEM_ComputeVolume(Mesh_t*) ;
+extern double   (FEM_ComputeVolume)(Mesh_t*) ;
 
 
 

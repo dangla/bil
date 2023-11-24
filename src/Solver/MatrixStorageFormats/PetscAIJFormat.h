@@ -13,6 +13,8 @@ struct PetscAIJFormat_s ; typedef struct PetscAIJFormat_s PetscAIJFormat_t ;
 
 extern PetscAIJFormat_t* (PetscAIJFormat_Create)(Mesh_t*,const int) ;
 extern void              (PetscAIJFormat_Delete)(void*) ;
+extern int               (PetscAIJFormat_AssembleElementMatrix)(PetscAIJFormat_t*,double*,int*,int*,int) ;
+extern void              (PetscAIJFormat_PrintMatrix)(PetscAIJFormat_t*,const char*) ;
 
 
 

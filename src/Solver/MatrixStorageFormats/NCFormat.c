@@ -229,39 +229,65 @@ void (NCFormat_Delete)(void* self)
 
 
 
-void NCFormat_AssembleElementMatrix(NCFormat_t* a,double* ke,int* cole,int* lige,int n,int* rowptr,int n_row)
-/* Assemblage de la matrice elementaire ke dans la matrice globale a */
+int (NCFormat_AssembleElementMatrix)(NCFormat_t* a,double* ke,int* col,int* row,int ndof,int* rowptr,int n_row)
+/** Assemble the local matrix ke into the global matrix a 
+ *  Return the nb of entries */
 {
-#define KE(i,j) (ke[(i)*n+(j)])
+#define KE(i,j) (ke[(i)*ndof+(j)])
   double* nzval  = (double*) NCFormat_GetNonZeroValue(a) ;
   int*    colptr = NCFormat_GetFirstNonZeroValueIndexOfColumn(a) ;
   int*    rowind = NCFormat_GetRowIndexOfNonZeroValue(a) ;
-  int    je,i ;
+  int    je ;
+  int len = 0 ;
 
-  for(i = 0 ; i < n_row ; i++) rowptr[i] = -1 ;
+  if(ke && rowptr) {
+    int i ;
+    
+    for(i = 0 ; i < n_row ; i++) {
+      rowptr[i] = -1 ;
+    }
+  }
   
-  for(je = 0 ; je < n ; je++) {
-    int jcol = cole[je] ;
+  for(je = 0 ; je < ndof ; je++) {
+    int jcol = col[je] ;
     int ie ;
     
     if(jcol < 0) continue ;
 
-    for(i = colptr[jcol] ; i < colptr[jcol+1] ; i++) rowptr[rowind[i]] = i ;
+    if(ke && rowptr) {
+      int i ;
+      
+      for(i = colptr[jcol] ; i < colptr[jcol+1] ; i++) {
+        rowptr[rowind[i]] = i ;
+      }
+    }
 
-    for(ie = 0 ; ie < n ; ie++) {
-      int irow = lige[ie] ;
+    for(ie = 0 ; ie < ndof ; ie++) {
+      int irow = row[ie] ;
       
       if(irow < 0) continue ;
       
-      if(rowptr[irow] < 0) {
-        arret("NCFormat_AssembleElementMatrix: assembling not possible") ;
+      if(ke && rowptr) {
+        if(rowptr[irow] < 0) {
+          arret("NCFormat_AssembleElementMatrix: assembling not possible") ;
+        }
+
+        nzval[rowptr[irow]] += KE(ie,je) ;
       }
       
-      nzval[rowptr[irow]] += KE(ie,je) ;
+      len += 1 ;
     }
 
-    for(i = colptr[jcol] ; i < colptr[jcol+1] ; i++) rowptr[rowind[i]] = -1 ;
+    if(ke && rowptr) {
+      int i ;
+      
+      for(i = colptr[jcol] ; i < colptr[jcol+1] ; i++) {
+        rowptr[rowind[i]] = -1 ;
+      }
+    }
   }
+  
+  return(len) ;
 
 #undef KE
 }
@@ -269,7 +295,7 @@ void NCFormat_AssembleElementMatrix(NCFormat_t* a,double* ke,int* cole,int* lige
 
 
 
-void NCFormat_PrintMatrix(NCFormat_t* a,unsigned int n_col,const char* keyword)
+void (NCFormat_PrintMatrix)(NCFormat_t* a,unsigned int n_col,const char* keyword)
 {
   double* nzval  = (double*) NCFormat_GetNonZeroValue(a) ;
   int*    colptr = NCFormat_GetFirstNonZeroValueIndexOfColumn(a) ;

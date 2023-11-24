@@ -61,7 +61,7 @@ static double  macrogradient[9] ;
 static double  macrostrain[9] ;
 static double* cijkl ;
 static Elasticity_t* elasty ;
-#if Threads_APIis(OpenMP)
+#if SharedMS_APIis(OpenMP)
   #pragma omp threadprivate(gravity,rho_s,sig0,macrogradient,macrostrain,cijkl,elasty)
 #endif
 
@@ -91,7 +91,7 @@ I_Last
 static double  Variable[NbOfVariables] ;
 //static double  Variable_n[NbOfVariables] ;
 //static double dVariable[NbOfVariables] ;
-#if Threads_APIis(OpenMP)
+#if SharedMS_APIis(OpenMP)
   #pragma omp threadprivate(Variable)
 #endif
 
@@ -695,7 +695,7 @@ double* ComputeVariables(Element_t* el,double** u,double* f_n,double t,double dt
   
   #if 0
   {
-    int id = Threads_CurrentThreadId ;
+    int id = SharedMS_CurrentThreadId ;
     
     printf("thread: %d\n",id) ;
     printf("integration point: %d\n",p) ;

@@ -15,8 +15,8 @@ struct LDUSKLFormat_s   ; typedef struct LDUSKLFormat_s   LDUSKLFormat_t ;
 //extern LDUSKLFormat_t* (LDUSKLFormat_Create)(Mesh_t*) ;
 extern LDUSKLFormat_t* (LDUSKLFormat_Create)(Mesh_t*,const int) ;
 extern void            (LDUSKLFormat_Delete)(void*) ;
-extern void LDUSKLFormat_AssembleElementMatrix(LDUSKLFormat_t*,double*,int*,int*,int) ;
-extern void LDUSKLFormat_PrintMatrix(LDUSKLFormat_t*,unsigned int,const char*) ;
+extern int             (LDUSKLFormat_AssembleElementMatrix)(LDUSKLFormat_t*,double*,int*,int*,int) ;
+extern void            (LDUSKLFormat_PrintMatrix)(LDUSKLFormat_t*,unsigned int,const char*) ;
 
 
 

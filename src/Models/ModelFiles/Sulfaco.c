@@ -198,10 +198,8 @@ enum {
 /* Nb of nodes (el must be used below) */
 #define NN     Element_GetNbOfNodes(el)
 
-/* Nb of (im/ex)plicit and constant terms */
-#define NVE     ((1 + CementSolutionDiffusion_NbOfConcentrations)*NN)
+/* Nb of implicit terms */
 #define NVI     (7*NN*NN + 14*NN)
-#define NV0     (2)
 
 
 
@@ -306,6 +304,8 @@ enum {
 
 
 
+/* Nb of explicit terms */
+#define NVE     ((1 + CementSolutionDiffusion_NbOfConcentrations)*NN + 1)
 /* Names used for explicit terms */
 #define TransferCoefficient(f,n)  ((f) + (n)*NN)
 
@@ -313,8 +313,12 @@ enum {
 
 #define CONCENTRATION(i)  (TransferCoefficient(va,1) + (i)*CementSolutionDiffusion_NbOfConcentrations)
 
+#define StrainYY          (va + (1 + CementSolutionDiffusion_NbOfConcentrations)*NN)[0]
 
 
+
+/* Nb of constant terms */
+#define NV0     (2)
 /* Names used for constant terms */
 #define V_Cem0(n)   (v0[(0+n)])
 
@@ -621,6 +625,8 @@ I_P_C,
 I_Beta_p,
 
 I_Strain,
+
+I_StrainYY,
 
 I_Straind,
 
@@ -1146,6 +1152,7 @@ int ComputeInitialState(Element_t* el)
 int  ComputeExplicitTerms(Element_t* el,double t)
 /* Thermes explicites (va)  */
 {
+  double* va = Element_GetExplicitTerm(el) ;
   double* f = Element_GetPreviousImplicitTerm(el) ;
   double** u = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   
@@ -1161,6 +1168,16 @@ int  ComputeExplicitTerms(Element_t* el,double t)
   */
   
   ComputeTransferCoefficients(el,u,f) ;
+  
+  {
+    DataSet_t* dataset = Element_GetDataSet(el) ;
+    Mesh_t* mesh = DataSet_GetMesh(dataset) ;
+    int index = &(Strain(0)) - f ;
+    int shift = 1 ;
+    double strainyy = FVM_AveragePreviousImplicitTerm(mesh,"Sulfaco",index,shift) ;
+    
+    StrainYY = strainyy ;
+  }
   
 
   return(0) ;
@@ -1902,6 +1919,7 @@ int TangentCoefficients(Element_t* el,double t,double dt,double* c)
 
 double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,double t,double dt,int n)
 {
+  double* va = Element_GetExplicitTerm(el) ;
   /*
   Model_t* model = Element_GetModel(el) ;
   double* x      = Model_GetVariable(model,n) ;
@@ -1937,6 +1955,8 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
   x_n[I_Strain]  = Strain_n(n);
   x_n[I_Straind] = Straind_n(n);
   x_n[I_VarPHI_C] = VarPHI_Cn(n) ;
+  
+  x_n[I_StrainYY] = StrainYY ;
 
   {
     double* v0   = Element_GetConstantTerm(el) ;

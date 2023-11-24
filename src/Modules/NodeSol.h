@@ -10,6 +10,7 @@ struct NodeSol_s      ; typedef struct NodeSol_s      NodeSol_t ;
 
 extern NodeSol_t* (NodeSol_Create)(const int) ;
 extern void       (NodeSol_Delete)(void*) ;
+extern void       (NodeSol_Copy)(NodeSol_t*,NodeSol_t*) ;
 
 
 #define NodeSol_GetNbOfUnknowns(NS)       ((NS)->nu)

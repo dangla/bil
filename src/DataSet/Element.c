@@ -1673,3 +1673,28 @@ ElementSol_t* (Element_GetDeepElementSol)(Element_t* el,unsigned int depth)
   return(elementsol) ;
 }
 #endif
+
+  
+
+void  (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t* el)
+/** Copy the current solution into the previous solution */
+{
+  {
+    ElementSol_t* elementsol = Element_GetElementSol(el) ;
+    ElementSol_t* elementsol_n = Element_GetPreviousElementSol(el) ;
+    
+    ElementSol_Copy(elementsol_n,elementsol) ;
+  }
+  {
+    int nn = Element_GetNbOfNodes(el) ;
+    int i ;
+
+    for(i = 0 ; i < nn ; i++) {
+      Node_t* node = Element_GetNode(el,i) ;
+      NodeSol_t* nodesol = Node_GetNodeSol(node) ;
+      NodeSol_t* nodesol_n = Node_GetPreviousNodeSol(node) ;
+      
+      NodeSol_Copy(nodesol_n,nodesol) ;
+    }
+  }
+}

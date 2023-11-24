@@ -182,8 +182,9 @@ void (LDUSKLFormat_Delete)(void* self)
 
 
 
-void LDUSKLFormat_AssembleElementMatrix(LDUSKLFormat_t* a,double* ke,int* cole,int* lige,int n)
-/* Assemblage de la matrice elementaire ke dans la matrice globale k */
+int (LDUSKLFormat_AssembleElementMatrix)(LDUSKLFormat_t* a,double* ke,int* cole,int* lige,int n)
+/** Assemble the local matrix ke into the global matrix a 
+ *  Return the nb of entries */
 {
 #define KE(i,j) (ke[(i)*n+(j)])
 #define D(i)    (LDUSKLFormat_GetDiagonal(a)[i])
@@ -193,6 +194,8 @@ void LDUSKLFormat_AssembleElementMatrix(LDUSKLFormat_t* a,double* ke,int* cole,i
 #define U(i,j)  (*(LDUSKLFormat_GetPointerToUpperColumn(a)[j] - j + i))
 #define L(i,j)  (*(LDUSKLFormat_GetPointerToLowerRow(a)[i] - i + j))
 */
+  int len = 0 ;
+  
   {
     int    ie ;
   
@@ -207,12 +210,18 @@ void LDUSKLFormat_AssembleElementMatrix(LDUSKLFormat_t* a,double* ke,int* cole,i
       
         if(j < 0) continue ;
       
-        if(i == j)     D(i)   += KE(ie,je) ;
-        else if(i < j) U(i,j) += KE(ie,je) ;
-        else if(i > j) L(i,j) += KE(ie,je) ;
+        if(ke) {
+          if(i == j)     D(i)   += KE(ie,je) ;
+          else if(i < j) U(i,j) += KE(ie,je) ;
+          else if(i > j) L(i,j) += KE(ie,je) ;
+        }
+        
+        len += 1 ;
       }
     }
   }
+  
+  return(len) ;
 
 #undef KE
 #undef D
@@ -223,7 +232,7 @@ void LDUSKLFormat_AssembleElementMatrix(LDUSKLFormat_t* a,double* ke,int* cole,i
 
 
 
-void LDUSKLFormat_PrintMatrix(LDUSKLFormat_t* a,unsigned int n,const char* keyword)
+void (LDUSKLFormat_PrintMatrix)(LDUSKLFormat_t* a,unsigned int n,const char* keyword)
 {
   double*  d = LDUSKLFormat_GetDiagonal(a) ;
   double** u = LDUSKLFormat_GetPointerToUpperColumn(a) ;

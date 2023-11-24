@@ -123,7 +123,7 @@ void (ElementsSol_AllocateMemoryForConstantTerms)(ElementsSol_t* elementssol)
 
 
 
-void ElementsSol_Copy(ElementsSol_t* elementssol_dest,ElementsSol_t* elementssol_src)
+void (ElementsSol_Copy)(ElementsSol_t* elementssol_dest,ElementsSol_t* elementssol_src)
 /** Copy the (im/ex)plicit and constant terms 
  *  from elementssol_src to elementssol_dest */
 {
