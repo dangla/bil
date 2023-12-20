@@ -59,18 +59,5 @@ void  (Solvers_Delete)(void* self)
       free(solver) ;
       Solvers_GetSolver(solvers) = NULL ;
     }
-  
-    #if defined (PETSCLIB)
-    if(solver) {
-      PetscBool isfinalized ;
-      
-      PetscFinalized(&isfinalized) ;
-      
-      if(!isfinalized) {
-        PetscInitialize(NULL,NULL,NULL,NULL) ;
-        PetscFinalize() ;
-      }
-    }
-    #endif
   }
 }

@@ -23,12 +23,6 @@
 #include "SharedMS.h"
 #include "DistributedMS.h"
 
-#include "BilExtraLibs.h"
-
-#ifdef PETSCLIB
-  #include <petsc.h>
-#endif
-
 
 
 static void   (Entry_PrintUsage)(char*) ;
@@ -38,7 +32,7 @@ static void   (Entry_CLI)(Entry_t*) ;
 
 int (Entry_Main)(int argc,char** argv)
 {
-  #ifdef PETSCLIB
+  #if DistributedMS_APIis(MPI)
     MPI_Init(&argc,&argv) ;
   #endif
   {
@@ -48,7 +42,7 @@ int (Entry_Main)(int argc,char** argv)
   
     Entry_Delete(entry) ;
   }
-  #ifdef PETSCLIB
+  #if DistributedMS_APIis(MPI)
     MPI_Finalize() ;
   #endif
   
@@ -108,7 +102,7 @@ int (Entry_Execute)(Entry_t* entry)
       /* Graphical user interface */
       //Entry_GUI(entry) ; /* Not done yet */
     } else {
-      Message_Direct("An exception occurs with value %d\n",val) ;
+      Message_FatalError("An exception occurs with value %d\n",val) ;
     }
   }
     
@@ -359,6 +353,15 @@ void Entry_CLI(Entry_t* entry)
       SharedMS_SetTheNbOfThreads(nthreads) ;
       Message_Direct("Nb of requested threads: %d\n",nthreads) ;
       Message_Direct("Multithreading API: "Utils_STR(SharedMS_API)"\n") ;
+    }
+    #endif
+
+    #if DistributedMS_APIisNot(None)
+    {
+      int nprocs = DistributedMS_NbOfProcessors ;
+      
+      Message_Direct("Nb of processors: %d\n",nprocs) ;
+      Message_Direct("Distributed Memory API: "Utils_STR(DistributedMS_API)"\n") ;
     }
     #endif
   

@@ -7,6 +7,7 @@
 #include "Matrix.h"
 #include "Message.h"
 #include "LDUSKLFormat.h"
+#include "DistributedMS.h"
 
 
 static int    ludcmp(LDUSKLFormat_t*,int) ;
@@ -26,17 +27,28 @@ int   CroutMethod_Solve(Solver_t* solver)
   double* x = Solver_GetSolution(solver) ;
   int n = Solver_GetNbOfColumns(solver) ;
   LDUSKLFormat_t* askl = (LDUSKLFormat_t*) Matrix_GetStorage(a) ;
+  int rank = DistributedMS_RankOfCallingProcess ;
+  int size = DistributedMS_NbOfProcessors ;
 
-  if(Matrix_IsNotFactorized(a)) {
-    int i = ludcmp(askl,n) ;
+  if(rank == 0) {
+    if(Matrix_IsNotFactorized(a)) {
+      int i = ludcmp(askl,n) ;
     
-    Matrix_SetToFactorizedState(a) ;
+      Matrix_SetToFactorizedState(a) ;
     
-    if(i < 0) return(i) ;
+      if(i < 0) return(i) ;
+    }
+  
+  
+    lubksb(askl,x,b,n) ;
   }
   
-  
-  lubksb(askl,x,b,n) ;
+  /* Broadcast to other processors */
+  if(size > 1) {
+    #if DistributedMS_APIis(MPI)
+    MPI_Bcast(x,n,MPI_DOUBLE,0,MPI_COMM_WORLD) ;
+    #endif
+  }
   
   return(0) ;
 }

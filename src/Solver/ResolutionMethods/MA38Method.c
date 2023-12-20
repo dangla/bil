@@ -15,9 +15,9 @@
 #include "Matrix.h"
 #include "Math_.h"
 
-
 #include "MA38Method.h"
 #include "CoordinateFormat.h"
+#include "DistributedMS.h"
 
 
 static void MA38Method_PrintErrorDiagnostics(double*,int*,int*) ;
@@ -46,76 +46,90 @@ int   MA38Method_Solve(Solver_t* solver)
   double cntl[10] ;
   int    info[40] ;
   double rinfo[20] ;
+  int rank = DistributedMS_RankOfCallingProcess ;
+  int size = DistributedMS_NbOfProcessors ;
   
-  /* Initialize controls */
-  ma38id_(keep,cntl,icntl) ;
   
-  /* Printing controls:
-   * 1: Print only error messages, 
-   * 2: + warnings, 
-   * 3: + terse diagnostics 
-   */
-  {
-    Options_t* options = Matrix_GetOptions(a) ;
+  if(rank == 0) {
+    /* Initialize controls */
+    ma38id_(keep,cntl,icntl) ;
+  
+    /* Printing controls:
+     * 1: Print only error messages, 
+     * 2: + warnings, 
+     * 3: + terse diagnostics 
+     */
+    {
+      Options_t* options = Matrix_GetOptions(a) ;
     
-    icntl[2] = 1 ;
-    //icntl[2] = 5 ;
-    icntl[7] = 1 ; // Max nb of steps of iterative refinement.
+      icntl[2] = 1 ;
+      //icntl[2] = 5 ;
+      icntl[7] = 1 ; // Max nb of steps of iterative refinement.
     
-    #if 0
-    if(Options_IsToPrintOutAtEachIteration(options)) {
-      icntl[2] = 5 ;
+      #if 0
+      if(Options_IsToPrintOutAtEachIteration(options)) {
+        icntl[2] = 5 ;
+      }
+      #endif
     }
-    #endif
-  }
   
-  /* Factorize the matrix */
-  {
-    int ne = CoordinateFormat_GetNbOfNonZeroValues(ac) ;
-    int job = 1 ; // 1 if icntl[7] > 0
-    bool transa = false ;
+    /* Factorize the matrix */
+    {
+      int ne = CoordinateFormat_GetNbOfNonZeroValues(ac) ;
+      int job = 1 ; // 1 if icntl[7] > 0
+      bool transa = false ;
   
-    ma38ad_(&n,&ne,&job,&transa,&lvalue,&lindex,value,index,keep,cntl,icntl,info,rinfo) ;
+      ma38ad_(&n,&ne,&job,&transa,&lvalue,&lindex,value,index,keep,cntl,icntl,info,rinfo) ;
     
-    if(info[0] < 0) {
-      double ffvalue = ((double) lvalue)/(2*ne) ;
-      double ffindex = ((double) lindex)/(3*ne + 2*n + 1) ;
+      if(info[0] < 0) {
+        double ffvalue = ((double) lvalue)/(2*ne) ;
+        double ffindex = ((double) lindex)/(3*ne + 2*n + 1) ;
       
-      printf("MA38Method_Solve: error in the factorization\n") ;
+        printf("MA38Method_Solve: error in the factorization\n") ;
       
-      printf("Length of INDEX allocated: %d\n",lindex) ;
+        printf("Length of INDEX allocated: %d\n",lindex) ;
       
-      printf("Length of VALUE allocated: %d\n",lvalue) ;
+        printf("Length of VALUE allocated: %d\n",lvalue) ;
   
-      //printf("Number of entries: %d\n",ne) ;
-      //printf("Dimension of the matrix: %d\n",n) ;
+        //printf("Number of entries: %d\n",ne) ;
+        //printf("Dimension of the matrix: %d\n",n) ;
       
-      printf("Fill factors = %e ; %e\n",ffindex,ffvalue) ;
+        printf("Fill factors = %e ; %e\n",ffindex,ffvalue) ;
       
-      MA38Method_PrintErrorDiagnostics(cntl,icntl,info) ;
+        MA38Method_PrintErrorDiagnostics(cntl,icntl,info) ;
 
-      return(-1) ;
+        return(-1) ;
+      }
+    }
+  
+    /* Solve a * x = b */
+    {
+      double* b = Solver_GetRHS(solver) ;
+      double* x = Solver_GetSolution(solver) ;
+      GenericData_t* gw = Solver_GetGenericWorkSpace(solver) ;
+      double* w = GenericData_FindData(gw,double,"work") ;
+      int job = 0 ;
+      bool transc = false ;
+    
+      ma38cd_(&n,&job,&transc,&lvalue,&lindex,value,index,keep,b,x,w,cntl,icntl,info,rinfo) ;
+    
+      if(info[0] < 0) {
+      
+        printf("MA38Method_Solve: error in the resolution\n") ;
+      
+        return(-1) ;
+      }
     }
   }
   
-  /* Solve a * x = b */
-  {
-    double* b = Solver_GetRHS(solver) ;
+  /* Broadcast to other processors */
+  #if DistributedMS_APIis(MPI)
+  if(size > 1) {
     double* x = Solver_GetSolution(solver) ;
-    GenericData_t* gw = Solver_GetGenericWorkSpace(solver) ;
-    double* w = GenericData_FindData(gw,double,"work") ;
-    int job = 0 ;
-    bool transc = false ;
     
-    ma38cd_(&n,&job,&transc,&lvalue,&lindex,value,index,keep,b,x,w,cntl,icntl,info,rinfo) ;
-    
-    if(info[0] < 0) {
-      
-      printf("MA38Method_Solve: error in the resolution\n") ;
-      
-      return(-1) ;
-    }
+    MPI_Bcast(x,n,MPI_DOUBLE,0,MPI_COMM_WORLD) ;
   }
+  #endif
   
   return(0) ;
 }

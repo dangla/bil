@@ -10,6 +10,7 @@
 #include "BilExtraLibs.h"
 #include "ResolutionMethod.h"
 #include "CroutMethod.h"
+#include "DistributedMS.h"
 
 #ifdef SUPERLULIB
   #include "SuperLUMethod.h"
@@ -47,12 +48,6 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
   Solver_t* solver = (Solver_t*) Mry_New(Solver_t) ;
   
   
-  /* Resolution method */
-  {
-    Solver_GetResolutionMethod(solver) = ResolutionMethod_Create(options) ;
-  }
-  
-  
   /* Nb of rows/columns */
   {
     int n_col = Mesh_GetNbOfMatrixColumns(mesh)[imatrix] ;
@@ -74,6 +69,12 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
     Matrix_t* matrix = Matrix_Create(mesh,options,imatrix) ;
     
     Solver_GetMatrix(solver) = matrix ;
+  }
+  
+  
+  /* Resolution method */
+  {
+    Solver_GetResolutionMethod(solver) = ResolutionMethod_Create(options) ;
   }
   
   
@@ -188,7 +189,8 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
         /* Initialization */
         {
           int n = Solver_GetNbOfColumns(solver) ;
-          int nprocs = Options_NbOfProcessorsInDistributedMemorySolver(options) ;
+          //int nprocs = Options_NbOfProcessorsInDistributedMemorySolver(options) ;
+          int nprocs = DistributedMS_NbOfProcessors ;
           int nprow = sqrt(nprocs) ;
           int npcol = nprocs/nprow ;
           //Context_t* ctx = Options_GetContext(options) ;
@@ -199,15 +201,34 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
         
           /* Initialize MPI environment */
           //MPI_Init(&argc,&argv);
-          MPI_Init(NULL,NULL);
+          //MPI_Init(NULL,NULL);
         
           /* Initialize the superlu process grid */
           superlu_gridinit(MPI_COMM_WORLD,nprow,npcol,grid);
+          
+          /* Leave if not belong in the grid */
+          {
+            int iam = (*grid).iam ;
+            
+            if(iam > nprocs) {
+              superlu_gridexit(grid) ;
+              Message_FatalError("Solver_Create: too many ") ;
+            }
+          }
 
           /* Initialize scalepermstruct
            * scalepermstruct->DiagScale = NOEQUIL
            */
           dScalePermstructInit(n,n,scalepermstruct);
+          
+          {
+            int i ;
+            
+            for(i = 0 ; i < n ; i++) {
+              scalepermstruct->perm_r[i] = i ;
+              scalepermstruct->perm_c[i] = i ;
+            }
+          }
           /* Initialize lustruct 
            * lustruct->Llu->inv = 0
            */
@@ -233,8 +254,6 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
     
     #if defined (PETSCLIB)
     } else if(Solver_ResolutionMethodIs(solver,PetscKSP)) {
-      Matrix_t* matrix = Solver_GetMatrix(solver) ;
-      
       Solver_GetSolve(solver) = PetscKSPMethod_Solve ;
       
       /* Initialization */
@@ -266,11 +285,12 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
          **/
         {
           int n = Solver_GetNbOfColumns(solver) ;
+          PetscReal rtol = 1.e-4/n ;
           
-          //KSPSetTolerances(*ksp,1.e-2/n,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT) ;
-          KSPSetTolerances(*ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT) ;
+          KSPSetTolerances(*ksp,rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT) ;
+          //KSPSetTolerances(*ksp,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT) ;
           KSPSetFromOptions(*ksp) ;
-          KSPSetUp(*ksp) ;
+          //KSPSetUp(*ksp) ;
         }
         
         Solver_AppendGenericWorkSpace(solver,gksp) ;
@@ -340,6 +360,21 @@ void  (Solver_Delete)(void* self)
       Solver_GetGenericWorkSpace(solver) = NULL ;
     }
   }
+  
+  #if defined (PETSCLIB)
+  {
+    if(Solver_ResolutionMethodIs(solver,PetscKSP)) {
+      PetscBool isfinalized ;
+      
+      PetscFinalized(&isfinalized) ;
+      
+      if(!isfinalized) {
+        PetscInitialize(NULL,NULL,NULL,NULL) ;
+        PetscFinalize() ;
+      }
+    }
+  }
+  #endif
   
   {
     ResolutionMethod_t* rm = Solver_GetResolutionMethod(solver) ;

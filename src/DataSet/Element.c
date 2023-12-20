@@ -638,7 +638,10 @@ double (Element_ComputeJacobianDeterminant)(Element_t* el,double* dh,int nn,cons
   Element_FreeBufferFrom(el,jac) ;
   
   if(det < 0) {
-    arret("Element_ComputeJacobianDeterminant: negative determinant (det = %f)",det) ;
+    int index = Element_GetElementIndex(el) ;
+    
+    arret("Element_ComputeJacobianDeterminant: negative determinant\n\
+    (det = %e) at element %d",det,index) ;
   }
   
   return(det) ;

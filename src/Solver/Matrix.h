@@ -74,28 +74,7 @@ extern void        (Matrix_SetValuesToZero)       (Matrix_t*) ;
 
 #define Matrix_HasNotSameSparsityPattern(MAT) \
         (Matrix_GetSparsityPattern(MAT) == Matrix_SparsityPatternOFF)
-        
 
-
-#if 0
-/* Initialize the matrix */
-#define Matrix_SetValuesToZero(MAT) \
-        do { \
-          if(0) { \
-          } else if(Matrix_StorageFormatIs(MAT,PetscAIJ)) { \
-            PetscAIJFormat_t* petscaij = (PetscAIJFormat_t*) Matrix_GetStorage(MAT) ;
-            Mat* A = (Mat*) PetscAIJFormat_GetStorage(petscaij) ;
-            MatZeroEntries(*A) ; \
-          } else {
-            unsigned int Matrix_k ; \
-            for(Matrix_k = 0 ; Matrix_k < Matrix_GetNbOfNonZeroValues(MAT) ; Matrix_k++) { \
-              Matrix_GetNonZeroValue(MAT)[Matrix_k] = 0. ; \
-            } \
-          } \
-          Matrix_GetNbOfEntries(MAT) = 0 ; \
-          Matrix_SetToUnfactorizedState(MAT) ; \
-        } while(0)
-#endif
 
 
 

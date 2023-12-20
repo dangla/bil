@@ -8,6 +8,7 @@
 #include "Message.h"
 #include "BilExtraLibs.h"
 #include "Mry.h"
+#include "DistributedMS.h"
 #include "CoordinateFormat.h"
 
 
@@ -78,6 +79,9 @@ int (CoordinateFormat_AssembleElementMatrix)(CoordinateFormat_t* a,double* ke,in
   int*  colind = CoordinateFormat_GetColumnIndexOfValue(a) ;
   int*  rowind = CoordinateFormat_GetRowIndexOfValue(a) ;
   int len = 0 ;
+  int rank = DistributedMS_RankOfCallingProcess ;
+  
+  if(rank > 0) return(len) ;
   
   
   {

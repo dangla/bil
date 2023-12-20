@@ -240,7 +240,7 @@ int (NCFormat_AssembleElementMatrix)(NCFormat_t* a,double* ke,int* col,int* row,
   int    je ;
   int len = 0 ;
 
-  if(ke && rowptr) {
+  if(rowptr) {
     int i ;
     
     for(i = 0 ; i < n_row ; i++) {
@@ -254,7 +254,7 @@ int (NCFormat_AssembleElementMatrix)(NCFormat_t* a,double* ke,int* col,int* row,
     
     if(jcol < 0) continue ;
 
-    if(ke && rowptr) {
+    if(rowptr) {
       int i ;
       
       for(i = colptr[jcol] ; i < colptr[jcol+1] ; i++) {
@@ -267,18 +267,20 @@ int (NCFormat_AssembleElementMatrix)(NCFormat_t* a,double* ke,int* col,int* row,
       
       if(irow < 0) continue ;
       
-      if(ke && rowptr) {
+      if(rowptr) {
         if(rowptr[irow] < 0) {
           arret("NCFormat_AssembleElementMatrix: assembling not possible") ;
         }
 
-        nzval[rowptr[irow]] += KE(ie,je) ;
-      }
+        if(ke) {
+          nzval[rowptr[irow]] += KE(ie,je) ;
+        }
       
-      len += 1 ;
+        len += 1 ;
+      }
     }
 
-    if(ke && rowptr) {
+    if(rowptr) {
       int i ;
       
       for(i = colptr[jcol] ; i < colptr[jcol+1] ; i++) {

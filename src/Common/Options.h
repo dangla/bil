@@ -86,7 +86,7 @@ extern void        (Options_Delete)(void*) ;
     
 
 #define Options_GetFillFactor(OPT) \
-        (((!strcmp(((char**) Context_GetSolver(Options_GetContext(OPT)))[2],"-ff")) && atof(((char**) Context_GetSolver(Options_GetContext(OPT)))[3])) ? \
+        (((String_Is(((char**) Context_GetSolver(Options_GetContext(OPT)))[2],"-ff")) && atof(((char**) Context_GetSolver(Options_GetContext(OPT)))[3])) ? \
         atof(((char**) Context_GetSolver(Options_GetContext(OPT)))[3]) : Options_DefaultFillFactor(OPT))
         
 

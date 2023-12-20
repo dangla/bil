@@ -23,6 +23,11 @@ Viewing
   showing the difference introduced in each commit: git log -p
   prints on a single line: git log --pretty=oneline
 
+Resetting back to a previous version (e.g. 9e5e6a4xxxx)
+  moving back the master branch HEAD: git reset --soft 9e5e6a4
+  ... and updating the index: git reset 9e5e6a4
+  ... and updating the working directory (risky): git reset --hard 9e5e6a4
+
 Working with remotes
   showing your remotes: git remote
   with the URLs that Git has stored for the shortname to be used: git remote -v

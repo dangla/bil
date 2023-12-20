@@ -19,8 +19,9 @@ endif()
 project(bil LANGUAGES C CXX Fortran)
 
 
-option(ENABLE_OPENMP "Enable OpenMP parallelization" OFF)
+option(ENABLE_OPENMP   "Enable OpenMP parallelization"   OFF)
 option(ENABLE_PTHREADS "Enable Pthreads parallelization" OFF)
+option(ENABLE_MPI      "Enable MPI parallelization"      OFF)
 
 
 # Add the CMake directory for custon CMake modules

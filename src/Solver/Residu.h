@@ -13,7 +13,7 @@ struct Residu_s       ; typedef struct Residu_s       Residu_t ;
 
 extern Residu_t*   (Residu_Create)(Mesh_t*,Options_t*,const int,const int) ;
 extern void        (Residu_Delete)(void*) ;
-extern void        (Residu_AssembleElementResidu)(Residu_t*,Element_t*,double*) ;
+extern int         (Residu_AssembleElementResidu)(Residu_t*,Element_t*,double*) ;
 extern void        (Residu_PrintResidu)(Residu_t*,const char*) ;
 extern void        (Residu_SetValuesToZero)(Residu_t*) ;
 
@@ -34,29 +34,6 @@ extern void        (Residu_SetValuesToZero)(Residu_t*) ;
         VectorStorageFormat_GetOptions(Residu_GetVectorStorageFormat(RS))
 
 #include "Node.h"
-
-#if 0
-#define Residu_AssembleElementResidu(R,EL,RE) \
-        do { \
-          if(Element_GetMaterial(EL)) { \
-            int Residu_nn  = Element_GetNbOfNodes(EL) ; \
-            int Residu_neq = Element_GetNbOfEquations(EL) ; \
-            int Residu_i ; \
-            for(Residu_i = 0 ; Residu_i < Residu_nn ; Residu_i++) { \
-              Node_t* node_i = Element_GetNode(EL,Residu_i) ; \
-              int Residu_j ; \
-              for(Residu_j = 0 ; Residu_j < Residu_neq ; Residu_j++) { \
-                int Residu_ij = Residu_i*Residu_neq + Residu_j ; \
-                int Residu_ii = Element_GetUnknownPosition(EL)[Residu_ij] ; \
-                if(Residu_ii >= 0) { \
-                  int Residu_k = Node_GetMatrixColumnIndex(node_i)[Residu_ii] ; \
-                  if(Residu_k >= 0) R[Residu_k] += RE[Residu_ij] ; \
-                } \
-              } \
-            } \
-          } \
-        } while(0)
-#endif
         
         
 /* Initialize the residu */

@@ -11,6 +11,7 @@
 #include "Solver.h"
 #include "Message.h"
 #include "Matrix.h"
+#include "DistributedMS.h"
 
 #include "SuperLUDistMethod.h"
 #include "SuperLUFormat.h"
@@ -81,6 +82,8 @@ int   SuperLUDistMethod_Solve(Solver_t* solver)
       set_default_options_dist(&sludist_options);
       sludist_options.ColPerm = NATURAL;
       sludist_options.RowPerm = NATURAL;
+      //sludist_options.ColPerm = MY_PERMC;
+      //sludist_options.RowPerm = MY_PERMR;
       sludist_options.PrintStat = NO;
 
       /* Initialize the statistics variables. */
@@ -90,6 +93,7 @@ int   SuperLUDistMethod_Solve(Solver_t* solver)
       if(Matrix_IsFactorized(a)) {
         sludist_options.Fact = FACTORED ;
       } else if(Matrix_HasSameSparsityPattern(a)) {
+        //sludist_options.Fact = DOFACT;
         /* Same sparsity pattern and different numerical entries */
         sludist_options.Fact = SamePattern ;
         /* Same sparsity pattern and similar numerical */
@@ -99,6 +103,9 @@ int   SuperLUDistMethod_Solve(Solver_t* solver)
       }
 
       pdgssvx_ABglobal(&sludist_options,A,ScalePermstruct,b,n,1,grid,LUstruct,berr,&stat,&info);
+      
+      /* The row permutation and the rowind array of A are modified on ouputs */
+      Message_FatalError("SuperLUDistMethod_Solve: issue not fixed yet") ;
       
       Matrix_SetToFactorizedState(a) ;
       Matrix_SetSameSparsityPattern(a) ;
@@ -140,6 +147,4 @@ int   SuperLUDistMethod_Solve(Solver_t* solver)
   
   return(0) ;
 }
-
 #endif
-

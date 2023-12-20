@@ -166,7 +166,9 @@ Some functionalities (like solvers ma38, superlu, petscksp) require the use of t
             URL: https://portal.nersc.gov/project/sparse/superlu/.
             Note that these three libraries cannot be mixed, only one can be loaded per build target. SuperMU_MT needs either "omp" or "pthread" library. SuperLU_DIST needs "mpi" library.
 
-  - **Petsc**: this library is usually available from package managers. Visit the url  http://www.petsc.org for more informations.  
+  - **Petsc**: this library is usually available from package managers. Visit the url  http://www.petsc.org for more informations.
+            Note that Petsc needs "mpi" library.
+
   
 
 These librairies are not included in this package. You need to explicitly specify their location in the file "EXTRALIBS". You can also choose to disable the use of these libraries and the associated functionalities by deleting or commenting the locations. The file "EXTRALIBS" is also where you can add other libraries for your own development. Just add the location of the library using a macro name for this library, e.g. NEWNAME, and use the macro NEWNAMELIB in your implementation to test if the library is really installed.

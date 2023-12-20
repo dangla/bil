@@ -13,6 +13,7 @@
 #include "LDUSKLFormat.h"
 #include "NCFormat.h"
 #include "CoordinateFormat.h"
+#include "DistributedMS.h"
 
 #if defined (SUPERLULIB) || defined (SUPERLUMTLIB) || defined (SUPERLUDISTLIB)
   #define SUPERLU
@@ -303,6 +304,16 @@ int (Matrix_AssembleElementMatrix)(Matrix_t* a,Element_t* el,double* ke)
 
 void (Matrix_PrintMatrix)(Matrix_t* a,const char* keyword)
 {
+  #if !DistributedMS_APIis(None)
+  {
+    int rank = DistributedMS_RankOfCallingProcess ;
+    
+    fprintf(stdout,"\n") ;
+    fprintf(stdout,"Rank of calling processor = %d\n",rank) ;
+    fprintf(stdout,"\n") ;
+  }
+  #endif
+  
   /* format Sky Line */
   if(Matrix_StorageFormatIs(a,LDUSKL)) {
     LDUSKLFormat_t* askl = (LDUSKLFormat_t*) Matrix_GetStorage(a) ;

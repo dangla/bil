@@ -10,6 +10,7 @@
 #include <time.h>
 #include <Mry.h>
 #include <assert.h>
+#include "DistributedMS.h"
 
 
 static Message_t*  (Message_GetInstance)(void) ;
@@ -180,6 +181,8 @@ void (Message_Warning)(const char* fmt, ...)
 {
   Message_t* msg = Message_GetInstance() ;
   
+  if(DistributedMS_RankOfCallingProcess) return ;
+  
   if(!msg || Message_GetVerbosity(msg) < 2) return ;
   
   fflush(stdout) ;
@@ -203,6 +206,8 @@ void (Message_Warning)(const char* fmt, ...)
 void (Message_Info)(const char* fmt, ...)
 {
   Message_t* msg = Message_GetInstance() ;
+  
+  if(DistributedMS_RankOfCallingProcess) return ;
   
   if(!msg || Message_GetVerbosity(msg) < 3) return ;
   
@@ -228,6 +233,8 @@ int (Message_Direct)(const char* fmt, ...)
 {
   Message_t* msg = Message_GetInstance() ;
   int n ;
+  
+  if(DistributedMS_RankOfCallingProcess) return ;
   
   if(!msg || Message_GetVerbosity(msg) < 4) return(0) ;
   

@@ -8,6 +8,7 @@
 #include "Message.h"
 #include "Mry.h"
 #include "LDUSKLFormat.h"
+#include "DistributedMS.h"
 
 
 
@@ -195,6 +196,9 @@ int (LDUSKLFormat_AssembleElementMatrix)(LDUSKLFormat_t* a,double* ke,int* cole,
 #define L(i,j)  (*(LDUSKLFormat_GetPointerToLowerRow(a)[i] - i + j))
 */
   int len = 0 ;
+  int rank = DistributedMS_RankOfCallingProcess ;
+  
+  if(rank > 0) return(len) ;
   
   {
     int    ie ;
@@ -239,6 +243,9 @@ void (LDUSKLFormat_PrintMatrix)(LDUSKLFormat_t* a,unsigned int n,const char* key
   double** l = LDUSKLFormat_GetPointerToLowerRow(a) ;
   int nnz = LDUSKLFormat_GetNbOfNonZeroValues(a) ;
   int    irow,jcol ;
+  int rank = DistributedMS_RankOfCallingProcess ;
+  
+  if(rank > 0) return ;
 
   fprintf(stdout,"\n") ;
   

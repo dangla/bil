@@ -4,7 +4,7 @@
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
-struct DistributedMS_s     ; typedef struct DistributedMS_s     DistributedMS_t ;
+//struct DistributedMS_s     ; typedef struct DistributedMS_s     DistributedMS_t ;
 
 
 //extern int DistributedMS_CurrentThreadId(void) ;
@@ -64,7 +64,7 @@ struct DistributedMS_s     ; typedef struct DistributedMS_s     DistributedMS_t 
 
 /* The rank of the calling process */
 #if DistributedMS_APIis(None)
-  #define DistributedMS_RankOfCallingProcess 1
+  #define DistributedMS_RankOfCallingProcess 0
 #elif DistributedMS_APIis(MPI)
   /* We use a C extension provided by GNU C:
    * A compound statement enclosed in parentheses may appear 
@@ -81,10 +81,22 @@ struct DistributedMS_s     ; typedef struct DistributedMS_s     DistributedMS_t 
 #endif
 
 
+/* Barrier */
+#if DistributedMS_APIis(None)
+  #define DistributedMS_Barrier
+#elif DistributedMS_APIis(MPI)
+  #define DistributedMS_Barrier \
+          MPI_Barrier(MPI_COMM_WORLD)
+#else
+  #error "DistributedMS_API not available"
+#endif
 
+
+#if 0
 struct DistributedMS_s {
   int rank ;
   int size ;
 } ;
+#endif
 
 #endif

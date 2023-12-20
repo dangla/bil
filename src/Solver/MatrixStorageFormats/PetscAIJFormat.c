@@ -8,6 +8,7 @@
 #include "Mesh.h"
 #include "Message.h"
 #include "Mry.h"
+#include "DistributedMS.h"
 
 #include "PetscAIJFormat.h"
 
@@ -48,17 +49,6 @@ PetscAIJFormat_t* (PetscAIJFormat_Create)(Mesh_t* mesh,const int imatrix)
     
     MatSeqAIJSetPreallocation(*aij,0,nnzrow) ;
     free(nnzrow) ;
-  }
-    
-  /* The nb of processes and the rank of the calling process */
-  {
-    PetscMPIInt rank ;
-    PetscMPIInt size ;
-      
-    MPI_Comm_size(PETSC_COMM_WORLD,&size);
-    MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
-    //PetscPrintf(PETSC_COMM_WORLD,"Number of processors = %d, rank = %d\n", size, rank);
-    Message_Direct("Number of processors = %d, rank = %d\n", size, rank);
   }
     
   /* Preallocate the MPI matrix aij */

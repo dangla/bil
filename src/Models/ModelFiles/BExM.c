@@ -16,10 +16,6 @@
 
 /* Nb of equations */
 #define NEQ     (1+dim)
-/* Nb of (im/ex)plicit terms and constant terms */
-#define NVI     (32)
-#define NVE     (1)
-#define NV0     (0)
 
 /* Equation index */
 #define E_liq   (0)
@@ -29,7 +25,9 @@
 #define U_p_l   (0)
 #define U_u     (1)
 
+
 /* We define some names for implicit terms */
+#define NVI     (32)  /* Nb of implicit terms */
 #define M_L           (vim   + 0)[0]
 #define M_L_n         (vim_n + 0)[0]
 #define W_L           (vim   + 1)
@@ -50,9 +48,11 @@
 
 
 /* We define some names for explicit terms */
+#define NVE     (1)  /* Nb of explicit terms */
 #define K_L           (vex + 0)[0]
 
 /* We define some names for constant terms */
+#define NV0     (0)  /* Nb of constant terms */
 
 
 /* Functions */

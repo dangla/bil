@@ -33,12 +33,22 @@ extern double   (OutputFiles_Version)(OutputFiles_t*) ;
         TextFile_ReadLineFromCurrentFilePosition(textfile,OutputFiles_GetTextLine(OFS),OutputFiles_MaxLengthOfTextLine)
         
 
+#include "DistributedMS.h"
+
 #define OutputFiles_BackupSolutionAtTime(OFS,...) \
-        if(OFS) OutputFiles_BackupSolutionAtTime_(OFS,__VA_ARGS__)
+        do { \
+          if(DistributedMS_RankOfCallingProcess == 0) { \
+            if(OFS) OutputFiles_BackupSolutionAtTime_(OFS,__VA_ARGS__) ; \
+          } \
+        } while(0)
         
         
 #define OutputFiles_BackupSolutionAtPoint(...) \
-        Utils_CAT_NARG(OutputFiles_BackupSolutionAtPoint,__VA_ARGS__)(__VA_ARGS__)
+        do { \
+          if(DistributedMS_RankOfCallingProcess == 0) { \
+            Utils_CAT_NARG(OutputFiles_BackupSolutionAtPoint,__VA_ARGS__)(__VA_ARGS__) ; \
+          } \
+        } while(0)
 
 
 /* Implementation */

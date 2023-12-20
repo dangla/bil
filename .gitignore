@@ -19,11 +19,18 @@
 *.cold
 *.hold
 
+# Specific Bil files
+*.sto
+*.cont
+*.conti
+
 # Specific headers
+BilConfig.h
 BilInfo.h
 BilLib.h
 BilPath.h
 BilVersion.h
+BilExtraLibs.h
 
 # Database
 
