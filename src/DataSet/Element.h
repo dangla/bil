@@ -12,39 +12,45 @@ typedef Element_t*        Element_tt ;
 
 #include "Mesh.h"
 #include "Node.h"
+#include "ShapeFcts.h"
+#include "IntFcts.h"
+#include "Buffers.h"
 
-extern void     (Element_AllocateMicrostructureSolutions)       (Element_t*,Mesh_t*,const int) ;
-extern double** (Element_ComputePointerToCurrentNodalUnknowns)  (Element_t*) ;
-extern double** (Element_ComputePointerToPreviousNodalUnknowns) (Element_t*) ;
-extern double*  (Element_ComputeCurrentNodalUnknowns)           (Element_t*) ;
-extern double*  (Element_ComputePreviousNodalUnknowns)          (Element_t*) ;
-extern double*  (Element_ComputeIncrementalNodalUnknowns)       (Element_t*) ;
-extern double*  (Element_ComputeDeepNodalUnknowns)              (Element_t*,unsigned int) ;
-extern double** (Element_ComputePointerToNodalCoordinates)      (Element_t*) ;
-extern double*  (Element_ComputeNodalCoordinates)               (Element_t*) ;
-extern int      (Element_FindUnknownPositionIndex)              (Element_t*,const char*) ;
-extern int      (Element_FindEquationPositionIndex)             (Element_t*,const char*) ;
-extern double*  (Element_ComputeIncrementalImplicitTerms)       (Element_t*) ;
-extern double*  (Element_ComputeNormalVector)                   (Element_t*,double*,int,const int) ;
-extern double*  (Element_ComputeCoordinateInReferenceFrame)     (Element_t*,double*) ;
-extern int      (Element_ComputeNbOfSolutions)                  (Element_t*) ;
-extern int*     (Element_ComputeMatrixRowAndColumnIndices)      (Element_t*) ;
-extern int*     (Element_ComputeSelectedMatrixRowAndColumnIndices)(Element_t*,const int) ;
-extern double   (Element_ComputeSize)                           (Element_t*) ;
-extern double*  (Element_ComputeSizes)                          (Element_t*) ;
-extern int      (Element_ComputeNbOfMatrixEntries)              (Element_t*) ;
-extern int      (Element_ComputeNbOfSelectedMatrixEntries)      (Element_t*,const int) ;
-extern double*  (Element_ComputeJacobianMatrix)                 (Element_t*,double*,int,const int) ;
-extern double   (Element_ComputeJacobianDeterminant)            (Element_t*,double*,int,const int) ;
-extern double*  (Element_ComputeInverseJacobianMatrix)          (Element_t*,double*,int,const int) ;
-extern int      (Element_OverlappingNode)                       (Element_t*,const int) ;
-extern int      (Element_HasZeroThickness)                      (Element_t*) ;
-extern int      (Element_NbOfOverlappingNodes)                  (Element_t*) ;
-extern void     (Element_MakeUnknownContinuousAcrossZeroThicknessElement)(Element_t*,const char*);
-extern void     (Element_MakeEquationContinuousAcrossZeroThicknessElement)(Element_t*,const char*);
-extern int      (Element_FindNodeIndex)                         (Element_t*,const Node_t*) ;
-extern double*  (Element_ComputeCoordinateVector)               (Element_t*,double*) ;
-extern void     (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t*) ;
+extern Element_t*  (Element_New)(void) ;
+extern void        (Element_CreateMore)(Element_t*,Buffers_t*,ShapeFcts_t*,IntFcts_t*) ;
+extern void        (Element_Delete)(void*) ;
+extern void        (Element_AllocateMicrostructureSolutions)       (Element_t*,Mesh_t*,const int) ;
+extern double**    (Element_ComputePointerToCurrentNodalUnknowns)  (Element_t*) ;
+extern double**    (Element_ComputePointerToPreviousNodalUnknowns) (Element_t*) ;
+extern double*     (Element_ComputeCurrentNodalUnknowns)           (Element_t*) ;
+extern double*     (Element_ComputePreviousNodalUnknowns)          (Element_t*) ;
+extern double*     (Element_ComputeIncrementalNodalUnknowns)       (Element_t*) ;
+extern double*     (Element_ComputeDeepNodalUnknowns)              (Element_t*,unsigned int) ;
+extern double**    (Element_ComputePointerToNodalCoordinates)      (Element_t*) ;
+extern double*     (Element_ComputeNodalCoordinates)               (Element_t*) ;
+extern int         (Element_FindUnknownPositionIndex)              (Element_t*,const char*) ;
+extern int         (Element_FindEquationPositionIndex)             (Element_t*,const char*) ;
+extern double*     (Element_ComputeIncrementalImplicitTerms)       (Element_t*) ;
+extern double*     (Element_ComputeNormalVector)                   (Element_t*,double*,int,const int) ;
+extern double*     (Element_ComputeCoordinateInReferenceFrame)     (Element_t*,double*) ;
+extern int         (Element_ComputeNbOfSolutions)                  (Element_t*) ;
+extern int*        (Element_ComputeMatrixRowAndColumnIndices)      (Element_t*) ;
+extern int*        (Element_ComputeSelectedMatrixRowAndColumnIndices)(Element_t*,const int) ;
+extern double      (Element_ComputeSize)                           (Element_t*) ;
+extern double*     (Element_ComputeSizes)                          (Element_t*) ;
+extern int         (Element_ComputeNbOfMatrixEntries)              (Element_t*) ;
+extern int         (Element_ComputeNbOfSelectedMatrixEntries)      (Element_t*,const int) ;
+extern double*     (Element_ComputeJacobianMatrix)                 (Element_t*,double*,int,const int) ;
+extern double      (Element_ComputeJacobianDeterminant)            (Element_t*,double*,int,const int) ;
+extern double*     (Element_ComputeInverseJacobianMatrix)          (Element_t*,double*,int,const int) ;
+extern int         (Element_OverlappingNode)                       (Element_t*,const int) ;
+extern int         (Element_HasZeroThickness)                      (Element_t*) ;
+extern int         (Element_NbOfOverlappingNodes)                  (Element_t*) ;
+extern void        (Element_MakeUnknownContinuousAcrossZeroThicknessElement)(Element_t*,const char*);
+extern void        (Element_MakeEquationContinuousAcrossZeroThicknessElement)(Element_t*,const char*);
+extern int         (Element_FindNodeIndex)                         (Element_t*,const Node_t*) ;
+extern double*     (Element_ComputeCoordinateVector)               (Element_t*,double*) ;
+extern void        (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t*) ;
 
 /* Synonyms */
 #define  Element_ComputePointerToNodalUnknowns \
@@ -81,6 +87,8 @@ extern void     (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t*) ;
 //#define Element_GetElementSol(ELT)             ((ELT)->sol)
 #define Element_GetBuffers(ELT)                ((ELT)->buffers)
 #define Element_GetSolutions(ELT)              ((ELT)->solutions)
+#define Element_GetMatrix(ELT)                 ((ELT)->matrix)
+#define Element_GetResidu(ELT)                 ((ELT)->residu)
 
 
 
@@ -424,6 +432,11 @@ extern void     (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t*) ;
         for(p = 0 ; p < IntFct_GetNbOfPoints(Element_GetIntFct(ELT)) ; p++)
         
 
+#include "DistributedMS.h"
+
+/* Supporting processor */
+#define Element_RankOfSupportingProcessor(ELT) \
+        (Element_GetElementIndex(ELT) % DistributedMS_NbOfProcessors)
 
 
 #include "ShapeFct.h"
@@ -433,25 +446,28 @@ extern void     (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t*) ;
 #include "Solutions.h"
 
 
+/* Minmize the size of the struct by re-organizing the order of its members*/
 struct Element_s {            /* element */
-  unsigned int index ;        /* element index */
-  unsigned short int nn ;     /* nb of nodes */
   Node_tt* node ;             /* pointers to nodes */
-  int    reg ;                /* region index */
-  int    imat ;               /* material index */
   Material_t* mat ;           /* material */
   ShapeFct_t* shapefct ;      /* Shape function */
   IntFct_t* fi ;              /* interpolation function */
-  unsigned short int dim ;    /* dimension of the element (0,1,2,3) */
+  //ElementSol_t* sol ;         /* Element Solution */
+  Buffers_t*  buffers ;       /* Buffers */
+  Solutions_t* solutions ;    /* Pointer to the global solutions */
+  double* matrix ;            /* Elementary matrix */
+  double* residu ;            /* Elementary residu */
   short int* pin ;            /* local position of unknowns at nodes */
   short int* peq ;            /* local position of equations at nodes */
+  int    reg ;                /* region index */
+  int    imat ;               /* material index */
+  unsigned short int dim ;    /* dimension of the element (0,1,2,3) */
+  unsigned int index ;        /* element index */
+  unsigned short int nn ;     /* nb of nodes */
   /* n_vi and n_ve must be kept for old methods! */
   unsigned int n_vi ;         /* Nb of implicit terms */
   unsigned int n_ve ;         /* Nb of explicit terms */
 //  unsigned int nbofconstterms ;   /* Nb of constant terms */
-  //ElementSol_t* sol ;         /* Element Solution */
-  Buffers_t*  buffers ;       /* Buffers */
-  Solutions_t* solutions ;    /* Pointer to the global solutions */
 } ;
 
 

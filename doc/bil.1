@@ -99,10 +99,10 @@ use the solver defined by \fImethod\fR. Available methods are:
 \fBsuperlu\fR: Sequential SuperLU (if libsuperlu.so installed).
 .RE
 .RS
-\fBsuperlumt\fIN\fR\fR: Multithreaded SuperLU (if libsuperlu_mt.so installed) with \fIN\fR number of threads.
+\fBsuperlumt\fR: Multithreaded SuperLU (if libsuperlu_mt.so installed). The number of threads is specified with the option \fB-nthreads\fR (see below).
 .RE
 .RS
-\fBsuperludist\fIN\fR\fR: Distributed SuperLU (if libsuperlu_dist.so installed) with \fIN\fR number of processes.
+\fBsuperludist\fR: Distributed SuperLU (if libsuperlu_dist.so installed).
 .RE
 .RS
 \fBma38\fR: MA38 from HSL (if libblas.so installed).
@@ -112,6 +112,10 @@ use the solver defined by \fImethod\fR. Available methods are:
 .RE
 
 .TP 4
+.B \-nthreads \fIN\fR
+use \fIN\fR threads for the solver "superlumt".
+
+.TP 4
 .B \-ff \fIN\fR
 use the fill factor \fIN\fR for the multi-frontal methods SuperLU (default \fIN\fR=0 meaning that space is allocated internally by SuperLU) or MA38 (default \fIN\fR=2). This option must follow the option \fB-solver\fR \fImethod\fR.
 
@@ -119,14 +123,14 @@ use the fill factor \fIN\fR for the multi-frontal methods SuperLU (default \fIN\
 .B \-ksp_type \fImethod\fR
 use the KSP method \fImethod\fR for the KSP solver (default is gmres). This option must follow the option \fB-solver petscksp\fR. Available methods are:
 .RS
-\fBrichardson, chebyshev, cg, gmres, tcqmr, bcgs, cgs, tfqmr, cr, lsqr, bicg, preonly ...\fR (see the Petsc documentation for more details at https://petsc.org).
+\fBrichardson, chebyshev, cg, pipecg, groppcg, pipecgrr, cgne, fcg, pipefcg, cgls, nash, stcg, gltr, qcg, bicg, bcgs, ibcgs, qmrcgs, fbcgs, fbcgsr, bcgsl, minres, gmres, fgmres, dgmres, pgmres, pipefgmres, lgmres, cr, gcr, pipecr, pipegcr, fetidp, cgs, tfqmr, tcgmr, lsgr, symmlq, tsirm, python, tcqmr, bcgs, cgs, tfqmr, cr, lsqr, bicg, preonly\fR (see the Petsc documentation for more details at https://petsc.org).
 .RE
 
 .TP 4
 .B \-pc_type \fImethod\fR
 use the preconditoner method \fImethod\fR for the KSP solver (default is ilu for gmres). This option must follow the option \fB-solver petscksp\fR. Available methods are:
 .RS
-\fBnone, jacobi, sor, ilu, icc ...\fR (see the Petsc documentation for more details at https://petsc.org).
+\fBnone, jacobi, bjacobi, sor, eisenstat, icc, ilu, asm, gasm, gamg, bddc, ksp, composite, lu, cholesky, shell\fR (see the Petsc documentation for more details at https://petsc.org).
 .RE
 
 .TP 4

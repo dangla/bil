@@ -31,6 +31,8 @@ extern void      (Nodes_InitializeMatrixRowColumnIndexes)(Nodes_t*) ;
 #define Nodes_GetNbOfDOF(NODS)            ((NODS)->n_dof)
 #define Nodes_GetObjectiveValues(NODS)    ((NODS)->obvals)
 #define Nodes_GetNbOfMatrices(NODS)       ((NODS)->NbOfMatrices)
+#define Nodes_GetPointerToElement(NODS)   ((NODS)->pelement)
+#define Nodes_GetBuffers(NODS)            ((NODS)->buffers)
 
 
 
@@ -53,6 +55,8 @@ extern void      (Nodes_InitializeMatrixRowColumnIndexes)(Nodes_t*) ;
 
 #include "Node.h"
 #include "ObVals.h"
+#include "Element.h"
+#include "Buffers.h"
 
 
 struct Nodes_s {              /* nodes */
@@ -64,6 +68,8 @@ struct Nodes_s {              /* nodes */
   unsigned int n_dof ;        /* nb of degrees of freedom */
   Node_t* no ;                /* node */
   ObVals_t* obvals ;          /* Objective values */
+  Element_tt* pelement ;      /* pointers to elements */
+  Buffers_t*  buffers ;       /* Buffers */
 } ;
 
 #endif

@@ -50,7 +50,6 @@ Solutions_t*   (Solutions_Create)(Mesh_t* mesh,const int n_sol)
    */
   {
     Solutions_InitializeMeshPointers(sols,mesh) ;
-    //Mesh_InitializeSolutionPointers(mesh,sols) ;
     Elements_DefineProperties(Mesh_GetElements(mesh)) ;
   }
   

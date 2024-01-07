@@ -180,7 +180,7 @@ void (Context_Initialize)(Context_t* ctx)
          * "-mpi_linear_solver_server": option for PetscKSP methods
          **/
       
-        while(String_Is(argv[i + 1],"-mpi_linear_solver_server")) {
+        while(String_Is(argv[i + 1],"-mpi_linear_solver_server",5)) {
           i += 1 ;
         }
       }

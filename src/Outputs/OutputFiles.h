@@ -37,26 +37,26 @@ extern double   (OutputFiles_Version)(OutputFiles_t*) ;
 
 #define OutputFiles_BackupSolutionAtTime(OFS,...) \
         do { \
-          if(DistributedMS_RankOfCallingProcess == 0) { \
-            if(OFS) OutputFiles_BackupSolutionAtTime_(OFS,__VA_ARGS__) ; \
+          if(OFS) { \
+              OutputFiles_BackupSolutionAtTime_(OFS,__VA_ARGS__) ; \
           } \
         } while(0)
         
         
-#define OutputFiles_BackupSolutionAtPoint(...) \
+#define OutputFiles_BackupSolutionAtPoint(OFS,...) \
         do { \
-          if(DistributedMS_RankOfCallingProcess == 0) { \
-            Utils_CAT_NARG(OutputFiles_BackupSolutionAtPoint,__VA_ARGS__)(__VA_ARGS__) ; \
+          if(OFS) { \
+            Utils_CAT_NARG(OutputFiles_BackupSolutionAtPoint,__VA_ARGS__)(OFS,__VA_ARGS__) ; \
           } \
         } while(0)
 
 
 /* Implementation */
-#define OutputFiles_BackupSolutionAtPoint4(OFS,...) \
-        if(OFS) OutputFiles_BackupSolutionAtPoint_(OFS,__VA_ARGS__)
+#define OutputFiles_BackupSolutionAtPoint3(...) \
+        OutputFiles_BackupSolutionAtPoint_(__VA_ARGS__)
         
-#define OutputFiles_BackupSolutionAtPoint3(OFS,...) \
-        OutputFiles_BackupSolutionAtPoint4(OFS,__VA_ARGS__,NULL)
+#define OutputFiles_BackupSolutionAtPoint2(...) \
+        OutputFiles_BackupSolutionAtPoint3(__VA_ARGS__,NULL)
 
 
 #include "TextFile.h"

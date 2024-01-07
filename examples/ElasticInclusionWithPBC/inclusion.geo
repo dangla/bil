@@ -4,13 +4,17 @@ lc2 = 0.05 ;
 L = 1 ;
 R = 0.5 ;
 
-Point(1) = {0,0,0,lc1} ;
-Point(2) = {L,0,0,lc1} ;
-Point(3) = {L,L,0,lc1} ;
-Point(4) = {0,L,0,lc1} ;
+Point(1) = {0,0,0} ;
+Point(2) = {L,0,0} ;
+Point(3) = {L,L,0} ;
+Point(4) = {0,L,0} ;
 
-Point(5) = {R,0,0,lc2} ;
-Point(6) = {0,R,0,lc2} ;
+Point(5) = {R,0,0} ;
+Point(6) = {0,R,0} ;
+
+
+Characteristic Length{1:4} = lc1;
+Characteristic Length{5:6} = lc2;
 
 Circle(10) = {5,1,6} ;
 Line(11) = {1,5} ;

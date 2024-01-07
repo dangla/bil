@@ -1,0 +1,133 @@
+Geometry
+2 axis
+
+
+
+Mesh
+CSA.msh
+
+
+
+# K = E / (3 - 6 nu)
+# G = E / (2 + 2 nu)
+# k_s = K/(1 - b)
+# g_s = 0.75 K phi / (b - phi)
+      
+
+
+Material   # Aggregate
+Model = Frostaco3d
+porosity  = 0.04
+k_int  = 1.0e-20
+C_s = 1.9e+06
+lam_s = 2.8
+alpha_s = 2.2e-6
+p0=1e5
+T0=273
+k_s = 12.5e9
+g_s = 2.68e9
+Curves = aggregate   p_c = Range{x1 = 0,x2 = 2.e8,n = 401} s_l = Van-Genuchten(1){p0 = 1.628e7,m = 0.421} k_rl = Mualem_liq(2){m = 0.421}
+
+
+
+Material   # Coated paste
+Model = Frostaco3d
+porosity  = 0.3
+k_int  = 1.e-21
+C_s = 1.47e+06
+lam_s = 0.53
+alpha_s = 17.e-6
+p0=1e5
+T0=273
+k_s = 33.07e9    
+g_s = 45e9
+Curves = paste   p_c = Range{x1 = 0,x2 = 2.e8,n = 401} s_l = Van-Genuchten(1){p0 = 1.628e7,m = 0.421} k_rl = Mualem_liq(2){m = 0.421}
+
+
+
+Fields
+1
+Value = 1     Gradient = 0 Point = 0
+
+
+
+Initialization
+6
+Region = 100 Unknown = tem  Field = 1 Function = 1
+Region = 100 Unknown = p_l  Field = 1 Function = 3
+Region = 200 Unknown = tem  Field = 1 Function = 1
+Region = 200 Unknown = p_l  Field = 1 Function = 3
+Region = 300 Unknown = tem  Field = 1 Function = 1
+Region = 300 Unknown = p_l  Field = 1 Function = 3
+
+
+
+Functions
+5
+Fichier = tem
+Fichier = cs
+N = 1 F(0) = 1.e5
+Fichier = cs
+N = 1 F(0) = 520
+
+
+
+Boundary Conditions
+19
+Region = 77 Unknown = u_1    Field = 0 Function = 0
+Region = 66 Unknown = u_1    Field = 0 Function = 0
+Region = 44 Unknown = u_1    Field = 0 Function = 0
+Region = 1 Unknown = u_2    Field = 0 Function = 0
+Region = 131 Unknown = tem    Field = 1 Function = 1
+Region = 131 Unknown = p_l    Field = 1 Function = 3
+Region = 131 Unknown = c_s    Field = 1 Function = 2
+Region = 171 Unknown = tem    Field = 1 Function = 1
+Region = 171 Unknown = p_l    Field = 1 Function = 3
+Region = 171 Unknown = c_s    Field = 1 Function = 2
+Region = 33 Unknown = tem    Field = 1 Function = 1
+Region = 33 Unknown = p_l    Field = 1 Function = 3
+Region = 33 Unknown = c_s    Field = 1 Function = 2
+Region = 55 Unknown = tem    Field = 1 Function = 1
+Region = 55 Unknown = p_l    Field = 1 Function = 3
+Region = 55 Unknown = c_s    Field = 1 Function = 2
+Region = 111 Unknown = tem    Field = 1 Function = 1
+Region = 111 Unknown = p_l    Field = 1 Function = 3
+Region = 111 Unknown = c_s    Field = 1 Function = 2
+
+
+
+Loads
+0
+
+
+
+Points
+0
+
+
+
+Dates
+86
+0 720 1440 2160 2880 3600 4320 5040 5760 6480 7200 7920 8640 9360 10080 10800 11520 12240 12960 13680 14400 15120 15840 16560 17280 18000 18720 19440 20160 20880 21600 22320 23040 23760 24480 25200 25920 26640 27360 28080 28800 29520 30240 30960 31680 32400 33120 33840 34560 35280 36000 36720 37440 38160 38880 39600 40320 41040 41760 42480 43200 43920 44640 45360 46080 46800 47520 48240 48960 49680 50400 51120 51840 52560 53280 54000 54720 55440 56160 56880 57600 58320 59040 59760 60480 61200
+
+
+
+Objective Variations
+p_l  = 1.e5
+c_s  = 20.
+u_2  = 1.e-2
+tem  = 1.e-1
+u_1  = 1.e-2
+
+
+
+Iterative Process
+Iter = 40
+Tol = 1.e-4
+Rep = 0
+
+
+
+Time Steps
+Dtini = 1.
+Dtmax = 61200

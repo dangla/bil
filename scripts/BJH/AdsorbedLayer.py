@@ -12,7 +12,7 @@ class AdsorbedLayer:
         # Temperature
         self.temperature = T
 
-        # Badam's constants
+        # Badmann's constants
         self.K1 = K1
         self.K2 = K2
 
@@ -26,7 +26,7 @@ class AdsorbedLayer:
             Tc = 647.096
             self.surfacetension = 0.2358 * (1 - T/Tc)**(1.256) * (1 - 0.625*(1 - T/Tc))
         
-            # 2. Molar volume of the gas
+            # 2. Molar volume of the adsorbed gas (i.e. in liquid state)
             self.molarvolume = 18.e-6
         else:
             print('gas %(name)s not available'%{'name':gas})
@@ -112,8 +112,8 @@ if __name__=="__main__":
             print('Options:')
             print('-s, --sample:          Number of sampling points')
             print('-T, --Temperature:     Temperature in K')
-            print('-1, --K1:              Badam\'s constant')
-            print('-2, --K2:              Badam\'s constant')
+            print('-1, --K1:              Badmann\'s constant')
+            print('-2, --K2:              Badmann\'s constant')
             print('-h, --help:            Display this help message')
             print('\n')
             sys.exit()

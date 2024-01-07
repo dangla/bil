@@ -17,9 +17,9 @@ class BJH:
 
         hr = sorptioncurve.x
 
-        # Must be a desorption curve
+        # Must be ordered in decreasing humidities
         if(hr[0] < hr[-1]):
-            print("Must be a desorption curve")
+            print("Data of the sorption curve must be ordered in decreasing humidities")
             sys.exit(1)
             return
 
@@ -88,6 +88,10 @@ class BJH:
         
         DeltaAG.append(2 * DeltaSG[0] / rm[0])
         AG.append(DeltaAG[0])
+        
+        # Derivative of the surface area w.r.t. the saturation degree
+        dAGdSG = []
+        dAGdSG.append(2 / rm[0])
 
         # Loop on the desorption steps (BJH method)
         for n in range(1,len(hr)):
@@ -130,9 +134,21 @@ class BJH:
             DeltaAG.append(dag)
             SG.append(SG[n-1] + dsg)
             AG.append(AG[n-1] + dag)
+            dAGdSG.append(2 / rm[n])
 
         SG = np.asarray(SG)
         AG = np.asarray(AG)
+        
+        SL = []
+        for i in range(0,len(SG)):
+            SL.append(1 - SG[i])
+        
+        # Adsorbed content (moles/m3)
+        molarvol = adsorbedlayer.molarvolume
+        NADS = []
+        for i in range(0,len(SG)):
+            nads = (Sw[i] - SL[i]) / molarvol 
+            NADS.append(nads)
 
 
         # Backup
@@ -141,16 +157,10 @@ class BJH:
         # volumes and surface per unit volume of porous space.
         self.surfaceareaofpores = AG
         self.gassaturation = SG
-        
-        SL = []
-        VADS = []
-        for i in range(0,len(SG)):
-            SL.append(1 - SG[i])
-            VADS.append(Sw[i] - 1 + SG[i])
-        
         self.liquidsaturation = SL
-        self.adsorbedcontent = VADS
+        self.adsorbedcontent = NADS
         self.adsorbedlayer = adsorbedlayer
+        self.derivativeofsurfaceareaofpores = dAGdSG
 
 
     def poresizedistribution(self):

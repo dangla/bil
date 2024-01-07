@@ -13,20 +13,93 @@ static int      (Node_CommonEquationPositionIndexAtOverlappingNodes)(const Node_
 
 
 
-
-#if 0
-Node_t*  Node_Create(const int dim)
+Node_t*  (Node_New)(const int dim)
 {
   Node_t* node = (Node_t*) Mry_New(Node_t) ;
   
+  /* Allocation of space for the coordinates */
   {
     double* x = (double*) Mry_New(double[dim]) ;
     
     Node_GetCoordinate(node) = x ;
   }
   
+  /* Initialization */
+  {
+    Node_GetNodeIndex(node)         = -1 ;
+    Node_GetPointerToElement(node)  = NULL ;
+    Node_GetNbOfEquations(node)     = 0 ;
+    Node_GetNbOfUnknowns(node)      = 0 ;
+    Node_GetNameOfEquation(node)    = NULL ;
+    Node_GetNameOfUnknown(node)     = NULL ;
+    Node_GetSequentialIndexOfUnknown(node) = NULL ;
+    Node_GetObValIndex(node)        = 0 ;
+    Node_GetMatrixColumnIndex(node) = NULL ;
+    Node_GetMatrixRowIndex(node)    = NULL ;
+    Node_GetNbOfElements(node)      = 0 ;
+    Node_GetBuffers(node)           = NULL ;
+    Node_GetSolutions(node)           = NULL ;
+  }
+  
   return(node) ;
 }
+
+
+
+
+void  (Node_CreateMore)(Node_t* node,Buffers_t* buf)
+/** Allocate memory space for:
+ *  - the names of unknowns/equations
+ *  - the sequential indexes of unknowns/equations
+ *  - the indexes of matrix rows and matrix columns
+ *  - the indexes of objective values
+ */
+{
+  /* Allocate memory space for names of equations and unknowns */
+  {
+    int n_dof = Node_GetNbOfUnknowns(node) ;
+    char** uname = (char**) Mry_New(char*[2*n_dof]) ;
+    char** ename = uname + n_dof ;
+  
+    Node_GetNameOfUnknown(node)  = uname ;
+    Node_GetNameOfEquation(node) = ename ;
+  }
+  
+  
+  /* Allocate memory space for the sequential indexes of unknowns/equations */
+  {
+    int n_dof = Node_GetNbOfUnknowns(node) ;
+    int* index = (int*) Mry_New(int[n_dof]) ;
+  
+    Node_GetSequentialIndexOfUnknown(node)  = index ;
+  }
+
+
+  /* Allocation of space for the matrix column and matrix row indexes */
+  {
+    int n_dof = Node_GetNbOfUnknowns(node) ;
+    int* colind = (int*) Mry_New(int[2*n_dof]) ;
+    int* rowind = colind + n_dof ;
+    
+    Node_GetMatrixColumnIndex(node) = colind ;
+    Node_GetMatrixRowIndex(node)    = rowind ;
+  }
+  
+
+  /* Allocation of space for the index of objective values */
+  {
+    unsigned int n_dof = Node_GetNbOfUnknowns(node) ;
+    unsigned short int* index = (unsigned short int*) Mry_New(unsigned short int[n_dof]) ;
+    
+    Node_GetObValIndex(node) = index ;
+  }
+
+  /* Space allocation for buffer */
+  {
+    Node_GetBuffers(node) = buf ;
+  }
+}
+
 
 
 
@@ -41,9 +114,39 @@ void (Node_Delete)(void* self)
       free(x) ;
     }
   }
-}
-#endif
+  
+  {
+    char** uname = Node_GetNameOfUnknown(node) ;
+    
+    if(uname) {
+      free(uname) ;
+    }
+  }
+  
+  {
+    int* index = Node_GetSequentialIndexOfUnknown(node) ;
+    
+    if(index) {
+      free(index) ;
+    }
+  }
+  
+  {
+    int* colind = Node_GetMatrixColumnIndex(node) ;
+    
+    if(colind) {
+      free(colind) ;
+    }
+  }
 
+  {
+    unsigned short int* index = Node_GetObValIndex(node) ;
+    
+    if(index) {
+      free(index) ;
+    }
+  }
+}
 
 
 

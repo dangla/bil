@@ -61,6 +61,11 @@ static int    gmsh_ElmType(int,int) ;
 static int    gmsh_NbNodes(int) ;
 static int    gmsh_DimElement(int) ;
 
+static void     (Mesh_AssembleElementaryMatrices)(Mesh_t*,Matrix_t*) ;
+static void     (Mesh_AssembleElementaryResidus)(Mesh_t*,Residu_t*) ;
+static void     (Mesh_BroadcastElementaryMatrices)(Mesh_t*) ;
+static void     (Mesh_BroadcastElementaryResidus)(Mesh_t*) ;
+
 
 
 
@@ -231,105 +236,6 @@ char*  (Mesh_Scan)(Mesh_t* mesh,char* line)
   
   return(line) ;
 }
-
-
-#if 0
-void (Mesh_CreateMore)(Mesh_t* mesh)
-{
-  /* The number of elements per node */
-  {
-    int nno = Mesh_GetNbOfNodes(mesh) ;
-    Node_t* node = Mesh_GetNode(mesh) ;
-    int jn ;
-      
-    for(jn = 0 ; jn < nno ; jn++) {
-      Node_t* node_j = node + jn ;
-        
-      Node_GetNbOfElements(node_j) = 0 ;
-    }
-  }
-  
-  {
-    int nel = Mesh_GetNbOfElements(mesh) ;
-    Element_t* el = Mesh_GetElement(mesh) ;
-    
-    {
-      int ie ;
-    
-      for(ie = 0 ; ie < nel ; ie++) {
-        Element_t* el_i = el + ie ;
-        int nn = Element_GetNbOfNodes(el_i) ;
-        int jn ;
-      
-        for(jn = 0 ; jn < nn ; jn++) {
-          Node_t* node_j = Element_GetNode(el_i,jn) ;
-        
-          Node_GetNbOfElements(node_j) += 1 ;
-        }
-      }
-    }
-  }
-  
-  /* Allocation of space for the pointers to elements */
-  {
-    int nc = Mesh_GetNbOfConnectivities(mesh) ;
-    int nno = Mesh_GetNbOfNodes(mesh) ;
-    Node_t* node = Mesh_GetNode(mesh) ;
-    //Element_t** pel = (Element_t**) Mry_New(Element_t*[nc]) ;
-    Element_t** pel = Node_GetPointerToElement(node) ;
-    
-    {
-      int jn ;
-      
-      nc = 0 ;
-      for(jn = 0 ; jn < nno ; jn++) {
-        Node_t* node_j = node + jn ;
-        
-        Node_GetPointerToElement(node_j) = pel + nc ;
-        nc += Node_GetNbOfElements(node_j) ;
-      }
-    }
-  }
-  
-  /* Initialize the pointers to elements per node */
-  {
-    int nno = Mesh_GetNbOfNodes(mesh) ;
-    Node_t* node = Mesh_GetNode(mesh) ;
-    
-    {
-      int jn ;
-    
-      for(jn = 0 ; jn < nno ; jn++) {
-        Node_GetNbOfElements(node + jn) = 0 ;
-      }
-    }
-  }
-  
-  {
-    int nel = Mesh_GetNbOfElements(mesh) ;
-    Element_t* el = Mesh_GetElement(mesh) ;
-    
-    {
-      int ie ;
-    
-      for(ie = 0 ; ie < nel ; ie++) {
-        Element_t* el_i = el + ie ;
-        int nn = Element_GetNbOfNodes(el_i) ;
-        int jn ;
-      
-        for(jn = 0 ; jn < nn ; jn++) {
-          Node_t* node_j = Element_GetNode(el_i,jn) ;
-          int je = Node_GetNbOfElements(node_j) ;
-          
-          Node_GetElement(node_j,je) = el_i ;
-        
-          Node_GetNbOfElements(node_j) += 1 ;
-        }
-      }
-    }
-  }
-}
-#endif
 
 
 
@@ -1110,30 +1016,6 @@ void (Mesh_SetEquationContinuity)(Mesh_t* mesh)
 }
 
 
-#if 0
-void (Mesh_InitializeSolutionPointers)(Mesh_t* mesh,Solutions_t* sols)
-/** Initialize the pointers of nodes and elements to
- ** the pointers of the solution sol. */
-{
-  Solution_t* sol = Solutions_GetSolution(sols) ;
-  int n_no = Mesh_GetNbOfNodes(mesh) ;
-  Node_t* no = Mesh_GetNode(mesh) ;
-  int n_el = Mesh_GetNbOfElements(mesh) ;
-  Element_t* el = Mesh_GetElement(mesh) ;
-  int    i ;
-
-  for(i = 0 ; i < n_el ; i++) {
-    //Element_GetElementSol(el + i) = Solution_GetElementSol(sol) + i ;
-  }
-  
-  for(i = 0 ; i < n_no ; i++) {
-    //Node_GetNodeSol(no + i) = Solution_GetNodeSol(sol) + i ;
-  }
-
-}
-#endif
-
-
 
 int (Mesh_LoadCurrentSolution)(Mesh_t* mesh,DataFile_t* datafile,double* t)
 /** Load the solution from a continuous file (suffix "cont" or "conti"). 
@@ -1428,50 +1310,42 @@ void (Mesh_UpdateCurrentUnknowns)(Mesh_t* mesh,Solver_t* solver)
 
 
 /* This implementation is skipped because in some models we initialize
- * the nodal unknowns which are shared by serveral elements. */
+ * the nodal unknowns which are shared by several elements. */
 #if 0 //DistributedMS_APIis(MPI)
 int (Mesh_ComputeInitialState)(Mesh_t* mesh,double t)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
+  int size = DistributedMS_NbOfProcessors ;
   int flag = 0 ;
   
   {
     unsigned int    ie ;
     int rank = DistributedMS_RankOfCallingProcess ;
-    int size = DistributedMS_NbOfProcessors ;
 
-    for(ie = 0 ; ie < n_el ; ie++) {
+    for(ie = rank ; ie < n_el ; ie += size) {
       Material_t* mat = Element_GetMaterial(el + ie) ;
     
       if(mat) {
         int i ;
-        int ranksender = ie % size ;
       
-        if(ranksender == rank) {
-          Element_FreeBuffer(el + ie) ;
-          i = Element_ComputeInitialState(el + ie,t) ;
-          if(i != 0) {
-            flag = i ;
-            break ;
-          }
-        }
-        
-        /* Broadcast to other processors */
-        if(size > 1) {
-          double* vi = Element_GetImplicitTerm(el+ie) ;
-          double* ve = Element_GetExplicitTerm(el+ie) ;
-          double* vc = Element_GetConstantTerm(el+ie) ;
-          int nvi = Element_GetNbOfImplicitTerms(el+ie) ;
-          int nve = Element_GetNbOfExplicitTerms(el+ie) ;
-          int nvc = Element_GetNbOfConstantTerms(el+ie) ;
-          
-          MPI_Bcast(vi,nvi,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
-          MPI_Bcast(ve,nve,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
-          MPI_Bcast(vc,nvc,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
+        Element_FreeBuffer(el + ie) ;
+        i = Element_ComputeInitialState(el + ie,t) ;
+        if(i != 0) {
+          flag = i ;
+          break ;
         }
       }
     }
+  }
+    
+  if(flag) return(flag) ;
+  
+  /* Broadcast to other processors */
+  if(size > 1) {
+    Mesh_BroadcastConstantTerms(mesh) ;
+    Mesh_BroadcastExplicitTerms(mesh) ;
+    Mesh_BroadcastImplicitTerms(mesh) ;
   }
   
   return(flag) ;
@@ -1510,18 +1384,22 @@ int (Mesh_ComputeInitialState)(Mesh_t* mesh,double t)
 
 
 
-#if SharedMS_APIis(OpenMP) && DistributedMS_APIis(None)
+
 int (Mesh_ComputeExplicitTerms)(Mesh_t* mesh,double t)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
+  int size = DistributedMS_NbOfProcessors ;
   int flag = 0 ;
   
   {
     unsigned int    ie ;
+    int rank = DistributedMS_RankOfCallingProcess ;
 
-    #pragma omp parallel for
-    for(ie = 0 ; ie < n_el ; ie++) {
+    #if SharedMS_APIis(OpenMP)
+      #pragma omp parallel for
+    #endif
+    for(ie = rank ; ie < n_el ; ie += size) {
       Material_t* mat = Element_GetMaterial(el + ie) ;
     
       if(mat) {
@@ -1530,7 +1408,9 @@ int (Mesh_ComputeExplicitTerms)(Mesh_t* mesh,double t)
         Element_FreeBuffer(el + ie) ;
         i = Element_ComputeExplicitTerms(el + ie,t) ;
         if(i != 0) {
-          #pragma omp critical
+          #if SharedMS_APIis(OpenMP)
+            #pragma omp critical
+          #endif
           {
             flag = i ;
             n_el = 0 ;
@@ -1543,175 +1423,23 @@ int (Mesh_ComputeExplicitTerms)(Mesh_t* mesh,double t)
   return(flag) ;
 }
 
-#elif DistributedMS_APIis(MPI) && SharedMS_APIis(None)
-
-int (Mesh_ComputeExplicitTerms)(Mesh_t* mesh,double t)
-{
-  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
-  Element_t* el = Mesh_GetElement(mesh) ;
-  int size = DistributedMS_NbOfProcessors ;
-  int flag = 0 ;
-  
-  {
-    unsigned int    ie ;
-    int rank = DistributedMS_RankOfCallingProcess ;
-
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
-        int    i ;
-        int ranksender = ie % size ;
-      
-        if(ranksender == rank) {
-          Element_FreeBuffer(el + ie) ;
-          i = Element_ComputeExplicitTerms(el + ie,t) ;
-          if(i != 0) {
-            flag = i ;
-            break ;
-          }
-        }
-      }
-    }
-  }
-    
-  if(flag) return(flag) ;
-  
-  /* Broadcast to other processors */
-  if(size > 1) {
-    unsigned int    ie ;
-
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
-        int    i ;
-        int ranksender = ie % size ;
-        
-        {
-          double* ve = Element_GetExplicitTerm(el+ie) ;
-          int nve = Element_GetNbOfExplicitTerms(el+ie) ;
-          
-          MPI_Bcast(ve,nve,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
-        }
-      }
-    }
-  }
-  
-  return(flag) ;
-}
-
-#elif SharedMS_APIis(OpenMP) && DistributedMS_APIis(MPI)
-
-int (Mesh_ComputeExplicitTerms)(Mesh_t* mesh,double t)
-{
-  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
-  Element_t* el = Mesh_GetElement(mesh) ;
-  int size = DistributedMS_NbOfProcessors ;
-  int flag = 0 ;
-  
-  {
-    unsigned int    ie ;
-    int rank = DistributedMS_RankOfCallingProcess ;
-
-    #pragma omp parallel for
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
-        int    i ;
-        int ranksender = ie % size ;
-      
-        if(ranksender == rank) {
-          Element_FreeBuffer(el + ie) ;
-          i = Element_ComputeExplicitTerms(el + ie,t) ;
-          if(i != 0) {
-            #pragma omp critical
-            {
-              flag = i ;
-              n_el = 0 ;
-            }
-          }
-        }
-      }
-    }
-  }
-    
-  if(flag) return(flag) ;
-  
-  /* Broadcast to other processors */
-  if(size > 1) {
-    unsigned int    ie ;
-
-    #pragma omp parallel for
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
-        int    i ;
-        int ranksender = ie % size ;
-        
-        {
-          double* ve = Element_GetExplicitTerm(el+ie) ;
-          int nve = Element_GetNbOfExplicitTerms(el+ie) ;
-          
-          MPI_Bcast(ve,nve,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
-        }
-      }
-    }
-  }
-  
-  return(flag) ;
-}
-
-#else
-
-int (Mesh_ComputeExplicitTerms)(Mesh_t* mesh,double t)
-{
-  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
-  Element_t* el = Mesh_GetElement(mesh) ;
-  int flag = 0 ;
-  
-  {
-    unsigned int    ie ;
-
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
-        int    i ;
-      
-        Element_FreeBuffer(el + ie) ;
-        i = Element_ComputeExplicitTerms(el + ie,t) ;
-        if(i != 0) {
-          flag = i ;
-          break ;
-        }
-      }
-    }
-  }
-
-  /* In case the previous implementation is skipped (debug) */
-  //DistributedMS_Barrier ;
-  
-  return(flag) ;
-}
-#endif
 
 
-
-#if SharedMS_APIis(OpenMP) && DistributedMS_APIis(None)
 int (Mesh_ComputeImplicitTerms)(Mesh_t* mesh,double t,double dt)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
+  int size = DistributedMS_NbOfProcessors ;
   int flag = 0 ;
   
   {
     unsigned int    ie ;
+    int rank = DistributedMS_RankOfCallingProcess ;
     
-    #pragma omp parallel for
-    for(ie = 0 ; ie < n_el ; ie++) {
+    #if SharedMS_APIis(OpenMP)
+      #pragma omp parallel for
+    #endif
+    for(ie = rank ; ie < n_el ; ie += size) {
       Material_t* mat = Element_GetMaterial(el + ie) ;
     
       if(mat) {
@@ -1720,352 +1448,102 @@ int (Mesh_ComputeImplicitTerms)(Mesh_t* mesh,double t,double dt)
         Element_FreeBuffer(el + ie) ;
         i = Element_ComputeImplicitTerms(el + ie,t,dt) ;
         if(i != 0) {
-          #pragma omp critical
+          #if SharedMS_APIis(OpenMP)
+            #pragma omp critical
+          #endif
           {
             flag = i ;
             n_el = 0 ;
           }
         }
       }
-      
-      #if 0
-      {
-        int id = SharedMS_CurrentThreadId ;
-        
-        printf("Element: %d\n",ie) ;
-        
-        if(id == 0) {
-          int nthreads = SharedMS_GetTheNbOfThreads() ;
-          
-          printf("Actual number of threads: %d\n",nthreads) ;
-        }
-        
-        printf("Current thread id: %d\n",id) ;
-      }
-      #endif
     }
   }
   
   return(flag) ;
 }
 
-#elif 0 //DistributedMS_APIis(MPI)
 
-int (Mesh_ComputeImplicitTerms)(Mesh_t* mesh,double t,double dt)
-{
-  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
-  Element_t* el = Mesh_GetElement(mesh) ;
-  int flag = 0 ;
-  
-  {
-    unsigned int    ie ;
-    int rank = DistributedMS_RankOfCallingProcess ;
-    int size = DistributedMS_NbOfProcessors ;
 
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
-        int    i ;
-        int ranksender = ie % size ;
-      
-        if(ranksender == rank) {
-          Element_FreeBuffer(el + ie) ;
-          i = Element_ComputeImplicitTerms(el + ie,t,dt) ;
-          if(i != 0) {
-            flag = i ;
-            break ;
-          }
-        }
-        
-        /* Broadcast to other processors */
-        if(size > 1) {
-          double* vi = Element_GetImplicitTerm(el+ie) ;
-          int nvi = Element_GetNbOfImplicitTerms(el+ie) ;
-          
-          MPI_Bcast(vi,nvi,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
-        }
-      }
-    }
-  }
-  
-  return(flag) ;
-}
 
-/* another test */
-#elif DistributedMS_APIis(MPI) && SharedMS_APIis(None)
 
-int (Mesh_ComputeImplicitTerms)(Mesh_t* mesh,double t,double dt)
+int (Mesh_ComputeMatrix)(Mesh_t* mesh,Matrix_t* a,double t,double dt)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
   int size = DistributedMS_NbOfProcessors ;
   int flag = 0 ;
+
+  Matrix_SetValuesToZero(a) ;
   
   {
     unsigned int    ie ;
     int rank = DistributedMS_RankOfCallingProcess ;
 
-    for(ie = 0 ; ie < n_el ; ie++) {
+    #if SharedMS_APIis(OpenMP)
+      #pragma omp parallel for
+    #endif
+    for(ie = rank ; ie < n_el ; ie += size) {
       Material_t* mat = Element_GetMaterial(el + ie) ;
     
       if(mat) {
-        int    i ;
-        int ranksender = ie % size ;
-      
-        if(ranksender == rank) {
-          Element_FreeBuffer(el + ie) ;
-          i = Element_ComputeImplicitTerms(el + ie,t,dt) ;
-          if(i != 0) {
-            flag = i ;
-            break ;
-          }
-        }
-      }
-    }
-  }
-    
-  if(flag) return(flag) ;
-  
-  /* Broadcast to other processors */
-  if(size > 1) {
-    unsigned int    ie ;
-    
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
-        int ranksender = ie % size ;
-        
-        {
-          double* vi = Element_GetImplicitTerm(el+ie) ;
-          int nvi = Element_GetNbOfImplicitTerms(el+ie) ;
-          
-          MPI_Bcast(vi,nvi,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
-        }
-      }
-    }
-  }
-  
-  return(flag) ;
-}
-
-#elif SharedMS_APIis(OpenMP) && DistributedMS_APIis(MPI)
-
-int (Mesh_ComputeImplicitTerms)(Mesh_t* mesh,double t,double dt)
-{
-  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
-  Element_t* el = Mesh_GetElement(mesh) ;
-  int size = DistributedMS_NbOfProcessors ;
-  int flag = 0 ;
-  
-  {
-    unsigned int    ie ;
-    int rank = DistributedMS_RankOfCallingProcess ;
-    
-    #pragma omp parallel for
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
-        int    i ;
-        int ranksender = ie % size ;
-      
-        if(ranksender == rank) {
-          Element_FreeBuffer(el + ie) ;
-          i = Element_ComputeImplicitTerms(el + ie,t,dt) ;
-          if(i != 0) {
-            #pragma omp critical
-            {
-              flag = i ;
-              n_el = 0 ;
-            }
-          }
-        }
-      }
-    }
-  }
-    
-  if(flag) return(flag) ;
-  
-  /* Broadcast to other processors */
-  if(size > 1) {
-    unsigned int    ie ;
-    
-    #pragma omp parallel for
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
-        int ranksender = ie % size ;
-        
-        {
-          double* vi = Element_GetImplicitTerm(el+ie) ;
-          int nvi = Element_GetNbOfImplicitTerms(el+ie) ;
-          
-          MPI_Bcast(vi,nvi,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
-        }
-      }
-    }
-  }
-  
-  return(flag) ;
-}
-
-#else
-
-int (Mesh_ComputeImplicitTerms)(Mesh_t* mesh,double t,double dt)
-{
-  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
-  Element_t* el = Mesh_GetElement(mesh) ;
-  int flag = 0 ;
-  
-  {
-    unsigned int    ie ;
-
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
+        double* ke = Element_GetMatrix(el + ie) ;
         int    i ;
       
         Element_FreeBuffer(el + ie) ;
-        i = Element_ComputeImplicitTerms(el + ie,t,dt) ;
+        i = Element_ComputeMatrix(el + ie,t,dt,ke) ;
         if(i != 0) {
-          flag = i ;
-          break ;
-        }
-      }
-    }
-  }
-
-  /* In case the previous implementation is skipped (debug) */
-  //DistributedMS_Barrier ;
-  
-  return(flag) ;
-}
-#endif
-
-
-
-#if SharedMS_APIis(OpenMP)
-int (Mesh_ComputeMatrix)(Mesh_t* mesh,Matrix_t* a,double t,double dt)
-{
-  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
-  Element_t* el = Mesh_GetElement(mesh) ;
-  int flag = 0 ;
-
-  Matrix_SetValuesToZero(a) ;
-  
-  {
-    unsigned int    ie ;
-    
-    #pragma omp parallel for
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
-        #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
-        double ke[NE*NE] ;
-        #undef NE
-        int    i ;
-        int len = Matrix_AssembleElementMatrix(a,el+ie,NULL) ;
-      
-        if(len > 0) {
-          Element_FreeBuffer(el + ie) ;
-          i = Element_ComputeMatrix(el + ie,t,dt,ke) ;
-          if(i != 0) {
+          #if SharedMS_APIis(OpenMP)
             #pragma omp critical
-            {
-              flag = i ;
-              n_el = 0 ;
-            }
-          }
-      
-          #pragma omp critical
-          Matrix_AssembleElementMatrix(a,el+ie,ke) ;
-        }
-      }
-    }
-  }
-  
-  return(flag) ;
-}
-
-#else
-
-int (Mesh_ComputeMatrix)(Mesh_t* mesh,Matrix_t* a,double t,double dt)
-{
-  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
-  Element_t* el = Mesh_GetElement(mesh) ;
-  int flag = 0 ;
-
-  Matrix_SetValuesToZero(a) ;
-  
-  {
-    unsigned int    ie ;
-  
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(mat) {
-        #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
-        double ke[NE*NE] ;
-        #undef NE
-        int    i ;
-        int len = Matrix_AssembleElementMatrix(a,el+ie,NULL) ;
-      
-        if(len > 0) {
-          Element_FreeBuffer(el + ie) ;
-          i = Element_ComputeMatrix(el + ie,t,dt,ke) ;
-          if(i != 0) {
+          #endif
+          {
             flag = i ;
-            break ;
+            n_el = 0 ;
           }
-      
-          Matrix_AssembleElementMatrix(a,el+ie,ke) ;
         }
       }
     }
   }
 
-  //DistributedMS_Barrier ;
-
+  if(flag) return(flag) ;
+  
+  /* Broadcast to other processors */
+  if(size > 1) {
+    Mesh_BroadcastElementaryMatrices(mesh) ;
+  }
+  
+  /* Assembling the elementary matrices */
+  Mesh_AssembleElementaryMatrices(mesh,a) ;
+  
   return(flag) ;
 }
-#endif
 
 
 
-#if SharedMS_APIis(OpenMP)
 void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,double dt)
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
+  int size = DistributedMS_NbOfProcessors ;
+  int rank = DistributedMS_RankOfCallingProcess ;
   
   Residu_SetValuesToZero(r) ;
   
   /* Residu */
   {
     unsigned int ie ;
-    
-    #pragma omp parallel for
-    for(ie = 0 ; ie < n_el ; ie++) {
+  
+    #if SharedMS_APIis(OpenMP)
+      #pragma omp parallel for
+    #endif
+    for(ie = rank ; ie < n_el ; ie += size) {
       Material_t* mat = Element_GetMaterial(el + ie) ;
     
       if(mat) {
-        #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
-        double re[NE] ;
-        #undef NE
-        int len = Residu_AssembleElementResidu(r,el + ie,NULL) ;
+        double* re = Element_GetResidu(el + ie) ;
       
-        if(len > 0) {
-          Element_FreeBuffer(el + ie) ;
-          Element_ComputeResidu(el + ie,t,dt,re) ;
-      
-          #pragma omp critical
-          Residu_AssembleElementResidu(r,el + ie,re) ;
-        }
+        Element_FreeBuffer(el + ie) ;
+        Element_ComputeResidu(el + ie,t,dt,re) ;
       }
     }
   }
@@ -2082,23 +1560,29 @@ void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,doubl
         int reg_cg = Load_GetRegionIndex(cg + i_cg) ;
         unsigned int ie ;
     
-        #pragma omp parallel for
-        for(ie = 0 ; ie < n_el ; ie++) {
+        #if SharedMS_APIis(OpenMP)
+          #pragma omp parallel for
+        #endif
+        for(ie = rank ; ie < n_el ; ie += size) {
           if(Element_GetRegionIndex(el + ie) == reg_cg) {
             Material_t* mat = Element_GetMaterial(el + ie) ;
     
             if(mat) {
               #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
-              double re[NE] ;
+              double re_cg[NE] ;
               #undef NE
-              int len = Residu_AssembleElementResidu(r,el + ie,NULL) ;
+                
+              Element_FreeBuffer(el + ie) ;
+              Element_ComputeLoads(el + ie,t,dt,cg + i_cg,re_cg) ;
       
-              if(len > 0) {
-                Element_FreeBuffer(el + ie) ;
-                Element_ComputeLoads(el + ie,t,dt,cg + i_cg,re) ;
-      
-                #pragma omp critical
-                Residu_AssembleElementResidu(r,el + ie,re) ;
+              {
+                double* re = Element_GetResidu(el + ie) ;
+                int ndof = Element_GetNbOfDOF(el + ie) ;
+                int i ;
+                
+                for(i = 0 ; i < ndof ; i++) {
+                  re[i] += re_cg[i] ;
+                }
               }
             }
           }
@@ -2106,78 +1590,117 @@ void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,doubl
       }
     }
   }
+  
+  /* Broadcast to other processors */
+  if(size > 1) {
+    Mesh_BroadcastElementaryResidus(mesh) ;
+  }
+  
+  /* Assembling the elementary residus */
+  Mesh_AssembleElementaryResidus(mesh,r) ;
 }
 
-#else
 
-void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,double dt)
+void (Mesh_BroadcastConstantTerms)(Mesh_t* mesh)
+/** Broadcast constant terms to other processors */
 {
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
-  
-  Residu_SetValuesToZero(r) ;
-  
-  /* Residu */
-  {
-    unsigned int ie ;
-  
+  int size = DistributedMS_NbOfProcessors ;
+
+  if(size > 1) {
+    unsigned int    ie ;
+
     for(ie = 0 ; ie < n_el ; ie++) {
       Material_t* mat = Element_GetMaterial(el + ie) ;
     
       if(mat) {
-        #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
-        double re[NE] ;
-        #undef NE
-        int len = Residu_AssembleElementResidu(r,el + ie,NULL) ;
-      
-        if(len > 0) {
-          Element_FreeBuffer(el + ie) ;
-          Element_ComputeResidu(el + ie,t,dt,re) ;
-      
-          Residu_AssembleElementResidu(r,el + ie,re) ;
+        int ranksender = Element_RankOfSupportingProcessor(el + ie) ;
+        
+        {
+          double* vc = Element_GetConstantTerm(el+ie) ;
+          int nvc = Element_GetNbOfConstantTerms(el+ie) ;
+          
+          #if DistributedMS_APIis(MPI)
+            MPI_Bcast(vc,nvc,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
+          #else
+            #error "Distributed MS not available"
+          #endif
         }
       }
     }
   }
   
-  /* Loads */
-  {
-    unsigned int n_cg = Loads_GetNbOfLoads(loads) ;
-    Load_t* cg = Loads_GetLoad(loads) ;
+  return ;
+}
+
+
+void (Mesh_BroadcastExplicitTerms)(Mesh_t* mesh)
+/** Broadcast explicit terms to other processors */
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  int size = DistributedMS_NbOfProcessors ;
+
+  if(size > 1) {
+    unsigned int    ie ;
+
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
     
-    {
-      unsigned int i_cg ;
-    
-      for(i_cg = 0 ; i_cg < n_cg ; i_cg++) {
-        int reg_cg = Load_GetRegionIndex(cg + i_cg) ;
-        unsigned int ie ;
-    
-        for(ie = 0 ; ie < n_el ; ie++) {
-          if(Element_GetRegionIndex(el + ie) == reg_cg) {
-            Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-            if(mat) {
-              #define NE (Element_MaxNbOfNodes*Model_MaxNbOfEquations)
-              double re[NE] ;
-              #undef NE
-              int len = Residu_AssembleElementResidu(r,el + ie,NULL) ;
-      
-              if(len > 0) {
-                Element_FreeBuffer(el + ie) ;
-                Element_ComputeLoads(el + ie,t,dt,cg + i_cg,re) ;
-      
-                Residu_AssembleElementResidu(r,el + ie,re) ;
-              }
-            }
-          }
+      if(mat) {
+        int ranksender = Element_RankOfSupportingProcessor(el + ie) ;
+        
+        {
+          double* ve = Element_GetExplicitTerm(el+ie) ;
+          int nve = Element_GetNbOfExplicitTerms(el+ie) ;
+          
+          #if DistributedMS_APIis(MPI)
+            MPI_Bcast(ve,nve,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
+          #else
+            #error "Distributed MS not available"
+          #endif
         }
       }
     }
   }
-
-  //DistributedMS_Barrier ;
+  
+  return ;
 }
-#endif
+
+
+void (Mesh_BroadcastImplicitTerms)(Mesh_t* mesh)
+/** Broadcast implicit terms to other processors */
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  int size = DistributedMS_NbOfProcessors ;
+  
+  if(size > 1) {
+    unsigned int    ie ;
+    
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+      if(mat) {
+        int ranksender = Element_RankOfSupportingProcessor(el + ie) ;
+        
+        {
+          double* vi = Element_GetImplicitTerm(el+ie) ;
+          int nvi = Element_GetNbOfImplicitTerms(el+ie) ;
+          
+          #if DistributedMS_APIis(MPI)
+            MPI_Bcast(vi,nvi,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
+          #else
+            #error "Distributed MS not available"
+          #endif
+        }
+      }
+    }
+  }
+  
+  return ;
+}
 
 
 
@@ -4099,4 +3622,148 @@ void Mesh_PrintData(Mesh_t* mesh,char* mot)
   }
 
   fflush(stdout) ;
+}
+
+
+
+
+
+void (Mesh_AssembleElementaryMatrices)(Mesh_t* mesh,Matrix_t* a)
+/** Assembling the elementary matrices */
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  
+  
+  /* Assembling the elementary matrices */
+  {
+    unsigned int    ie ;
+    
+    #if SharedMS_APIis(OpenMP)
+      #pragma omp parallel for
+    #endif
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+      if(mat) {
+        int len = Matrix_AssembleElementMatrix(a,el+ie,NULL) ;
+      
+        if(len > 0) {
+          double* ke = Element_GetMatrix(el + ie) ;
+          
+          #if SharedMS_APIis(OpenMP)
+            #pragma omp critical
+          #endif
+          Matrix_AssembleElementMatrix(a,el+ie,ke) ;
+        }
+      }
+    }
+  }
+  
+  return ;
+}
+
+
+
+void (Mesh_AssembleElementaryResidus)(Mesh_t* mesh,Residu_t* r)
+/** Assembling the elementary residus */
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+
+  {
+    unsigned int ie ;
+  
+    #if SharedMS_APIis(OpenMP)
+      #pragma omp parallel for
+    #endif
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+      if(mat) {
+        int len = Residu_AssembleElementResidu(r,el + ie,NULL) ;
+      
+        if(len > 0) {
+          double* re = Element_GetResidu(el + ie) ;
+          
+          #if SharedMS_APIis(OpenMP)
+            #pragma omp critical
+          #endif
+          Residu_AssembleElementResidu(r,el + ie,re) ;
+        }
+      }
+    }
+  }
+  
+   return ;
+}
+
+
+
+void (Mesh_BroadcastElementaryMatrices)(Mesh_t* mesh)
+/** Broadcast elementary matrices to other processors */
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  int size = DistributedMS_NbOfProcessors ;
+  
+  if(size > 1) {
+    unsigned int    ie ;
+    
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+      if(mat) {
+        int ranksender = Element_RankOfSupportingProcessor(el + ie) ;
+        
+        {
+          double* ke = Element_GetMatrix(el+ie) ;
+          int ndof = Element_GetNbOfDOF(el+ie) ;
+          int n = ndof*ndof ;
+          
+          #if DistributedMS_APIis(MPI)
+            MPI_Bcast(ke,n,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
+          #else
+            #error "Distributed MS not available"
+          #endif
+        }
+      }
+    }
+  }
+  
+  return ;
+}
+
+
+void (Mesh_BroadcastElementaryResidus)(Mesh_t* mesh)
+/** Broadcast elementary residus to other processors */
+{
+  unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
+  Element_t* el = Mesh_GetElement(mesh) ;
+  int size = DistributedMS_NbOfProcessors ;
+  
+  if(size > 1) {
+    unsigned int    ie ;
+    
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+      if(mat) {
+        int ranksender = Element_RankOfSupportingProcessor(el + ie) ;
+        
+        {
+          double* re = Element_GetResidu(el+ie) ;
+          int ndof = Element_GetNbOfDOF(el+ie) ;
+          
+          #if DistributedMS_APIis(MPI)
+            MPI_Bcast(re,ndof,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
+          #else
+            #error "Distributed MS not available"
+          #endif
+        }
+      }
+    }
+  }
+  
+  return ;
 }

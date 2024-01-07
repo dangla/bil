@@ -21,7 +21,7 @@ static double   (Elements_ComputeMaximumSizeOfElements)(Elements_t*) ;
 static double   (Elements_ComputeMinimumSizeOfElements)(Elements_t*) ;
 
 
-
+#if 1
 Elements_t*  (Elements_New)(const int n,const int nc)
 {
   Elements_t* elts = (Elements_t*) Mry_New(Elements_t) ;
@@ -30,58 +30,74 @@ Elements_t*  (Elements_New)(const int n,const int nc)
   Elements_GetNbOfConnectivities(elts) = nc ;
   
   
-  /* Allocation of space for the elements */
+  /* Allocation of space for the pointers to "node" */
   {
-    Element_t* el = (Element_t*) Mry_New(Element_t[n]) ;
+    Node_t** pnode = (Node_t**) Mry_New(Node_t*[nc]) ;
+    
+    Elements_GetPointerToNode(elts) = pnode ;
+  }
+  
+  
+  /* Allocation of space for each element */
+  {
+    Element_t* el = Mry_Create(Element_t,n,Element_New()) ;
     
     Elements_GetElement(elts) = el ;
   }
   
   
-  /* Allocation of space for the pointers to "node" */
+  /* Initialization */
   {
-    Node_t** pnode = (Node_t**) Mry_New(Node_t*[nc]) ;
+    Node_t** pnode = Elements_GetPointerToNode(elts) ;
     Element_t* el = Elements_GetElement(elts) ;
     int i ;
     
     for(i = 0 ; i < n ; i++) {
       Element_t* el_i = el + i ;
       
+      Element_GetElementIndex(el_i)  = i ;
       Element_GetPointerToNode(el_i) = pnode ;
     }
   }
   
-  
-  /* Initialization */
-  
   Elements_GetShapeFcts(elts) = NULL ;
   Elements_GetIntFcts(elts) = NULL ;
   
+  return(elts) ;
+}
+#endif
+
+
+#if 1
+void (Elements_CreateMore)(Elements_t* elements)
+{
+  Buffers_t* buffers = Buffers_Create(Element_SizeOfBuffer) ;
+  ShapeFcts_t* shapefcts = ShapeFcts_Create() ;
+  IntFcts_t* intfcts = IntFcts_Create() ;
+  
   {
-    Element_t* el = Elements_GetElement(elts) ;
-    int i ;
+    Elements_GetBuffers(elements) = buffers ;
+    Elements_GetShapeFcts(elements) = shapefcts ;
+    Elements_GetIntFcts(elements) = intfcts ;
+  }
+  
+  /* Create additional memory space for each element */
+  {
+    int n_el = Elements_GetNbOfElements(elements) ;
+    Element_t* el = Elements_GetElement(elements) ;
+    int ie ;
     
-    for(i = 0 ; i < n ; i++) {
-      Element_t* el_i = el + i ;
-      
-      Element_GetElementIndex(el_i)      = i ;
-      Element_GetDimension(el_i)         = -1 ;
-      Element_GetNbOfNodes(el_i)         = 0 ;
-      Element_GetRegionIndex(el_i)       = -1 ;
-      Element_GetMaterial(el_i)          = NULL ;
-      Element_GetMaterialIndex(el_i)     = -1 ;
-      Element_GetShapeFct(el_i)          = NULL ;
-      Element_GetIntFct(el_i)            = NULL ;
-      Element_GetUnknownPosition(el_i)   = NULL ;
-      Element_GetEquationPosition(el_i)  = NULL ;
-      Element_GetBuffers(el_i)           = NULL ;
-      //Element_GetElementSol(el_i)        = NULL ;
-      Element_GetSolutions(el_i)         = NULL ;
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Element_CreateMore(el + ie,buffers,shapefcts,intfcts) ;
     }
   }
   
-  return(elts) ;
+  /* The max and min sizes of elements */
+  Elements_GetMaximumSizeOfElements(elements) = Elements_ComputeMaximumSizeOfElements(elements) ;
+  Elements_GetMinimumSizeOfElements(elements) = Elements_ComputeMinimumSizeOfElements(elements) ;
+  
 }
+#endif
 
 
 
@@ -89,42 +105,32 @@ void (Elements_Delete)(void* self)
 {
   Elements_t* elements = (Elements_t*) self ;
   
+    
   {
+    Node_t** pnode = Elements_GetPointerToNode(elements) ;
+    
+    if(pnode) {
+      free(pnode) ;
+    }
+  }
+
+  {
+    int nel = Elements_GetNbOfElements(elements) ;
     Element_t* el = Elements_GetElement(elements) ;
-    
-    {
-      Node_t** pnode = Element_GetPointerToNode(el) ;
-    
-      if(pnode) {
-        free(pnode) ;
-      }
       
-      Element_GetPointerToNode(el) = NULL ;
-    }
-    
-    {
-      short int* upos = Element_GetUnknownPosition(el) ;
-    
-      if(upos) {
-        free(upos) ;
-      }
-      
-      Element_GetUnknownPosition(el) = NULL ;
-    }
-    
-    {
-      Buffers_t* buf = Element_GetBuffers(el) ;
-    
-      if(buf) {
-        Buffers_Delete(buf) ;
-        free(buf) ;
-      }
-      
-      Element_GetBuffers(el) = NULL ;
-    }
-    
+    Mry_Delete(el,nel,Element_Delete) ;
     free(el) ;
   }
+    
+  {
+    Buffers_t* buf = Elements_GetBuffers(elements) ;
+    
+    if(buf) {
+      Buffers_Delete(buf) ;
+      free(buf) ;
+    }
+  }
+
   
   {
     ShapeFcts_t* shapefcts = Elements_GetShapeFcts(elements) ;
@@ -168,141 +174,6 @@ void (Elements_LinkUp)(Elements_t* elements,Materials_t* materials)
       }
     }
   }
-}
-
-
-
-void (Elements_CreateMore)(Elements_t* elements)
-{
-  int n_el = Elements_GetNbOfElements(elements) ;
-  Element_t* el = Elements_GetElement(elements) ;
-  
-  /* Pointers to unknowns and equations positions at nodes */
-  {
-    int n_pos = 0 ;
-    int ie ;
-    
-    for(ie = 0 ; ie < n_el ; ie++) {
-      int imat = Element_GetMaterialIndex(el + ie) ;
-      //Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(imat >= 0) {
-        int nn = Element_GetNbOfNodes(el + ie) ;
-        int neq = Element_GetNbOfEquations(el + ie) ;
-        
-        n_pos += nn*neq ;
-      }
-    }
-  
-    /* Memory space allocation with initialization to 0 */
-    {
-      //short int* pos = (short int* ) calloc(2*n_pos,sizeof(short int)) ;
-      short int* upos = (short int* ) Mry_New(short int[2*n_pos]) ;
-      short int* epos = upos + n_pos ;
-      
-      for(ie = 0 ; ie < 2*n_pos ; ie++) upos[ie] = 0 ;
-      
-      for(ie = 0 ; ie < n_el ; ie++) {
-        int imat = Element_GetMaterialIndex(el + ie) ;
-        //Material_t* mat = Element_GetMaterial(el + ie) ;
-        
-        Element_GetUnknownPosition(el + ie)  = upos ;
-        Element_GetEquationPosition(el + ie) = epos ;
-      
-        if(imat >= 0) {
-          int nn = Element_GetNbOfNodes(el + ie) ;
-          int neq = Element_GetNbOfEquations(el + ie) ;
-          
-          upos += nn*neq ;
-          epos += nn*neq ;
-        }
-      }
-    }
-  }
-
-  /* Space allocation for buffer */
-  {
-    Buffers_t* buf = Buffers_Create(Element_SizeOfBuffer) ;
-    int ie ;
-  
-    /* ATTENTION: same memory space (buffer) for all the elements */
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Element_GetBuffers(el + ie) = buf ;
-    }
-  }
-  
-  /* Create shape functions */
-  {
-    ShapeFcts_t* shapefcts = ShapeFcts_Create() ;
-    int    ie ;
-  
-    Elements_GetShapeFcts(elements) = shapefcts ;
-    
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Element_t* el_i = el + ie ;
-      Material_t* mat = Element_GetMaterial(el_i) ;
-
-      /* Find or create the shape functions */
-      if(mat) {
-        int  nn = Element_GetNbOfNodes(el_i) ;
-        int  dim = Element_GetDimension(el_i) ;
-        ShapeFct_t*  shapefct  = ShapeFcts_GetShapeFct(shapefcts) ;
-        int  i = ShapeFcts_FindShapeFct(shapefcts,nn,dim) ;
-      
-        /* Element shape functions */
-        Element_GetShapeFct(el_i) = shapefct + i ;
-        
-        {
-          if(Element_HasZeroThickness(el_i)) {
-            int nf = nn - Element_NbOfOverlappingNodes(el_i) ;
-            int dim_h = dim - 1 ;
-            int j  = ShapeFcts_FindShapeFct(shapefcts,nf,dim_h) ;
-
-            Element_GetShapeFct(el_i) = shapefct + j ;
-          }
-        }
-      }
-    }
-  }
-  
-  /* Create interpolation functions */
-  {
-    IntFcts_t* intfcts = IntFcts_Create() ;
-    int    ie ;
-    
-    Elements_GetIntFcts(elements) = intfcts ;
-    
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Element_t* el_i = el + ie ;
-      Material_t* mat = Element_GetMaterial(el_i) ;
-
-      /* Find or create default interpolation functions (Gauss type) */
-      if(mat) {
-        int  nn = Element_GetNbOfNodes(el_i) ;
-        int  dim = Element_GetDimension(el_i) ;
-        IntFct_t*  intfct  = IntFcts_GetIntFct(intfcts) ;
-        int  i = IntFcts_FindIntFct(intfcts,nn,dim,"Gauss") ;
-
-        /* Element interpolation functions */
-        Element_GetIntFct(el_i)   = intfct + i ;
-        
-        {
-          if(Element_HasZeroThickness(el_i)) {
-            int nf = nn - Element_NbOfOverlappingNodes(el_i) ;
-            int dim_h = dim - 1 ;
-            int j  = IntFcts_FindIntFct(intfcts,nf,dim_h,"Gauss") ;
-
-            Element_GetIntFct(el_i) = intfct + j ;
-          }
-        }
-      }
-    }
-  }
-  
-  /* The max and min sizes of elements */
-  Elements_GetMaximumSizeOfElements(elements) = Elements_ComputeMaximumSizeOfElements(elements) ;
-  Elements_GetMinimumSizeOfElements(elements) = Elements_ComputeMinimumSizeOfElements(elements) ;
-  
 }
 
 
@@ -575,3 +446,206 @@ void  (Elements_UpdateMatrixRowColumnIndexesOfOverlappingNodes)(Elements_t* elem
   }
 }
 
+
+
+/* Not used from here */
+
+#if 0
+Elements_t*  (Elements_New)(const int n,const int nc)
+{
+  Elements_t* elts = (Elements_t*) Mry_New(Elements_t) ;
+  
+  Elements_GetNbOfElements(elts) = n ;
+  Elements_GetNbOfConnectivities(elts) = nc ;
+  
+  
+  /* Allocation of space for the elements */
+  {
+    Element_t* el = (Element_t*) Mry_New(Element_t[n]) ;
+    
+    Elements_GetElement(elts) = el ;
+  }
+  
+  
+  /* Allocation of space for the pointers to "node" */
+  {
+    Node_t** pnode = (Node_t**) Mry_New(Node_t*[nc]) ;
+    Element_t* el = Elements_GetElement(elts) ;
+    int i ;
+    
+    for(i = 0 ; i < n ; i++) {
+      Element_t* el_i = el + i ;
+      
+      Element_GetPointerToNode(el_i) = pnode ;
+    }
+  }
+  
+  
+  /* Initialization */
+  
+  Elements_GetShapeFcts(elts) = NULL ;
+  Elements_GetIntFcts(elts) = NULL ;
+  
+  {
+    Element_t* el = Elements_GetElement(elts) ;
+    int i ;
+    
+    for(i = 0 ; i < n ; i++) {
+      Element_t* el_i = el + i ;
+      
+      Element_GetElementIndex(el_i)      = i ;
+      Element_GetDimension(el_i)         = -1 ;
+      Element_GetNbOfNodes(el_i)         = 0 ;
+      Element_GetRegionIndex(el_i)       = -1 ;
+      Element_GetMaterial(el_i)          = NULL ;
+      Element_GetMaterialIndex(el_i)     = -1 ;
+      Element_GetShapeFct(el_i)          = NULL ;
+      Element_GetIntFct(el_i)            = NULL ;
+      Element_GetUnknownPosition(el_i)   = NULL ;
+      Element_GetEquationPosition(el_i)  = NULL ;
+      Element_GetBuffers(el_i)           = NULL ;
+      //Element_GetElementSol(el_i)        = NULL ;
+      Element_GetSolutions(el_i)         = NULL ;
+    }
+  }
+  
+  return(elts) ;
+}
+#endif
+
+
+
+#if 0
+void (Elements_CreateMore)(Elements_t* elements)
+{
+  int n_el = Elements_GetNbOfElements(elements) ;
+  Element_t* el = Elements_GetElement(elements) ;
+  
+  /* Pointers to unknowns and equations positions at nodes */
+  {
+    int n_pos = 0 ;
+    int ie ;
+    
+    for(ie = 0 ; ie < n_el ; ie++) {
+      int imat = Element_GetMaterialIndex(el + ie) ;
+      //Material_t* mat = Element_GetMaterial(el + ie) ;
+    
+      if(imat >= 0) {
+        int nn = Element_GetNbOfNodes(el + ie) ;
+        int neq = Element_GetNbOfEquations(el + ie) ;
+        
+        n_pos += nn*neq ;
+      }
+    }
+  
+    /* Memory space allocation with initialization to 0 */
+    {
+      //short int* pos = (short int* ) calloc(2*n_pos,sizeof(short int)) ;
+      short int* upos = (short int* ) Mry_New(short int[2*n_pos]) ;
+      short int* epos = upos + n_pos ;
+      
+      for(ie = 0 ; ie < 2*n_pos ; ie++) upos[ie] = 0 ;
+      
+      for(ie = 0 ; ie < n_el ; ie++) {
+        int imat = Element_GetMaterialIndex(el + ie) ;
+        //Material_t* mat = Element_GetMaterial(el + ie) ;
+        
+        Element_GetUnknownPosition(el + ie)  = upos ;
+        Element_GetEquationPosition(el + ie) = epos ;
+      
+        if(imat >= 0) {
+          int nn = Element_GetNbOfNodes(el + ie) ;
+          int neq = Element_GetNbOfEquations(el + ie) ;
+          
+          upos += nn*neq ;
+          epos += nn*neq ;
+        }
+      }
+    }
+  }
+
+  /* Space allocation for buffer */
+  {
+    Buffers_t* buf = Buffers_Create(Element_SizeOfBuffer) ;
+    int ie ;
+  
+    /* ATTENTION: same memory space (buffer) for all the elements */
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Element_GetBuffers(el + ie) = buf ;
+    }
+  }
+  
+  /* Create shape functions */
+  {
+    ShapeFcts_t* shapefcts = ShapeFcts_Create() ;
+    int    ie ;
+  
+    Elements_GetShapeFcts(elements) = shapefcts ;
+    
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Element_t* el_i = el + ie ;
+      Material_t* mat = Element_GetMaterial(el_i) ;
+
+      /* Find or create the shape functions */
+      if(mat) {
+        int  nn = Element_GetNbOfNodes(el_i) ;
+        int  dim = Element_GetDimension(el_i) ;
+        ShapeFct_t*  shapefct  = ShapeFcts_GetShapeFct(shapefcts) ;
+        int  i = ShapeFcts_FindShapeFct(shapefcts,nn,dim) ;
+      
+        /* Element shape functions */
+        Element_GetShapeFct(el_i) = shapefct + i ;
+        
+        {
+          if(Element_HasZeroThickness(el_i)) {
+            int nf = nn - Element_NbOfOverlappingNodes(el_i) ;
+            int dim_h = dim - 1 ;
+            int j  = ShapeFcts_FindShapeFct(shapefcts,nf,dim_h) ;
+
+            Element_GetShapeFct(el_i) = shapefct + j ;
+          }
+        }
+      }
+    }
+  }
+  
+  /* Create interpolation functions */
+  {
+    IntFcts_t* intfcts = IntFcts_Create() ;
+    int    ie ;
+    
+    Elements_GetIntFcts(elements) = intfcts ;
+    
+    for(ie = 0 ; ie < n_el ; ie++) {
+      Element_t* el_i = el + ie ;
+      Material_t* mat = Element_GetMaterial(el_i) ;
+
+      /* Find or create default interpolation functions (Gauss type) */
+      if(mat) {
+        int  nn = Element_GetNbOfNodes(el_i) ;
+        int  dim = Element_GetDimension(el_i) ;
+        IntFct_t*  intfct  = IntFcts_GetIntFct(intfcts) ;
+        int  i = IntFcts_FindIntFct(intfcts,nn,dim,"Gauss") ;
+
+        /* Element interpolation functions */
+        Element_GetIntFct(el_i)   = intfct + i ;
+        
+        {
+          if(Element_HasZeroThickness(el_i)) {
+            int nf = nn - Element_NbOfOverlappingNodes(el_i) ;
+            int dim_h = dim - 1 ;
+            int j  = IntFcts_FindIntFct(intfcts,nf,dim_h,"Gauss") ;
+
+            Element_GetIntFct(el_i) = intfct + j ;
+          }
+        }
+      }
+    }
+  }
+  
+  /* The max and min sizes of elements */
+  Elements_GetMaximumSizeOfElements(elements) = Elements_ComputeMaximumSizeOfElements(elements) ;
+  Elements_GetMinimumSizeOfElements(elements) = Elements_ComputeMinimumSizeOfElements(elements) ;
+  
+}
+#endif

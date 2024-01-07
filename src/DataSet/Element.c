@@ -13,6 +13,168 @@
 
 
 
+
+
+Element_t*  (Element_New)(void)
+{
+  Element_t* el = (Element_t*) Mry_New(Element_t) ;
+  
+  {
+    Element_GetElementIndex(el)      = -1 ;
+    Element_GetPointerToNode(el)     = NULL ;
+    Element_GetDimension(el)         = -1 ;
+    Element_GetNbOfNodes(el)         = 0 ;
+    Element_GetRegionIndex(el)       = -1 ;
+    Element_GetMaterial(el)          = NULL ;
+    Element_GetMaterialIndex(el)     = -1 ;
+    Element_GetShapeFct(el)          = NULL ;
+    Element_GetIntFct(el)            = NULL ;
+    Element_GetUnknownPosition(el)   = NULL ;
+    Element_GetEquationPosition(el)  = NULL ;
+    Element_GetBuffers(el)           = NULL ;
+    Element_GetSolutions(el)         = NULL ;
+  }
+  
+  return(el) ;
+}
+
+
+
+void (Element_CreateMore)(Element_t* el,Buffers_t* buffers,ShapeFcts_t* shapefcts,IntFcts_t* intfcts)
+{
+  int imat = Element_GetMaterialIndex(el) ;
+  int nn  = Element_GetNbOfNodes(el) ;
+  int neq = Element_GetNbOfEquations(el) ;
+  int dim = Element_GetDimension(el) ;
+  int ndof = nn*neq ;
+  
+
+  /* Memory space allocation for the pointers to unknowns and 
+   * equations positions at nodes with initialization to 0 */
+  if(imat >= 0) {
+    short int* upos = (short int* ) Mry_New(short int[2*ndof]) ;
+    short int* epos = upos + ndof ;
+    int i ;
+      
+    for(i = 0 ; i < 2*ndof ; i++) upos[i] = 0 ;
+
+    Element_GetUnknownPosition(el)  = upos ;
+    Element_GetEquationPosition(el) = epos ;
+  } else {
+    Element_GetUnknownPosition(el)  = NULL ;
+    Element_GetEquationPosition(el) = NULL ;
+  }
+  
+  
+  /* Memory space allocation for the matrix */
+  {
+    double* matrix = (double*) Mry_New(double[ndof*ndof]) ;
+    
+    Element_GetMatrix(el) = matrix ;
+  }
+  
+  
+  /* Memory space allocation for the residu */
+  {
+    double* residu = (double*) Mry_New(double[ndof]) ;
+    
+    Element_GetResidu(el) = residu ;
+  }
+
+
+  /* The buffer (the same for all elements) */
+  {
+    Element_GetBuffers(el) = buffers ;
+  }
+
+
+  /* Find or create the shape functions */
+  {
+    Material_t* mat = Element_GetMaterial(el) ;
+
+    if(mat) {
+      ShapeFct_t*  shapefct  = ShapeFcts_GetShapeFct(shapefcts) ;
+      int  i = ShapeFcts_FindShapeFct(shapefcts,nn,dim) ;
+      
+      /* Element shape functions */
+      Element_GetShapeFct(el) = shapefct + i ;
+        
+      {
+        if(Element_HasZeroThickness(el)) {
+          int nf = nn - Element_NbOfOverlappingNodes(el) ;
+          int dim_h = dim - 1 ;
+          int j  = ShapeFcts_FindShapeFct(shapefcts,nf,dim_h) ;
+
+          Element_GetShapeFct(el) = shapefct + j ;
+        }
+      }
+    }
+  }
+
+
+  /* Find or create default interpolation functions (Gauss type) */
+  {
+    Material_t* mat = Element_GetMaterial(el) ;
+
+    if(mat) {
+      IntFct_t*  intfct  = IntFcts_GetIntFct(intfcts) ;
+      int  i = IntFcts_FindIntFct(intfcts,nn,dim,"Gauss") ;
+
+      /* Element interpolation functions */
+      Element_GetIntFct(el)   = intfct + i ;
+        
+      {
+        if(Element_HasZeroThickness(el)) {
+          int nf = nn - Element_NbOfOverlappingNodes(el) ;
+          int dim_h = dim - 1 ;
+          int j  = IntFcts_FindIntFct(intfcts,nf,dim_h,"Gauss") ;
+
+          Element_GetIntFct(el) = intfct + j ;
+        }
+      }
+    }
+  }
+}
+
+
+
+void (Element_Delete)(void* self)
+{
+  Element_t* el = (Element_t*) self ;
+  
+  {
+    short int* upos = Element_GetUnknownPosition(el) ;
+    
+    if(upos) {
+      free(upos) ;
+    }
+      
+    Element_GetUnknownPosition(el) = NULL ;
+  }
+  
+  {
+    double* matrix = Element_GetMatrix(el) ;
+    
+    if(matrix) {
+      free(matrix) ;
+    }
+    
+    Element_GetMatrix(el) = NULL ;
+  }
+  
+  {
+    double* residu = Element_GetResidu(el) ;
+    
+    if(residu) {
+      free(residu) ;
+    }
+    
+    Element_GetResidu(el) = NULL ;
+  }
+}
+
+
+
 void (Element_AllocateMicrostructureSolutions)(Element_t* el,Mesh_t* mesh,const int nsol)
 /** Allocate space as implicit generic data at the interpolation points 
  *  of the element "el" for the solutions of the microstructure defined by "mesh".

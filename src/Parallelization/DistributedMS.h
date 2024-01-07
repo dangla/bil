@@ -11,8 +11,8 @@
 
 
 
-#define DistributedMS_GetRankOfCallingProcess(DM)        ((DM)->rank)
-#define DistributedMS_GetNbOfProcesses(DM)               ((DM)->size)
+//#define DistributedMS_GetRankOfCallingProcess(DM)        ((DM)->rank)
+//#define DistributedMS_GetNbOfProcesses(DM)               ((DM)->size)
 
 
 
@@ -58,7 +58,7 @@
     DistributedMS_size ; \
   })
 #else
-  #error "DistributedMS_API not available"
+  #error "Distributed memory system not available"
 #endif
 
 
@@ -77,7 +77,7 @@
     DistributedMS_rank ; \
   })
 #else
-  #error "DistributedMS_API not available"
+  #error "Distributed memory system not available"
 #endif
 
 
@@ -88,7 +88,7 @@
   #define DistributedMS_Barrier \
           MPI_Barrier(MPI_COMM_WORLD)
 #else
-  #error "DistributedMS_API not available"
+  #error "Distributed memory system not available"
 #endif
 
 

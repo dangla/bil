@@ -6,13 +6,19 @@ lc2 = 0.001 ;
 
 
 // Geometry Boundary
-Point(1) = {0,0,0,lc1};
-Point(2) = {L,0,0,lc1};
-Point(3) = {L,H,0,lc1};
-Point(4) = {0,H,0,lc1};
-Point(5) = {0,0.51*H,0,lc1};
-Point(6) = {0,0.49*H,0,lc1};
-Point(7) = {0.2*L,0.5*H,0,lc2};
+Point(1) = {0,0,0};
+Point(2) = {L,0,0};
+Point(3) = {L,H,0};
+Point(4) = {0,H,0};
+Point(5) = {0,0.51*H,0};
+Point(6) = {0,0.49*H,0};
+Point(7) = {0.2*L,0.5*H,0};
+
+
+Characteristic Length{1:6} = lc1;
+Characteristic Length{7} = lc2;
+
+
 Line(10) ={1,2};
 Line(20) ={2,3};
 Line(30) ={3,4};

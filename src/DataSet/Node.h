@@ -11,10 +11,12 @@ typedef Node_t*   Node_tt ;
 
 #include "Utils.h"
 #include "Solutions.h"
+#include "Buffers.h"
 
 
-//extern Node_t*  (Node_Create)(const int) ;
-//extern void     (Node_Delete)(void*) ;
+extern Node_t*  (Node_New)(const int) ;
+extern void     (Node_CreateMore)(Node_t*,Buffers_t*) ;
+extern void     (Node_Delete)(void*) ;
 extern int      (Node_FindUnknownPositionIndex)(const Node_t*,const char*) ;
 extern int      (Node_FindEquationPositionIndex)(const Node_t*,const char*) ;
 extern void     (Node_EliminateMatrixColumnIndexForOverlappingNodes)(const Node_t*,const char*) ;
@@ -59,7 +61,7 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 #define Node_GetMatrixRowIndex(NOD)       ((NOD)->rowindex)
 //#define Node_GetNodeSol(NOD)              ((NOD)->sol)
 #define Node_GetNbOfElements(NOD)         ((NOD)->nel)
-#define Node_GetPointerToElement(NOD)     ((NOD)->element)
+#define Node_GetPointerToElement(NOD)     ((NOD)->pelement)
 #define Node_GetBuffers(NOD)              ((NOD)->buffers)
 #define Node_GetSolutions(NOD)            ((NOD)->solutions)
 
@@ -244,12 +246,8 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 
 
 struct Node_s {               /* noeud */
-  unsigned int index ;        /* node index */
-  unsigned short int nel ;    /* nb of elements */
-  Element_tt* element ;       /* pointers to elements */
+  Element_tt* pelement ;      /* pointers to elements */
   double* x ;                 /* coordonnees */
-  unsigned short int neq ;    /* nombre d'equations au noeud */
-  unsigned short int nin ;    /* nombre d'inconnues au noeud */
   char**   inc ;              /* nom des inconnues */
   char**   eqn ;              /* nom des equations */
   int*     sequentialindex ;  /* Sequential indexes of unknowns/equations */
@@ -259,6 +257,10 @@ struct Node_s {               /* noeud */
   //NodeSol_t* sol ;            /* Nodal solution */
   Buffers_t* buffers ;        /* Buffers */
   Solutions_t* solutions ;    /* Pointer to the global solutions */
+  unsigned int index ;        /* node index */
+  unsigned short int nel ;    /* nb of elements */
+  unsigned short int neq ;    /* nombre d'equations au noeud */
+  unsigned short int nin ;    /* nombre d'inconnues au noeud */
 } ;
 
 #endif

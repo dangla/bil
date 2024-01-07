@@ -12,6 +12,7 @@
 #include "Models.h"
 #include "String_.h"
 #include "Mry.h"
+#include "DistributedMS.h"
 
 
 //char   OutputFile_TypeOfCurrentFile ;
@@ -237,6 +238,16 @@ void (OutputFiles_BackupSolutionAtTime_)(OutputFiles_t* outputfiles,DataSet_t* d
   
   OutputFile_TypeOfCurrentFile = 't' ;
   
+  int size = DistributedMS_NbOfProcessors ;
+  int rank = DistributedMS_RankOfCallingProcess ;
+  
+  if(size > 1) {
+    Mesh_BroadcastExplicitTerms(mesh) ;
+    Mesh_BroadcastImplicitTerms(mesh) ;
+  }
+  
+  if(rank > 0) return ;
+  
   
   /* First lines: version and date */
   {
@@ -358,14 +369,20 @@ void (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t* outputfiles,DataSet_t* 
   
   OutputFile_TypeOfCurrentFile = 'p' ;
   
+  int rank = DistributedMS_RankOfCallingProcess ;
+  
   
   /* Open point files for writing */
   //if(t == t_0) {
   if(String_Is(mode,"o")) {
     for(p = 0 ; p < npt ; p++) {
       TextFile_t* textfile = OutputFile_GetTextFile(outputfile + p) ;
+      Point_t* point = Points_GetPoint(points) + p ;
+      double *xp = Point_GetCoordinate(point) ;
+      Element_t* elt = Point_GetEnclosingElement(point) ;
+      int rankofelt = Element_RankOfSupportingProcessor(elt) ;
       
-      TextFile_OpenFile(textfile,"w") ;
+      if(rank == rankofelt) TextFile_OpenFile(textfile,"w") ;
     }
   }
   
@@ -375,7 +392,10 @@ void (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t* outputfiles,DataSet_t* 
     Point_t* point = Points_GetPoint(points) + p ;
     double *xp = Point_GetCoordinate(point) ;
     Element_t* elt = Point_GetEnclosingElement(point) ;
+    int rankofelt = Element_RankOfSupportingProcessor(elt) ;
     FILE *ficp = TextFile_GetFileStream(textfile) ;
+    
+    if(rank != rankofelt) continue ;
     
     /* First lines: version and point coordinates */
     //if(t == t_0) {

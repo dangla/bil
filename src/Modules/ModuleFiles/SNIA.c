@@ -194,7 +194,6 @@ int   (SNIA_StepForward)(DataSet_t* dataset,Solutions_t* sols,Solver_t* solver,d
        * We step forward (point to the next solution) 
        */
       Solutions_StepForward(sols) ;
-      //Mesh_InitializeSolutionPointers(mesh,sols) ;
       
       /*
        * 3.1.1b Save the environment. 
@@ -213,8 +212,6 @@ int   (SNIA_StepForward)(DataSet_t* dataset,Solutions_t* sols,Solver_t* solver,d
         if(Exception_OrderToBackupAndTerminate) {
           backupandreturn :
           Solutions_StepBackward(sols) ;
-          //Mesh_InitializeSolutionPointers(mesh,sols) ;
-          //OutputFiles_BackupSolutionAtTime(outputfiles,dataset,T_1,idate+1) ;
           return(-1) ;
         }
       }
@@ -543,7 +540,6 @@ int calcul(DataSet_t* dataset)
       Solution_t* sol = Solutions_GetSolution(sols) ;
       double t =  Solution_GetTime(sol) ;
       
-      //Mesh_InitializeSolutionPointers(mesh,sols) ;
       Mesh_StoreCurrentSolution(mesh,datafile,t) ;
     }
 

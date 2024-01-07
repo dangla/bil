@@ -158,11 +158,13 @@ int   SuperLUMethod_Solve(Solver_t* solver)
   }
   
   /* Broadcast to other processors */
-  #if DistributedMS_APIis(MPI)
   if(size > 1) {
-    MPI_Bcast(x,n,MPI_DOUBLE,0,MPI_COMM_WORLD) ;
+    #if DistributedMS_APIis(MPI)
+      MPI_Bcast(x,n,MPI_DOUBLE,0,MPI_COMM_WORLD) ;
+    #else
+      #error "Distributed memory system not available"
+    #endif
   }
-  #endif
   
   return(0) ;
 }

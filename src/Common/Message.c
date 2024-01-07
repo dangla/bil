@@ -234,7 +234,7 @@ int (Message_Direct)(const char* fmt, ...)
   Message_t* msg = Message_GetInstance() ;
   int n ;
   
-  if(DistributedMS_RankOfCallingProcess) return ;
+  if(DistributedMS_RankOfCallingProcess) return(0) ;
   
   if(!msg || Message_GetVerbosity(msg) < 4) return(0) ;
   

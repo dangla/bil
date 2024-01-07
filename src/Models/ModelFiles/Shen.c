@@ -594,7 +594,7 @@ int ReadMatProp(Material_t *mat,DataFile_t *datafile)
     /* Self-initialization */
     Material_GetProperty(mat)[pm("N_CH")] = 1 ;
     Material_GetProperty(mat)[pm("N_Si")] = 1 ;
-    Material_GetProperty(mat)[pm("N_CC")] = 0 ;
+    //Material_GetProperty(mat)[pm("N_CC")] = 0 ;
     Material_GetProperty(mat)[pm("T_CH")] = 600 ;
     Material_GetProperty(mat)[pm("T_CC")] = 0 ;
   
@@ -852,7 +852,7 @@ int  ComputeImplicitTerms(Element_t *el,double t,double dt)
 
     {
       double c_co2      = x[I_C_CO2] ;
-      double p_g	      = x[I_P_G] ;
+      double p_g        = x[I_P_G] ;
       if(c_co2 < 0 || p_g < 0) {
         double x0 = Element_GetNodeCoordinate(el,i)[0] ;
         double c_oh       = x[I_C_OH] ;
@@ -1042,8 +1042,8 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
     /* Liquid and gas components */
     double *x         = ComputeComponents(el,u,f,0.,j) ;
     
-    double p_l     	  = x[I_P_L] ;
-    double p_g	      = x[I_P_G] ;
+    double p_l        = x[I_P_L] ;
+    double p_g        = x[I_P_G] ;
     double gc_co2     = x[I_C_CO2_G] ;
     double gc_h2o     = x[I_C_H2O_G] ;
     double c_co2      = x[I_C_CO2] ;
@@ -1054,7 +1054,7 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
     double c_cl       = x[I_C_Cl] ;
     double p_c        = p_g - p_l ;
     double s_l        = SaturationDegree(p_c) ;
-    double s_g     	  = 1 - s_l ;
+    double s_g        = 1 - s_l ;
     
     double s_ch       = x[I_S_CH] ;
 
@@ -1076,10 +1076,10 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
 
     double rho_g      = x[I_RHO_G] ;
     
-    double y_h2o 	    = MoleFractionOfH2OInGas(p_g,p_l,temperature) ;
-    double y_h2os 	  = MoleFractionOfH2OInGas(p_g,p_g,temperature) ;
+    double y_h2o      = MoleFractionOfH2OInGas(p_g,p_l,temperature) ;
+    double y_h2os     = MoleFractionOfH2OInGas(p_g,p_g,temperature) ;
     double gc_h2os    = ConcentrationOfH2OInGas(p_g,p_g,temperature) ;
-    double RH		      = MIN(ConcentrationOfH2OInGas(p_l,p_l,temperature)/gc_h2os,1.) ;
+    double RH         = MIN(ConcentrationOfH2OInGas(p_l,p_l,temperature)/gc_h2os,1.) ;
 
     /* Charge density */
     double c_q = x[I_N_Q] ;
@@ -1102,7 +1102,7 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
     /* Porosity */
     double v_s0       = V_S0(j) ;
     double phi        = phi0 + v_s0 - v_s ;
-    double phimax 	  = MAX(phi,0.) ; 
+    double phimax     = MAX(phi,0.) ; 
     
     
     double psi        = x[I_PSI] ;
@@ -1213,8 +1213,8 @@ void ComputeTransferCoefficients(Element_t *el,double **u,double *f)
     /* Liquid and gas components */
     double *x         = ComputeComponents(el,u,f,0.,i) ;
     
-    double p_l     	  = x[I_P_L] ;
-    double p_g	      = x[I_P_G] ;
+    double p_l        = x[I_P_L] ;
+    double p_g        = x[I_P_G] ;
     double gc_co2     = x[I_C_CO2_G] ;
     double gc_h2o     = x[I_C_H2O_G] ;
     double c_co2      = x[I_C_CO2] ;
@@ -1256,36 +1256,36 @@ void ComputeTransferCoefficients(Element_t *el,double **u,double *f)
     /* double tau  = TortuosityToGas(phi,s_g) ; */
     double iff  = TortuosityToLiquid(phi,s_l) ;
     
-    KD_Ca     	+= c_ca*k_l ;
-    KD_HCO3   	+= c_hco3*k_l ;
-    KD_CO3    	+= c_co3*k_l ;
-    KD_OH     	+= c_oh*k_l ;
-    KD_H      	+= c_h*k_l ;
-    KD_K      	+= c_k*k_l ;
+    KD_Ca       += c_ca*k_l ;
+    KD_HCO3     += c_hco3*k_l ;
+    KD_CO3      += c_co3*k_l ;
+    KD_OH       += c_oh*k_l ;
+    KD_H        += c_h*k_l ;
+    KD_K        += c_k*k_l ;
     KD_Cl       += c_cl*k_l ;
-    KD_CaOH   	+= c_caoh*k_l ;
-    KD_CaHCO3 	+= c_cahco3*k_l ;
-    KD_CaCO3aq	+= c_caco3aq*k_l ;
-    KD_H3SiO4 	+= c_h3sio4*k_l ;
-    KD_H2SiO4 	+= c_h2sio4*k_l ;
-    KD_H4SiO4 	+= c_h4sio4*k_l ;
+    KD_CaOH     += c_caoh*k_l ;
+    KD_CaHCO3   += c_cahco3*k_l ;
+    KD_CaCO3aq  += c_caco3aq*k_l ;
+    KD_H3SiO4   += c_h3sio4*k_l ;
+    KD_H2SiO4   += c_h2sio4*k_l ;
+    KD_H4SiO4   += c_h4sio4*k_l ;
     KD_CaH3SiO4 += c_cah3sio4*k_l ;
     KD_CaH2SiO4 += c_cah2sio4*k_l ;
     KD_CO2      += c_co2*k_l ;
     
-    KD_M      	+= rho_l*k_l ;
+    KD_M        += rho_l*k_l ;
     
     KD_GCO2     += gc_co2*k_g ;
     KD_GH2O     += gc_h2o*k_g ;
     
     KD_GM       += rho_g*k_g ;
     /*
-    KD_Na     	+= c_na*k_l ;
-    KD_NaOH   	+= c_naoh*k_l ;
-    KD_NaHCO3 	+= c_nahco3*k_l ;
-    KD_NaCO3  	+= c_naco3*k_l ;
-    KD_CaOH2aq	+= c_caoh2aq*k_l ;
-    KD_KOH    	+= c_koh*k_l ; 
+    KD_Na       += c_na*k_l ;
+    KD_NaOH     += c_naoh*k_l ;
+    KD_NaHCO3   += c_nahco3*k_l ;
+    KD_NaCO3    += c_naco3*k_l ;
+    KD_CaOH2aq  += c_caoh2aq*k_l ;
+    KD_KOH      += c_koh*k_l ; 
     */
     
     KF_OH         += d_oh*iff ;
@@ -1475,7 +1475,7 @@ void  ComputeSecondaryComponents(Element_t *el,double dt,double *x)
   /* Saturation */
   double p_c        = p_g - p_l ;
   double s_l        = SaturationDegree(p_c) ;
-  double s_g     	  = 1 - s_l ;
+  double s_g        = 1 - s_l ;
   
   /* Liquid contents */
   double phi_l      = s_l*phi ;
@@ -1678,74 +1678,74 @@ double* Fluxes(Element_t *el,double *grd)
     
     /* Fluxes in the gas phase */
   double wg_co2     = - KD_GCO2*grd_p_g ;
-  double wg_m     	= - KD_GM*grd_p_g ;
+  double wg_m       = - KD_GM*grd_p_g ;
   
     /* Fluxes in the liquid phase */
-  double w_co2      = - KD_CO2*grd_p_l 		  - KF_CO2*grd_co2 ; 
-  double w_hco3     = - KD_HCO3*grd_p_l 		- KF_HCO3*grd_hco3          - Kpsi_HCO3*grd_psi ;
-  double w_co3      = - KD_CO3*grd_p_l 		  - KF_CO3*grd_co3            - Kpsi_CO3*grd_psi ;
+  double w_co2      = - KD_CO2*grd_p_l      - KF_CO2*grd_co2 ; 
+  double w_hco3     = - KD_HCO3*grd_p_l     - KF_HCO3*grd_hco3          - Kpsi_HCO3*grd_psi ;
+  double w_co3      = - KD_CO3*grd_p_l      - KF_CO3*grd_co3            - Kpsi_CO3*grd_psi ;
   
-  double w_ca       = - KD_Ca*grd_p_l 		  - KF_Ca*grd_ca              - Kpsi_Ca*grd_psi ;
-  double w_caoh     = - KD_CaOH*grd_p_l 		- KF_CaOH*grd_caoh          - Kpsi_CaOH*grd_psi ;
+  double w_ca       = - KD_Ca*grd_p_l       - KF_Ca*grd_ca              - Kpsi_Ca*grd_psi ;
+  double w_caoh     = - KD_CaOH*grd_p_l     - KF_CaOH*grd_caoh          - Kpsi_CaOH*grd_psi ;
   
-  double w_cahco3   = - KD_CaHCO3*grd_p_l 	- KF_CaHCO3*grd_cahco3      - Kpsi_CaHCO3*grd_psi ;
-  double w_caco3aq  = - KD_CaCO3aq*grd_p_l 	- KF_CaCO3aq*grd_caco3aq ;    
+  double w_cahco3   = - KD_CaHCO3*grd_p_l   - KF_CaHCO3*grd_cahco3      - Kpsi_CaHCO3*grd_psi ;
+  double w_caco3aq  = - KD_CaCO3aq*grd_p_l  - KF_CaCO3aq*grd_caco3aq ;    
   
-  double w_h2sio4   = - KD_H2SiO4*grd_p_l 	- KF_H2SiO4*grd_h2sio4      - Kpsi_H2SiO4*grd_psi ;
-  double w_h3sio4   = - KD_H3SiO4*grd_p_l 	- KF_H3SiO4*grd_h3sio4      - Kpsi_H3SiO4*grd_psi ;
-  double w_h4sio4   = - KD_H4SiO4*grd_p_l 	- KF_H4SiO4*grd_h4sio4 ;
+  double w_h2sio4   = - KD_H2SiO4*grd_p_l   - KF_H2SiO4*grd_h2sio4      - Kpsi_H2SiO4*grd_psi ;
+  double w_h3sio4   = - KD_H3SiO4*grd_p_l   - KF_H3SiO4*grd_h3sio4      - Kpsi_H3SiO4*grd_psi ;
+  double w_h4sio4   = - KD_H4SiO4*grd_p_l   - KF_H4SiO4*grd_h4sio4 ;
   
   double w_cah2sio4 = - KD_CaH2SiO4*grd_p_l - KF_CaH2SiO4*grd_cah2sio4 ;
   double w_cah3sio4 = - KD_CaH3SiO4*grd_p_l - KF_CaH3SiO4*grd_cah3sio4  - Kpsi_CaH3SiO4*grd_psi ;
   
-  double w_k        = - KD_K*grd_p_l			  - KF_K*grd_k                - Kpsi_K*grd_psi ; 
-  double w_cl       = - KD_Cl*grd_p_l 		  - KF_Cl*grd_cl              - Kpsi_Cl*grd_psi ; 
+  double w_k        = - KD_K*grd_p_l        - KF_K*grd_k                - Kpsi_K*grd_psi ; 
+  double w_cl       = - KD_Cl*grd_p_l       - KF_Cl*grd_cl              - Kpsi_Cl*grd_psi ; 
     
   /* Changed compared to what Shen J. did */
-  double w_m     	  = - KD_M*grd_p_l ;
+  double w_m        = - KD_M*grd_p_l ;
   /* This is the law originally introduced by Shen */
   /*
-  double w_m     	  = - KD_M*grd_p_l 				- M_CO2*KD_GCO2*grd_p_g	- M_H2O*KD_GH2O*grd_p_g \
-						- M_H*Kpsi_H*grd_psi			- M_OH*Kpsi_OH*grd_psi	\
-						- M_HCO3*Kpsi_HCO3*grd_psi		- M_CO3*Kpsi_CO3*grd_psi	\
-						- M_Ca*Kpsi_Ca*grd_psi			- M_CaHCO3*Kpsi_CaHCO3*grd_psi	\
-						- M_H3SiO4*Kpsi_H3SiO4*grd_psi	- M_CaH3SiO4*Kpsi_CaH3SiO4*grd_psi	\
-						- M_H2SiO4*Kpsi_H2SiO4*grd_psi	- M_CaOH*Kpsi_CaOH*grd_psi	\
-						- M_Cl*Kpsi_Cl*grd_psi			- M_K*Kpsi_K*grd_psi \
-						- M_H*KF_H*grd_h						- M_OH*KF_OH*grd_oh \
-						- M_CO2*KF_CO2*grd_co2 					 \
-						- M_HCO3*KF_HCO3*grd_hco3				- M_CO3*KF_CO3*grd_co3 \
-						- M_CaHCO3*KF_CaHCO3*grd_cahco3 		- M_Ca*KF_Ca*grd_ca\
-						- M_CaH3SiO4*KF_CaH3SiO4*grd_cah3sio4	- M_H3SiO4*KF_H3SiO4*grd_h3sio4\
-						- M_H2SiO4*KF_H2SiO4*grd_h2sio4\
-						- M_CaOH*KF_CaOH*grd_caoh				- M_H4SiO4*KF_H4SiO4*grd_h4sio4\
-						- M_CaH2SiO4*KF_CaH2SiO4*grd_cah2sio4	- M_CaCO3aq*KF_CaCO3aq*grd_caco3aq\
-						- M_K*KF_K*grd_k 						- M_Cl*KF_Cl*grd_cl\
-						+ M_H2O*(Kpsi_H*grd_psi + KF_H*grd_h)*v_h/v_h2o\
-						+ M_H2O*(Kpsi_OH*grd_psi + KF_OH*grd_oh)*v_oh/v_h2o\
-						+ M_H2O*(Kpsi_CaHCO3*grd_psi + KF_CaHCO3*grd_cahco3)*v_cahco3/v_h2o\
-						+ M_H2O*(Kpsi_CO3*grd_psi + KF_CO3*grd_co3)*v_co3/v_h2o\
-						+ M_H2O*(Kpsi_Ca*grd_psi + KF_Ca*grd_ca)*v_ca/v_h2o\
-						+ M_H2O*(Kpsi_CaH3SiO4*grd_psi + KF_CaH3SiO4*grd_cah3sio4)*v_cah3sio4/v_h2o\
-						+ M_H2O*(Kpsi_H3SiO4*grd_psi + KF_H3SiO4*grd_h3sio4)*v_h3sio4/v_h2o\
-						+ M_H2O*(Kpsi_H2SiO4*grd_psi + KF_H2SiO4*grd_h2sio4)*v_h2sio4/v_h2o\
-						+ M_H2O*(Kpsi_CaOH*grd_psi + KF_CaOH*grd_caoh)*v_caoh/v_h2o\
-						+ M_H2O*(KF_CaH2SiO4*grd_cah2sio4)*v_cah2sio4/v_h2o\
-						+ M_H2O*(KF_H4SiO4*grd_h4sio4)*v_h4sio4/v_h2o\
-						+ M_H2O*(KF_CaCO3aq*grd_caco3aq)*v_caco3aq/v_h2o\
-						+ M_H2O*(Kpsi_K*grd_psi + KF_K*grd_k)*v_k/v_h2o\
-						+ M_H2O*(Kpsi_Cl*grd_psi + KF_Cl*grd_cl)*v_cl/v_h2o\
-						+ M_H2O*(Kpsi_HCO3*grd_psi + KF_HCO3*grd_hco3)*v_hco3/v_h2o\
-						+ M_H2O*KF_CO2*grd_co2*v_co2/v_h2o ;
+  double w_m        = - KD_M*grd_p_l        - M_CO2*KD_GCO2*grd_p_g - M_H2O*KD_GH2O*grd_p_g \
+            - M_H*Kpsi_H*grd_psi      - M_OH*Kpsi_OH*grd_psi  \
+            - M_HCO3*Kpsi_HCO3*grd_psi    - M_CO3*Kpsi_CO3*grd_psi  \
+            - M_Ca*Kpsi_Ca*grd_psi      - M_CaHCO3*Kpsi_CaHCO3*grd_psi  \
+            - M_H3SiO4*Kpsi_H3SiO4*grd_psi  - M_CaH3SiO4*Kpsi_CaH3SiO4*grd_psi  \
+            - M_H2SiO4*Kpsi_H2SiO4*grd_psi  - M_CaOH*Kpsi_CaOH*grd_psi  \
+            - M_Cl*Kpsi_Cl*grd_psi      - M_K*Kpsi_K*grd_psi \
+            - M_H*KF_H*grd_h            - M_OH*KF_OH*grd_oh \
+            - M_CO2*KF_CO2*grd_co2           \
+            - M_HCO3*KF_HCO3*grd_hco3       - M_CO3*KF_CO3*grd_co3 \
+            - M_CaHCO3*KF_CaHCO3*grd_cahco3     - M_Ca*KF_Ca*grd_ca\
+            - M_CaH3SiO4*KF_CaH3SiO4*grd_cah3sio4 - M_H3SiO4*KF_H3SiO4*grd_h3sio4\
+            - M_H2SiO4*KF_H2SiO4*grd_h2sio4\
+            - M_CaOH*KF_CaOH*grd_caoh       - M_H4SiO4*KF_H4SiO4*grd_h4sio4\
+            - M_CaH2SiO4*KF_CaH2SiO4*grd_cah2sio4 - M_CaCO3aq*KF_CaCO3aq*grd_caco3aq\
+            - M_K*KF_K*grd_k            - M_Cl*KF_Cl*grd_cl\
+            + M_H2O*(Kpsi_H*grd_psi + KF_H*grd_h)*v_h/v_h2o\
+            + M_H2O*(Kpsi_OH*grd_psi + KF_OH*grd_oh)*v_oh/v_h2o\
+            + M_H2O*(Kpsi_CaHCO3*grd_psi + KF_CaHCO3*grd_cahco3)*v_cahco3/v_h2o\
+            + M_H2O*(Kpsi_CO3*grd_psi + KF_CO3*grd_co3)*v_co3/v_h2o\
+            + M_H2O*(Kpsi_Ca*grd_psi + KF_Ca*grd_ca)*v_ca/v_h2o\
+            + M_H2O*(Kpsi_CaH3SiO4*grd_psi + KF_CaH3SiO4*grd_cah3sio4)*v_cah3sio4/v_h2o\
+            + M_H2O*(Kpsi_H3SiO4*grd_psi + KF_H3SiO4*grd_h3sio4)*v_h3sio4/v_h2o\
+            + M_H2O*(Kpsi_H2SiO4*grd_psi + KF_H2SiO4*grd_h2sio4)*v_h2sio4/v_h2o\
+            + M_H2O*(Kpsi_CaOH*grd_psi + KF_CaOH*grd_caoh)*v_caoh/v_h2o\
+            + M_H2O*(KF_CaH2SiO4*grd_cah2sio4)*v_cah2sio4/v_h2o\
+            + M_H2O*(KF_H4SiO4*grd_h4sio4)*v_h4sio4/v_h2o\
+            + M_H2O*(KF_CaCO3aq*grd_caco3aq)*v_caco3aq/v_h2o\
+            + M_H2O*(Kpsi_K*grd_psi + KF_K*grd_k)*v_k/v_h2o\
+            + M_H2O*(Kpsi_Cl*grd_psi + KF_Cl*grd_cl)*v_cl/v_h2o\
+            + M_H2O*(Kpsi_HCO3*grd_psi + KF_HCO3*grd_hco3)*v_hco3/v_h2o\
+            + M_H2O*KF_CO2*grd_co2*v_co2/v_h2o ;
   */
-						
-  double w_q        = - z_h*KF_H*grd_h		                  \
-                      - z_oh*KF_OH*grd_oh		                \
+            
+  double w_q        = - z_h*KF_H*grd_h                      \
+                      - z_oh*KF_OH*grd_oh                   \
                       - z_hco3*KF_HCO3*grd_hco3             \
-                      - z_co3*KF_CO3*grd_co3		            \
-                      - z_ca*KF_Ca*grd_ca		                \
-                      - z_cahco3*KF_CaHCO3*grd_cahco3	      \
-                      - z_h3sio4*KF_H3SiO4*grd_h3sio4	      \
+                      - z_co3*KF_CO3*grd_co3                \
+                      - z_ca*KF_Ca*grd_ca                   \
+                      - z_cahco3*KF_CaHCO3*grd_cahco3       \
+                      - z_h3sio4*KF_H3SiO4*grd_h3sio4       \
                       - z_cah3sio4*KF_CaH3SiO4*grd_cah3sio4 \
                       - z_h2sio4*KF_H2SiO4*grd_h2sio4       \
                       - z_caoh*KF_CaOH*grd_caoh             \
@@ -1798,7 +1798,7 @@ int TangentCoefficients(Element_t *el,double dt,double *c)
   c_co2_eq  = GetProperty("C_CO2_eq") ;
   t_ch      = GetProperty("T_CH") ;
   t_cc      = GetProperty("T_CC") ;
-  temperature 	= GetProperty("temperature") ;
+  temperature   = GetProperty("temperature") ;
   
   
   for(i = 0 ; i < 2 ; i++) {
@@ -1932,8 +1932,8 @@ double (solubilityCO2)(Element_t *el,double p_g,double p_l,double TK)
 double (solubilityCO2b)(Element_t *el,double p_g,double p_l,double TK)
 /* CO2 concentration in liquid */
 {
-  double p0		= 1.e5 ;
-  double p1		= 4.e5 ;
+  double p0   = 1.e5 ;
+  double p1   = 4.e5 ;
   double c_co2 ;
   
   if (p_g < p0) {
@@ -1944,7 +1944,7 @@ double (solubilityCO2b)(Element_t *el,double p_g,double p_l,double TK)
     double c_co21 = solubilityCO2(el,p1,p_l,TK) ;
     c_co2  = c_co20 + (c_co21 - c_co20)*(p_g - p0)/(p1 - p0) ;
   } else {
-    c_co2 	= solubilityCO2(el,p_g,p_l,TK) ;
+    c_co2   = solubilityCO2(el,p_g,p_l,TK) ;
   }
   
   return(c_co2) ;
@@ -2018,7 +2018,7 @@ double fugacityCO2(Element_t *el,double pg,double TK)
   double V         = 1.e3/MolarDensityOfCO2(pg,TK) ; /* cm3/mol */
   double zg        = pb*V/RTK ; /* Compression factor */
   double lco2      = - log(zg*(1 - B_CO2/V)) + B_CO2/(V - B_CO2) \
-			               - C_CO2*(log(1 + B_CO2/V) + B_CO2/(V + B_CO2)) ;
+                     - C_CO2*(log(1 + B_CO2/V) + B_CO2/(V + B_CO2)) ;
   return(exp(lco2)) ;
 }
 
@@ -2037,7 +2037,7 @@ double fugacityH2O(Element_t *el,double pg,double TK)
   double zg        = pb*V/RTK ; /* Compression factor */
   double lh2o      = - log(zg*(1 - B_CO2/V)) + B_H2O/(V - B_CO2) \
                      - 2*A_H2OCO2/(RTK*T05*B_CO2)*log(1 + B_CO2/V) \
-			               - C_H2O*(- log(1 + B_CO2/V) + B_CO2/(V + B_CO2)) ;
+                     - C_H2O*(- log(1 + B_CO2/V) + B_CO2/(V + B_CO2)) ;
   return(exp(lh2o)) ;
 }
 

@@ -1,5 +1,6 @@
 # Compiled object files
 *.o
+*.pyc
 
 # Compiled static libraries
 *.a
@@ -36,6 +37,7 @@ BilExtraLibs.h
 
 # Specific folders
 build
+__pycache__
 
 # Specific files
 ._sync_*

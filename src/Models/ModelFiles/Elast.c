@@ -844,7 +844,6 @@ void ComputeMicrostructure(DataSet_t* dataset,double* macrograd,double* sig)
   {
     Mesh_t* mesh = DataSet_GetMesh(dataset) ;
     
-    //Mesh_InitializeSolutionPointers(mesh,sols) ;
     FEM_AverageStresses(mesh,sig) ;
   }
 }

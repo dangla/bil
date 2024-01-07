@@ -10,7 +10,7 @@ Mesh
 1 1 1
 Material
 Model = Shen
-porosite = 0.4	
+porosite = 0.4
 N_CH     = 5.16
 N_Si     = 3.9
 T_CH     = 4.e5
@@ -47,7 +47,7 @@ N = 2 F(0) = 1. F(7200) = -0.5
 N = 5 F(0) = 1. F(2400000) = 1. F(3200000) = -0.4 F(4000000) = -0.8 F(8400000) = -0.9
 N = 3 F(0) = -2. F(8540000) = -1. F(8640000) = 1
 N = 2 F(0) = 1. F(7200) = -20.
-Boundary Conditions	
+Boundary Conditions 
 6
 Reg = 3 Inc = psi      Champ = 0 Fonc = 0
 Reg = 3 Inc = logp_co2 Champ = 1 Fonc = 1
