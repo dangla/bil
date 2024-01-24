@@ -48,7 +48,7 @@ int   CroutMethod_Solve(Solver_t* solver)
     #if DistributedMS_APIis(MPI)
       MPI_Bcast(x,n,MPI_DOUBLE,0,MPI_COMM_WORLD) ;
     #else
-      #error "Distributed memory system not available"
+      Message_FatalError("Distributed MS not available") ;
     #endif
   }
   

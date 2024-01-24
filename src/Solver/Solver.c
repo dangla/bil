@@ -281,7 +281,7 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
          * with gmres by default. 
          * Set the relative, absolute, divergence tolerance from the
          * command line: 
-         * "ksp_rtol <rtol>", "ksp_atol <atol>", "ksp_dtol <dtol>
+         * "-ksp_rtol <rtol>", "-ksp_atol <atol>", "-ksp_dtol <dtol>
          **/
         {
           int n = Solver_GetNbOfColumns(solver) ;
@@ -313,6 +313,8 @@ Solver_t*  (Solver_Create)(Mesh_t* mesh,Options_t* options,const int n_res,const
           PCSetFromOptions(*pc) ;
           //PCSetUp(*pc) ;
         }
+        
+        //Solver_AppendGenericWorkSpace(solver,gpc) ;
       }
       #endif
     #endif

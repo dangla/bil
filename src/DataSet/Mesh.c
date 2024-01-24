@@ -1624,7 +1624,7 @@ void (Mesh_BroadcastConstantTerms)(Mesh_t* mesh)
           #if DistributedMS_APIis(MPI)
             MPI_Bcast(vc,nvc,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
           #else
-            #error "Distributed MS not available"
+            Message_FatalError("Distributed MS not available") ;
           #endif
         }
       }
@@ -1658,7 +1658,7 @@ void (Mesh_BroadcastExplicitTerms)(Mesh_t* mesh)
           #if DistributedMS_APIis(MPI)
             MPI_Bcast(ve,nve,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
           #else
-            #error "Distributed MS not available"
+            Message_FatalError("Distributed MS not available") ;
           #endif
         }
       }
@@ -1692,7 +1692,7 @@ void (Mesh_BroadcastImplicitTerms)(Mesh_t* mesh)
           #if DistributedMS_APIis(MPI)
             MPI_Bcast(vi,nvi,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
           #else
-            #error "Distributed MS not available"
+            Message_FatalError("Distributed MS not available") ;
           #endif
         }
       }
@@ -3724,7 +3724,7 @@ void (Mesh_BroadcastElementaryMatrices)(Mesh_t* mesh)
           #if DistributedMS_APIis(MPI)
             MPI_Bcast(ke,n,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
           #else
-            #error "Distributed MS not available"
+            Message_FatalError("Distributed MS not available") ;
           #endif
         }
       }
@@ -3758,7 +3758,7 @@ void (Mesh_BroadcastElementaryResidus)(Mesh_t* mesh)
           #if DistributedMS_APIis(MPI)
             MPI_Bcast(re,ndof,MPI_DOUBLE,ranksender,MPI_COMM_WORLD) ;
           #else
-            #error "Distributed MS not available"
+            Message_FatalError("Distributed MS not available") ;
           #endif
         }
       }

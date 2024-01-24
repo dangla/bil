@@ -1,3 +1,6 @@
+Request(01/09/2023)  - MPI parallelization.
+Done(07/01/2024)
+
 Request(21/10/2022)  - Rename all files using the prefix "bil_".
 To avoid confusion rename also "Bil.[c,h]" as "Entry.[c,h]"
 

@@ -9,6 +9,13 @@ Mesh
 1 1
 
 
+
+Model
+Name  = Carbocem   Unknowns  = z_ca  z_si  logc_na  logc_k  psi  p_l  logc_co2  logc_oh
+
+
+
+
 Material
 Model = Carbocem
 porosity = 0.379

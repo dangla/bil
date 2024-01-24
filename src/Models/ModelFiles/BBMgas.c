@@ -40,7 +40,7 @@
 
 /* Implicit terms */
 /* Nb of implicit terms */
-#define NVI     (32)
+#define NVI     (35)
 /* We define some names for implicit terms */
 #define M_Tot         (vim   + 0)[0]
 #define M_Tot_n       (vim_n + 0)[0]
@@ -64,15 +64,18 @@
 #define CRIT          (vim   + 30)[0]
 #define DLAMBDA       (vim   + 31)[0]
 
+#define W_Gas         (vim   + 32)
+
 
 /* Explicit terms */
 /* Nb of explicit terms */
-#define NVE     (4)
+#define NVE     (5)
 /* We define some names for explicit terms */
-#define KD_L           (vex + 0)[0]
-#define KD_G           (vex + 1)[0]
-#define KF_vap         (vex + 2)[0]
-#define MC_air         (vex + 3)[0]
+#define KD_mass_L      (vex + 0)[0]
+#define KD_mass_G      (vex + 1)[0]
+#define KF_air_L       (vex + 2)[0]
+#define KF_air_G       (vex + 3)[0]
+#define MC_air         (vex + 4)[0]
 
 
 /* Constant terms */
@@ -109,12 +112,14 @@ static void    ComputePhysicoChemicalProperties(double) ;
  * ----- */
 #include "InternationalSystemOfUnits.h"
 /* Shorthands of some units */
-#define dm    (0.1*InternationalSystemOfUnits_OneMeter)
-#define cm    (0.01*InternationalSystemOfUnits_OneMeter)
+#define meter (InternationalSystemOfUnits_OneMeter)
+#define dm    (0.1*meter)
+#define cm    (0.01*meter)
 #define dm2   (dm*dm)
 #define dm3   (dm*dm*dm)
 #define cm3   (cm*cm*cm)
-#define MPa   (1.e6*InternationalSystemOfUnits_OnePascal)
+#define Pascal   (InternationalSystemOfUnits_OnePascal)
+#define MPa   (1.e6*Pascal)
 #define GPa   (1.e3*MPa)
 #define mol   InternationalSystemOfUnits_OneMole
 #define sec   InternationalSystemOfUnits_OneSecond
@@ -126,16 +131,14 @@ static void    ComputePhysicoChemicalProperties(double) ;
 
 
 /* Material properties */
-#define SATURATION_CURVE        (saturationcurve)
-#define SaturationDegree(pc)    (Curve_ComputeValue(SATURATION_CURVE,pc))
-#define dSaturationDegree(pc)   (Curve_ComputeDerivative(SATURATION_CURVE,pc))
+#define SaturationDegree(pc)    (Curve_ComputeValue(saturationcurve,pc))
+#define dSaturationDegree(pc)   (Curve_ComputeDerivative(saturationcurve,pc))
 
-#define RELATIVEPERMLIQ_CURVE                (relativepermliqcurve)
-#define RelativePermeabilityToLiquid(pc)  (Curve_ComputeValue(RELATIVEPERMLIQ_CURVE,pc))
-#define RELATIVEPERMGAS_CURVE                (relativepermgascurve)
-#define RelativePermeabilityToGas(pc)     (Curve_ComputeValue(RELATIVEPERMGAS_CURVE,pc))
+#define RelativePermeabilityToLiquid(pc)  (Curve_ComputeValue(relativepermliqcurve,pc))
+#define RelativePermeabilityToGas(pc)     (Curve_ComputeValue(relativepermgascurve,pc))
 
-#define TortuosityToGas(f,sg)            ((sg > 0) ? pow(f,aa)*pow(sg,bb) : 0)
+#define TortuosityToGas(f,sg)     (0.1) //((sg > 0) ? pow(f,aa)*pow(sg,bb) : 0)
+//#define TortuosityToGas(f,sg)   ((sg > 0) ? pow(f*sg,4./3) : 0) // After HYDRUS
 #define aa                        (0.33)  /* 1/3 Millington, Thiery 1.74 */
 #define bb                        (2.33)   /* 7/3 Millington, Thiery 3.2 */
 
@@ -150,7 +153,7 @@ static void    ComputePhysicoChemicalProperties(double) ;
 /* Molar volume of liquid water */
 #define V_H2O          (18 * cm3)
 /* Mass density */
-#define MassDensityOfWaterVapor(p_v)   (M_H2O*(p_v)/RT)
+#define MassDensityOfWaterVapor(pv)    (M_H2O*(pv)/RT)
 /* Vapor-Liquid Equilibrium */
 #define RelativeHumidity(pc)           (exp(-V_H2O/RT*(pc)))
 #define VaporPressure(pc)              (p_v0*RelativeHumidity(pc))
@@ -187,8 +190,7 @@ static Curve_t* saturationcurve ;
 static Curve_t* relativepermliqcurve ;
 static Curve_t* relativepermgascurve ;
 static double  kappa_s ;
-static double  p_atm = 101325. ;
-static double  p_l0 = 101325 ;
+static double  p_atm ;
 static double  p_v0 ;
 static double  RT ;
 
@@ -202,7 +204,6 @@ static double  RT ;
 
 void ComputePhysicoChemicalProperties(double TK)
 {
-
   /* Diffusion Coefficient Of Molecules In Air (dm2/s) */
   //d_vap   = DiffusionCoefficientOfMoleculeInAir(H2O,TK) ;
   
@@ -215,6 +216,7 @@ void ComputePhysicoChemicalProperties(double TK)
   
   /* Physical constants */
   RT      = PhysicalConstant(PerfectGasConstant)*TK ;
+  p_atm = 101325.*Pascal ;
   
   /* Liquid mass density */
   //rho_l0 = 1 * kg/dm3 ;
@@ -242,14 +244,18 @@ enum {
   I_M_Air,
   I_W_Air,
   I_W_Air2 = I_W_Air + 2,
+  I_W_Gas,
+  I_W_Gas2 = I_W_Gas + 2,
   I_HARDV,
   I_CRIT,
   I_RHO_L,
   I_RHO_G,
+  I_RHO_AIR,
   I_PHI,
-  I_KD_L,
-  I_KD_G,
-  I_KF_vap,
+  I_KD_mass_L,
+  I_KD_mass_G,
+  I_KF_air_L,
+  I_KF_air_G,
   I_GRD_P_L,
   I_GRD_P_L2 = I_GRD_P_L + 2,
   I_GRD_P_G,
@@ -280,8 +286,6 @@ int pm(const char *s)
     return (4) ;
   } else if(!strcmp(s,"mu_l"))       { 
     return (5) ;
-  } else if(!strcmp(s,"p_l0"))       {
-    return (6) ;
   } else if(!strcmp(s,"initial_stress"))       {
     return(7) ;
   } else if(!strncmp(s,"initial_stress_",15))   {
@@ -321,8 +325,8 @@ void GetProperties(Element_t* el)
 {
   gravity = Element_GetPropertyValue(el,"gravity") ;
   rho_s   = Element_GetPropertyValue(el,"rho_s") ;
-  kl_int   = Element_GetPropertyValue(el,"kl_int") ;
-  kg_int   = Element_GetPropertyValue(el,"kg_int") ;
+  kl_int  = Element_GetPropertyValue(el,"kl_int") ;
+  kg_int  = Element_GetPropertyValue(el,"kg_int") ;
   mu_l    = Element_GetPropertyValue(el,"mu_l") ;
   mu_g    = Element_GetPropertyValue(el,"mu_g") ;
   rho_l0  = Element_GetPropertyValue(el,"rho_l") ;
@@ -428,7 +432,9 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double p_ref  = Material_GetPropertyValue(mat,"reference_consolidation_pressure") ;
         Curve_t* lc   = Material_FindCurve(mat,"lc") ;
         
-        e0     = Material_GetPropertyValue(mat,"initial_void_ratio") ;
+        phi0    = Material_GetPropertyValue(mat,"initial_porosity") ;
+        e0      = phi0/(1 - phi0) ;
+
         kappa  = Material_GetPropertyValue(mat,"slope_of_swelling_line") ;
         
         Plasticity_SetTo(plasty,BBM) ;
@@ -587,6 +593,7 @@ int ComputeInitialState(Element_t* el)
       for(i = 0 ; i < 3 ; i++) {
         W_Tot[i] = x[I_W_Tot + i] ;
         W_Air[i] = x[I_W_Air + i] ;
+        W_Gas[i] = x[I_W_Gas + i] ;
       }
     
       for(i = 0 ; i < 9 ; i++) SIG[i] = x[I_SIG + i] ;
@@ -604,22 +611,12 @@ int ComputeInitialState(Element_t* el)
     /* storage in vex */
     {
       double* vex  = vex0 + p*NVE ;
-      double rho_l = x[I_RHO_L] ;
-      double rho_g = x[I_RHO_G] ;
-      double p_l = x[I_P_L] ;
-      double p_g = x[I_P_G] ;
-      double pc = p_g - p_l ;
-      double sl = SaturationDegree(pc) ;
-      double sg = 1 - sl ;
-      double phi_g = phi0*sg ;
-      double kd_l = rho_l*kl_int/mu_l*RelativePermeabilityToLiquid(pc) ;
-      double kd_g = rho_g*kg_int/mu_g*RelativePermeabilityToGas(pc) ;
-      double kf_vap = phi_g * d_vap * TortuosityToGas(phi0,sg) ;
-    
-      KD_L = kd_l ;
-      KD_G = kd_g ;
-      KF_vap = kf_vap ;
-      MC_air = x[I_MC_air] ;
+
+      KD_mass_L = x[I_KD_mass_L] ;
+      KD_mass_G = x[I_KD_mass_G] ;
+      KF_air_L  = x[I_KF_air_L] ;
+      KF_air_G  = x[I_KF_air_G] ;
+      MC_air    = x[I_MC_air] ;
     }
   }
   
@@ -653,22 +650,12 @@ int  ComputeExplicitTerms(Element_t* el,double t)
     /* storage in vex */
     {
       double* vex  = vex0 + p*NVE ;
-      double rho_l = x[I_RHO_L] ;
-      double rho_g = x[I_RHO_G] ;
-      double p_l = x[I_P_L] ;
-      double p_g = x[I_P_G] ;
-      double pc = p_g - p_l ;
-      double sl = SaturationDegree(pc) ;
-      double sg = 1 - sl ;
-      double phi_g = phi0*sg ;
-      double kd_l = rho_l*kl_int/mu_l*RelativePermeabilityToLiquid(pc) ;
-      double kd_g = rho_g*kg_int/mu_g*RelativePermeabilityToGas(pc) ;
-      double kf_vap = phi_g * d_vap * TortuosityToGas(phi0,sg) ;
-    
-      KD_L = kd_l ;
-      KD_G = kd_g ;
-      KF_vap = kf_vap ;
-      MC_air = x[I_MC_air] ;
+      
+      KD_mass_L = x[I_KD_mass_L] ;
+      KD_mass_G = x[I_KD_mass_G] ;
+      KF_air_L  = x[I_KF_air_L] ;
+      KF_air_G  = x[I_KF_air_G] ;
+      MC_air    = x[I_MC_air] ;
     }
   }
   
@@ -712,6 +699,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
       for(i = 0 ; i < 3 ; i++) {
         W_Tot[i] = x[I_W_Tot + i] ;
         W_Air[i] = x[I_W_Air + i] ;
+        W_Gas[i] = x[I_W_Gas + i] ;
       }
     
       for(i = 0 ; i < 9 ; i++) SIG[i] = x[I_SIG + i] ;
@@ -744,10 +732,9 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 
   /* Initialization */
   {
-    double zero = 0. ;
     int    i ;
     
-    for(i = 0 ; i < ndof*ndof ; i++) k[i] = zero ;
+    for(i = 0 ; i < ndof*ndof ; i++) k[i] = 0 ;
   }
 
 
@@ -765,9 +752,9 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   ** Poromechanic matrix
   */
   {
-    double c[IntFct_MaxNbOfIntPoints*100] ;
+    double c[IntFct_MaxNbOfIntPoints*121] ;
     int dec = ComputeTangentCoefficients(fem,t,dt,c) ;
-    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,1,U_u) ;
+    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,2,U_u) ;
     
     {
       int i ;
@@ -778,20 +765,27 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     }
   }
   
+
   /*
-  ** Conduction matrix
+  ** Conduction Matrix
   */
   {
-    double c[IntFct_MaxNbOfIntPoints*100] ;
+    double c[IntFct_MaxNbOfIntPoints*36] ;
     int dec = ComputeTransferCoefficients(fem,dt,c) ;
-    double* kc = FEM_ComputeConductionMatrix(fem,intfct,c,dec) ;
+    double* kc_mass_L = FEM_ComputeConductionMatrix(fem,intfct,c,dec) ;
+    double* kc_mass_G = FEM_ComputeConductionMatrix(fem,intfct,c+9,dec) ;
+    double* kc_air_L  = FEM_ComputeConductionMatrix(fem,intfct,c+2*9,dec) ;
+    double* kc_air_G  = FEM_ComputeConductionMatrix(fem,intfct,c+3*9,dec) ;
     int    i ;
-  
+    
     for(i = 0 ; i < nn ; i++) {
       int    j ;
       
       for(j = 0 ; j < nn ; j++) {
-        K(E_mass + i*NEQ,U_p_l + j*NEQ) += dt*kc[i*nn + j] ;
+        K(E_mass + i*NEQ,U_p_l + j*NEQ) += dt*kc_mass_L[i*nn + j] ;
+        K(E_mass + i*NEQ,U_p_g + j*NEQ) += dt*kc_mass_G[i*nn + j] ;
+        K(E_air  + i*NEQ,U_p_l + j*NEQ) += dt*kc_air_L[i*nn + j] ;
+        K(E_air  + i*NEQ,U_p_g + j*NEQ) += dt*kc_air_G[i*nn + j] ;
       }
     }
   }
@@ -807,8 +801,8 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 /** Comput the residu (r) */
 {
 #define R(n,i)    (r[(n)*NEQ+(i)])
-  double* vim_1 = Element_GetCurrentImplicitTerm(el) ;
-  double* vim_n = Element_GetPreviousImplicitTerm(el) ;
+  double* vim0 = Element_GetCurrentImplicitTerm(el) ;
+  double* vim0_n = Element_GetPreviousImplicitTerm(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
@@ -816,10 +810,9 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   int ndof = nn*NEQ ;
   FEM_t* fem = FEM_GetInstance(el) ;
   int    i ;
-  double zero = 0. ;
 
   /* Initialization */
-  for(i = 0 ; i < ndof ; i++) r[i] = zero ;
+  for(i = 0 ; i < ndof ; i++) r[i] = 0 ;
 
   if(Element_IsSubmanifold(el)) return(0) ;
 
@@ -828,7 +821,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   
   /* 1.1 Stresses */
   {
-    double* vim = vim_1 ;
+    double* vim = vim0 ;
     double* rw = FEM_ComputeStrainWorkResidu(fem,intfct,SIG,NVI) ;
     
     for(i = 0 ; i < nn ; i++) {
@@ -841,7 +834,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   
   /* 1.2 Body forces */
   {
-    double* vim = vim_1 ;
+    double* vim = vim0 ;
     double* rbf = FEM_ComputeBodyForceResidu(fem,intfct,F_MASS + dim - 1,NVI) ;
     
     for(i = 0 ; i < nn ; i++) {
@@ -855,7 +848,8 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   
   /* 2.1 Accumulation Terms */
   {
-    double* vim = vim_1 ;
+    double* vim = vim0 ;
+    double* vim_n = vim0_n ;
     double g1[IntFct_MaxNbOfIntPoints] ;
     
     for(i = 0 ; i < np ; i++ , vim += NVI , vim_n += NVI) g1[i] = M_Tot - M_Tot_n ;
@@ -869,7 +863,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   
   /* 2.2 Transport Terms */
   {
-    double* vim = vim_1 ;
+    double* vim = vim0 ;
     double* rf = FEM_ComputeFluxResidu(fem,intfct,W_Tot,NVI) ;
     
     for(i = 0 ; i < nn ; i++) R(i,E_mass) -= -dt*rf[i] ;
@@ -878,7 +872,28 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   
   /* 3. Conservation of air mass */
   
-  //!!! To be continued
+  /* 3.1 Accumulation Terms */
+  {
+    double* vim = vim0 ;
+    double* vim_n = vim0_n ;
+    double g1[IntFct_MaxNbOfIntPoints] ;
+    
+    for(i = 0 ; i < np ; i++ , vim += NVI , vim_n += NVI) g1[i] = M_Air - M_Air_n ;
+    
+    {
+      double* ra = FEM_ComputeBodyForceResidu(fem,intfct,g1,1) ;
+    
+      for(i = 0 ; i < nn ; i++) R(i,E_air) -= ra[i] ;
+    }
+  }
+  
+  /* 3.2 Transport Terms */
+  {
+    double* vim = vim0 ;
+    double* rf = FEM_ComputeFluxResidu(fem,intfct,W_Air,NVI) ;
+    
+    for(i = 0 ; i < nn ; i++) R(i,E_air) -= -dt*rf[i] ;
+  }
   
   return(0) ;
 #undef R
@@ -889,7 +904,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 /** Compute the outputs (r) */
 {
-  int NbOfOutputs = 8 ;
+  int NbOfOutputs = 11 ;
   double* vex0  = Element_GetExplicitTerm(el) ;
   double* vim0  = Element_GetCurrentImplicitTerm(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
@@ -931,6 +946,9 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double eps_p[9] = {0,0,0,0,0,0,0,0,0} ;
     double tre,e ;
     double w_tot[3] = {0,0,0} ;
+    double w_air[3] = {0,0,0} ;
+    double w_gas[3] = {0,0,0} ;
+    double j_vap[3] = {0,0,0} ;
     double sig[9] = {0,0,0,0,0,0,0,0,0} ;
     double hardv = 0 ;
     int    i ;
@@ -954,6 +972,15 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       
       for(j = 0 ; j < 9 ; j++) eps[j] += def[j]/np ;
       
+      for(j = 0 ; j < 3 ; j++) w_air[j] += W_Air[j]/np ;
+      
+      for(j = 0 ; j < 3 ; j++) w_gas[j] += W_Gas[j]/np ;
+    
+      
+      for(j = 0 ; j < 3 ; j++) {
+        j_vap[j] += MC_air*W_Gas[j] - W_Air[j] ;
+      }
+      
       hardv += HARDV/np ;
     }
     
@@ -963,12 +990,15 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     i = 0 ;
     Result_Store(r + i++,&p_l     ,"Liquid_pore_pressure",1) ;
     Result_Store(r + i++,dis      ,"Displacements",3) ;
-    Result_Store(r + i++,w_tot    ,"Fluid_mass_flow",3) ;
+    Result_Store(r + i++,w_tot    ,"Total_mass_flow",3) ;
     Result_Store(r + i++,sig      ,"Stresses",9) ;
     Result_Store(r + i++,&sl      ,"Saturation_degree",1) ;
     Result_Store(r + i++,&e       ,"Void_ratio_variation",1) ;
     Result_Store(r + i++,eps_p    ,"Plastic_strains",9) ;
     Result_Store(r + i++,&hardv   ,"Hardening_variable",1) ;
+    Result_Store(r + i++,&p_g     ,"Gas_pore_pressure",1) ;
+    Result_Store(r + i++,w_air    ,"Air_mass_flow",3) ;
+    Result_Store(r + i++,j_vap    ,"Diffusive_vapor_mass_flow",3) ;
   }
   
   return(NbOfOutputs) ;
@@ -995,9 +1025,8 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
   
-  int    dec = 100 ;
+  int    dec = 121 ;
   int    p ;
-  double zero = 0. ;
   
   double dxi[Model_MaxNbOfEquations] ;
   
@@ -1019,40 +1048,35 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
     /* Variables */
     double* x = ComputeVariables(el,u,u_n,vim0_n,t,dt,p) ;
     
-    /* Pressure */
+    /* Pressures */
     double p_l = x[I_P_L] ;
     double p_g = x[I_P_G] ;
     double pc = p_g - p_l ;
+    /* Saturations */
+    double sl = SaturationDegree(pc) ;
+    double sg = 1 - sl ;
 
 
     /* initialization */
     {
       int i ;
       
-      for(i = 0 ; i < dec ; i++) c0[i] = zero ;
+      for(i = 0 ; i < dec ; i++) c0[i] = 0 ;
     }
     
 
-    /* Mechanics */
+    /* 1. Derivatives w.r.t. the strain tensor
+     * --------------------------------------- */
     {
-      double sig[9] ;
-      int i ;
-    
-      for(i = 0 ; i < 9 ; i++) sig[i] = SIG[i] ;
-    
-      /* Net stresses */
-      sig[0] += p_g ;
-      sig[4] += p_g ;
-      sig[8] += p_g ;
-      
-      /* Tangent stiffness matrix */
+      /* 1.1 Tangent stiffness matrix */
       {
         double* c1 = c0 ;
         double crit = CRIT ;
         
         {
           double* sig_n   = SIG_n ;
-          double signet_n = (sig_n[0] + sig_n[4] + sig_n[8])/3. + p_g ;
+          double  p_gn    = FEM_ComputeUnknown(fem,u_n,intfct,p,U_p_g) ;
+          double signet_n = (sig_n[0] + sig_n[4] + sig_n[8])/3. + p_gn ;
           double bulk     = - signet_n*(1 + e0)/kappa ;
           double lame     = bulk - 2*mu/3. ;
           double poisson  = 0.5 * lame / (lame + mu) ;
@@ -1064,63 +1088,98 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
 
         Elasticity_CopyStiffnessTensor(elasty,c1) ;
       
-        {
-          /* Criterion */
-          if(crit >= 0.) {
-            double logp_co  = HARDV ;
-            double hardv[2] = {logp_co,pc} ;
+        /* Criterion */
+        if(crit >= 0.) {
+          double logp_co  = HARDV ;
+          double hardv[2] = {logp_co,pc} ;
+          double sig[9] ;
+          int i ;
+    
+          for(i = 0 ; i < 9 ; i++) sig[i] = SIG[i] ;
+    
+          /* Net stresses */
+          sig[0] += p_g ;
+          sig[4] += p_g ;
+          sig[8] += p_g ;
             
           /* Continuum tangent stiffness matrix */
-            //ComputeTangentStiffnessTensor(sig,hardv) ;
+          //ComputeTangentStiffnessTensor(sig,hardv) ;
           /* Consistent tangent stiffness matrix */
-            ComputeTangentStiffnessTensor(sig,hardv,&DLAMBDA) ;
+          ComputeTangentStiffnessTensor(sig,hardv,&DLAMBDA) ;
 
-            CopyTangentStiffnessTensor(c1) ;
-          }
+          CopyTangentStiffnessTensor(c1) ;
         }
       }
       
-      
-      /* Coupling matrix */
+      /* 1.2 Coupling matrix for the total mass  */
       {
-        double  dp_l = dxi[U_p_l] ;
-        double* dxdp_l = ComputeVariableDerivatives(el,t,dt,x,dp_l,I_P_L) ;
-        double* dsigdp_l = dxdp_l + I_SIG ;
-        double* c1 = c0 + 81 ;
-
-        for(i = 0 ; i < 9 ; i++) c1[i] = dsigdp_l[i] ;
+        double* c1 = c0 + 81 + 2*9 ;
+        double rho_l = x[I_RHO_L] ;
+        double rho_g = x[I_RHO_G] ;
+        int i ;
+        
+        for(i = 0 ; i < 3 ; i++) B1(i,i) = rho_l*sl + rho_g*sg ;
+      }
+    
+      /* 1.3 Coupling matrix for the air mass */
+      {
+        double* c1 = c0 + 81 + 3*9 + 2 ;
+        double rho_air = x[I_RHO_AIR] ;
+        int i ;
+        
+        for(i = 0 ; i < 3 ; i++) B1(i,i) = rho_air*sg ;
       }
     }
     
     
-    /* Hydraulics */
+    /* 2. Derivatives w.r.t. the liquid pressure
+     * ----------------------------------------- */
     {
-      /* Fluid mass density */
-      double rho_l = rho_l0 ;
-      double sl = SaturationDegree(pc) ;
-    
-    
-      /* Coupling matrix */
+      double  dp_l = dxi[U_p_l] ;
+      double* dxdp_l = ComputeVariableDerivatives(el,t,dt,x,dp_l,I_P_L) ;
+      
+      /* 2.1 Mechanical coupling matrix */
       {
-        double* c1 = c0 + 81 + 9 ;
+        double* dsigdp_l = dxdp_l + I_SIG ;
+        double* c1 = c0 + 81 ;
         int i ;
-        
-        for(i = 0 ; i < 3 ; i++) B1(i,i) = rho_l*sl ;
+
+        for(i = 0 ; i < 9 ; i++) c1[i] = dsigdp_l[i] ;
       }
       
-      
-      /* Storage matrix */
+      /* 2.2 Storage coefficients for the total and air masses */
       {
-        double* c1 = c0 + 81 + 9 + 9 ;
-        //double dxk   = dxi[U_p_l] ;
-        //int    k     = I_P_L ;
-        //double* dx   = ComputeVariableDerivatives(el,t,dt,x,dxk,k) ;
-        /* Porosity */
-        double* eps  = FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_u) ;
-        double tre   = eps[0] + eps[4] + eps[8] ;
-        double phi   = phi0 + tre ;
+        double* c1 = c0 + 81 + 3*9 ;
+        double* c2 = c0 + 81 + 4*9 + 2 ;
         
-        c1[0] = - rho_l*phi*dSaturationDegree(pc) ;
+        c1[0] = dxdp_l[I_M_Tot] ;
+        c2[0] = dxdp_l[I_M_Air] ;
+      }
+    }
+    
+    
+    /* 3. Derivatives w.r.t. the air pressure
+     * -------------------------------------- */
+    {
+      double  dp_g = dxi[U_p_g] ;
+      double* dxdp_g = ComputeVariableDerivatives(el,t,dt,x,dp_g,I_P_G) ;
+      
+      /* 3.1 Mechanical coupling matrix */
+      {
+        double* dsigdp_g = dxdp_g + I_SIG ;
+        double* c1 = c0 + 90 ;
+        int i ;
+
+        for(i = 0 ; i < 9 ; i++) c1[i] = dsigdp_g[i] ;
+      }
+      
+      /* 3.2 Storage coefficients for the total and air masses */
+      {
+        double* c1 = c0 + 81 + 3*9 + 1 ;
+        double* c2 = c0 + 81 + 4*9 + 3 ;
+        
+        c1[0] = dxdp_g[I_M_Tot] ;
+        c2[0] = dxdp_g[I_M_Air] ;
       }
     }
   }
@@ -1134,37 +1193,74 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
 
 
 
+
 int ComputeTransferCoefficients(FEM_t* fem,double dt,double* c)
 /*
 **  Conduction matrix (c) and shift (dec)
 */
 {
   Element_t* el = FEM_GetElement(fem) ;
-  double* vex0 = Element_GetExplicitTerm(el) ;
+  double*  vim0  = Element_GetCurrentImplicitTerm(el) ;
+  double*  vim0_n = Element_GetPreviousImplicitTerm(el) ;
+  double*  vex0  = Element_GetExplicitTerm(el) ;
+  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
-  int    dec = 9 ;
+  int    dec = 4*9 ;
   int    p ;
-  double zero = 0. ;
   
 
   for(p = 0 ; p < np ; p++) {
+    /* Pressures at previous time step */
+    double p_l = FEM_ComputeUnknown(fem,u_n,intfct,p,U_p_l) ;
+    double p_g = FEM_ComputeUnknown(fem,u_n,intfct,p,U_p_g) ;
+    double pc = p_g - p_l ;
+    double drho_vap = M_H2O/RT*dVaporPressure(pc) ;
     int i ;
     double* c1 = c + p*dec ;
     
     /* initialization */
-    for(i = 0 ; i < dec ; i++) c1[i] = zero ;
+    for(i = 0 ; i < dec ; i++) c1[i] = 0. ;
     
     {
       double* vex  = vex0 + p*NVE ;
       
-      /* Permeability tensors */
-      c1[0] = KD_L ;
-      c1[4] = KD_L ;
-      c1[8] = KD_L ;
+      /* Transfer coefficients for the total mass flux */
+      {
+        double* c2 = c1 ;
+        
+        c2[0] = KD_mass_L ;
+        c2[4] = KD_mass_L ;
+        c2[8] = KD_mass_L ;
+      }
+      
+      {
+        double* c2 = c1 + 9 ;
+        
+        c2[0] = KD_mass_G ;
+        c2[4] = KD_mass_G ;
+        c2[8] = KD_mass_G ;
+      }
+      
+      /* Transfer coefficients for the air mass flux */
+      {
+        double* c2 = c1 + 2 * 9 ;
+        
+        c2[0] = KF_air_L ;
+        c2[4] = c2[0] ;
+        c2[8] = c2[0] ;
+      }
+      {
+        double* c2 = c1 + 3 * 9 ;
+        
+        c2[0] = MC_air * KD_mass_G + KF_air_G ;
+        c2[4] = c2[0] ;
+        c2[8] = c2[0] ;
+      }
     }
   }
-  
+
   return(dec) ;
 }
 
@@ -1263,10 +1359,11 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
       double* vex0 = Element_GetExplicitTerm(el) ;
       double* vex  = vex0 + p*NVE ;
       
-      x_n[I_KD_L]   = KD_L ;
-      x_n[I_KD_G]   = KD_G ;
-      x_n[I_KF_vap] = KF_vap ;
-      x_n[I_MC_air] = MC_air ;
+      x_n[I_KD_mass_L] = KD_mass_L ;
+      x_n[I_KD_mass_G] = KD_mass_G ;
+      x_n[I_KF_air_L]  = KF_air_L ;
+      x_n[I_KF_air_G]  = KF_air_G ;
+      x_n[I_MC_air]    = MC_air ;
     }
   }
     
@@ -1317,7 +1414,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       {
         double trde      = deps[0] + deps[4] + deps[8] ;
         double dlns      = log((pc + p_atm)/(pc_n + p_atm)) ;
-        double signet_n  = (sig_n[0] + sig_n[4] + sig_n[8])/3. + p_g ;
+        double signet_n  = (sig_n[0] + sig_n[4] + sig_n[8])/3. + p_gn ;
         double bulk      = - signet_n*(1 + e0)/kappa ;
         double dsigm     = bulk*trde - signet_n*kappa_s/kappa*dlns ;
         double lame      = bulk - 2*mu/3. ;
@@ -1380,13 +1477,18 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
     double rho_air = M_AIR/RT*p_air ;
     double rho_g   = rho_vap + rho_air ;
     
+    /* saturation */
+    double  sl  = SaturationDegree(pc) ;
+    double  sg  = 1 - sl ;
+    
     /* Fluid mass flow */
     {
-      /* Transfer coefficients */
-      double kd_l = x_n[I_KD_L] ;
-      double kd_g = x_n[I_KD_G] ;
-      double kf_vap = x_n[I_KF_vap] ;
-      double mc_air  = x_n[I_MC_air] ;
+      /* Transfer coefficients at the previous time */
+      double kd_mass_l = x_n[I_KD_mass_L] ;
+      double kd_mass_g = x_n[I_KD_mass_G] ;
+      double kf_air_l  = x_n[I_KF_air_L] ;
+      double kf_air_g  = x_n[I_KF_air_G] ;
+      double mc_air    = x_n[I_MC_air] ;
     
       /* Pressure gradients */
       double* gpl = x + I_GRD_P_L ;
@@ -1395,36 +1497,46 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       /* Mass flows */
       double* w_tot = x + I_W_Tot ;
       double* w_air = x + I_W_Air ;
-      double drho_vap = M_H2O/RT*dVaporPressure(pc) ;
+      double* w_gas = x + I_W_Gas ;
       int i ;
+      
+      if(p_air < 0) {
+        Message_RuntimeError("Negative air pressure!") ;
+      }
     
       for(i = 0 ; i < 3 ; i++) {
-        double w_l = - kd_l*gpl[i] ;
-        double w_g = - kd_g*gpg[i] ;
-        double grd_vap = drho_vap*(gpg[i] - gpl[i]) ;
-        double j_vap = - kf_vap*grd_vap ;
-        double j_air = - j_vap ;
+        double w_l   = - kd_mass_l*gpl[i] ;
+        double w_g   = - kd_mass_g*gpg[i] ;
+        double j_air = - kf_air_l*gpl[i] - kf_air_g*gpg[i] ;
         
         w_tot[i] = w_l + w_g ;
         w_air[i] = mc_air*w_g + j_air ;
+        w_gas[i] = w_g ;
       }
-      w_tot[dim - 1] += (kd_l*rho_l + kd_g*rho_g)*gravity ;
-      w_air[dim - 1] += mc_air*(kd_g*rho_g)*gravity ;
+      w_tot[dim - 1] += (kd_mass_l*rho_l + kd_mass_g*rho_g)*gravity ;
+      w_air[dim - 1] += mc_air*kd_mass_g*rho_g*gravity ;
+    }
     
-      /* permeabilities and mass fraction */
-      x[I_KD_L] = rho_l*kl_int/mu_l*RelativePermeabilityToLiquid(pc) ;
-      x[I_KD_G] = rho_g*kg_int/mu_g*RelativePermeabilityToGas(pc) ;
-      x[I_MC_air] = rho_air/rho_g ;
+    /* Transfer coefficients at the current time */
+    {
+      double d_eff    = d_vap*TortuosityToGas(phi,sg) ;
+      double mc_air   = rho_air/rho_g ;
+      double mc_vap   = 1 - mc_air ;
+      double drho_vap = M_H2O/RT*dVaporPressure(pc) ;
+      
+      x[I_KD_mass_L] = rho_l*kl_int/mu_l*RelativePermeabilityToLiquid(pc) ;
+      x[I_KD_mass_G] = rho_g*kg_int/mu_g*RelativePermeabilityToGas(pc) ;
+      x[I_MC_air]    = mc_air ;
+      /* j_air = - rho_g * d_eff * Grad(mc_air) */
+      x[I_KF_air_L]  = (mc_air*M_H2O+mc_vap*M_AIR)/RT*drho_vap*d_eff ;
+      x[I_KF_air_G]  = - x[I_KF_air_L] + mc_vap*M_AIR/RT*d_eff;
     }
     
     /* Mass contents, body force */
     {
-    /* saturation */
-      double  sl  = SaturationDegree(pc) ;
-      double  sg  = 1 - sl ;
-      double  m_l = rho_l*phi*sl ;
-      double  m_g = rho_g*phi*sg ;
-      double m_tot = m_l + m_g ;
+      double  m_l   = rho_l*phi*sl ;
+      double  m_g   = rho_g*phi*sg ;
+      double  m_tot = m_l + m_g ;
       double  m_air = rho_air*phi*sg ;
       double* f_mass = x + I_Fmass ;
       int i ;
@@ -1433,6 +1545,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       x[I_M_Air] = m_air ;
       x[I_RHO_L] = rho_l ;
       x[I_RHO_G] = rho_g ;
+      x[I_RHO_AIR] = rho_air ;
       x[I_PHI]   = phi ;
       
       for(i = 0 ; i < 3 ; i++) f_mass[i] = 0 ;

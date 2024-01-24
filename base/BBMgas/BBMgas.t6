@@ -1,6 +1,6 @@
-# Version 2.9.1, Tue Jan 16 11:27:35 2024
+# Version 2.9.1, Tue Jan 16 11:12:27 2024
 # Time = 6.000000e+00
-# Model = BBM
+# Model = BBMgas
 # Number of views = 8
 # Numbers of components per view = 1 3 3 9 1 1 9 1
 # Coordinates(1) Liquid_pore_pressure(4) Displacements(5) Fluid_mass_flow(8) Stresses(11) Saturation_degree(20) Void_ratio_variation(21) Plastic_strains(22) Hardening_variable(31)

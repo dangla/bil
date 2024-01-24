@@ -503,6 +503,8 @@ double Plasticity_UpdateElastoplasticTensor(Plasticity_t* plasty,double* c)
           printf(" %e",dgsds[i]) ;
         }
         printf("\n") ;
+        printf("hm = %e\n",hm[0]) ;
+        printf("dF(j,i) * C(i,j,k,l) * dG(l,k) = %e\n",fcg) ;
         printf("hm + dF(j,i) * C(i,j,k,l) * dG(l,k) = %e\n",det) ;
         printf("\n") ;
         

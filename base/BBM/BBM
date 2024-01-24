@@ -4,6 +4,7 @@ Geometry       # dimension (1, 2, 3) et symétrie (axis, plan) du pb
 Mesh                # maillage considéré (généré avec GMSH)
 carre.msh
 
+
 Material            # liste des matériaux (modèles et param. associés)
 Model = BBM         # nom du modèle
 gravity = 0         # gravité
@@ -24,7 +25,8 @@ k_int = 1e-20       # permeabilite intrinseque
 mu_l = 0.001        # viscosite du liquide
 suction_cohesion_coefficient = 0.8
 #Curves = wrc        # nom du fichier contenant p_c S_l k_rl LC
-Curves = wrc2   pc = Range{x1 = 0 , x2 = 30.e6, n = 171}  sl = Expressions(1){p0 = 1.e6 ; m = 0.6 ; sl = (1 + (pc/p0)**(1/(1-m)))**(-m)} kl = Expressions(1){kl = 1} kg = Expressions(1){kg = 1}
+Curves = wrc2   pc = Range{x1 = 0 , x2 = 30.e6, n = 171}  sl = Expressions(1){p0 = 1.e6 ; m = 0.6 ; sl = (1 + (pc/p0)**(1/(1-m)))**(-m)}
+Curves = krc2   pc = Range{x1 = 0 , x2 = 30.e6, n = 171}  kl = Expressions(1){kl = 1} kg = Expressions(1){kg = 1}
 Curves = lc   pc = Range{x1 = 0 , x2 = 1.e6, n = 200}  lc = Expressions(1){l0 = 0.065 ; k = 0.011 ; beta = 20.e-6 ; r = 0.75 ; lc = (l0 - k)/(l0*((1-r)*exp(-beta*pc) + r) - k)}
 
 

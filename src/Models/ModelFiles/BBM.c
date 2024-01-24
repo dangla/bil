@@ -300,7 +300,9 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double p_ref  = Material_GetPropertyValue(mat,"reference_consolidation_pressure") ;
         Curve_t* lc   = Material_FindCurve(mat,"lc") ;
         
-        e0     = Material_GetPropertyValue(mat,"initial_void_ratio") ;
+        phi0    = Material_GetPropertyValue(mat,"initial_porosity") ;
+        e0      = phi0/(1 - phi0) ;
+
         kappa  = Material_GetPropertyValue(mat,"slope_of_swelling_line") ;
         
         Plasticity_SetTo(plasty,BBM) ;
@@ -592,10 +594,9 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 
   /* Initialization */
   {
-    double zero = 0. ;
     int    i ;
     
-    for(i = 0 ; i < ndof*ndof ; i++) k[i] = zero ;
+    for(i = 0 ; i < ndof*ndof ; i++) k[i] = 0 ;
   }
 
 
@@ -630,7 +631,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   ** Conduction matrix
   */
   {
-    double c[IntFct_MaxNbOfIntPoints*100] ;
+    double c[IntFct_MaxNbOfIntPoints*9] ;
     int dec = ComputeTransferCoefficients(fem,dt,c) ;
     double* kc = FEM_ComputeConductionMatrix(fem,intfct,c,dec) ;
     int    i ;
@@ -664,10 +665,9 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   int ndof = nn*NEQ ;
   FEM_t* fem = FEM_GetInstance(el) ;
   int    i ;
-  double zero = 0. ;
 
   /* Initialization */
-  for(i = 0 ; i < ndof ; i++) r[i] = zero ;
+  for(i = 0 ; i < ndof ; i++) r[i] = 0 ;
 
   if(Element_IsSubmanifold(el)) return(0) ;
 
@@ -842,7 +842,6 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
   
   int    dec = 100 ;
   int    p ;
-  double zero = 0. ;
   
   double dxi[Model_MaxNbOfEquations] ;
   
@@ -865,8 +864,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
     double* x = ComputeVariables(el,u,u_n,vim0_n,t,dt,p) ;
     
     /* Pressure */
-    double p_l = FEM_ComputeUnknown(fem,u,intfct,p,U_p_l) ;
-    //double p_l = x[I_P_L] ;
+    double p_l = x[I_P_L] ;
     double pc = p_g - p_l ;
 
 
@@ -874,23 +872,14 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
     {
       int i ;
       
-      for(i = 0 ; i < dec ; i++) c0[i] = zero ;
+      for(i = 0 ; i < dec ; i++) c0[i] = 0 ;
     }
     
 
-    /* Mechanics */
+    /* 1. Derivatives w.r.t. the strain tensor
+     * --------------------------------------- */
     {
-      double sig[9] ;
-      int i ;
-    
-      for(i = 0 ; i < 9 ; i++) sig[i] = SIG[i] ;
-    
-      /* Net stresses */
-      sig[0] += p_g ;
-      sig[4] += p_g ;
-      sig[8] += p_g ;
-      
-      /* Tangent stiffness matrix */
+      /* 1.1 Tangent stiffness matrix */
       {
         double* c1 = c0 ;
         double crit = CRIT ;
@@ -914,6 +903,15 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
           if(crit >= 0.) {
             double logp_co  = HARDV ;
             double hardv[2] = {logp_co,pc} ;
+            double sig[9] ;
+            int i ;
+    
+            for(i = 0 ; i < 9 ; i++) sig[i] = SIG[i] ;
+    
+            /* Net stresses */
+            sig[0] += p_g ;
+            sig[4] += p_g ;
+            sig[8] += p_g ;
             
           /* Continuum tangent stiffness matrix */
             //ComputeTangentStiffnessTensor(sig,hardv) ;
@@ -925,45 +923,39 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
         }
       }
       
-      
-      /* Coupling matrix */
-      {
-        double  dp_l = dxi[U_p_l] ;
-        double* dxdp_l = ComputeVariableDerivatives(el,t,dt,x,dp_l,I_P_L) ;
-        double* dsigdp_l = dxdp_l + I_SIG ;
-        double* c1 = c0 + 81 ;
-
-        for(i = 0 ; i < 9 ; i++) c1[i] = dsigdp_l[i] ;
-      }
-    }
-    
-    
-    /* Hydraulics */
-    {
-      /* Fluid mass density */
-      double rho_l = rho_l0 ;
-      double sl = SaturationDegree(pc) ;
-    
-    
-      /* Coupling matrix */
+      /* 1.2 Coupling matrix for the total mass  */
       {
         double* c1 = c0 + 81 + 9 ;
+        double rho_l = rho_l0 ;
+        double sl = SaturationDegree(pc) ;
         int i ;
         
         for(i = 0 ; i < 3 ; i++) B1(i,i) = rho_l*sl ;
       }
+    }
+    
+    
+    
+    /* 2. Derivatives w.r.t. the liquid pressure
+     * ----------------------------------------- */
+    {
+      double  dp_l = dxi[U_p_l] ;
+      double* dxdp_l = ComputeVariableDerivatives(el,t,dt,x,dp_l,I_P_L) ;
       
+      /* 2.1 Mechanical coupling matrix */
+      {
+        double* dsigdp_l = dxdp_l + I_SIG ;
+        double* c1 = c0 + 81 ;
+            int i ;
+
+        for(i = 0 ; i < 9 ; i++) c1[i] = dsigdp_l[i] ;
+      }
       
-      /* Storage matrix */
+      /* 2.2 Storage coefficient for the liquid mass */
       {
         double* c1 = c0 + 81 + 9 + 9 ;
-        //double dxk   = dxi[U_p_l] ;
-        //int    k     = I_P_L ;
-        //double* dx   = ComputeVariableDerivatives(el,t,dt,x,dxk,k) ;
-        /* Porosity */
-        double* eps  = FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_u) ;
-        double tre   = eps[0] + eps[4] + eps[8] ;
-        double phi   = phi0 + tre ;
+        double phi   = x[I_PHI] ;
+        double rho_l = rho_l0 ;
         
         c1[0] = - rho_l*phi*dSaturationDegree(pc) ;
       }
@@ -990,7 +982,6 @@ int ComputeTransferCoefficients(FEM_t* fem,double dt,double* c)
   int np = IntFct_GetNbOfPoints(intfct) ;
   int    dec = 9 ;
   int    p ;
-  double zero = 0. ;
   
 
   for(p = 0 ; p < np ; p++) {
@@ -998,7 +989,7 @@ int ComputeTransferCoefficients(FEM_t* fem,double dt,double* c)
     double* c1 = c + p*dec ;
     
     /* initialization */
-    for(i = 0 ; i < dec ; i++) c1[i] = zero ;
+    for(i = 0 ; i < dec ; i++) c1[i] = 0 ;
     
     {
       double* vex  = vex0 + p*NVE ;

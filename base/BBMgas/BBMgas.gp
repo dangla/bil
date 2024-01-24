@@ -39,7 +39,7 @@ Y(p,pc) = (p <= pc) ? m*sqrt(abs((p + ps)*(p - pc))) : 1/0
 
 
 # Input Data file
-file = 'BBM'
+file = 'BBMgas'
 
 # Data files
 file1 = file.'.p1'
@@ -114,8 +114,8 @@ set ylabel '{/Symbol D} e (-)'
 y0 = 0
 y1 = m*pc0*3/4
 set autoscale y
-#set yrange[y0:y1] noreverse nowriteback
-#set ytics norotate 0,0.2,1.2
+set yrange[-0.1:0] noreverse nowriteback
+set ytics norotate 0,-0.01,-0.1
 
 set grid
 
