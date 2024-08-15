@@ -7,14 +7,14 @@
 
 
 
-TypeId_t* (TypeId_Create_)(const int id,const size_t sz)
+TypeId_t* (TypeId_Create_)(const TypeId_e id,const size_t sz)
 {
-  TypeId_t* typeid = (TypeId_t*) Mry_New(TypeId_t) ;
+  TypeId_t* tid = (TypeId_t*) Mry_New(TypeId_t) ;
   
-  TypeId_GetIdNumber(typeid) = id ;
-  TypeId_GetSize(typeid) = sz ;
+  TypeId_GetIdNumber(tid) = id ;
+  TypeId_GetSize(tid) = sz ;
   
-  return(typeid) ;
+  return(tid) ;
 }
 
 
@@ -22,9 +22,9 @@ TypeId_t* (TypeId_Create_)(const int id,const size_t sz)
 
 void  (TypeId_Delete)(void* self)
 {
-  TypeId_t* typeid = (TypeId_t*) self ;
+  TypeId_t* tid = (TypeId_t*) self ;
   
-  if(typeid) {
+  if(tid) {
   }
 
 }

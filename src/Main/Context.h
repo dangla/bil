@@ -1,6 +1,10 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -118,4 +122,8 @@ struct Context_s {        /* Context */
 } ;
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

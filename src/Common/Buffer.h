@@ -1,6 +1,10 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -32,4 +36,8 @@ struct Buffer_s {           /* Circular buffer */
   size_t available_sz ;     /* Available size in the buffer */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

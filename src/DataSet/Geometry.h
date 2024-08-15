@@ -1,6 +1,10 @@
 #ifndef GEOMETRY_H
 #define GEOMETRY_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -74,4 +78,8 @@ struct Geometry_s {
 } ;
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

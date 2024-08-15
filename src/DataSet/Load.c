@@ -33,6 +33,14 @@ Load_t* Load_New(void)
     Load_GetNameOfEquation(load) = name ;
   }
   
+  
+  /* Allocation of space for the region name */
+  {
+    char* name = (char*) Mry_New(char[Load_MaxLengthOfRegionName]) ;
+    
+    Load_GetRegionName(load) = name ;
+  }
+  
   return(load) ;
 }
 
@@ -42,8 +50,29 @@ void (Load_Delete)(void* self)
 {
   Load_t* load = (Load_t*) self ;
   
-  free(Load_GetType(load)) ;
-  free(Load_GetNameOfEquation(load)) ;
+  {
+    char* type = Load_GetType(load) ;
+    
+    if(type) {
+      free(type) ;
+    }
+  }
+  
+  {
+    char* name = Load_GetNameOfEquation(load) ;
+    
+    if(name) {
+      free(name) ;
+    }
+  }
+  
+  {
+    char* name = Load_GetRegionName(load) ;
+    
+    if(name) {
+      free(name) ;
+    }
+  }
 }
 
 
@@ -55,11 +84,14 @@ void Load_Scan(Load_t* load,DataFile_t* datafile)
 
   /* Region */
   {
-    int i ;
-    int n = String_FindAndScanExp(line,"Reg",","," = %d",&i) ;
+    char name[Load_MaxLengthOfRegionName] ;
+    int n = String_FindAndScanExp(line,"Reg",","," = %s",name) ;
+    //int i ;
+    //int n = String_FindAndScanExp(line,"Reg",","," = %d",&i) ;
     
     if(n) {
-      Load_GetRegionIndex(load) = i ;
+      Load_GetRegionTag(load) = atoi(name) ;
+      strncpy(Load_GetRegionName(load),name,Load_MaxLengthOfRegionName)  ;
     } else {
       arret("Load_Scan: no region") ;
     }
@@ -72,7 +104,7 @@ void Load_Scan(Load_t* load,DataFile_t* datafile)
     int n = String_FindAndScanExp(line,"Equ",","," = %s",name) ;
     
     if(n) {
-      strcpy(Load_GetNameOfEquation(load),name) ;
+      strncpy(Load_GetNameOfEquation(load),name,Load_MaxLengthOfKeyWord) ;
       
       if(strlen(Load_GetNameOfEquation(load)) > Load_MaxLengthOfKeyWord) {
         arret("Load_Scan: name %s too long",name) ;
@@ -93,7 +125,7 @@ void Load_Scan(Load_t* load,DataFile_t* datafile)
     int n = String_FindAndScanExp(line,"Type",","," = %s",name) ;
     
     if(n) {
-      strcpy(Load_GetType(load),name) ;
+      strncpy(Load_GetType(load),name,Load_MaxLengthOfKeyWord) ;
       
       if(strlen(Load_GetType(load)) > Load_MaxLengthOfKeyWord) {
         arret("Load_Scan: name %s too long",name) ;

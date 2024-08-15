@@ -77,7 +77,7 @@ diff2:
 # To pass the variable "-r" to make, use: make exec opt=-r
 #=======================================================================
 
-exec: iperm
+exec: toto iperm
 	for i in ${BASE_DIRS}; do (\
 	cd $$i && \
 	echo "\n\nExecution of $$i:" && \
@@ -87,12 +87,11 @@ exec: iperm
 
 
 
-iperm: clean
+iperm: toto
 	for i in ${BASE_DIRS}; do (\
 	cd $$i && \
 	echo "\n\nExecution of $$i:" && \
 	echo "-----------------------------------------" && \
-	cp $$i toto && \
 	bil -i toto \
 	); done ; echo "\n\n\n";
 
@@ -106,6 +105,14 @@ ref:
 	); done
 
 
+
+toto: clean
+	for i in ${BASE_DIRS}; do (\
+	cd $$i && \
+	echo "\n\nCopy $$i in toto:" && \
+	echo "-----------------------------------------" && \
+	cp $$i toto \
+	); done ; echo "\n\n\n";
 
 #=======================================================================
 # Target rules for execfem
@@ -205,6 +212,24 @@ plotdiffp1:
 	cd $$i && \
 	gnuplot -e "call '${BASEDIR}/diffp.gp' \"$$i.p1\" \"toto.p1\" " \
 	); done
+
+
+
+
+
+#=======================================================================
+# Target rules for readonly
+#=======================================================================
+
+readonly: toto
+	for i in ${BASE_DIRS}; do (\
+	cd $$i && \
+	echo "\n\nReading of $$i:" && \
+	echo "-----------------------------------------" && \
+	bil -r toto \
+	); done ; echo "\n\n\n";
+
+
 
 
 

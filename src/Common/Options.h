@@ -1,6 +1,10 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -123,7 +127,7 @@ extern void        (Options_Delete)(void*) ;
 
 
 /* Number of processors for distributed-memory solver */
-//fbil #define Options_NbOfProcessorsInDistributedMemorySolver(OPT) \
+//#define Options_NbOfProcessorsInDistributedMemorySolver(OPT) \
         Options_NbInResolutionMethod(OPT)
 
 
@@ -152,4 +156,8 @@ struct Options_s {            /* options */
 } ;
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

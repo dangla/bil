@@ -1,9 +1,20 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <stdarg.h>
+
+#include "Message.h"
+#include "Math_.h"
+#include "Plasticity.h"
+#include "autodiff.h"
+
 static Plasticity_ComputeTangentStiffnessTensor_t    PlasticityACC_CT ;
 static Plasticity_ReturnMapping_t                    PlasticityACC_RM ;
 static Plasticity_YieldFunction_t                    PlasticityACC_YF ;
 static Plasticity_FlowRules_t                        PlasticityACC_FR ;
 static Plasticity_SetParameters_t                    PlasticityACC_SP ;
-static Plasticity_SetModelProp_t                     PlasticityACC_SetModelProp ;
+extern Plasticity_SetModelProp_t                     PlasticityACC_SetModelProp ;
 
 
 static void PlasticityACC_ScaleStress(Plasticity_t*,double*) ;
@@ -117,7 +128,7 @@ double* PlasticityACC_CT(Plasticity_t* plasty,const double* stress,const double*
   */
   {
     int    i ;
-    double* dyield = Plasticity_DerivativeOfYieldFunction(plasty,PlasticityACC_YF,stress,hardv) ;
+    double* dyield = Plasticity_DerivativeOfYieldFunction(PlasticityACC_YF,plasty,stress,hardv) ;
     double* flow = PlasticityACC_FR(plasty,stress,hardv) ;
     
     for(i = 0 ; i < 9 ; i++) {

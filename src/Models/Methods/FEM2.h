@@ -1,6 +1,10 @@
 #ifndef FEM2_H
 #define FEM2_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -66,5 +70,9 @@ struct FEM2_s {               /* (FEM)^2 */
   Buffers_t*  buffers ;         /* Buffer */
   GenericObject_Delete_t* Delete ;
 } ;
+
+#ifdef __CPLUSPLUS
+}
+#endif
 
 #endif

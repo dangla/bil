@@ -1,6 +1,10 @@
 #ifndef OUTPUTFILE_H
 #define OUTPUTFILE_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* class-like structures "OutputFiles_t" */
 
@@ -11,7 +15,7 @@ struct OutputFile_s  ; typedef struct OutputFile_s  OutputFile_t ;
 
 /* Declaration of Macros, Methods and Structures */
 
-extern char    (OutputFile_TypeOfCurrentFile) ;
+extern char    OutputFile_TypeOfCurrentFile ;
 
 extern OutputFile_t*  (OutputFile_Create)(char*) ;
 extern void           (OutputFile_Delete)(void*) ;
@@ -30,4 +34,8 @@ struct OutputFile_s {             /* Output file */
   TextFile_t* textfile ;          /* The file */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

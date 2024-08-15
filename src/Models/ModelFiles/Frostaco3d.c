@@ -242,13 +242,14 @@ static double phi ;
 static double k_int ;
 static double lam_s ;
 static double C_s ;
-static double k_s ;
-static double g_s ;
 static double alpha_s ;
 static double p0 ;
 static double T0 ;
 static double* cijkl ;
 static Elasticity_t* elasty ;
+static double young ;
+static double poisson ;
+static double biot ;
 
 
 
@@ -265,6 +266,9 @@ int pm(const char* s)
   else if(strcmp(s,"alpha_s") == 0)  return (6) ;
   else if(strcmp(s,"p0") == 0)       return (7) ;
   else if(strcmp(s,"T0") == 0)       return (8) ;
+  else if(strcmp(s,"Young") == 0)    return (9) ;
+  else if(strcmp(s,"Poisson") == 0)  return (10) ;
+  else if(strcmp(s,"Biot") == 0)     return (11) ;
   else return (-1) ;
 }
 
@@ -279,11 +283,12 @@ void GetProperties(Element_t* el)
   k_int   = GetProperty("k_int") ;
   C_s     = GetProperty("C_s") ;
   lam_s   = GetProperty("lam_s") ;
-  k_s     = GetProperty("k_s") ;
-  g_s     = GetProperty("g_s") ;
   alpha_s = GetProperty("alpha_s") ;
   p0      = GetProperty("p0") ;
   T0      = GetProperty("T0") ;
+  young   = GetProperty("Young") ;
+  poisson = GetProperty("Poisson") ;
+  biot    = GetProperty("Biot") ;
   
   elasty  = Element_FindMaterialData(el,Elasticity_t,"Elasticity") ;
   cijkl   = Elasticity_GetStiffnessTensor(elasty) ;
@@ -418,7 +423,7 @@ int SetModelProp(Model_t* model)
   char name_eqn[3][7] = {"meca_1","meca_2","meca_3"} ;
   char name_unk[3][4] = {"u_1","u_2","u_3"} ;
   int i ;
-  
+
   /** Number of equations to be solved */
   Model_GetNbOfEquations(model) = NEQ ;
   
@@ -460,7 +465,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 /** Read the material properties in the stream file ficd 
  *  Return the nb of (scalar) properties of the model */
 {
-  int  NbOfProp = 9 ;
+  int  NbOfProp = 12 ;
 
   /* By default */
   {
@@ -480,6 +485,33 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
   }
   
   Material_ScanProperties(mat,datafile,pm) ;
+  
+  if(Material_GetProperty(mat)[pm("Young")] == 0) {
+    double k_s  = Material_GetPropertyValue(mat,"k_s") ;
+    double g_s  = Material_GetPropertyValue(mat,"g_s") ;
+    
+    phi  = Material_GetPropertyValue(mat,"porosity") ;
+    
+    if(k_s > 0 && g_s > 0) {
+      /* Elastic moduli (Mori-Tanaka) */
+      double k_0 = k_s ;
+      double g_0 = g_s ;
+      double a_0 = 0.75 * k_0 / g_0 ;
+      double b_0 = 6 * (k_0 + 2 * g_0) / (9 * k_0 + 8 * g_0) ;
+      double K = (1 - phi) * k_s / (1 + phi * a_0 * k_s / k_0) ;
+      double G = (1 - phi) * g_s / (1 + phi * b_0 * g_s / g_0) ;
+      
+      young =  9 * G * K / (3 * K + G) ;
+      poisson = 0.5 * (1 - young / (3 * K)) ;
+      biot = 1 - K/k_s ;
+      
+      Material_GetProperty(mat)[pm("Young")] = young ;
+      Material_GetProperty(mat)[pm("Poisson")] = poisson ;
+      Material_GetProperty(mat)[pm("Biot")] = biot ;
+    } else {
+      arret("ReadMatProp") ;
+    }
+  }
       
   /* Elasticity */
   {
@@ -491,22 +523,11 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
   /* The 4th rank elastic tensor */
   {
     elasty = Material_FindData(mat,Elasticity_t,"Elasticity") ;
-    
-    k_s  = Material_GetPropertyValue(mat,"k_s") ;
-    g_s  = Material_GetPropertyValue(mat,"g_s") ;
-    phi  = Material_GetPropertyValue(mat,"porosity") ;
 
     /* isotropic Hooke's law */
-    {    
-      /* Elastic moduli (Mori-Tanaka) */
-      double k_0 = k_s ;
-      double g_0 = g_s ;
-      double a_0 = 3 * k_0/(4 * g_0) ;
-      double b_0 = 6 * (k_0 + 2 * g_0) / (9 * k_0 + 8 * g_0) ;
-      double K = (1 - phi) * k_s / (1 + phi * a_0 * k_s / k_0) ;
-      double G = (1 - phi) * g_s / (1 + phi * b_0 * g_s / g_0) ;
-      double young =  9 * G * K / (3 * K + G) ;
-      double poisson = 0.5 * (1 - young / (3 * K)) ;
+    { 
+      young =  Material_GetProperty(mat)[pm("Young")] ;
+      poisson = Material_GetProperty(mat)[pm("Poisson")] ;
     
       Elasticity_SetToIsotropy(elasty) ;
       Elasticity_SetParameters(elasty,young,poisson) ;
@@ -591,6 +612,25 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
   Element_GetNbOfImplicitTerms(el) = NVI*NbOfIntPoints ;
   Element_GetNbOfExplicitTerms(el) = NVE*NbOfIntPoints ;
   Element_GetNbOfConstantTerms(el) = NV0*NbOfIntPoints ;
+
+
+  /* Continuity of unknowns across zero-thickness element */
+  {
+    if(Element_HasZeroThickness(el)) {
+      #if defined (U_p_max)
+      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,"p_max") ;
+      #elif defined (U_p_l)
+      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,"p_l") ;
+      #endif
+      Element_MakeEquationContinuousAcrossZeroThicknessElement(el,"mass") ;
+      
+      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,"tem") ;
+      Element_MakeEquationContinuousAcrossZeroThicknessElement(el,"the") ;
+      
+      Element_MakeUnknownContinuousAcrossZeroThicknessElement(el,"c_s") ;
+      Element_MakeEquationContinuousAcrossZeroThicknessElement(el,"salt") ;
+    }
+  }
   
   return(0) ;
 }
@@ -1088,7 +1128,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 /** Compute the outputs (r) 
  *  Return the nb of views (scalar, vector or tensor) */
 {
-  int NbOfOutputs  = 17 ;
+  int NbOfOutputs  = 18 ;
   double* ve  = Element_GetExplicitTerm(el) ;
   double* vi  = Element_GetCurrentImplicitTerm(el) ;
   double** u  = Element_ComputePointerToCurrentNodalUnknowns(el) ;
@@ -1133,24 +1173,16 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double w_tot[3]  = {0,0,0} ;
     double w_salt[3] = {0,0,0} ;
     double w_the[3]  = {0,0,0} ;
-    /* Poroelastic coefficients: homogenization
-     * Mori-Tanaka:     k_0 = k_s and g_0 = g_s
-     * Self-consistent: k_0 = K   and g_0 = G (for the record) */
-    double k_0 = k_s ;
-    double g_0 = g_s ;
-    double a_0 = 3 * k_0/(4 * g_0) ;
-    double b_0 = 6 * (k_0 + 2 * g_0) / (9 * k_0 + 8 * g_0) ;
-    double K = (1 - phi) * k_s / (1 + phi * a_0 * k_s / k_0) ;
-    double G = (1 - phi) * g_s / (1 + phi * b_0 * g_s / g_0) ;
-    double b    = 1 - K/k_s ;
+    double K = young / (3 - 6*poisson) ;
+    double G = 0.5 * young / (1 + poisson) ;
+    double b = biot ;
     double sd_l = x[I_SD_L] ;
     double sd_i = 1 - sd_l ;
     double b_i  = b*sd_i ;
     double b_l  = b*sd_l ;
-    double N    = (b - phi)/k_s ;
-    double N_il = sd_i*sd_l*(N - 0.75*phi/g_s) ;
-    double N_ii = sd_i*N - N_il ;
-    double N_ll = sd_l*N - N_il ;
+    double N_il = - (b - phi) / K * b * sd_i * sd_l ;
+    double N_ii =  (b - phi) / K * sd_i * (1 - b_i) ;
+    double N_ll =  (b - phi) / K * sd_l * (1 - b_l) ;
     double alpha_phi = (b - phi)*alpha_s ;
     double alpha_phi_l = sd_l*alpha_phi ;
     double alpha_phi_i = sd_i*alpha_phi ;
@@ -1214,6 +1246,12 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       double lnaw = LogActivityOfWater(x[I_C_SALT],x[I_TEM]) ;
       
       Result_Store(r + i++,&lnaw,"Lna_w",1) ;
+    }
+    
+    {
+      double lnaw = LogActivityOfWater(x[I_C_SALT],x[I_TEM]) ;
+      
+      Result_Store(r + i++,x + I_S_TOT,"Total entropy",1) ;
     }
     
     if(i != NbOfOutputs) {
@@ -1690,8 +1728,8 @@ void  ComputeSecondaryVariables(Element_t* el,const double t,const double dt,dou
   
   /* Stresses */
   {
-    double K    = (1 - phi)*k_s*g_s/(0.75*phi*k_s + g_s) ;
-    double b    = 1 - K/k_s ;
+    double K = young / (3 - 6*poisson) ;
+    double b    = biot ;
     double b_i  = b*sd_i ;
     double b_l  = b*sd_l ;
     

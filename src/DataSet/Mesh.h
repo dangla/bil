@@ -1,6 +1,10 @@
 #ifndef MESH_H
 #define MESH_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -139,4 +143,8 @@ struct Mesh_s {
   Nodes_t*    nodes ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

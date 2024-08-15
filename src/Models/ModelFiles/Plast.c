@@ -16,17 +16,16 @@
 
 /* Nb of equations */
 #define NEQ     (dim)
-/* Nb of (im/ex)plicit terms and constant terms */
-#define NVI     (24)
-#define NVE     (0)
-#define NV0     (9)
 
 /* Equation index */
-#define E_mec   (0)
+#define E_MECH   (0)
 
 /* Unknown index */
-#define U_u     (0)
+#define U_DISP     (0)
 
+
+/* Nb of implicit terms */
+#define NVI     (24)
 /* We define some names for implicit terms */
 #define SIG           (vim + 0)
 #define F_MASS        (vim + 9)
@@ -39,8 +38,14 @@
 #define EPS_P_n       (vim_n + 12)
 #define HARDV_n       (vim_n + 21)[0]
 
+
+/* Nb of explicit terms */
+#define NVE     (0)
 /* We define some names for explicit terms */
 
+
+/* Nb of constant terms */
+#define NV0     (9)
 /* We define some names for constant terms */
 #define SIG0          (v0  + 0)
 
@@ -295,14 +300,14 @@ int SetModelProp(Model_t* model)
   for(i = 0 ; i < dim ; i++) {
     char name_eqn[7] ;
     sprintf(name_eqn,"meca_%d",i + 1) ;
-    Model_CopyNameOfEquation(model,E_mec + i,name_eqn) ;
+    Model_CopyNameOfEquation(model,E_MECH + i,name_eqn) ;
   }
   
   /** Names of the main unknowns */
   for(i = 0 ; i < dim ; i++) {
     char name_unk[4] ;
     sprintf(name_unk,"u_%d",i + 1) ;
-    Model_CopyNameOfUnknown(model,U_u + i,name_unk) ;
+    Model_CopyNameOfUnknown(model,U_DISP + i,name_unk) ;
   }
   
   Model_GetComputePropertyIndex(model) = pm ;
@@ -367,7 +372,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double ad       = Material_GetPropertyValue(mat,"dilatancy")*M_PI/180. ;
         
         Plasticity_SetTo(plastyi,DruckerPrager) ;
-        Plasticity_SetParameters(plastyi,af,ad,cohesion) ;
+        Plasticity_SetParameters(plastyi,af,ad,cohesion,NULL) ;
       
       /* Cam-Clay with linear elasticity */
       } else if(plasticmodel == 2) {
@@ -674,7 +679,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     for(i = 0 ; i < nn ; i++) {
       int j ;
       
-      for(j = 0 ; j < dim ; j++) R(i,E_mec + j) -= rw[i*dim + j] ;
+      for(j = 0 ; j < dim ; j++) R(i,E_MECH + j) -= rw[i*dim + j] ;
     }
     
   }
@@ -684,7 +689,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     double* rbf = FEM_ComputeBodyForceResidu(fem,intfct,F_MASS + dim - 1,NVI) ;
     
     for(i = 0 ; i < nn ; i++) {
-      R(i,E_mec + dim - 1) -= -rbf[i] ;
+      R(i,E_MECH + dim - 1) -= -rbf[i] ;
     }
     
   }
@@ -737,7 +742,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     int    i ;
     
     for(i = 0 ; i < dim ; i++) {
-      pdis[i] = FEM_ComputeUnknown(fem,u,intfct,p,U_u + i) ;
+      pdis[i] = FEM_ComputeUnknown(fem,u,intfct,p,U_DISP + i) ;
       dis[i] = pdis[i] ;
     }
 
@@ -773,6 +778,10 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     Result_Store(r + i++,eps_p ,"Plastic-strains",9) ;
     Result_Store(r + i++,&hardv,"Hardening variable",1) ;
     Result_Store(r + i++,&crit ,"Yield function",1) ;
+    
+    if(i != NbOfOutputs) {
+      Message_RuntimeError("ComputeOutputs: wrong number of outputs") ;
+    }
   }
   
   return(NbOfOutputs) ;
@@ -878,7 +887,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
     
     /* Displacements */
     for(i = 0 ; i < dim ; i++) {
-      x[I_U + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_u + i) ;
+      x[I_U + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_DISP + i) ;
     }
     
     for(i = dim ; i < 3 ; i++) {
@@ -888,7 +897,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
     
   /* Strains */
   {
-    double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_u) ;
+    double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_DISP) ;
     int    i ;
       
     if(ItIsPeriodic) {
@@ -912,7 +921,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
     
     /* Stresses, strains at previous time step */
     {
-      double* eps_n =  FEM_ComputeLinearStrainTensor(fem,u_n,intfct,p,U_u) ;
+      double* eps_n =  FEM_ComputeLinearStrainTensor(fem,u_n,intfct,p,U_DISP) ;
       double* vim_n = f_n + p*NVI ;
       
       if(ItIsPeriodic) {

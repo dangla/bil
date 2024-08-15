@@ -25,7 +25,16 @@ Point_t*  (Point_New)(void)
     Point_GetCoordinate(point) = coor ;
   }
   
-  Point_GetRegionIndex(point) = 0 ;
+  
+  /* Allocation of space for the region name */
+  {
+    char* name = (char*) Mry_New(char[Point_MaxLengthOfRegionName]) ;
+    
+    Point_GetRegionName(point) = name ;
+  }
+  
+  Point_GetRegionTag(point) = 0 ;
+  strcpy(Point_GetRegionName(point),"\0") ;
   
   return(point) ;
 }
@@ -36,7 +45,21 @@ void (Point_Delete)(void* self)
 {
   Point_t* point = (Point_t*) self ;
   
-  free(Point_GetCoordinate(point)) ;
+  {
+    double* coor Point_GetCoordinate(point) ;
+    
+    if(coor) {
+      free(coor) ;
+    }
+  }
+  
+  {
+    char* name = Point_GetRegionName(point) ;
+    
+    if(name) {
+      free(name) ;
+    }
+  }
 }
 
 
@@ -60,11 +83,15 @@ void (Point_Scan)(Point_t* point,char* line)
   
   /* Region */
   {
-    int i ;
-    int n = String_FindAndScanExp(line,"Reg",","," = %d",&i) ;
+    char name[Point_MaxLengthOfRegionName] ;
+    int n = String_FindAndScanExp(line,"Reg",","," = %s",name) ;
+    //int i ;
+    //int n = String_FindAndScanExp(line,"Reg",","," = %d",&i) ;
     
     if(n) {
-      Point_GetRegionIndex(point) = i ;
+      Point_GetRegionTag(point) = atoi(name) ;
+      strncpy(Point_GetRegionName(point),name,Point_MaxLengthOfRegionName)  ;
+      //Point_GetRegionTag(point) = i ;
     } else {
       arret("Point_Scan: no region") ;
     }
@@ -80,7 +107,8 @@ void (Point_SetEnclosingElement)(Point_t* point,Mesh_t* mesh)
   int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
   double* pt = Point_GetCoordinate(point) ;
-  int reg = Point_GetRegionIndex(point) ;
+  //int reg = Point_GetRegionTag(point) ;
+  char* reg = Point_GetRegionName(point) ;
   double d0 = 0. ;
   int ie = -1 ;
   int    i ;
@@ -89,16 +117,15 @@ void (Point_SetEnclosingElement)(Point_t* point,Mesh_t* mesh)
   for(i = 0 ; i < n_el ; i++) {
     int  nn = Element_GetNbOfNodes(el + i) ;
     Material_t* mat = Element_GetMaterial(el + i) ;
-    int reg_el = Element_GetRegionIndex(el + i) ;
+    //int reg_el = Element_GetRegionTag(el + i) ;
+    char* reg_el = Element_GetRegionName(el + i) ;
     double x_s[3] = {0.,0.,0.} ;
     double d = 0. ;
-    
-    if((reg > 0) && (reg != reg_el)) continue ;
     
     if(!mat) continue ;
     
     /* Select the element whose center is the closest to the point */
-    {
+    if(String_Is(reg,"\0") || String_Is(reg,reg_el)) {
       int    j ;
       
       for(j = 0 ; j < dim ; j++) {

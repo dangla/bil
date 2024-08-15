@@ -1,6 +1,10 @@
 #ifndef DATASET_H
 #define DATASET_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -11,7 +15,7 @@ struct DataSet_s      ; typedef struct DataSet_s      DataSet_t ;
 
 extern DataSet_t*  (DataSet_Create)    (char*,Options_t*) ;
 extern void        (DataSet_Delete)    (void*) ;
-extern DataSet_t*  (DataSet_Create1)   (char*,Options_t*) ;
+//extern DataSet_t*  (DataSet_Create1)   (char*,Options_t*) ;
 extern void        (DataSet_PrintData) (DataSet_t*,char*) ;
 
 
@@ -105,4 +109,8 @@ struct DataSet_s {               /* set of data for the problem to work out */
 } ;
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

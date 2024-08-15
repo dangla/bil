@@ -1,6 +1,10 @@
 #ifndef MATERIALS_H
 #define MATERIALS_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -42,4 +46,8 @@ struct Materials_s {          /* materials */
   Models_t* models ;          /**< Used models */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

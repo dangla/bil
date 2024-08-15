@@ -1,6 +1,10 @@
 #ifndef NODE_H
 #define NODE_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -49,21 +53,20 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 
 
 /* Accessors */
-#define Node_GetNodeIndex(NOD)            ((NOD)->index)
-#define Node_GetCoordinate(NOD)           ((NOD)->x)
-#define Node_GetNbOfEquations(NOD)        ((NOD)->neq)
-#define Node_GetNbOfUnknowns(NOD)         ((NOD)->nin)
-#define Node_GetNameOfEquation(NOD)       ((NOD)->eqn)
-#define Node_GetNameOfUnknown(NOD)        ((NOD)->inc)
-#define Node_GetSequentialIndexOfUnknown(NOD)        ((NOD)->sequentialindex)
-#define Node_GetObValIndex(NOD)           ((NOD)->i_obj)
-#define Node_GetMatrixColumnIndex(NOD)    ((NOD)->colindex)
-#define Node_GetMatrixRowIndex(NOD)       ((NOD)->rowindex)
-//#define Node_GetNodeSol(NOD)              ((NOD)->sol)
-#define Node_GetNbOfElements(NOD)         ((NOD)->nel)
-#define Node_GetPointerToElement(NOD)     ((NOD)->pelement)
-#define Node_GetBuffers(NOD)              ((NOD)->buffers)
-#define Node_GetSolutions(NOD)            ((NOD)->solutions)
+#define Node_GetNodeIndex(NOD)            ((NOD)->NodeIndex)
+#define Node_GetCoordinate(NOD)           ((NOD)->Coordinate)
+#define Node_GetNbOfEquations(NOD)        ((NOD)->NbOfEquations)
+#define Node_GetNbOfUnknowns(NOD)         ((NOD)->NbOfUnknowns)
+#define Node_GetNameOfEquation(NOD)       ((NOD)->NameOfEquation)
+#define Node_GetNameOfUnknown(NOD)        ((NOD)->NameOfUnknown)
+#define Node_GetSequentialIndexOfUnknown(NOD)        ((NOD)->SequentialIndexOfUnknown)
+#define Node_GetObValIndex(NOD)           ((NOD)->ObValIndex)
+#define Node_GetMatrixColumnIndex(NOD)    ((NOD)->MatrixColumnIndex)
+#define Node_GetMatrixRowIndex(NOD)       ((NOD)->MatrixRowIndex)
+#define Node_GetNbOfElements(NOD)         ((NOD)->NbOfElements)
+#define Node_GetPointerToElement(NOD)     ((NOD)->PointerToElement)
+#define Node_GetBuffers(NOD)              ((NOD)->Buffers)
+#define Node_GetSolutions(NOD)            ((NOD)->Solutions)
 
 
 
@@ -241,26 +244,30 @@ extern Node_t*  (Node_OverlappingNodes3)(const Node_t*,int*,Node_t*) ;
 
 
 #include "Element.h"
-#include "NodeSol.h"
+//#include "NodeSol.h"
 #include "Buffers.h"
+#include "Solutions.h"
 
 
-struct Node_s {               /* noeud */
-  Element_tt* pelement ;      /* pointers to elements */
-  double* x ;                 /* coordonnees */
-  char**   inc ;              /* nom des inconnues */
-  char**   eqn ;              /* nom des equations */
-  int*     sequentialindex ;  /* Sequential indexes of unknowns/equations */
-  unsigned short int* i_obj ; /* indices des inconnues dans obj */
-  int*    colindex ;          /* column index (unknowns) */
-  int*    rowindex ;          /* row index (equations) */
-  //NodeSol_t* sol ;            /* Nodal solution */
-  Buffers_t* buffers ;        /* Buffers */
-  Solutions_t* solutions ;    /* Pointer to the global solutions */
-  unsigned int index ;        /* node index */
-  unsigned short int nel ;    /* nb of elements */
-  unsigned short int neq ;    /* nombre d'equations au noeud */
-  unsigned short int nin ;    /* nombre d'inconnues au noeud */
+struct Node_s {
+  Element_tt* PointerToElement ;
+  Buffers_t* Buffers ;
+  Solutions_t* Solutions ;             /* Pointer to the global solutions */
+  double* Coordinate ;
+  char**   NameOfUnknown ;
+  char**   NameOfEquation ;
+  int*     SequentialIndexOfUnknown ;  /* Sequential indexes of unknowns/equations */
+  unsigned short int* ObValIndex ;     /* indices des inconnues dans obj */
+  int*    MatrixColumnIndex ;          /* column index (unknowns) */
+  int*    MatrixRowIndex ;             /* row index (equations) */
+  unsigned int NodeIndex ;             /* node index */
+  unsigned short int NbOfElements ;
+  unsigned short int NbOfEquations ;   /* nombre d'equations au noeud */
+  unsigned short int NbOfUnknowns ;    /* nombre d'inconnues au noeud */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

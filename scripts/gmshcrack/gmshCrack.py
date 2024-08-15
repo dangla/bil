@@ -65,10 +65,10 @@ def main():
 
 #===============================================================================
 def usage():
-    print('Usages:')
-    print('python %s -f<filename> -c<crack_id> -t<cracktip_id> -s<oneside_id>' % os.path.basename(sys.argv[0]))
+    print('Usages (with python 2 only):')
+    print('python2 %s -f<filename> -c<crack_id> -t<cracktip_id> -s<oneside_id>' % os.path.basename(sys.argv[0]))
     print('or')
-    print('python %s -f<filename> -r<region_ids> -p<physical_id>' % os.path.basename(sys.argv[0]))
+    print('python2 %s -f<filename> -r<region_ids> -p<physical_id>' % os.path.basename(sys.argv[0]))
     
     print('\n')
     
@@ -96,7 +96,7 @@ def usage():
     print('Restriction:')
     print('Use options (-c -t -s) or (-r -p) but do not mix them.')
     print('Examples:')
-    print('python %s -f filename -c crack_id -t cracktip_id -s oneside_id')
+    print('python %s -f filename -c crack_id -t cracktip_id -s oneside_id' % os.path.basename(sys.argv[0]))
     print('or')
     print('python %s -f filename -r region_id -p physical_id' % os.path.basename(sys.argv[0]))
 

@@ -27,10 +27,14 @@
 
 # Specific headers
 BilConfig.h
+BilConfig.h.in
 BilInfo.h
+BilInfo.h.in
 BilLib.h
 BilPath.h
+BilPath.h.in
 BilVersion.h
+BilVersion.h.in
 BilExtraLibs.h
 
 # Database

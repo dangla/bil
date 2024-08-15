@@ -124,7 +124,7 @@ void (Context_Initialize)(Context_t* ctx)
          * Skip two more entries if the following entry is either:
          * "-ksp_XXX" <YYY>: option for PetscKSP methods
          **/
-        while(String_Is(argv[i + 1],"-ksp_")) {
+        while(String_Is(argv[i + 1],"-ksp_",5)) {
           if(i + 2 < argc) {
             i += 2 ;
           } else {
@@ -138,7 +138,7 @@ void (Context_Initialize)(Context_t* ctx)
          * "-pc_XXX" <YYY>: option for PetscKSP methods
          **/
       
-        while(String_Is(argv[i + 1],"-pc_")) {
+        while(String_Is(argv[i + 1],"-pc_",4)) {
           if(i + 2 < argc) {
             i += 2 ;
           } else {
@@ -152,7 +152,7 @@ void (Context_Initialize)(Context_t* ctx)
          * "-mat_XXX" <YYY>: option for PetscKSP methods
          **/
       
-        while(String_Is(argv[i + 1],"-mat_")) {
+        while(String_Is(argv[i + 1],"-mat_",5)) {
           if(i + 2 < argc) {
             i += 2 ;
           } else {
@@ -166,7 +166,7 @@ void (Context_Initialize)(Context_t* ctx)
          * "-log_XXX" <YYY>: option for PetscKSP methods
          **/
       
-        while(String_Is(argv[i + 1],"-log_")) {
+        while(String_Is(argv[i + 1],"-log_",5)) {
           if(i + 2 < argc) {
             i += 2 ;
           } else {

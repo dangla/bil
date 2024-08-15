@@ -1,6 +1,10 @@
 #ifndef CURVE_H
 #define CURVE_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 
 /* vacuous declarations and typedef names */
@@ -16,9 +20,18 @@ extern Curve_t* (Curve_CreateDerivative)(Curve_t*) ;
 extern Curve_t* (Curve_CreateIntegral)(Curve_t*) ;
 extern Curve_t* (Curve_CreateInverse)(Curve_t*,const char) ;
 extern double*  (Curve_CreateSamplingOfX)(Curve_t*) ;
-extern double   (Curve_ComputeValue)(Curve_t*,double) ;
-extern double   (Curve_ComputeDerivative)(Curve_t*,double) ;
-extern double   (Curve_ComputeIntegral)(Curve_t*,double) ;
+
+template<typename T>
+extern T        (Curve_ComputeValue)(Curve_t*,const T&) ;
+
+/* Explicit specialization of template must appear before instantiation.
+ * So we declare the specialization here. */
+template<>
+double   (Curve_ComputeValue<double>)(Curve_t*,const double&) ;
+//extern real     (Curve_ComputeValue)(Curve_t*,const real&);
+
+extern double   (Curve_ComputeDerivative)(Curve_t*,const double&) ;
+extern double   (Curve_ComputeIntegral)(Curve_t*,const double&) ;
 //extern char*    (Curve_PrintInFile)(Curve_t*) ;
 
 
@@ -62,4 +75,8 @@ struct Curve_s {              /* courbe */
 #define courbe(a,b)            Curve_ComputeValue(&(b),(a))
 #define dcourbe(a,b)           Curve_ComputeDerivative(&(b),(a))
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

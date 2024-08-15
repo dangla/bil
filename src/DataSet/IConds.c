@@ -214,7 +214,8 @@ void   (IConds_AssignInitialConditions)(IConds_t* iconds,Mesh_t* mesh,double t)
   for(i_ic = 0 ; i_ic < n_ic ; i_ic++) {
     Function_t* fn = ICond_GetFunction(ic + i_ic) ;
     double ft = (fn) ? Function_ComputeValue(fn,t) : 1. ;
-    int    reg_ic = ICond_GetRegionIndex(ic + i_ic) ;
+    //int    reg_ic = ICond_GetRegionTag(ic + i_ic) ;
+    char*    reg_ic = ICond_GetRegionName(ic + i_ic) ;
     char*  inc_ic = ICond_GetNameOfUnknown(ic + i_ic) ;
     Field_t* ch_ic = ICond_GetField(ic + i_ic) ;
     char* nom = ICond_GetFileNameOfNodalValues(ic + i_ic) ;
@@ -252,9 +253,10 @@ void   (IConds_AssignInitialConditions)(IConds_t* iconds,Mesh_t* mesh,double t)
     for(ie = 0 ; ie < n_el ; ie++) {
       int  nn = Element_GetNbOfNodes(el + ie) ;
       Material_t* mat = Element_GetMaterial(el + ie) ;
-      int reg_el = Element_GetRegionIndex(el + ie) ;
+      //int reg_el = Element_GetRegionTag(el + ie) ;
+      char* reg_el = Element_GetRegionName(el + ie) ;
       
-      if(reg_el == reg_ic && mat != NULL) {
+      if(String_Is(reg_el,reg_ic) && mat != NULL) {
         int    neq = Material_GetNbOfEquations(mat) ;
         int    i,j ;
 

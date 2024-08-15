@@ -53,7 +53,8 @@ void* (Buffer_Allocate)(Buffer_t* buffer,size_t sz)
   char* end  = (char*) Buffer_GetEndOfBuffer(buffer) ;
   
   if(head + sz > end) {
-    size_t dead_sz = end - head ;
+    //size_t dead_sz = end - head ;
+    long int dead_sz = end - head ;
     Buffer_GetAvailableSize(buffer) -= dead_sz ;
     head = (char*) Buffer_GetBeginOfBuffer(buffer) ;
   }

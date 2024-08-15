@@ -1,6 +1,10 @@
 #ifndef RESULT_H
 #define RESULT_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -38,4 +42,8 @@ struct Result_s {             /* Result */
 /* Old notations which I try to eliminate little by little */
 #define resu_t    Result_t
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

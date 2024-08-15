@@ -167,7 +167,6 @@ static double  k_r_M ;
 static double  B_b ;
 static double  A_m ;
 static double  B_m ;
-static double  p_l0 ;
 static double  p_limit ;
 static double  k_s ;
 static double  tortuosity ;

@@ -12,20 +12,24 @@ extern void     (ICond_Delete) (void*) ;
 extern void     (ICond_Scan)   (ICond_t*,DataFile_t*) ;
 
 
+#include "Region.h"
 
+#define ICond_MaxLengthOfRegionName      Region_MaxLengthOfRegionName
 #define ICond_MaxLengthOfKeyWord        (30)
 #define ICond_MaxLengthOfFileName       (60)
 
-#define ICond_GetRegionIndex(IC)             ((IC)->reg)
-#define ICond_GetNameOfUnknown(IC)           ((IC)->inc)
-#define ICond_GetFunction(IC)                ((IC)->fn)
-#define ICond_GetField(IC)                   ((IC)->ch)
-#define ICond_GetFileNameOfNodalValues(IC)   ((IC)->file)
-#define ICond_GetEntryInDataFile(IC)         ((IC)->data)
-#define ICond_GetFunctionIndex(IC)           ((IC)->fctindex)
-#define ICond_GetFieldIndex(IC)              ((IC)->fldindex)
-#define ICond_GetFunctions(IC)               ((IC)->functions)
-#define ICond_GetFields(IC)                  ((IC)->fields)
+
+#define ICond_GetRegionTag(IC)               ((IC)->RegionTag)
+#define ICond_GetRegionName(IC)              ((IC)->RegionName)
+#define ICond_GetNameOfUnknown(IC)           ((IC)->NameOfUnknown)
+#define ICond_GetFunction(IC)                ((IC)->Function)
+#define ICond_GetField(IC)                   ((IC)->Field)
+#define ICond_GetFileNameOfNodalValues(IC)   ((IC)->FileNameOfNodalValues)
+#define ICond_GetEntryInDataFile(IC)         ((IC)->EntryInDataFile)
+#define ICond_GetFunctionIndex(IC)           ((IC)->FunctionIndex)
+#define ICond_GetFieldIndex(IC)              ((IC)->FieldIndex)
+#define ICond_GetFunctions(IC)               ((IC)->Functions)
+#define ICond_GetFields(IC)                  ((IC)->Fields)
 
 
 
@@ -34,16 +38,17 @@ extern void     (ICond_Scan)   (ICond_t*,DataFile_t*) ;
 
 
 struct ICond_s {              /* Initial condition */
-  char*  data ;               /* Entry point in the string of data */
-  int    reg ;                /* Region index */
-  char*  inc ;                /* Name of unknown */
-  int    fctindex ;           /* Time function index */
-  int    fldindex ;           /* Field index */
-  Function_t* fn ;            /* Time function */
-  Field_t* ch ;               /* Field */
-  char*  file ;               /* Name of file containing nodal values */
-  Functions_t* functions ;    /* Time functions */
-  Fields_t* fields ;          /* Fields */
+  Function_t* Function ;
+  Field_t* Field ;
+  Functions_t* Functions ;
+  Fields_t* Fields ;
+  char*  EntryInDataFile ;       /* Entry point in the string of data */
+  int    RegionTag ;
+  char*  RegionName ;
+  char*  NameOfUnknown ;
+  int    FunctionIndex ;
+  int    FieldIndex ;
+  char*  FileNameOfNodalValues ;
 } ;
 
 #endif

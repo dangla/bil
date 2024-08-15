@@ -102,7 +102,9 @@ OBJALL1 = ${filter-out ${OBJMAIN},${OBJALL}}
 
 #=======================================================================
 # Default target executed when no arguments are given to make.
-entry: parser models modules ${LIBBIL}
+# entry: parser models modules ${LIBBIL}
+# Remove parser (11/03/2024)
+entry: models modules ${LIBBIL}
 
 
 
@@ -324,6 +326,13 @@ listdirectories:
 rename:
 	for file in ${SRCALL} ${HEADERSALL}; do (\
 	sed 's/^#include "..\/Tools\/Math.h/#include "Math_.h/g' $$file > $$file.bak && \
+	mv $$file.bak $$file \
+	); done
+
+
+cplusplus:
+	for file in ${HEADERSALL}; do (\
+	sed 's/^#ifdef __cplusplus/#ifdef __CPLUSPLUS/' $$file > $$file.bak && \
 	mv $$file.bak $$file \
 	); done
 

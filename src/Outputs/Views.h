@@ -1,6 +1,10 @@
 #ifndef VIEWS_H
 #define VIEWS_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -26,4 +30,8 @@ struct Views_s {            /* Views */
   View_t *view ;            /* view */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

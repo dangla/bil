@@ -182,7 +182,7 @@ static double alpha_l = 207.e-6 ; //volumetric th expansion coeff of water at 20
 #define GetProperty(a)      Element_GetPropertyValue(el,a)
 
 /* We define some indices for the local variables */
-static enum {
+enum {
 I_U  = 0,
 I_U2 = I_U + 2,
 
@@ -516,7 +516,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double ad       = Material_GetPropertyValue(mat,"dilatancy")*M_PI/180. ;
         
         Plasticity_SetTo(plasty,DruckerPrager) ;
-        Plasticity_SetParameters(plasty,af,ad,cohesion) ;
+        Plasticity_SetParameters(plasty,af,ad,cohesion,NULL) ;
       }
       */
       

@@ -1,6 +1,10 @@
 #ifndef SOLUTION_H
 #define SOLUTION_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* class-like structures "Solution_t" and attributes */
 
 /* vacuous declarations and typedef names */
@@ -198,4 +202,8 @@ struct Solution_s {           /* solution at a time t */
   Solution_t* sol_n ;         /* next solution */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

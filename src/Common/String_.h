@@ -1,6 +1,16 @@
 #ifndef STRING_H
 #define STRING_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
+#include <string.h>
+#include <strings.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+
 
 /* vacuous declarations and typedef names */
 
@@ -41,12 +51,7 @@ extern char*       (String_RemoveComments)       (char*,char*) ;
 
 
 
-#include <stdio.h>
-#include <string.h>
-#include <strings.h>
-#include <stdarg.h>
 
-#include "Message.h"
 #include "Arg.h"
 #include "Tuple.h"
 #include "Algos.h"
@@ -63,7 +68,7 @@ extern char*       (String_RemoveComments)       (char*,char*) ;
 
 
 #define String_ScanStringUntil(STR,KEY,END) \
-        String_Scan(STR,"%*[ ]%[^"END"]",KEY)
+        String_Scan(STR,"%*[ ]%[^" END "]",KEY)
 
 
 #define String_ScanAffectedKeyphrase(STR,KEY) \
@@ -149,7 +154,7 @@ extern char*       (String_RemoveComments)       (char*,char*) ;
 /* Find characters
  * --------------- */
 #define String_FindChar(STR,C) \
-        ((STR) ? strchr(STR,C) : NULL)
+        ((STR) ? (char*) strchr(STR,C) : NULL)
         
 
 #define String_FindAnyChar(STR,Cs) \
@@ -212,6 +217,9 @@ extern char*       (String_RemoveComments)       (char*,char*) ;
  * ----------------------- */
 #define String_Is(...) \
         Utils_CAT_NARG(String_Is,__VA_ARGS__)(__VA_ARGS__)
+        
+#define String_IsNot(...) \
+        !String_Is(__VA_ARGS__)
 
 #define String_CaseIgnoredIs(...) \
         Utils_CAT_NARG(String_CaseIgnoredIs,__VA_ARGS__)(__VA_ARGS__)
@@ -220,18 +228,18 @@ extern char*       (String_RemoveComments)       (char*,char*) ;
         ((STR) ? strspn(STR,Cs) : 0)
 
 #define String_BeginsWithSingleLineComment(STR) \
-        (String_Is(STR,"#") || String_Is(STR,"//"))
+        (String_Is(STR,"#",1) || String_Is(STR,"//",2))
 
 #define String_BeginsWithMultiLineComment(STR) \
-        String_Is(STR,"/*")
+        String_Is(STR,"/*",2)
 
 #define String_SkipMultiLineComment(STR) \
         String_FindAndSkipToken(STR,"*/")
 
 
 /* Implementation */
-#define String_Is2(STR,STR2) \
-        String_Is3(STR,STR2,strlen(STR2))
+#define String_Is2(STR,...) \
+        ((STR) ? (!strcmp(STR,__VA_ARGS__)) : 0)
         
 #define String_Is3(STR,...) \
         ((STR) ? (!strncmp(STR,__VA_ARGS__)) : 0)
@@ -244,7 +252,6 @@ extern char*       (String_RemoveComments)       (char*,char*) ;
 
 
 
-#include <Utils.h>
 
 /* Find tokens
  * ----------- */
@@ -260,7 +267,7 @@ extern char*       (String_RemoveComments)       (char*,char*) ;
         
 /* Implementation */
 #define String_FindToken2(STR,TOK) \
-        ((STR) ? strstr(STR,TOK) : NULL)
+        ((STR) ? (char*) strstr(STR,TOK) : NULL)
 
 #define String_FindTokenEndingLines2(STR,TOK) \
         (String_pchar = String_FindToken2(STR,TOK), \
@@ -315,4 +322,8 @@ struct String_s {
 #endif
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

@@ -82,6 +82,7 @@ void (DataFile_Delete)(void* self)
 
 
 
+#if 0
 char* (DataFile_SetFilePositionAfterKey)(DataFile_t* datafile,const char* cle,const char* del,short int n)
 /** The file "datafile" is assumed open for reading. Then set the file position of
  *  its stream just after the n^th occurence of any token of the series of tokens 
@@ -141,9 +142,10 @@ char* (DataFile_SetFilePositionAfterKey)(DataFile_t* datafile,const char* cle,co
   
   return(NULL) ;
 }
+#endif
 
 
-
+#if 0
 char* (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t* datafile)
 /** Reads the first non-commented line from the stream at the current position.
  *  Return a pointer to the string line if succeeded or stop if failed. */
@@ -161,6 +163,7 @@ char* (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t* datafile)
 
   return(c) ;
 }
+#endif
 
 
 

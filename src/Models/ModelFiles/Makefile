@@ -181,5 +181,10 @@ printfilenames:
 	@echo '----------------------------------------------'
 
 
+# Can be used with opt=backups/backup_PatrickDangla or any other subdir.
 showtitles:
-	grep --include="*.c" --include="*.cpp" -T --color -e "#define TITLE" *.c*
+	grep --include="*.c" --include="*.cpp" -T --color -e "#define TITLE" ./${opt}/*.c*
+	
+# Can be used with opt=backups/backup_PatrickDangla or any other subdir.
+showauthors:
+	grep --include="*.c" --include="*.cpp" -T --color -e "#define AUTHORS" ./${opt}/*.c*

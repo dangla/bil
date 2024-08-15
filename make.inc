@@ -29,7 +29,7 @@ DFLAGS = -iquote${BIL_PATH} -D '__BASEFILE__=${basename ${notdir $@}}'
 
 # Preprocessor flags
 #-------------------
-IFLAGS-SRC = -iprefix ${BIL_PATH}/src/ -iwithprefix . -iwithprefix Common -iwithprefix DataSet -iwithprefix Help -iwithprefix Libraries -iwithprefix Macros -iwithprefix Main -iwithprefix Models -iwithprefix Modules -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools -iwithprefix Parser -iwithprefix MultiThreading
+IFLAGS-SRC = -iprefix ${BIL_PATH}/src/ -iwithprefix . -iwithprefix Common -iwithprefix DataSet -iwithprefix Help -iwithprefix Libraries -iwithprefix Macros -iwithprefix Main -iwithprefix Models -iwithprefix Modules -iwithprefix Outputs -iwithprefix Solver -iwithprefix Tools -iwithprefix Parser -iwithprefix Parallelization
 
 IFLAGS-SOLVER = -iprefix ${BIL_PATH}/src/Solver/ -iwithprefix MatrixStorageFormats -iwithprefix ResolutionMethods -iwithprefix VectorStorageFormats
 

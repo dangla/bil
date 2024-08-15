@@ -1,7 +1,18 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <stdarg.h>
+
+#include "Message.h"
+#include "Math_.h"
+#include "Plasticity.h"
+#include "autodiff.h"
+
 static Plasticity_ComputeTangentStiffnessTensor_t    PlasticityACCPierre_CT ;
 static Plasticity_ReturnMapping_t                    PlasticityACCPierre_RM ;
 static Plasticity_SetParameters_t                    PlasticityACCPierre_SP ;
-static Plasticity_SetModelProp_t                     PlasticityACCPierre_SetModelProp ;
+extern Plasticity_SetModelProp_t                     PlasticityACCPierre_SetModelProp ;
 
 
 #define Plasticity_GetACC_k(PL) \

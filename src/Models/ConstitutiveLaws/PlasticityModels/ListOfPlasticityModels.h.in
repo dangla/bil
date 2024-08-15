@@ -1,0 +1,8 @@
+#ifndef LISTOFPLASTICITYMODELS_H
+#define LISTOFPLASTICITYMODELS_H
+
+#define ListOfPlasticityModels_Nb          ${NBOFSELECTEDMODELS}
+#define ListOfPlasticityModels_Methods(m)  ${SELECTEDMODELMETHODS}
+#define ListOfPlasticityModels_Names       ${SELECTEDMODELNAMES}
+
+#endif

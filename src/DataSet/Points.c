@@ -57,91 +57,7 @@ void  (Points_Delete)(void* self)
 
 
 
-#if 0
-Points_t*  (Points_Create)(DataFile_t* datafile,Mesh_t* mesh)
-{
-  Points_t* points = (Points_t*) malloc(sizeof(Points_t)) ;
-  int dim = Mesh_GetDimension(mesh) ;
-  int n_points ;
-  FILE *ficd ;
-  int   i ;
-  
-  if(!points) arret("Points_Create") ;
-  
-  DataFile_OpenFile(datafile,"r") ;
-  
-  DataFile_SetFilePositionAfterKey(datafile,"POIN,Points",",",1) ;
-  
-  Message_Direct("Enter in %s","Points") ;
-  Message_Direct("\n") ;
 
-  
-  ficd = DataFile_GetFileStream(datafile) ;
-
-
-  /* Nb of points */
-  {
-    fscanf(ficd,"%d",&n_points) ;
-    Points_GetNbOfPoints(points) = n_points ;
-  }
-  
-  
-  /* Memory space for points */
-  {
-    Point_t* point = (Point_t*) malloc(n_points*sizeof(Point_t)) ;
-    
-    if(!point) arret("Points_Create (2)") ;
-    
-    Points_GetPoint(points) = point ;
-  }
-  
-  
-  /* Memory space for coordinates */
-  {
-    double* coor = (double*) calloc(3*n_points,sizeof(double)) ;
-    
-    if(!coor) arret("Points_Create (1)") ;
-    
-    for(i = 0 ; i < n_points ; i++) {
-      Point_t* point_i = Points_GetPoint(points) + i ;
-      double  *x = coor + i*3 ;
-      
-      Point_GetCoordinate(point_i) = x ;
-    }
-  }
-  
-  
-  /* Read in the input data file */
-  {
-    for(i = 0 ; i < n_points ; i++) {
-      Point_t* point_i = Points_GetPoint(points) + i ;
-      double  *x = Point_GetCoordinate(point_i) ;
-      int j ;
-      
-      for(j = 0 ; j < dim ; j++) {
-        fscanf(ficd,"%lf",x + j) ;
-      }
-    }
-  }
-  
-
-  /* The enclosing element */
-  for(i = 0 ; i < n_points ; i++) {
-    Point_t* point_i = Points_GetPoint(points) + i ;
-    
-    Point_SetEnclosingElement(point_i,mesh) ;
-  }
-  
-  
-  DataFile_CloseFile(datafile) ;
-  
-  return(points) ;
-}
-#endif
-
-
-
-#if 1
 Points_t*  (Points_Create)(DataFile_t* datafile,Mesh_t* mesh)
 {
   char* filecontent = DataFile_GetFileContent(datafile) ;
@@ -218,4 +134,4 @@ Points_t*  (Points_Create)(DataFile_t* datafile,Mesh_t* mesh)
   
   return(points) ;
 }
-#endif
+

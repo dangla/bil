@@ -4,7 +4,7 @@
 
 #include "Utils.h"
 
-#define BASENAME_SETMODULEPROP(base)   (Utils_CAT(base,_SetModuleProp))
+#define BASENAME_SETMODULEPROP(base)   Utils_CAT(base,_SetModuleProp)
 
 /* The macro BASENAME is sent from the compiler */
 #ifdef  BASENAME

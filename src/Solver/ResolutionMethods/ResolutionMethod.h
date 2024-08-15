@@ -1,6 +1,10 @@
 #ifndef RESOLUTIONMETHOD_H
 #define RESOLUTIONMETHOD_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 enum ResolutionMethod_e {     /* Type of resolution method */
   ResolutionMethod_CROUT,     /* Crout method */
@@ -51,4 +55,8 @@ struct ResolutionMethod_s {
   Options_t* options ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

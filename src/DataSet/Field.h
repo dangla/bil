@@ -1,6 +1,10 @@
 #ifndef FIELD_H
 #define FIELD_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -59,7 +63,8 @@ extern void           (FieldGrid_Delete)(void*) ;
 
 /* 3. FieldConstant */
 
-#define FieldConstant_GetValue(FLD)      ((FLD)->v)
+#define FieldConstant_GetValue(FLD)               ((FLD)->v)
+#define FieldConstant_GetRandomRangeLength(FLD)   ((FLD)->ranlen)
 
 
 
@@ -87,6 +92,7 @@ struct FieldGrid_s {          /* champ sur une grille */
 
 struct FieldConstant_s {      /* Constant field */
   double v ;                  /* Value */
+  double ranlen ;
 } ;
 
 /* Old notations which I try to eliminate little by little */
@@ -95,4 +101,8 @@ struct FieldConstant_s {      /* Constant field */
 #define chmpgrille_t    FieldGrid_t
 #define champ(a,b,c)    Field_ComputeValueAtPoint(&(c),(a),(b))
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

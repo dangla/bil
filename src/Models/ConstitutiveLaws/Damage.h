@@ -1,6 +1,10 @@
 #ifndef DAMAGE_H
 #define DAMAGE_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -19,6 +23,7 @@ typedef void    (Damage_SetModelProp_t) (Damage_t*) ;
 extern Damage_t*      (Damage_Create)(void) ;
 extern void           (Damage_Delete)(void*) ;
 extern void           (Damage_Initialize)                  (Damage_t*) ;
+extern void           (DamageModel_Initialize)             (Damage_t*,const char*) ;
 //extern void           (Damage_SetParameters)               (Damage_t*,...) ;
 extern double         (Damage_UpdateTangentStiffnessTensor)(Damage_t*,double*) ;
 extern void           (Damage_PrintTangentStiffnessTensor) (Damage_t*) ;
@@ -52,6 +57,14 @@ extern void           (Damage_CopyDamagedStiffnessTensor)  (Damage_t*,double*) ;
 #define Damage_MaxLengthOfKeyWord             (100)
 #define Damage_MaxNbOfParameters              (6)
 #define Damage_MaxNbOfHardeningVariables      (2)
+
+
+#include "DamageModels/ListOfDamageModels.h"
+
+
+#define Damage_NbOfModels               (ListOfDamageModels_Nb)
+#define Damage_ListOfNames               ListOfDamageModels_Names
+#define Damage_ListOfSetModelProp        ListOfDamageModels_Methods(_SetModelProp)
 
 
 
@@ -107,11 +120,16 @@ extern void           (Damage_CopyDamagedStiffnessTensor)  (Damage_t*,double*) ;
         (!strcmp(Damage_GetCodeNameOfModel(D),STR))
 
 
-#define Damage_SetTo(D,MOD) \
+//#define Damage_SetTo(D,MOD) \
         do { \
           Damage_CopyCodeName(D,Utils_STR(MOD)) ; \
           Damage_Initialize(D) ; \
           Damage_SetModelProp(D) ; \
+        } while(0)
+
+#define Damage_SetTo(D,MOD) \
+        do { \
+          DamageModel_Initialize(D,Utils_STR(Damage##MOD)) ; \
         } while(0)
 
 
@@ -138,4 +156,8 @@ struct Damage_s {
   Damage_SetModelProp_t*              setmodelprop ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

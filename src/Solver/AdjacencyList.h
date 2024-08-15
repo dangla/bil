@@ -1,6 +1,10 @@
 #ifndef ADJACENCYLIST_H
 #define ADJACENCYLIST_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 struct AdjacencyList_s  ; typedef struct AdjacencyList_s AdjacencyList_t ;
@@ -20,4 +24,8 @@ struct AdjacencyList_s {      /* Format */
   int* dest ;                 /* Neighbors */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

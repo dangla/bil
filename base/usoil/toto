@@ -1,0 +1,93 @@
+Geometry
+2 axis
+
+
+
+Mesh
+carre.msh
+
+
+
+Material
+Model = usoil
+gravity = 0
+rho_s = 2000
+slope_of_swelling_line = 0.004
+slope_of_virgin_consolidation_line = 0.037
+shear_modulus = 1.e8
+slope_of_critical_state_line = 1.2
+initial_pre-consolidation_pressure = 18000
+initial_stress_11 = -1000
+initial_stress_22 = -1000
+initial_stress_33 = -1000
+initial_void_ratio = 0.33
+rho_l = 1000
+k_int = 1e-20
+mu_l = 0.001
+Curves = sterrebeek0 pc = Range{p1 = 10.e3 , p2 = 210.e3 , n = 101} sl = Expressions(1){p0 = 10.e3 ; a = -1/2.5 ; sl = (pc/p0)**(a) ;} kl = Expressions(1){p0 = 3.e6 ; a = 2 ; kl = (1 + (pc/p0)**(a))**(-0.5) ;} lc = Expressions(1){p1 = 10.e3 ; p2 = 20.e3 ; p3 = 40.e3 ; p4 = 80.e3 ; p5 = 160.e3 ; l1 = 1 ; l2 = 2.22222 ; l3 = 3 ; l4 = 4.0555555 ; l5 = 6.666666 ; lc = (pc < p1) ? l1 : ((pc < p2) ? ((pc - p1)*l2 + (p2 - pc)*l1)/(p2-p1) : ((pc < p3) ? ((pc - p2)*l3 + (p3 - pc)*l2)/(p3-p2) : ((pc < p4) ? ((pc - p3)*l4 + (p4 - pc)*l3)/(p4-p3) : ((pc < p5) ?((pc - p4)*l5 + (p5 - pc)*l4)/(p5-p4) : l5)))) ;}
+
+
+
+Fields
+2
+Val = -0.e3 Grad = 0 0 0 Point = 0 0 0
+Val =  1.e3 Grad = 0 0 0 Point = 0 0 0
+
+
+
+Initialization
+1
+Region = 10 Unknown = p_l Field = 1 Function = 0
+
+
+
+Functions
+1
+N = 3 F(1) = 1 F(256) = 256 F(512) = 1
+
+
+
+Boundary Conditions
+3
+Region = 4  Unknown = u_1 Field = 0 Function = 0
+Region = 1  Unknown = u_2 Field = 0 Function = 0
+Region = 10 Unknown = p_l Field = 1 Function = 0
+
+
+
+Loads
+2
+Region = 3 Equation = meca_1 Type = pression Field = 2 Function = 1
+Region = 2 Equation = meca_1 Type = pression Field = 2 Function = 1
+
+
+
+Points
+1
+0.5 0.5
+
+
+
+Dates
+3
+1 256 512 
+
+
+
+Objective Variations
+u_1 = 1.e-4 
+u_2 = 1.e-4 
+p_l = 1000
+
+
+
+Iterative Process
+Iter = 100 
+Tol = 1e-06 
+Rec = 0
+
+
+
+Time Steps
+Dtini = 0.5 
+Dtmax = 0.5

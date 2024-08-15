@@ -244,7 +244,7 @@ void GetProperties(Element_t* el,double t)
   rho_s   = GetProperty("rho_s") ;
   sig0    = &GetProperty("sig0") ;
   
-  damage = Element_FindMaterialData(el,Damage_t,"Damage") ;
+  damage = (Damage_t*) Element_FindMaterialData(el,Damage_t,"Damage") ;
   {
     cdamaged = Damage_GetDamagedStiffnessTensor(damage) ;
     cijkl    = Damage_GetTangentStiffnessTensor(damage) ;

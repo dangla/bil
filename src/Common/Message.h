@@ -1,6 +1,10 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -68,6 +72,10 @@ struct Message_s {            /* message */
 
 /* Old notations which should be eliminated */
 #define arret          Message_FatalError
-                          
+             
+
+#ifdef __CPLUSPLUS
+}
+#endif             
 
 #endif

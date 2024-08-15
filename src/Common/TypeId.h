@@ -1,6 +1,10 @@
 #ifndef TYPEID_H
 #define TYPEID_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 
 
@@ -114,7 +118,7 @@ struct TypeId_s ; typedef struct TypeId_s    TypeId_t ;
         TypeId_Create_(TypeId_IdNumber(T),sizeof(T))
         
         
-extern TypeId_t* (TypeId_Create_)(const int,const size_t) ;
+extern TypeId_t* (TypeId_Create_)(const TypeId_e,const size_t) ;
 extern void      (TypeId_Delete)(void*) ;
 
 
@@ -385,4 +389,8 @@ struct TypeId_s {
 
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

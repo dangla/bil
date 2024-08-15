@@ -16,6 +16,8 @@
 /* Damage model */
 #include "Damage.h"
 
+#include "autodiff.h"
+
 
 #define TEMPERATURE   (293)
 
@@ -71,6 +73,7 @@ enum {
 #define U_kinetics   E_kinetics
 #endif
 #define U_Mech       E_Mech
+#define U_Strain     U_Mech
 
 
 
@@ -632,6 +635,7 @@ I_Last
 static double Variable[NbOfVariables] ;
 static double Variable_n[NbOfVariables] ;
 static double dVariable[NbOfVariables] ;
+static double PrimaryVariable[NDIF+9];
 
 
 
@@ -2628,6 +2632,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
   int dim = Element_GetDimensionOfSpace(el) ; 
   double* x   = Variable ;
   double* x_n = Variable_n ;
+  double* y   = PrimaryVariable ;
   
   /* Load the primary variables in x */
   {
@@ -2648,6 +2653,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
     
       for(i = 0 ; i < 9 ; i++) {
         x[I_Strain + i] = eps[i] ;
+        y[U_Strain + i] = eps[i] ;
       }
       
       FEM_FreeBufferFrom(fem,eps) ;
@@ -2660,6 +2666,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_Sulfur) ;
     
       x[I_U_Sulfur    ] = v ;
+      y[U_Sulfur] = v ;
       for(i = 0 ; i < 3 ; i++) {
         x[I_GRD_U_Sulfur + i] = grd[i] ;
       }
@@ -2672,6 +2679,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_Calcium) ;
     
       x[I_U_Calcium    ] = v ;
+      y[U_Calcium] = v ;
       for(i = 0 ; i < 3 ; i++) {
         x[I_GRD_U_Calcium + i] = grd[i] ;
       }
@@ -2684,6 +2692,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_Potassium) ;
     
       x[I_U_Potassium    ] = v ;
+      y[U_Potassium] = v ;
       for(i = 0 ; i < 3 ; i++) {
         x[I_GRD_U_Potassium + i] = grd[i] ;
       }
@@ -2696,6 +2705,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_charge) ;
     
       x[I_U_charge    ] = v ;
+      y[U_charge] = v ;
       for(i = 0 ; i < 3 ; i++) {
         x[I_GRD_U_charge + i] = grd[i] ;
       }
@@ -2708,6 +2718,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_Aluminium) ;
     
       x[I_U_Aluminium    ] = v ;
+      y[U_Aluminium] = v ;
       for(i = 0 ; i < 3 ; i++) {
         x[I_GRD_U_Aluminium + i] = grd[i] ;
       }
@@ -2721,6 +2732,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_eneutral) ;
     
       x[I_U_eneutral    ] = v ;
+      y[U_eneutral] = v ;
       for(i = 0 ; i < 3 ; i++) {
         x[I_GRD_U_eneutral + i] = grd[i] ;
       }
@@ -2735,6 +2747,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_kinetics) ;
     
       x[I_U_kinetics    ] = v ;
+      y[U_kinetics] = v ;
       for(i = 0 ; i < 3 ; i++) {
         x[I_GRD_U_kinetics + i] = grd[i] ;
       }
@@ -2824,7 +2837,9 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   double zn_al_s    = x[I_U_Aluminium] ;
   double psi        = x[I_U_charge] ;
   double* strain    = x + I_Strain ;
+  
   double strainv    = strain[0] + strain[4] + strain[8] ;
+
 
   /* Damage and hardening variables
    * ============================== */
@@ -3182,6 +3197,7 @@ double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,do
 {
   double* dx  = dVariable ;
   double* x_n = Variable_n ;
+  double* y = PrimaryVariable;
   int j ;
   
   /* Primary Variables */
@@ -3191,6 +3207,75 @@ double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,do
   
   /* We increment the variable as (x + dx) */
   dx[i] += dui ;
+  
+  
+  {
+    y[U_Calcium] = x[I_U_Calcium] ;
+    y[U_Aluminium] = x[I_U_Aluminium] ;
+    y[U_charge] = x[I_U_charge] ;
+    
+    for(int i = 0 ; i < 9 ; i++) {
+      (y + U_Strain)[i] = (x + I_Strain)[i] ;
+    }
+    
+    y[U_Sulfur] = x[I_U_Sulfur] ;
+    y[U_Potassium] = x[I_U_Potassium] ;
+    #if defined (E_eneutral)
+    y[U_eneutral] = x[I_U_eneutral] ;
+    #endif
+    #ifdef E_kinetics
+    y[U_kinetics] = x[I_U_kinetics] ;
+    #endif
+  }
+  
+  ComputeSecondaryVariables(el,t,dt,x_n,dx) ;
+  
+  /* The numerical derivative as (f(x + dx) - f(x))/dx */
+  for(j = 0 ; j < NbOfVariables ; j++) {
+    dx[j] -= x[j] ;
+    dx[j] /= dui ;
+  }
+
+  return(dx) ;
+}
+
+
+
+
+double* ComputeVariableDerivatives1(Element_t* el,double t,double dt,double* x,double dui,int i)
+{
+  double* dx  = dVariable ;
+  double* x_n = Variable_n ;
+  double* y = PrimaryVariable;
+  int j ;
+  
+  /* Primary Variables */
+  for(j = 0 ; j < NbOfVariables ; j++) {
+    dx[j] = x[j] ;
+  }
+  
+  /* We increment the variable as (x + dx) */
+  dx[i] += dui ;
+  
+  
+  {
+    y[U_Calcium] = x[I_U_Calcium] ;
+    y[U_Aluminium] = x[I_U_Aluminium] ;
+    y[U_charge] = x[I_U_charge] ;
+    
+    for(int i = 0 ; i < 9 ; i++) {
+      (y + U_Strain)[i] = (x + I_Strain)[i] ;
+    }
+    
+    y[U_Sulfur] = x[I_U_Sulfur] ;
+    y[U_Potassium] = x[I_U_Potassium] ;
+    #if defined (E_eneutral)
+    y[U_eneutral] = x[I_U_eneutral] ;
+    #endif
+    #ifdef E_kinetics
+    y[U_kinetics] = x[I_U_kinetics] ;
+    #endif
+  }
   
   ComputeSecondaryVariables(el,t,dt,x_n,dx) ;
   

@@ -1,6 +1,10 @@
 #ifndef RESIDU_H
 #define RESIDU_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* class-like structures "Residu_t" and attributes */
 
 /* vacuous declarations and typedef names */
@@ -71,4 +75,8 @@ struct Residu_s {             /* Residu */
   void*           storageofsol ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

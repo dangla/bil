@@ -10,6 +10,10 @@
 #ifndef MODEL_H
 #define MODEL_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* Vacuous declarations and typedef names */
 
@@ -34,7 +38,7 @@ typedef int    (Model_ComputeResidu_t)       (Element_t*,double,double,double*) 
 
 typedef void*  (Model_ComputeVariables_t)(Element_t*,void*,void*,void*,const double,const double,const int) ;
 //typedef double*   (Model_ComputeVariableFluxes_t)(Element_t* el,double** u,double t,double dt,int i,int j,...) ;
-typedef void   (Model_ComputeSecondaryVariables_t)(Element_t*,const double,const double,const double*,double*) ;
+typedef int    (Model_ComputeSecondaryVariables_t)(Element_t*,const double,const double,double*,double*) ;
 typedef void*  (Model_ComputeVariableDerivatives_t)(Element_t*,const double,const double,void*,const double,const int) ;
 
 #include "IntFcts.h"
@@ -133,7 +137,6 @@ extern void      (Model_Scan)(Model_t*,DataFile_t*,Geometry_t*) ;
         (strcpy(Model_GetNameOfAuthors(MOD),authors))
 
 
-
 /* Dimension */
 #define Model_GetDimension(MOD) \
         Geometry_GetDimension(Model_GetGeometry(MOD))
@@ -204,7 +207,7 @@ struct Model_s {              /* model */
   char*   shorttitle ;        /* Short title of the model */
   char*   authors ;           /* Authors of the model */
   
-  unsigned short nbofequations ;    /* Number of equations */
+  int      nbofequations ;    /* Number of equations */
   char**   nameofequations ;  /* Names of equations */
   char**   nameofunknowns ;   /* Names of unknowns */
   int*     sequentialindex ;  /* Sequential indexes of unknowns/equations */
@@ -227,4 +230,8 @@ struct Model_s {              /* model */
 /* Old notations which should be eliminated */
 #define MAX_EQUATIONS     Model_MaxNbOfEquations
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

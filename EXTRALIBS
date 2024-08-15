@@ -11,5 +11,5 @@
 #GSLCBLAS = /usr/lib/x86_64-linux-gnu/libgslcblas.so
 #F2C = /usr/lib/x86_64-linux-gnu/libf2c.so
 #SDL2 = /usr/lib/x86_64-linux-gnu/libsdl2.so
-#PETSC = /usr/lib/x86_64-linux-gnu/libpetsc.so
+PETSC = /usr/lib/x86_64-linux-gnu/libpetsc.so
 

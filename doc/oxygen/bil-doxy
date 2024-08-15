@@ -1742,8 +1742,8 @@ GENERATE_LEGEND        = YES
 # the various graphs.
 
 DOT_CLEANUP            = YES
-PROJECT_NAME     = Bil
-PROJECT_NUMBER   = 2.8.8
-OUTPUT_DIRECTORY = /home/dangla/Documents/Softwares/bil/bil-master/doc/oxygen
-INPUT            = /home/dangla/Documents/Softwares/bil/bil-master/src
-HTML_OUTPUT      = /home/dangla/Documents/Softwares/bil/bil-master/doc/oxygen/bil.doxy
+PROJECT_NAME           = Bil
+PROJECT_NUMBER         = 2.9.1
+OUTPUT_DIRECTORY       = /home/dangla/Documents/Softwares/bil/bil-master/doc/oxygen
+INPUT                  = /home/dangla/Documents/Softwares/bil/bil-master/src
+HTML_OUPUT             = bil.doxy

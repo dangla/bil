@@ -1,6 +1,18 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <math.h>
+#include <stdarg.h>
+
+#include "Message.h"
+#include "Math_.h"
+#include "Damage.h"
+
 static Damage_ComputeTangentStiffnessTensor_t    DamageMazars_CT ;
 static Damage_ReturnMapping_t                    DamageMazars_RM ;
 static Damage_SetParameters_t                    DamageMazars_SP ;
+extern Damage_SetModelProp_t                     DamageMazars_SetModelProp ;
 
 
 

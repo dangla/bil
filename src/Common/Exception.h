@@ -1,6 +1,10 @@
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -80,4 +84,8 @@ struct Exception_s {        /* Exception handler */
   GenericObject_Delete_t* Delete ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

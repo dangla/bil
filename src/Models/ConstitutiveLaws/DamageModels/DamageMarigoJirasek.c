@@ -1,6 +1,19 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <math.h>
+#include <stdarg.h>
+
+#include "Message.h"
+#include "Math_.h"
+#include "Damage.h"
+
 static Damage_ComputeTangentStiffnessTensor_t   DamageMarigoJirasek_CT ;
 static Damage_ReturnMapping_t                   DamageMarigoJirasek_RM ;
 static Damage_SetParameters_t                   DamageMarigoJirasek_SP ;
+extern Damage_SetModelProp_t                    DamageMarigoJirasek_SetModelProp ;
+ 
 
 
         

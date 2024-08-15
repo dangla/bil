@@ -1,6 +1,10 @@
 #ifndef LOCALVARIABLEVECTORS_H
 #define LOCALVARIABLEVECTORS_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -53,4 +57,8 @@ struct LocalVariableVectors_s {
   LocalVariableVector_t* localvariablevector ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

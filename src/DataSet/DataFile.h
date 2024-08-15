@@ -1,6 +1,10 @@
 #ifndef DATAFILE_H
 #define DATAFILE_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -11,8 +15,8 @@ struct DataFile_s     ; typedef struct DataFile_s     DataFile_t ;
 
 extern DataFile_t*  (DataFile_Create)(char*) ;
 extern void         (DataFile_Delete)(void*) ;
-extern char*        (DataFile_SetFilePositionAfterKey)(DataFile_t*,const char*,const char*,short int) ;
-extern char*        (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t*) ;
+//extern char*        (DataFile_SetFilePositionAfterKey)(DataFile_t*,const char*,const char*,short int) ;
+//extern char*        (DataFile_ReadLineFromCurrentFilePosition)(DataFile_t*) ;
 extern char*        (DataFile_ReadLineFromCurrentFilePositionInString)(DataFile_t*) ;
 //extern void*        (DataFile_ReadArray)(DataFile_t*,const char*,void*,int,size_t) ;
 extern int*         (DataFile_ReadInversePermutationOfNodes)(DataFile_t*,int) ;
@@ -169,4 +173,8 @@ struct DataFile_s {
   void* parent ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

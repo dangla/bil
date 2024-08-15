@@ -299,17 +299,17 @@ enum {
 
 
 /* Nb of nodes (el must be used below) */
-#define NbOfNodes               Element_GetNbOfNodes(el)
+#define NN               Element_GetNbOfNodes(el)
 
 
 /* Nb of terms */
-#define NbOfExplicitTerms       ((13 + CementSolutionDiffusion_NbOfConcentrations)*NbOfNodes)
-#define NbOfImplicitTerms       (10*NbOfNodes*NbOfNodes + 3*NbOfNodes)
+#define NbOfExplicitTerms       ((13 + CementSolutionDiffusion_NbOfConcentrations)*NN)
+#define NbOfImplicitTerms       (10*NN*NN + 3*NN)
 #define NbOfConstantTerms       (2)
 
 
 /* Names used for implicit terms */
-#define MassAndFlux(f,i,j)  ((f)[((i)*NbOfNodes + (j))])
+#define MassAndFlux(f,i,j)  ((f)[((i)*NN + (j))])
 
 #define NW_C          (f)
 #define NW_Cn         (f_n)
@@ -317,66 +317,66 @@ enum {
 #define N_Cn(i)       MassAndFlux(NW_Cn,i,i)
 #define W_C(i,j)      MassAndFlux(NW_C,i,j)
 
-#define NW_q          (f   + NbOfNodes*NbOfNodes)
-#define NW_qn         (f_n + NbOfNodes*NbOfNodes)
+#define NW_q          (f   + NN*NN)
+#define NW_qn         (f_n + NN*NN)
 #define N_q(i)        MassAndFlux(NW_q,i,i)
 #define N_qn(i)       MassAndFlux(NW_qn,i,i)
 #define W_q(i,j)      MassAndFlux(NW_q,i,j)
 
-#define MW_tot        (f   + 2*NbOfNodes*NbOfNodes)
-#define MW_totn       (f_n + 2*NbOfNodes*NbOfNodes)
+#define MW_tot        (f   + 2*NN*NN)
+#define MW_totn       (f_n + 2*NN*NN)
 #define M_tot(i)      MassAndFlux(MW_tot,i,i)
 #define M_totn(i)     MassAndFlux(MW_totn,i,i)
 #define W_tot(i,j)    MassAndFlux(MW_tot,i,j)
 
-#define NW_Ca         (f   + 3*NbOfNodes*NbOfNodes)
-#define NW_Can        (f_n + 3*NbOfNodes*NbOfNodes)
+#define NW_Ca         (f   + 3*NN*NN)
+#define NW_Can        (f_n + 3*NN*NN)
 #define N_Ca(i)       MassAndFlux(NW_Ca,i,i)
 #define N_Can(i)      MassAndFlux(NW_Can,i,i)
 #define W_Ca(i,j)     MassAndFlux(NW_Ca,i,j)
 
-#define NW_Na         (f   + 4*NbOfNodes*NbOfNodes)
-#define NW_Nan        (f_n + 4*NbOfNodes*NbOfNodes)
+#define NW_Na         (f   + 4*NN*NN)
+#define NW_Nan        (f_n + 4*NN*NN)
 #define N_Na(i)       MassAndFlux(NW_Na,i,i)
 #define N_Nan(i)      MassAndFlux(NW_Nan,i,i)
 #define W_Na(i,j)     MassAndFlux(NW_Na,i,j)
 
-#define NW_K          (f   + 5*NbOfNodes*NbOfNodes)
-#define NW_Kn         (f_n + 5*NbOfNodes*NbOfNodes)
+#define NW_K          (f   + 5*NN*NN)
+#define NW_Kn         (f_n + 5*NN*NN)
 #define N_K(i)        MassAndFlux(NW_K,i,i)
 #define N_Kn(i)       MassAndFlux(NW_Kn,i,i)
 #define W_K(i,j)      MassAndFlux(NW_K,i,j)
 
-#define NW_Si         (f   + 6*NbOfNodes*NbOfNodes)
-#define NW_Sin        (f_n + 6*NbOfNodes*NbOfNodes)
+#define NW_Si         (f   + 6*NN*NN)
+#define NW_Sin        (f_n + 6*NN*NN)
 #define N_Si(i)       MassAndFlux(NW_Si,i,i)
 #define N_Sin(i)      MassAndFlux(NW_Sin,i,i)
 #define W_Si(i,j)     MassAndFlux(NW_Si,i,j)
 
-#define NW_Cl         (f   + 7*NbOfNodes*NbOfNodes)
-#define NW_Cln        (f_n + 7*NbOfNodes*NbOfNodes)
+#define NW_Cl         (f   + 7*NN*NN)
+#define NW_Cln        (f_n + 7*NN*NN)
 #define N_Cl(i)       MassAndFlux(NW_Cl,i,i)
 #define N_Cln(i)      MassAndFlux(NW_Cln,i,i)
 #define W_Cl(i,j)     MassAndFlux(NW_Cl,i,j)
 
-#define MW_Air         (f   + 8*NbOfNodes*NbOfNodes)
-#define MW_Airn        (f_n + 8*NbOfNodes*NbOfNodes)
+#define MW_Air         (f   + 8*NN*NN)
+#define MW_Airn        (f_n + 8*NN*NN)
 #define M_Air(i)       MassAndFlux(MW_Air,i,i)
 #define M_Airn(i)      MassAndFlux(MW_Airn,i,i)
 #define W_Air(i,j)     MassAndFlux(MW_Air,i,j)
 
-#define N_CH(i)       (f   + 9*NbOfNodes*NbOfNodes)[i]
-#define N_CHn(i)      (f_n + 9*NbOfNodes*NbOfNodes)[i]
+#define N_CH(i)       (f   + 9*NN*NN)[i]
+#define N_CHn(i)      (f_n + 9*NN*NN)[i]
 
-#define N_CC(i)       (f   + 9*NbOfNodes*NbOfNodes + NbOfNodes)[i]
-#define N_CCn(i)      (f_n + 9*NbOfNodes*NbOfNodes + NbOfNodes)[i]
+#define N_CC(i)       (f   + 9*NN*NN + NN)[i]
+#define N_CCn(i)      (f_n + 9*NN*NN + NN)[i]
 
-#define N_FriedelSalt(i)  (f   + 10*NbOfNodes*NbOfNodes + NbOfNodes)[i]
-#define N_FriedelSaltn(i) (f_n + 10*NbOfNodes*NbOfNodes + NbOfNodes)[i]
+#define N_FriedelSalt(i)  (f   + 10*NN*NN + NN)[i]
+#define N_FriedelSaltn(i) (f_n + 10*NN*NN + NN)[i]
 
 #ifndef E_eneutral
-  #define C_OH(i)       (f   + 10*NbOfNodes*NbOfNodes + 2*NbOfNodes)[i]
-  #define C_OHn(i)      (f_n + 10*NbOfNodes*NbOfNodes + 2*NbOfNodes)[i]
+  #define C_OH(i)       (f   + 10*NN*NN + 2*NN)[i]
+  #define C_OHn(i)      (f_n + 10*NN*NN + 2*NN)[i]
   
   #define LogC_OH(n)    (log10(C_OH(n)))
   #define LogC_OHn(n)   (log10(C_OHn(n)))
@@ -386,7 +386,7 @@ enum {
 
 
 /* Names used for explicit terms */
-#define TransferCoefficient(va,n)  ((va) + (n)*NbOfNodes)
+#define TransferCoefficient(va,n)  ((va) + (n)*NN)
 
 #define KF_CO2          TransferCoefficient(va,0)
 

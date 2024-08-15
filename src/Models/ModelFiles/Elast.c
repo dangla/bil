@@ -17,21 +17,28 @@
 
 /* Nb of equations */
 #define NEQ     (dim)
-/* Nb of (im/ex)plicit terms and constant terms */
-#define NVI     (12)
-#define NVE     (0)
-#define NV0     (9)
 
 /* Equation index */
-#define E_mec   (0)
+#define E_MECH   (0)
 
 /* Unknown index */
-#define U_u     (0)
+#define U_DISP     (0)
 
+
+/* Nb of implicit terms */
+#define NVI     (12)
 /* We define some names for implicit terms */
 #define SIG     (vim + 0)
 #define F_MASS  (vim + 9)
 
+
+/* Nb of explicit terms */
+#define NVE     (0)
+/* We define some names for explicit terms */
+
+
+/* Nb of constant terms */
+#define NV0     (9)
 /* We define some names for constant terms */
 #define SIG0    (v0  + 0)
 
@@ -209,14 +216,14 @@ int SetModelProp(Model_t* model)
   for(i = 0 ; i < dim ; i++) {
     char name_eqn[7] ;
     sprintf(name_eqn,"meca_%d",i + 1) ;
-    Model_CopyNameOfEquation(model,E_mec + i,name_eqn) ;
+    Model_CopyNameOfEquation(model,E_MECH + i,name_eqn) ;
   }
   
   /** Names of the main unknowns */
   for(i = 0 ; i < dim ; i++) {
     char name_unk[4] ;
     sprintf(name_unk,"u_%d",i + 1) ;
-    Model_CopyNameOfUnknown(model,U_u + i,name_unk) ;
+    Model_CopyNameOfUnknown(model,U_DISP + i,name_unk) ;
   }
   
   Model_GetComputePropertyIndex(model) = pm ;
@@ -547,7 +554,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     
     for(i = 0 ; i < nn ; i++) {
       int j ;
-      for(j = 0 ; j < dim ; j++) R(i,E_mec + j) -= rw[i*dim + j] ;
+      for(j = 0 ; j < dim ; j++) R(i,E_MECH + j) -= rw[i*dim + j] ;
     }
   }
   
@@ -555,7 +562,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
   {
     double* rbf = FEM_ComputeBodyForceResidu(fem,intfct,F_MASS + dim - 1,NVI) ;
     
-    for(i = 0 ; i < nn ; i++) R(i,E_mec + dim - 1) -= -rbf[i] ;
+    for(i = 0 ; i < nn ; i++) R(i,E_MECH + dim - 1) -= -rbf[i] ;
   }
   
   return(0) ;
@@ -591,14 +598,14 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     /* Variables */
     //double* x = ComputeVariables(el,u,vim0,t,0,p) ;
     
-    double* dis  = FEM_ComputeDisplacementVector(fem,u,intfct,p,U_u) ;
+    double* dis  = FEM_ComputeDisplacementVector(fem,u,intfct,p,U_DISP) ;
     double dis_tot[3] = {0,0,0} ;
     double sig[9] = {0,0,0,0,0,0,0,0,0} ;
     int    i ;
     
     /* Displacement */
     for(i = 0 ; i < dim ; i++) {
-      //dis[i] = FEM_ComputeUnknown(fem,u,intfct,p,U_u + i) ;
+      //dis[i] = FEM_ComputeUnknown(fem,u,intfct,p,U_DISP + i) ;
       dis_tot[i] = dis[i] ;
     }
 
@@ -650,17 +657,17 @@ double* ComputeVariables(Element_t* el,double** u,double* f_n,double t,double dt
       int i ;
     
       for(i = 0 ; i < dim ; i++) {
-        x[U_u + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_u + i) ;
+        x[U_DISP + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_DISP + i) ;
       }
     
       for(i = dim ; i < 3 ; i++) {
-        x[U_u + i] = 0 ;
+        x[U_DISP + i] = 0 ;
       }
     }
     
     /* Strains */
     {
-      double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_u) ;
+      double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_DISP) ;
       int i ;
       
       if(ItIsPeriodic) {

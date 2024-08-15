@@ -1,6 +1,10 @@
 #ifndef VECTORSTORAGEFORMAT_H
 #define VECTORSTORAGEFORMAT_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 
 enum VectorStorageFormat_e {        /* format of the vector to be stored */
@@ -46,4 +50,8 @@ struct VectorStorageFormat_s {
   Options_t* options ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

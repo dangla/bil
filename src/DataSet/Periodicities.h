@@ -1,6 +1,10 @@
 #ifndef PERIODICITIES_H
 #define PERIODICITIES_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structures */
@@ -35,4 +39,8 @@ struct Periodicities_s {            /* Periodicities */
 } ;
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

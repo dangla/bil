@@ -73,8 +73,8 @@
 /* We define some names for explicit terms */
 #define KD_mass_L      (vex + 0)[0]
 #define KD_mass_G      (vex + 1)[0]
-#define KF_air_L       (vex + 2)[0]
-#define KF_air_G       (vex + 3)[0]
+#define K_air_L       (vex + 2)[0]
+#define K_air_G       (vex + 3)[0]
 #define MC_air         (vex + 4)[0]
 
 
@@ -97,6 +97,8 @@ static double* ComputeVariables(Element_t*,void*,void*,void*,const double,const 
 static void  ComputeSecondaryVariables(Element_t*,double,double,double*,double*) ;
 static double* ComputeVariableDerivatives(Element_t*,double,double,double*,double,int) ;
 static void    ComputePhysicoChemicalProperties(double) ;
+
+static double  saturationdegree(double,double,Curve_t*) ;
 
 
 
@@ -131,8 +133,8 @@ static void    ComputePhysicoChemicalProperties(double) ;
 
 
 /* Material properties */
-#define SaturationDegree(pc)    (Curve_ComputeValue(saturationcurve,pc))
-#define dSaturationDegree(pc)   (Curve_ComputeDerivative(saturationcurve,pc))
+//#define SaturationDegree(pc)    (Curve_ComputeValue(saturationcurve,pc))
+#define SaturationDegree(pc)    (saturationdegree(pc,p_c3,saturationcurve))
 
 #define RelativePermeabilityToLiquid(pc)  (Curve_ComputeValue(relativepermliqcurve,pc))
 #define RelativePermeabilityToGas(pc)     (Curve_ComputeValue(relativepermgascurve,pc))
@@ -141,6 +143,9 @@ static void    ComputePhysicoChemicalProperties(double) ;
 //#define TortuosityToGas(f,sg)   ((sg > 0) ? pow(f*sg,4./3) : 0) // After HYDRUS
 #define aa                        (0.33)  /* 1/3 Millington, Thiery 1.74 */
 #define bb                        (2.33)   /* 7/3 Millington, Thiery 3.2 */
+
+#define KappaSuction(p)    ((kappasuctioncurve) ? Curve_ComputeValue(kappasuctioncurve,p) : kappa_s)
+#define Kappa(s)           ((kappacurve) ? Curve_ComputeValue(kappacurve,s) : kappa)
 
 
 
@@ -178,21 +183,27 @@ static double  kl_int ;
 static double  kg_int ;
 static double  mu_l ;
 static double  mu_g ;
-static double  kappa ;
-static double  mu ;
+//static double  mu ;
+static double  poisson ;
 static double  e0 ;
 static double  phi0 ;
 static double  hardv0 ;
 static double  d_vap ;
+static double  d_airliq ;
 static Elasticity_t* elasty ;
 static Plasticity_t* plasty ;
 static Curve_t* saturationcurve ;
 static Curve_t* relativepermliqcurve ;
 static Curve_t* relativepermgascurve ;
+static Curve_t* kappasuctioncurve ;
+static Curve_t* kappacurve ;
+static double  kappa ;
 static double  kappa_s ;
 static double  p_atm ;
 static double  p_v0 ;
 static double  RT ;
+static double  p_c3 ;
+static double  henry ;
 
 
 #include "PhysicalConstant.h"
@@ -254,8 +265,8 @@ enum {
   I_PHI,
   I_KD_mass_L,
   I_KD_mass_G,
-  I_KF_air_L,
-  I_KF_air_G,
+  I_K_air_L,
+  I_K_air_G,
   I_GRD_P_L,
   I_GRD_P_L2 = I_GRD_P_L + 2,
   I_GRD_P_G,
@@ -317,12 +328,22 @@ int pm(const char *s)
     return (25) ;
   } else if(!strcmp(s,"vapor_diffusion_coefficient"))       { 
     return (26) ;
+  } else if(!strcmp(s,"poisson"))       { 
+    return (27) ;
+  } else if(!strcmp(s,"minimum_suction"))  {
+    return (28) ;
+  } else if(!strcmp(s,"henry_law_constant"))  {
+    return (29) ;
+  } else if(!strcmp(s,"dissolved_air_diffusion_coefficient"))       { 
+    return (30) ;
   } else return(-1) ;
 }
 
 
 void GetProperties(Element_t* el)
 {
+//#define GetProperty(a)  Element_GetPropertyValue(el,a)
+//#define GetCurve(a)     Element_FindCurve(el,a)
   gravity = Element_GetPropertyValue(el,"gravity") ;
   rho_s   = Element_GetPropertyValue(el,"rho_s") ;
   kl_int  = Element_GetPropertyValue(el,"kl_int") ;
@@ -332,13 +353,17 @@ void GetProperties(Element_t* el)
   rho_l0  = Element_GetPropertyValue(el,"rho_l") ;
   sig0    = &Element_GetPropertyValue(el,"initial_stress") ;
   kappa   = Element_GetPropertyValue(el,"slope_of_swelling_line") ;
-  mu      = Element_GetPropertyValue(el,"shear_modulus") ;
+  //mu      = Element_GetPropertyValue(el,"shear_modulus") ;
+  poisson = Element_GetPropertyValue(el,"poisson") ;
   phi0    = Element_GetPropertyValue(el,"initial_porosity") ;
   e0      = phi0/(1 - phi0) ;
   kappa_s = Element_GetPropertyValue(el,"kappa_s") ;
   d_vap   = Element_GetPropertyValue(el,"vapor_diffusion_coefficient") ;
+  d_airliq= Element_GetPropertyValue(el,"dissolved_air_diffusion_coefficient") ;
+  p_c3    = Element_GetPropertyValue(el,"minimum_suction") ;
+  henry   = Element_GetPropertyValue(el,"henry_law_constant") ;
   
-  plasty  = Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
+  plasty  = (Plasticity_t*) Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
   elasty  = Plasticity_GetElasticity(plasty) ;
   
   hardv0  = Plasticity_GetHardeningVariable(plasty)[0] ;
@@ -346,8 +371,12 @@ void GetProperties(Element_t* el)
   saturationcurve = Element_FindCurve(el,"sl") ;
   relativepermliqcurve = Element_FindCurve(el,"kl") ;
   relativepermgascurve = Element_FindCurve(el,"kg") ;
+  kappasuctioncurve = Element_FindCurve(el,"kappa_s") ;
+  kappacurve = Element_FindCurve(el,"kappa") ;
   
   ComputePhysicoChemicalProperties(TEMPERATURE) ;
+//#undef GetCurve
+//#undef GetProperty
 }
 
 
@@ -391,7 +420,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 /** Read the material properties in the stream file ficd 
  *  Return the nb of (scalar) properties of the model */
 {
-  int  NbOfProp = 27 ;
+  int  NbOfProp = 31 ;
   int i ;
 
   /* Par defaut tout a 0 */
@@ -432,10 +461,9 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double p_ref  = Material_GetPropertyValue(mat,"reference_consolidation_pressure") ;
         Curve_t* lc   = Material_FindCurve(mat,"lc") ;
         
+        kappa   = Material_GetPropertyValue(mat,"slope_of_swelling_line") ;
         phi0    = Material_GetPropertyValue(mat,"initial_porosity") ;
         e0      = phi0/(1 - phi0) ;
-
-        kappa  = Material_GetPropertyValue(mat,"slope_of_swelling_line") ;
         
         Plasticity_SetTo(plasty,BBM) ;
         Plasticity_SetParameters(plasty,kappa,lambda,M,pc0,e0,coh,p_ref,lc) ;
@@ -573,6 +601,7 @@ int ComputeInitialState(Element_t* el)
       }
       
       for(i = 0 ; i < 9 ; i++) EPS_P[i]  = 0 ;
+      DLAMBDA = 0 ;
     }
   }
   
@@ -614,8 +643,8 @@ int ComputeInitialState(Element_t* el)
 
       KD_mass_L = x[I_KD_mass_L] ;
       KD_mass_G = x[I_KD_mass_G] ;
-      KF_air_L  = x[I_KF_air_L] ;
-      KF_air_G  = x[I_KF_air_G] ;
+      K_air_L  = x[I_K_air_L] ;
+      K_air_G  = x[I_K_air_G] ;
       MC_air    = x[I_MC_air] ;
     }
   }
@@ -653,8 +682,8 @@ int  ComputeExplicitTerms(Element_t* el,double t)
       
       KD_mass_L = x[I_KD_mass_L] ;
       KD_mass_G = x[I_KD_mass_G] ;
-      KF_air_L  = x[I_KF_air_L] ;
-      KF_air_G  = x[I_KF_air_G] ;
+      K_air_L  = x[I_K_air_L] ;
+      K_air_G  = x[I_K_air_G] ;
       MC_air    = x[I_MC_air] ;
     }
   }
@@ -904,7 +933,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 /** Compute the outputs (r) */
 {
-  int NbOfOutputs = 11 ;
+  int NbOfOutputs = 12 ;
   double* vex0  = Element_GetExplicitTerm(el) ;
   double* vim0  = Element_GetCurrentImplicitTerm(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
@@ -951,6 +980,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double j_vap[3] = {0,0,0} ;
     double sig[9] = {0,0,0,0,0,0,0,0,0} ;
     double hardv = 0 ;
+    double dlambda = 0 ;
     int    i ;
     
     for(i = 0 ; i < dim ; i++) {
@@ -982,6 +1012,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       }
       
       hardv += HARDV/np ;
+      dlambda += DLAMBDA/np ;
     }
     
     tre = eps[0] + eps[4] + eps[8] ;
@@ -997,8 +1028,13 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     Result_Store(r + i++,eps_p    ,"Plastic_strains",9) ;
     Result_Store(r + i++,&hardv   ,"Hardening_variable",1) ;
     Result_Store(r + i++,&p_g     ,"Gas_pore_pressure",1) ;
-    Result_Store(r + i++,w_air    ,"Air_mass_flow",3) ;
+    Result_Store(r + i++,w_gas    ,"Gas_mass_flow",3) ;
     Result_Store(r + i++,j_vap    ,"Diffusive_vapor_mass_flow",3) ;
+    Result_Store(r + i++,&dlambda ,"Plastic_multiplier",1) ;
+    
+    if(i != NbOfOutputs) {
+      Message_RuntimeError("ComputeOutputs: wrong number of outputs") ;
+    }
   }
   
   return(NbOfOutputs) ;
@@ -1075,12 +1111,16 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
         
         {
           double* sig_n   = SIG_n ;
+          double  p_ln    = FEM_ComputeUnknown(fem,u_n,intfct,p,U_p_l) ;
           double  p_gn    = FEM_ComputeUnknown(fem,u_n,intfct,p,U_p_g) ;
+          double  pc_n    = p_gn - p_ln ;
           double signet_n = (sig_n[0] + sig_n[4] + sig_n[8])/3. + p_gn ;
-          double bulk     = - signet_n*(1 + e0)/kappa ;
-          double lame     = bulk - 2*mu/3. ;
-          double poisson  = 0.5 * lame / (lame + mu) ;
-          double young    = 2 * mu * (1 + poisson) ;
+          double kappa1   = Kappa(pc_n) ;
+          double bulk     = - signet_n*(1 + e0)/kappa1 ;
+          //double lame     = bulk - 2*shear/3. ;
+          //double poisson  = 0.5 * lame / (lame + mu) ;
+          //double young    = 2 * mu * (1 + poisson) ;
+          double young    = 3 * bulk * (1 - 2*poisson) ;
           
           Elasticity_SetParameters(elasty,young,poisson) ;
           Elasticity_UpdateStiffnessTensor(elasty) ;
@@ -1212,13 +1252,8 @@ int ComputeTransferCoefficients(FEM_t* fem,double dt,double* c)
   
 
   for(p = 0 ; p < np ; p++) {
-    /* Pressures at previous time step */
-    double p_l = FEM_ComputeUnknown(fem,u_n,intfct,p,U_p_l) ;
-    double p_g = FEM_ComputeUnknown(fem,u_n,intfct,p,U_p_g) ;
-    double pc = p_g - p_l ;
-    double drho_vap = M_H2O/RT*dVaporPressure(pc) ;
-    int i ;
     double* c1 = c + p*dec ;
+    int i ;
     
     /* initialization */
     for(i = 0 ; i < dec ; i++) c1[i] = 0. ;
@@ -1231,30 +1266,31 @@ int ComputeTransferCoefficients(FEM_t* fem,double dt,double* c)
         double* c2 = c1 ;
         
         c2[0] = KD_mass_L ;
-        c2[4] = KD_mass_L ;
-        c2[8] = KD_mass_L ;
+        c2[4] = c2[0] ;
+        c2[8] = c2[0] ;
       }
       
       {
         double* c2 = c1 + 9 ;
         
         c2[0] = KD_mass_G ;
-        c2[4] = KD_mass_G ;
-        c2[8] = KD_mass_G ;
+        c2[4] = c2[0] ;
+        c2[8] = c2[0] ;
       }
       
       /* Transfer coefficients for the air mass flux */
       {
         double* c2 = c1 + 2 * 9 ;
         
-        c2[0] = KF_air_L ;
+        c2[0] = K_air_L ;
         c2[4] = c2[0] ;
         c2[8] = c2[0] ;
       }
       {
         double* c2 = c1 + 3 * 9 ;
         
-        c2[0] = MC_air * KD_mass_G + KF_air_G ;
+        //c2[0] = MC_air * KD_mass_G + KF_air_G ;
+        c2[0] = K_air_G ;
         c2[4] = c2[0] ;
         c2[8] = c2[0] ;
       }
@@ -1361,8 +1397,8 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
       
       x_n[I_KD_mass_L] = KD_mass_L ;
       x_n[I_KD_mass_G] = KD_mass_G ;
-      x_n[I_KF_air_L]  = KF_air_L ;
-      x_n[I_KF_air_G]  = KF_air_G ;
+      x_n[I_K_air_L]   = K_air_L ;
+      x_n[I_K_air_G]   = K_air_G ;
       x_n[I_MC_air]    = MC_air ;
     }
   }
@@ -1415,11 +1451,28 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
         double trde      = deps[0] + deps[4] + deps[8] ;
         double dlns      = log((pc + p_atm)/(pc_n + p_atm)) ;
         double signet_n  = (sig_n[0] + sig_n[4] + sig_n[8])/3. + p_gn ;
-        double bulk      = - signet_n*(1 + e0)/kappa ;
-        double dsigm     = bulk*trde - signet_n*kappa_s/kappa*dlns ;
-        double lame      = bulk - 2*mu/3. ;
-        double poisson   = 0.5 * lame / (lame + mu) ;
-        double young     = 2 * mu * (1 + poisson) ;
+        double kappa1    = Kappa(pc_n) ;
+        double bulk      = - signet_n*(1 + e0)/kappa1 ;
+        double kappa1_s1  = KappaSuction(-signet_n) ;
+        double dsigm     = bulk*trde - signet_n*kappa1_s1/kappa1*dlns ;
+        //double lame      = bulk - 2*mu/3. ;
+        //double poisson   = 0.5 * lame / (lame + mu) ;
+        //double young     = 2 * mu * (1 + poisson) ;
+        double young     = 3*bulk*(1 - 2*poisson) ;
+        double mu        = 0.5*young/(1 + poisson) ;
+        
+        #if 1
+        if(young < 0) {
+          printf("stress:\n") ;
+          Math_PrintMatrix(sig_n,3) ;
+          printf("signet = %g\n",signet_n) ;
+          printf("pg_n = %g\n",p_gn) ;
+          printf("pc_n = %g\n",pc_n) ;
+          printf("bulk = %g\n",bulk) ;
+          printf("young = %g\n",young) ;
+          arret("") ;
+        }
+        #endif
           
         Elasticity_SetParameters(elasty,young,poisson) ;
         Elasticity_UpdateStiffnessTensor(elasty) ;
@@ -1476,6 +1529,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
     double rho_vap = M_H2O/RT*p_vap ;
     double rho_air = M_AIR/RT*p_air ;
     double rho_g   = rho_vap + rho_air ;
+    double rho_airliq = henry*p_air ;
     
     /* saturation */
     double  sl  = SaturationDegree(pc) ;
@@ -1486,9 +1540,9 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       /* Transfer coefficients at the previous time */
       double kd_mass_l = x_n[I_KD_mass_L] ;
       double kd_mass_g = x_n[I_KD_mass_G] ;
-      double kf_air_l  = x_n[I_KF_air_L] ;
-      double kf_air_g  = x_n[I_KF_air_G] ;
-      double mc_air    = x_n[I_MC_air] ;
+      double k_air_l   = x_n[I_K_air_L] ;
+      double k_air_g   = x_n[I_K_air_G] ;
+      //double mc_air    = x_n[I_MC_air] ;
     
       /* Pressure gradients */
       double* gpl = x + I_GRD_P_L ;
@@ -1507,29 +1561,41 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       for(i = 0 ; i < 3 ; i++) {
         double w_l   = - kd_mass_l*gpl[i] ;
         double w_g   = - kd_mass_g*gpg[i] ;
-        double j_air = - kf_air_l*gpl[i] - kf_air_g*gpg[i] ;
+        /* w_a   = mc_air*w_g + j_air
+           j_air = - rho_g * Fick_vap * Grad(mc_air) */
+        double w_a   = - k_air_g*gpg[i] - k_air_l*gpl[i] ;
         
         w_tot[i] = w_l + w_g ;
-        w_air[i] = mc_air*w_g + j_air ;
+        w_air[i] = w_a ;
         w_gas[i] = w_g ;
       }
       w_tot[dim - 1] += (kd_mass_l*rho_l + kd_mass_g*rho_g)*gravity ;
-      w_air[dim - 1] += mc_air*kd_mass_g*rho_g*gravity ;
+      w_air[dim - 1] += kd_mass_g*rho_air*gravity ;
     }
     
     /* Transfer coefficients at the current time */
     {
-      double d_eff    = d_vap*TortuosityToGas(phi,sg) ;
+      double Darcy_L  = kl_int/mu_l*RelativePermeabilityToLiquid(pc) ;
+      double Darcy_G  = kg_int/mu_g*RelativePermeabilityToGas(pc) ;
+      double Fick_vap = d_vap*TortuosityToGas(phi,sg) ;
+      double Fick_air = d_airliq ;
       double mc_air   = rho_air/rho_g ;
-      double mc_vap   = 1 - mc_air ;
-      double drho_vap = M_H2O/RT*dVaporPressure(pc) ;
+      double mc_vap   = rho_vap/rho_g ;
+      double dp_vap   = dVaporPressure(pc) ;
       
-      x[I_KD_mass_L] = rho_l*kl_int/mu_l*RelativePermeabilityToLiquid(pc) ;
-      x[I_KD_mass_G] = rho_g*kg_int/mu_g*RelativePermeabilityToGas(pc) ;
-      x[I_MC_air]    = mc_air ;
-      /* j_air = - rho_g * d_eff * Grad(mc_air) */
-      x[I_KF_air_L]  = (mc_air*M_H2O+mc_vap*M_AIR)/RT*drho_vap*d_eff ;
-      x[I_KF_air_G]  = - x[I_KF_air_L] + mc_vap*M_AIR/RT*d_eff;
+      /* w_l = - rho_l*Darcy_L*GradPL */
+      x[I_KD_mass_L] = rho_l*Darcy_L ;
+      /* w_g = - rho_g*Darcy_G*GradPG */
+      x[I_KD_mass_G] = rho_g*Darcy_G ;
+      /* w_air = mc_air*w_g + j_air */
+      x[I_K_air_G]   = rho_air*Darcy_G ;
+      /* j_air = - rho_g * Fick_vap * Grad(mc_air) */
+      x[I_K_air_L]   = (mc_air*M_H2O+mc_vap*M_AIR)/RT*dp_vap*Fick_vap ;
+      x[I_K_air_G]  += - x[I_K_air_L] + mc_vap*M_AIR/RT*Fick_vap;
+      /* w_airliq = rho_airliq/rho_l*w_l + j_air = 0 + j_airliq */
+      /* j_airliq = - Fick_air * Grad(rho_airliq) */
+      x[I_K_air_L]  += dp_vap*Fick_air*henry ;
+      x[I_K_air_G]  += (1 - dp_vap)*Fick_air*henry ;
     }
     
     /* Mass contents, body force */
@@ -1537,7 +1603,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       double  m_l   = rho_l*phi*sl ;
       double  m_g   = rho_g*phi*sg ;
       double  m_tot = m_l + m_g ;
-      double  m_air = rho_air*phi*sg ;
+      double  m_air = rho_air*phi*sg + rho_airliq*phi*sl ;
       double* f_mass = x + I_Fmass ;
       int i ;
     
@@ -1547,6 +1613,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
       x[I_RHO_G] = rho_g ;
       x[I_RHO_AIR] = rho_air ;
       x[I_PHI]   = phi ;
+      x[I_MC_air]  = rho_air/rho_g ;
       
       for(i = 0 ; i < 3 ; i++) f_mass[i] = 0 ;
       f_mass[dim - 1] = (rho_s + m_l)*gravity ;
@@ -1585,3 +1652,25 @@ double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,do
   return(dx) ;
 }
 #endif
+
+
+
+double saturationdegree(double pc,double pc3,Curve_t* curve)
+/* Saturation degree: regularization around 1 */
+{
+  double* x = Curve_GetXRange(curve) ;
+  double* y = Curve_GetYValue(curve) ;
+  double pc1 = x[0] ;
+  double sl ;
+  
+  if(pc >= pc3 || pc1 >= pc3) {
+    sl = Curve_ComputeValue(curve,pc) ;
+  } else {
+    double sl1 = y[0] ;
+    double sl3 = Curve_ComputeValue(curve,pc3) ;
+    
+    sl  = sl1 - (sl1 - sl3) * exp(-(pc - pc3)/(pc1 - pc3)) ;
+  }
+  
+  return(sl) ;
+}

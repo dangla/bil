@@ -97,7 +97,7 @@ int   PetscKSPMethod_Solve(Solver_t* solver)
       Options_t* options = Solver_GetOptions(solver) ;
       char* info = Options_GetPrintLevel(options) ;
       
-      if(String_Is(info,"iter")) {
+      if(String_Is(info,"iterations",4)) {
         PetscInt its ;
         PetscReal norm ;
       

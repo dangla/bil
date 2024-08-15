@@ -12,13 +12,7 @@
 #include "Damage.h"
 
 
-/* Mazars */
-#include "DamageModels/DamageMazars.c"
-
-/* Marigo-Jirasek */
-#include "DamageModels/DamageMarigoJirasek.c"
-
-
+extern Damage_SetModelProp_t Damage_ListOfSetModelProp ;
 
 
 
@@ -182,6 +176,33 @@ void Damage_Initialize(Damage_t* damage)
     Message_RuntimeError("Not known") ;
   }
   
+}
+
+
+
+
+
+void (DamageModel_Initialize)(Damage_t* damage,const char* codename)
+{
+  int n_models = Damage_NbOfModels ;
+  const char* modelnames[] = {Damage_ListOfNames} ;
+  Damage_SetModelProp_t* xDamage_SetModelProp[] = {Damage_ListOfSetModelProp} ;
+  int i = 0 ;
+  
+  while(i < n_models && strcmp(modelnames[i],codename)) i++ ;
+    
+  if(i < n_models) {
+    Damage_CopyCodeName(damage,modelnames[i]) ;
+    Damage_GetSetModelProp(damage) = xDamage_SetModelProp[i] ;
+    Damage_SetModelProp(damage) ;
+    
+    return ;
+  } else {
+    
+    Message_Warning("No model named %s",codename) ;
+  }
+
+  return ;
 }
 
 

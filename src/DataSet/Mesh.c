@@ -1557,14 +1557,16 @@ void (Mesh_ComputeResidu)(Mesh_t* mesh,Residu_t* r,Loads_t* loads,double t,doubl
       unsigned int i_cg ;
     
       for(i_cg = 0 ; i_cg < n_cg ; i_cg++) {
-        int reg_cg = Load_GetRegionIndex(cg + i_cg) ;
+        //int reg_cg = Load_GetRegionTag(cg + i_cg) ;
+        char* reg_cg = Load_GetRegionName(cg + i_cg) ;
         unsigned int ie ;
     
         #if SharedMS_APIis(OpenMP)
           #pragma omp parallel for
         #endif
         for(ie = rank ; ie < n_el ; ie += size) {
-          if(Element_GetRegionIndex(el + ie) == reg_cg) {
+          //if(Element_GetRegionTag(el + ie) == reg_cg) {
+          if(String_Is(Element_GetRegionName(el + ie),reg_cg)) {
             Material_t* mat = Element_GetMaterial(el + ie) ;
     
             if(mat) {
@@ -1877,12 +1879,15 @@ void (Mesh_OneNode)(Mesh_t* mesh)
   }
 
   {
+    Elements_t* elts = Mesh_GetElements(mesh) ;
+    Regions_t* regions = Elements_GetRegions(elts) ;
     Element_t* el = Mesh_GetElement(mesh) ;
     Node_t* no = Mesh_GetNode(mesh) ;
     
     Element_GetElementIndex(el) = 0 ;
     Element_GetMaterialIndex(el) = 0 ;
-    Element_GetRegionIndex(el) = 1 ;
+    //Element_GetRegionTag(el) = 1 ;
+    Element_SetDefaultRegion(el,regions,1) ;
 
     Element_GetDimension(el) = 3 ;
 
@@ -1956,6 +1961,8 @@ void (Mesh_ReadInline1d)(Mesh_t* mesh,char* str)
 
   /* The region and material indexes */
   {
+    Elements_t* elts = Mesh_GetElements(mesh) ;
+    Regions_t* regions = Elements_GetRegions(elts) ;
     Element_t* el = Mesh_GetElement(mesh) ;
     int i ;
     int k = 0 ;
@@ -1968,7 +1975,8 @@ void (Mesh_ReadInline1d)(Mesh_t* mesh,char* str)
     
       for(j = k ; j < k + ne[i] ; j++) {
         Element_GetMaterialIndex(el + j) = imat - 1 ;
-        Element_GetRegionIndex(el + j) = i + 1 ;
+        //Element_GetRegionTag(el + j) = i + 1 ;
+        Element_SetDefaultRegion(el + j,regions,i+1) ;
       }
       k += ne[i] ;
     }
@@ -2218,6 +2226,8 @@ void (Mesh_ReadFormatGmsh_1)(Mesh_t* mesh,const char* name)
   /* Elements */
   {
     Node_t* no = Mesh_GetNode(mesh) ;
+    Elements_t* elts = Mesh_GetElements(mesh) ;
+    Regions_t* regions = Elements_GetRegions(elts) ;
     Element_t* el = Mesh_GetElement(mesh) ;
     Node_t** p_node = Element_GetPointerToNode(el) ;
     int n_el_lu ;
@@ -2245,7 +2255,8 @@ void (Mesh_ReadFormatGmsh_1)(Mesh_t* mesh,const char* name)
       Element_GetElementIndex(el + n) = n ;
       Element_GetMaterialIndex(el + n) = imat - 1 ;
       Element_GetNbOfNodes(el + n) = nn ;
-      Element_GetRegionIndex(el + n) = reg ;
+      //Element_GetRegionTag(el + n) = reg ;
+      Element_SetDefaultRegion(el + n,regions,reg) ;
       Element_GetDimension(el + n) = gmsh_DimElement(type) ;
       if(Element_GetNbOfNodes(el + n) > Element_MaxNbOfNodes) arret("trop de noeuds") ;
       /* numerotation */
@@ -2440,8 +2451,10 @@ void (Mesh_ReadFormatGmsh_2)(Mesh_t* mesh,const char* nom_msh)
   /* Elements */
   {
     Node_t* no = Mesh_GetNode(mesh) ;
+    Elements_t* elts = Mesh_GetElements(mesh) ;
     Element_t* el = Mesh_GetElement(mesh) ;
     Node_t** p_node = Element_GetPointerToNode(el) ;
+    Regions_t* regions = Elements_GetRegions(elts) ;
     int nb_elements ;
     int i ;
     
@@ -2456,6 +2469,7 @@ void (Mesh_ReadFormatGmsh_2)(Mesh_t* mesh,const char* nom_msh)
       int j ;
       int elm_type,nb_tags ;
       int physical,elementary,partition ;
+      char regionname[Region_MaxLengthOfRegionName] ;
       
       /* le numero d'element */
       fscanf(fic_msh,"%d",&n) ; n -= 1 ;
@@ -2466,19 +2480,25 @@ void (Mesh_ReadFormatGmsh_2)(Mesh_t* mesh,const char* nom_msh)
       elementary = physical = partition = 1;
       
       for(j = 0; j < nb_tags; j++){
-        int tag ;
+        char tag[Region_MaxLengthOfRegionName] ;
         
-        fscanf(fic_msh, "%d", &tag);
+        fscanf(fic_msh, "%s", tag);
           
-        if(j == 0)      physical   = tag ;
-        else if(j == 1) elementary = tag ;
-        else if(j == 2) partition  = tag ;
+        if(j == 0) {
+          physical   = atoi(tag) ;
+        } else if(j == 1) {
+          elementary = atoi(tag) ;
+          strcpy(regionname,tag) ;
+        } else if(j == 2) {
+          partition  = atoi(tag) ;
+        }
         /* ignore any other tags for now */
       }
       
       Element_GetElementIndex(el + n) = n ;
       Element_GetMaterialIndex(el + n) = physical - 1 ;
-      Element_GetRegionIndex(el + n) = elementary ;
+      //Element_GetRegionTag(el + n) = elementary ;
+      Element_GetRegion(el + n) = Regions_FindRegion(regions,regionname) ;
       Element_GetNbOfNodes(el + n) = gmsh_NbNodes(elm_type) ;
       Element_GetDimension(el + n) = gmsh_DimElement(elm_type) ;
       
@@ -2570,6 +2590,8 @@ void (Mesh_Readm1d)(Mesh_t* mesh,const char* nom_m1d)
   /* Elements */
   {
     int n_el = Mesh_GetNbOfElements(mesh) ;
+    Elements_t* elts = Mesh_GetElements(mesh) ;
+    Regions_t* regions = Elements_GetRegions(elts) ;
     Element_t* el = Mesh_GetElement(mesh) ;
     Node_t* no = Mesh_GetNode(mesh) ;
     int k = 0 ;
@@ -2583,7 +2605,8 @@ void (Mesh_Readm1d)(Mesh_t* mesh,const char* nom_m1d)
       
       while(k < n_el) {
         Element_GetMaterialIndex(el + k) = imat - 1 ;
-        Element_GetRegionIndex(el + k) = ireg + 1 ;
+        //Element_GetRegionTag(el + k) = ireg + 1 ;
+        Element_SetDefaultRegion(el + k,regions,ireg+1) ;
         k++ ;
         if(fabs(pt[ireg + 1] - Node_GetCoordinate(no + k)[0]) < lc[ireg + 1]*0.1) break ;
       }
@@ -2655,13 +2678,12 @@ void (Mesh_ReadFormatCesar)(Mesh_t* mesh,const char* nom)
     char   type_el[3][8] = {{'P','L'},{'P','L','T','Q'},{'P','L','T','S','Y','I',' ','H'}} ; 
   */
   char   mot[Mesh_MaxLengthOfKeyWord] ;
-  int n_no ;
-  int n_el ;
-  int n_c ;
 
 
   /* Nb of nodes */
   {
+    int n_no ;
+    
     fscanf(fic_ces,"%s",mot) ;
   
     if(strcmp(mot,"COOR") != 0) {
@@ -2670,7 +2692,7 @@ void (Mesh_ReadFormatCesar)(Mesh_t* mesh,const char* nom)
     
     fscanf(fic_ces,"%*d %*d %d %*d",&n_no) ;
     
-    //Mesh_GetNbOfNodes(mesh) = n_no ;
+    Mesh_GetNbOfNodes(mesh) = n_no ;
     
     {
       int dim  = Mesh_GetDimension(mesh) ;
@@ -2685,6 +2707,9 @@ void (Mesh_ReadFormatCesar)(Mesh_t* mesh,const char* nom)
   
   /* Nb of elements */
   {
+    int n_el ;
+    int n_c ;
+    
     fscanf(fic_ces,"%s",mot) ;
   
     if(strcmp(mot,"ELEM") != 0) {
@@ -2702,16 +2727,16 @@ void (Mesh_ReadFormatCesar)(Mesh_t* mesh,const char* nom)
       }
     }
     
-    //Mesh_GetNbOfElements(mesh) = n_el ;
-    //Mesh_GetNbOfConnectivities(mesh) = n_c ;
+    Mesh_GetNbOfElements(mesh) = n_el ;
+    Mesh_GetNbOfConnectivities(mesh) = n_c ;
   }
   
   
   /* Allocation of space for "nodes" and "elements" */
   {
-    //int n_no = Mesh_GetNbOfNodes(mesh) ;
-    //int n_el = Mesh_GetNbOfElements(mesh) ;
-    //int n_c  = Mesh_GetNbOfConnectivities(mesh) ;
+    int n_no = Mesh_GetNbOfNodes(mesh) ;
+    int n_el = Mesh_GetNbOfElements(mesh) ;
+    int n_c  = Mesh_GetNbOfConnectivities(mesh) ;
     int dim  = Mesh_GetDimension(mesh) ;
     Nodes_t* nodes = Nodes_New(n_no,dim,n_c) ;
     Elements_t* elements = Elements_New(n_el,n_c) ;
@@ -2736,12 +2761,11 @@ void (Mesh_ReadFormatCesar)(Mesh_t* mesh,const char* nom)
     /* Coordinates */
     {
       int dim  = Mesh_GetDimension(mesh) ;
+      int n_no = Mesh_GetNbOfNodes(mesh) ;
       Node_t* no = Mesh_GetNode(mesh) ;
       int i ;
     
-      fscanf(fic_ces,"%*d %*d %d %*d",&n_no) ;
-      
-      n_no =  Mesh_GetNbOfNodes(mesh) ;
+      fscanf(fic_ces,"%*d %*d %*d %*d") ;
 
       for(i = 0 ; i < n_no ; i++) {
         Node_t* node_i = no + i ;
@@ -2759,9 +2783,15 @@ void (Mesh_ReadFormatCesar)(Mesh_t* mesh,const char* nom)
   /* Elements */
   {
     int dim  = Mesh_GetDimension(mesh) ;
+    int n_no = Mesh_GetNbOfNodes(mesh) ;
+    int n_el = Mesh_GetNbOfElements(mesh) ;
+    int n_c  = Mesh_GetNbOfConnectivities(mesh) ;
+    Elements_t* elts = Mesh_GetElements(mesh) ;
+    Regions_t* regions = Elements_GetRegions(elts) ;
     Element_t* el = Mesh_GetElement(mesh) ;
     Node_t* no = Mesh_GetNode(mesh) ;
     Node_t** p_node = Element_GetPointerToNode(el) ;
+    int* reg_i ;
     int i ;
     
     fscanf(fic_ces,"%s",mot) ;
@@ -2770,9 +2800,7 @@ void (Mesh_ReadFormatCesar)(Mesh_t* mesh,const char* nom)
       arret("pas de ELEM !\n") ;
     }
     
-    fscanf(fic_ces,"%*d %*d %d %*d",&n_el) ;
-    
-    fscanf(fic_ces,"%d",&n_c) ;
+    fscanf(fic_ces,"%*d %*d %*d %*d") ;
     
     
     n_el = Mesh_GetNbOfElements(mesh) ;
@@ -2812,6 +2840,8 @@ void (Mesh_ReadFormatCesar)(Mesh_t* mesh,const char* nom)
     }
   
     /* Regions */
+    reg_i = (int*) Mry_New(int[n_el]) ;
+    
     for(i = 0 ; i < n_el ; i++) {
       int    n_type = 4 ;
       char   nom_el[][5] = {"OBS2","OBS3","OBT3","OBQ4"} ;
@@ -2819,15 +2849,15 @@ void (Mesh_ReadFormatCesar)(Mesh_t* mesh,const char* nom)
       
       fscanf(fic_ces,"%s",mot) ;
       
-      Element_GetRegionIndex(el + i) = 0 ;
+      reg_i[i] = 0 ;
       
       for(j = 0 ; j < n_type ; j++) {
         if(String_Is(mot,nom_el[j],4)) {
-          Element_GetRegionIndex(el + i) = j + 1 ;
+          reg_i[i] = j + 1 ;
         }
       }
       
-      if(Element_GetRegionIndex(el + i)  == 0) {
+      if(reg_i[i]  == 0) {
         arret("Mesh_ReadFormatCesar: pas de region") ;
       }
     }
@@ -2841,8 +2871,11 @@ void (Mesh_ReadFormatCesar)(Mesh_t* mesh,const char* nom)
       imat -= 1 ;
       Element_GetMaterialIndex(el + i) = imat ;
       /* Region index is not defined in CESAR so we assume the following formula */
-      Element_GetRegionIndex(el + i) = 10*Element_GetRegionIndex(el + i) + imat ;
+      //Element_GetRegionTag(el + i) = 10*reg_i[i] + imat ;
+      Element_SetDefaultRegion(el + i,regions,10*reg_i[i] + imat) ;
     }
+    
+    free(reg_i) ;
   }
     
   {
@@ -3080,21 +3113,6 @@ int gmsh_DimElement(int type)
 
 
 #if 0
-#define MESH          (mesh)
-#define GEOMETRY      Mesh_GetGeometry(MESH) 
-#define DIM           Mesh_GetDimension(MESH)
-#define SYMMETRY      Mesh_GetSymmetry(MESH) 
-#define COORSYS       Mesh_GetCoordinateSystem(MESH) 
-#define N_NO          Mesh_GetNbOfNodes(MESH)
-#define NO            Mesh_GetNode(MESH)
-#define N_EL          Mesh_GetNbOfElements(MESH)
-#define EL            Mesh_GetElement(MESH)
-#endif
-
-
-
-
-#if 0
 void ecrit_mail_msh_1(Mesh_t* mesh,const char* nom)
 /* fichier de maillage au format GMSH "nom.msh" */
 {
@@ -3130,13 +3148,13 @@ void ecrit_mail_msh_1(Mesh_t* mesh,const char* nom)
   for(i=0;i<(int) N_EL;i++) {
     int    nn = Element_GetNbOfNodes(EL + i) ;
     int    imat = Element_GetMaterialIndex(EL + i) ;
-    int    reg = Element_GetRegionIndex(EL + i) ;
+    char*   reg = Element_GetRegionName(EL + i) ;
     int    dim_el = Element_GetDimension(EL + i) ;
     int    j ;
     /* le numero d'element */
     fprintf(fic_msh,"%d",i+1) ;
     /* groupe et nb de noeuds par elements */
-    fprintf(fic_msh," %d %d %d %d",gmsh_ElmType(dim_el,nn),imat+1,reg,nn) ;
+    fprintf(fic_msh," %d %d %s %d",gmsh_ElmType(dim_el,nn),imat+1,reg,nn) ;
     /* numerotation */
     for(j=0;j<nn;j++) {
       Node_t* node_j = Element_GetNode(EL + i,j) ;
@@ -3196,7 +3214,7 @@ void ecrit_mail_msh_2(Mesh_t* mesh,const char* nom)
   for(i=0;i<(int) N_EL;i++) {
     int    nn = Element_GetNbOfNodes(EL + i) ;
     int    imat = Element_GetMaterialIndex(EL + i) ;
-    int    reg = Element_GetRegionIndex(EL + i) ;
+    char*   reg = Element_GetRegionName(EL + i) ;
     int    dim_el = Element_GetDimension(EL + i) ;
     int    j ;
     if(nn > 8) arret("ecrit_mail_msh_2 : trop de noeud") ;
@@ -3207,7 +3225,7 @@ void ecrit_mail_msh_2(Mesh_t* mesh,const char* nom)
     /* 3 tags */
     fprintf(fic_msh," 3") ;
     /* physical, elementary, partition */
-    fprintf(fic_msh," %d %d 0",imat+1,reg) ;
+    fprintf(fic_msh," %d %s 0",imat+1,reg) ;
     /* numerotation */
     for(j=0;j<nn;j++) {
       Node_t* node_j = Element_GetNode(EL + i,j) ;
@@ -3329,7 +3347,8 @@ void Mesh_PrintData(Mesh_t* mesh,char* mot)
       
       n += PRINT(":") ;
       
-      n += PRINT("  reg(%d)",Element_GetRegionIndex(elt_i)) ;
+      //n += PRINT("  reg(%d)",Element_GetRegionTag(elt_i)) ;
+      n += PRINT("  reg(%s)",Region_GetRegionName(Element_GetRegion(elt_i))) ;
       
       while(n < c2) n += PRINT(" ") ;
       

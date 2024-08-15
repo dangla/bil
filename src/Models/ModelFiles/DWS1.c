@@ -92,13 +92,13 @@ enum {
 
 
 /* Nb of nodes (el must be used below) */
-#define NbOfNodes               Element_GetNbOfNodes(el)
+#define NN               Element_GetNbOfNodes(el)
 
 
 
 /* Nb of (im/ex)plicit terms and constant terms */
-#define NbOfExplicitTerms       (6*NbOfNodes)
-#define NbOfImplicitTerms       (3*NbOfNodes*NbOfNodes)
+#define NbOfExplicitTerms       (6*NN)
+#define NbOfImplicitTerms       (3*NN*NN)
 #define NbOfConstantTerms       (0)
 #define NVI      (NbOfImplicitTerms)
 #define NVE      (NbOfExplicitTerms)
@@ -106,7 +106,7 @@ enum {
 
 
 /* Names used for implicit terms */
-#define MassAndFlux(f,i,j)  ((f)[((i)*NbOfNodes + (j))])
+#define MassAndFlux(f,i,j)  ((f)[((i)*NN + (j))])
 
 #define MW_T          (f)
 #define MW_Tn         (f_n)
@@ -115,22 +115,22 @@ enum {
 #define W_T(i,j)      MassAndFlux(MW_T,i,j)
 
 
-#define MW_A          (f   + NbOfNodes*NbOfNodes)
-#define MW_An         (f_n + NbOfNodes*NbOfNodes)
+#define MW_A          (f   + NN*NN)
+#define MW_An         (f_n + NN*NN)
 #define M_A(i)        MassAndFlux(MW_A,i,i)
 #define M_An(i)       MassAndFlux(MW_An,i,i)
 #define W_A(i,j)      MassAndFlux(MW_A,i,j)
 
 
-#define NW_S        (f   + 2*NbOfNodes*NbOfNodes)
-#define NW_Sn       (f_n + 2*NbOfNodes*NbOfNodes)
+#define NW_S        (f   + 2*NN*NN)
+#define NW_Sn       (f_n + 2*NN*NN)
 #define N_S(i)        MassAndFlux(NW_S,i,i)
 #define N_Sn(i)       MassAndFlux(NW_Sn,i,i)
 #define W_S(i,j)      MassAndFlux(NW_S,i,j)
 
 
 /* Names used for explicit terms */
-#define TransferCoefficient(va,n)  ((va) + (n)*NbOfNodes)
+#define TransferCoefficient(va,n)  ((va) + (n)*NN)
 
 #define KD_L          TransferCoefficient(va,0)
 #define KD_G          TransferCoefficient(va,1)

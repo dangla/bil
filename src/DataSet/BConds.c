@@ -142,7 +142,8 @@ void  (BConds_SetDefaultNameOfEquations)(BConds_t* bconds,Mesh_t* mesh)
   
   for(ibc = 0 ; ibc < n_bconds ; ibc++) {
     BCond_t* bcond_i = bcond + ibc ;
-    int    reg_cl = BCond_GetRegionIndex(bcond_i) ;
+    //int    reg_cl = BCond_GetRegionTag(bcond_i) ;
+    char*    reg_cl = BCond_GetRegionName(bcond_i) ;
     char*  inc_cl = BCond_GetNameOfUnknown(bcond_i) ;
     char*  eqn_cl = BCond_GetNameOfEquation(bcond_i) ;
     
@@ -153,9 +154,10 @@ void  (BConds_SetDefaultNameOfEquations)(BConds_t* bconds,Mesh_t* mesh)
       for(ie = 0 ; ie < n_elts ; ie++) {
         Element_t* elt_i = elt + ie ;
         Material_t* mat = Element_GetMaterial(elt_i) ;
-        int reg_el = Element_GetRegionIndex(elt_i) ;
+        //int reg_el = Element_GetRegionTag(elt_i) ;
+        char* reg_el = Element_GetRegionName(elt_i) ;
       
-        if(reg_el == reg_cl && mat != NULL) {
+        if(String_Is(reg_el,reg_cl) && mat != NULL) {
           /* Index of prescribed unknown */
           int jun = Element_FindUnknownPositionIndex(elt_i,inc_cl) ;
           
@@ -198,7 +200,8 @@ void  BConds_EliminateMatrixRowColumnIndexes(BConds_t* bconds,Mesh_t* mesh)
    * so as to eliminate rows and columns due to boundary conditions */
   for(ibc = 0 ; ibc < n_bconds ; ibc++) {
     BCond_t* bcond_i = bcond + ibc ;
-    int    reg_cl = BCond_GetRegionIndex(bcond_i) ;
+    //int    reg_cl = BCond_GetRegionTag(bcond_i) ;
+    char*    reg_cl = BCond_GetRegionName(bcond_i) ;
     char*  inc_cl = BCond_GetNameOfUnknown(bcond_i) ;
     char*  eqn_cl = BCond_GetNameOfEquation(bcond_i) ;
     int    regionwasfound = 0 ;
@@ -207,9 +210,10 @@ void  BConds_EliminateMatrixRowColumnIndexes(BConds_t* bconds,Mesh_t* mesh)
     for(ie = 0 ; ie < n_elts ; ie++) {
       Element_t* elt_i = elt + ie ;
       Material_t* mat = Element_GetMaterial(elt_i) ;
-      int reg_el = Element_GetRegionIndex(elt_i) ;
+      //int reg_el = Element_GetRegionTag(elt_i) ;
+      char* reg_el = Element_GetRegionName(elt_i) ;
       
-      if(reg_el == reg_cl && mat != NULL) {
+      if(String_Is(reg_el,reg_cl) && mat != NULL) {
         //int    neq = Element_GetNbOfEquations(elt_i) ;
         int    nn  = Element_GetNbOfNodes(elt_i) ;
         int    i ;
@@ -285,16 +289,18 @@ void   BConds_AssignBoundaryConditions(BConds_t* bconds,Mesh_t* mesh,double t)
 
   for(ibc = 0 ; ibc < n_bconds ; ibc++) {
     BCond_t* bcond_i = bcond + ibc ;
-    int    reg_cl = BCond_GetRegionIndex(bcond_i) ;
+    //int    reg_cl = BCond_GetRegionTag(bcond_i) ;
+    char*    reg_cl = BCond_GetRegionName(bcond_i) ;
     char*  inc_cl = BCond_GetNameOfUnknown(bcond_i) ;
     unsigned int    ie ;
 
     for(ie = 0 ; ie < n_el ; ie++) {
       Element_t* el_i = el + ie ;
       Material_t* mat = Element_GetMaterial(el_i) ;
-      int reg_el = Element_GetRegionIndex(el_i) ;
+      //int reg_el = Element_GetRegionTag(el_i) ;
+      char* reg_el = Element_GetRegionName(el_i) ;
       
-      if(reg_el == reg_cl && mat != NULL) {
+      if(String_Is(reg_el,reg_cl) && mat != NULL) {
         int  nn = Element_GetNbOfNodes(el_i) ;
         int    in ;
 
@@ -334,7 +340,8 @@ void   BConds_AssignBoundaryConditions(BConds_t* bconds,Mesh_t* mesh,double t)
     BCond_t* bcond_i = bcond + ibc ;
     Function_t* fn = BCond_GetFunction(bcond_i) ;
     double ft = (fn) ? Function_ComputeValue(fn,t) : 1. ;
-    int    reg_cl = BCond_GetRegionIndex(bcond_i) ;
+    //int    reg_cl = BCond_GetRegionTag(bcond_i) ;
+    char*    reg_cl = BCond_GetRegionName(bcond_i) ;
     char*  inc_cl = BCond_GetNameOfUnknown(bcond_i) ;
     Field_t* ch_cl = BCond_GetField(bcond_i) ;
     unsigned int    ie ;
@@ -342,9 +349,10 @@ void   BConds_AssignBoundaryConditions(BConds_t* bconds,Mesh_t* mesh,double t)
     for(ie = 0 ; ie < n_el ; ie++) {
       Element_t* el_i = el + ie ;
       Material_t* mat = Element_GetMaterial(el_i) ;
-      int reg_el = Element_GetRegionIndex(el_i) ;
+      //int reg_el = Element_GetRegionTag(el_i) ;
+      char* reg_el = Element_GetRegionName(el_i) ;
       
-      if(reg_el == reg_cl && mat != NULL) {
+      if(String_Is(reg_el,reg_cl) && mat != NULL) {
         int  nn = Element_GetNbOfNodes(el_i) ;
         int    neq = Material_GetNbOfEquations(mat) ;
         int    i,j ;

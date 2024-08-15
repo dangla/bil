@@ -72,7 +72,7 @@ Loads_t* (Loads_Create)(DataFile_t* datafile,Fields_t* fields,Functions_t* funct
     DataFile_SetCurrentPositionInFileContent(datafile,c) ;
     
     for(i = 0 ; i < n_loads ; i++) {
-      Load_t *load = Loads_GetLoad(loads) + i ;
+      Load_t* load = Loads_GetLoad(loads) + i ;
     
       Message_Direct("Enter in %s %d","Load",i+1) ;
       Message_Direct("\n") ;

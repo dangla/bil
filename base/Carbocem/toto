@@ -1,0 +1,100 @@
+Geometry
+1 plan
+
+
+Mesh
+3 0. 0. 0.6
+0.001
+1 100
+1 1
+
+
+
+Model
+Name  = Carbocem   Unknowns  = z_ca  z_si  logc_na  logc_k  psi  p_l  logc_co2  logc_oh
+
+
+
+
+Material
+Model = Carbocem
+porosity = 0.379
+kl_int = 1.4e-17
+N_CH = 3.9
+N_CSH = 2.4
+C_Na = 0.019
+C_K = 0.012
+frac = 0.8
+phi_r = 0.70
+Curves = desorbCN
+Curves = relpermCN  s_l = Range{x1 = 0 , x2 = 1 , n = 101} kl_r = Mualem_liq(1){m = 0.45}
+Curves = V_CSH
+#Curves_log = cementpaste  p_c = Range{x1 = 1.e5 , x2 = 2.e9 , n = 2000} s_l  = Van-Genuchten(1){ p0 = 5.7643e7 , m = 0.45}
+
+
+Fields
+8
+Value = -15 		        Gradient = 0. 0. 0.     Point = 0. 0. 0. 
+Value = -0.158		        Gradient = 0. 0. 0.     Point = 0. 0. 0.  
+Value = -70.50000E+06 		Gradient = 0. 0. 0.     Point = 0. 0. 0.
+Value = 0.0		        Gradient = 0. 0. 0.     Point = 0. 0. 0.    
+Value = 0.03		        Gradient = 0. 0. 0.     Point = 0. 0. 0. 
+Value = 1   		        Gradient = 0. 0. 0.     Point = 0. 0. 0.    
+Value = 1  		        Gradient = 0. 0. 0.     Point = 0. 0. 0.
+Type = grid 		        File = CN_satb
+
+
+Initialization
+5
+Region = 2 	Unknown = logc_co2      Field = 1       Function = 0
+Region = 2 	Unknown = p_l           Field = 8       Function = 0
+Region = 2 	Unknown = psi           Field = 0       Function = 0
+Region = 2 	Unknown = z_si          Field = 6       Function = 0
+Region = 2 	Unknown = z_ca          Field = 7       Function = 0
+
+
+Functions
+1
+N = 2 F(0) = 1. F(3600) = 0.16
+
+
+Boundary Conditions
+3
+Region = 1 	Unknown = psi           Field = 0       Function = 0
+Region = 1 	Unknown = p_l           Field = 3       Function = 0
+Region = 1 	Unknown = logc_co2      Field = 1       Function = 1
+
+
+Loads
+0
+
+
+Points
+0
+
+
+Dates
+27
+0	86400	172800	259200	345600	432000	518400	604800	1209600	1814400	2419200	3024000	3628800	4233600	4838400	5443200	6048000	6652800	7257600	7862400	8467200	9072000	9676800	10281600	10886400	20736000	31536000
+
+
+Objective Variations
+logc_co2 = 0.1
+p_l      = 1.e5 
+z_ca     = 0.1
+psi      = 1.
+logc_na  = 1e-1
+logc_k   = 1e-1
+z_si     = 1e-1
+logc_oh  = 1.
+
+
+Iterative Process
+Iter        = 20
+Tol         = 1.e-3
+Repetitions = 0
+
+
+Time Steps
+Dtini = 10
+Dtmax = 36000

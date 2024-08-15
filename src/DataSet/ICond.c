@@ -32,6 +32,14 @@ ICond_t* (ICond_New)(void)
     ICond_GetFileNameOfNodalValues(icond)[0] = '\0' ;
   }
   
+  
+  /* Allocation of space for the region name */
+  {
+    char* name = (char*) Mry_New(char[ICond_MaxLengthOfRegionName]) ;
+    
+    ICond_GetRegionName(icond) = name ;
+  }
+  
   return(icond) ;
 }
 
@@ -41,8 +49,29 @@ void (ICond_Delete)(void* self)
 {
   ICond_t* icond = (ICond_t*) self ;
   
-  free(ICond_GetNameOfUnknown(icond)) ;
-  free(ICond_GetFileNameOfNodalValues(icond)) ;
+  {
+    char* name = ICond_GetNameOfUnknown(icond) ;
+    
+    if(name) {
+      free(name) ;
+    }
+  }
+  
+  {
+    char* name = ICond_GetFileNameOfNodalValues(icond) ;
+    
+    if(name) {
+      free(name) ;
+    }
+  }
+  
+  {
+    char* name = ICond_GetRegionName(icond) ;
+    
+    if(name) {
+      free(name) ;
+    }
+  }
 }
 
 
@@ -53,11 +82,14 @@ void (ICond_Scan)(ICond_t* icond,DataFile_t* datafile)
   
   /* Region */
   {
-    int i ;
-    int n = String_FindAndScanExp(line,"Reg",","," = %d",&i) ;
+    char name[ICond_MaxLengthOfRegionName] ;
+    int n = String_FindAndScanExp(line,"Reg",","," = %s",name) ;
+    //int i ;
+    //int n = String_FindAndScanExp(line,"Reg",","," = %d",&i) ;
     
     if(n) {
-      ICond_GetRegionIndex(icond) = i ;
+      ICond_GetRegionTag(icond) = atoi(name) ;
+      strncpy(ICond_GetRegionName(icond),name,ICond_MaxLengthOfRegionName)  ;
     } else {
       arret("ICond_Scan: no region") ;
     }

@@ -1,6 +1,10 @@
 #ifndef MATRIXSTORAGEFORMAT_H
 #define MATRIXSTORAGEFORMAT_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 
 enum MatrixStorageFormat_e {        /* format of the matrix to be stored */
@@ -53,4 +57,8 @@ struct MatrixStorageFormat_s {
   Options_t* options ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

@@ -1,6 +1,10 @@
 #ifndef SOLVERS_H
 #define SOLVERS_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* class-like structures "Solver_t" and attributes */
 
 /* vacuous declarations and typedef names */
@@ -27,4 +31,8 @@ struct Solvers_s {
   Solver_t* solver ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

@@ -1,10 +1,27 @@
 
-# Flags
-# -----
 # Warning flags
+# -------------
+# Warning flags common to C/C++
+set(WFLAGSmini
+    "-Wpedantic -Wall -Wextra"
+)
+
 set(WFLAGS
-    "-Wall -Wcast-align -Wcast-qual -Wnested-externs -Wpointer-arith -Wmissing-prototypes -Wstrict-prototypes -Wshadow -fno-common -Dinline= -Wvariadic-macros" 
-    #-W -Wtraditional -Wconversion -Wwrite-strings -Werror -fshort-enums -Wunused-macros
+    "${WFLAGSmini} -Wformat=2 -Wconversion -Wsign-conversion -Wtrampolines -Wimplicit-fallthrough -Wcast-align -Wcast-qual -Wpointer-arith -Wshadow"
+)
+
+set(WFLAGS1
+    "${WFLAGS} -Wctor-dtor-privacy -Wdisabled-optimization -Winit-self -Wlogical-op -Wmissing-declarations -Wmissing-include-dirs -Wnoexcept -Woverloaded-virtual -Wredundant-decls -Wstrict-null-sentinel -Wstrict-overflow=5 -Wswitch-default -Wundef"
+)
+
+# Warning flags for C
+set(WCFLAGS
+    "${WFLAGS} -Wnested-externs -Wmissing-prototypes -Wstrict-prototypes"
+)
+
+# Warning flags for C++
+set(WCXXFLAGS
+    "${WFLAGS} -Wnon-virtual-dtor -Wzero-as-null-pointer-constant -Wunused -Woverloaded-virtual -Wfloat-conversion -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wnull-dereference"
 )
     
 
@@ -13,11 +30,33 @@ set(OFLAGS
     "-gdwarf-2 -g3"#-O2
 )
 
-set(CMAKE_C_FLAGS  "-pedantic -fno-common ${WFLAGS}")
+# C compiler flags
+set(CFLAGS
+    "${WCFLAGS}"
+)
+
+# C++ compiler flags
+# fpermissive is not satisfactory but at the present time it is needed
+# because most of the implementations adopt a C-style which are not 
+# allowed in C++.
+set(CXXFLAGS
+    "${WCXXFLAGS} -fpermissive"
+)
+
+set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} ${CFLAGS}")
 set(CMAKE_C_FLAGS_DEBUG          "-g3 -DDEBUG")
 set(CMAKE_C_FLAGS_RELEASE        "-O3 -DNDEBUG")
 set(CMAKE_C_FLAGS_MINSIZEREL     "${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -g3 -gdwarf-3")
+
+
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${CXXFLAGS}")
+set(CMAKE_CXX_FLAGS_DEBUG          "-g3 -DDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE        "-O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g3 -gdwarf-3")
+
+
 set(CMAKE_Fortran_FLAGS "-cpp")
 
 
@@ -28,7 +67,7 @@ if( NOT C_FLAGS_INITIALIZED )
 
   # Overwrite CMake's defaults...
   if( "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-    set( CMAKE_C_FLAGS                "-pedantic -fno-common ${WFLAGS}" )
+    set( CMAKE_C_FLAGS                "-pedantic -fno-common ${WCFLAGS}" )
     set( CMAKE_C_FLAGS_DEBUG          "-g -DDEBUG")
     set( CMAKE_C_FLAGS_RELEASE        "-O3 -DNDEBUG" )
     set( CMAKE_C_FLAGS_MINSIZEREL     "${CMAKE_C_FLAGS_RELEASE}" )

@@ -34,7 +34,7 @@ Residu_t*   (Residu_Create)(Mesh_t* mesh,Options_t* options,const int n_res,cons
 
   /* Allocation of space for the right hand sides */
   {
-    void* rhs = Mry_New(double[n_res*n_col]) ;
+    double* rhs = (double*) Mry_New(double[n_res*n_col]) ;
     
     Residu_GetRHS(residu) = rhs ;
   }
@@ -42,7 +42,7 @@ Residu_t*   (Residu_Create)(Mesh_t* mesh,Options_t* options,const int n_res,cons
   
   /* Allocation of space for the solutions */
   {
-    void* sol = Mry_New(double[n_res*n_col]) ;
+    double* sol = (double*) Mry_New(double[n_res*n_col]) ;
     
     Residu_GetSolution(residu) = sol ;
   }

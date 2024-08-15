@@ -1,6 +1,10 @@
 #ifndef INTERNATIONALSYSTEMOFUNITS_H
 #define INTERNATIONALSYSTEMOFUNITS_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /*
  * Seven Base Units:
  * -----------------
@@ -210,4 +214,8 @@ struct InternationalSystemOfUnits_s {
   GenericObject_Delete_t* Delete ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

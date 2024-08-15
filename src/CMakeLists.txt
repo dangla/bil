@@ -1,6 +1,6 @@
 
 include(DirsAndSourcesOfBil)
-dirs_and_sources_of_bil(BIL_DIRSALL BIL_SRCALL)
+dirs_and_sources_of_bil(BIL_DIRSALL BIL_SRCALL BIL_SRCMAIN)
 
 
 
@@ -16,8 +16,9 @@ target_include_directories(${BIL_LIB}
     "${PROJECT_SOURCE_DIR}"
 )
 
+# autodiff requires a c++17 enabled compiler
 target_compile_features(${BIL_LIB}
-    PUBLIC c_std_11 cxx_std_11
+    PUBLIC c_std_11 cxx_std_17
 )
 
 set_target_properties(${BIL_LIB}
@@ -48,7 +49,8 @@ install(FILES "${BIL_INCLUDEDIR}/bil.h" DESTINATION ${BIL_INSTALL_FULL_INCLUDEDI
   Building the executable target
 #]]
 
-add_executable(${BIL_EXE} Main/Main.c)
+#add_executable(${BIL_EXE} Main/Main.c Main/Main.cpp)
+add_executable(${BIL_EXE} ${BIL_SRCMAIN})
 
 target_include_directories(${BIL_EXE}
     PRIVATE
@@ -57,7 +59,7 @@ target_include_directories(${BIL_EXE}
 )
 
 target_compile_features(${BIL_EXE}
-    PUBLIC c_std_11 cxx_std_11
+    PUBLIC c_std_11 cxx_std_17
 )
 
 #target_compile_options(${BIL_EXE}
@@ -110,7 +112,8 @@ if(HAVE_MPI)
   find_package(MPI)
   if(MPI_FOUND)
     Message(STATUS "Compiler supports MPI.")
-    target_link_libraries(${BIL_EXE} MPI::MPI_C)
+    #target_link_libraries(${BIL_EXE} MPI::MPI_C)
+    target_link_libraries(${BIL_EXE} MPI::MPI_CXX)
   else()
     Message(STATUS "Compiler doesn't support MPI.")
   endif()
@@ -121,6 +124,28 @@ else()
     Message(FATAL_ERROR "Please enable MPI.")
   endif()
 endif()
+
+
+if(HAVE_AUTODIFF)
+  UNSET(AUTODIFF_PATH CACHE)
+  find_path(AUTODIFF_PATH forward/real.hpp PATHS ${CMAKE_INSTALL_FULL_INCLUDEDIR}/autodiff)
+  if(AUTODIFF_PATH)
+    Message(STATUS "Compiler supports autodiff.")
+  else()
+    Message(FATAL ERROR "Compiler doesn't support autodiff.")
+  endif()
+  
+  find_package(Eigen3 REQUIRED)
+  if(Eigen3_FOUND)
+    Message(STATUS "Compiler supports Eigen3.")
+  else()
+    Message(FATAL ERROR "Compiler doesn't support Eigen3.")
+  endif()
+endif()
+
+
+include(FeatureSummary)
+feature_summary(INCLUDE_QUIET_PACKAGES DESCRIPTION "Found packages:" WHAT ALL)
 
 
 

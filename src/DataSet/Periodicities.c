@@ -46,113 +46,40 @@ Periodicities_t* (Periodicities_New)(const int n)
 
 Periodicities_t* (Periodicities_Create)(DataFile_t* datafile)
 {
-  Periodicities_t* periodicities = NULL ;
-  
-  {
-    int n = DataFile_CountNbOfKeyWords(datafile,"PERIODICITIES,Periodicities",",") ;
-    
-    if(n == 0) {
-      DataFile_CloseFile(datafile) ;
-      return(NULL) ;
-    } else if(n > 1) {
-      arret("Periodicities_Create") ;
-    }
-    
-    //periodicities  = (Periodicities_t*) Mry_New(Periodicities_t) ;
-  }
-  
-  
-  DataFile_OpenFile(datafile,"r") ;
-  
-  DataFile_SetFilePositionAfterKey(datafile,"PERIODICITIES,Periodicities",",",1) ;
+  char* filecontent = DataFile_GetFileContent(datafile) ;
+  char* c = String_FindToken(filecontent,"PERIODICITIES,Periodicities",",") ;
+  int   n_per = (c = String_SkipLine(c)) ? atoi(c) : 0 ;
+  Periodicities_t* periodicities = Periodicities_New(n_per) ;
   
   Message_Direct("Enter in %s","Periodicities") ;
   Message_Direct("\n") ;
   
-  
-  {
-    char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
-    int   n = atoi(line) ;
-    
-    periodicities = Periodicities_New(n) ;
-    
-    //Periodicities_GetNbOfPeriodicities(periodicities) = n ;
-    if(n <= 0) return(periodicities) ;
+  if(n_per <= 0) {
+    return(periodicities) ;
   }
 
-  /*
+
+  /* Scan the datafile */
   {
-    int n = Periodicities_GetNbOfPeriodicities(periodicities) ;
-    Periodicity_t* periodicity = (Periodicity_t*) Mry_New(Periodicity_t[n]) ;
-    
-    Periodicities_GetPeriodicity(periodicities) = periodicity ;
-  }
-   
-    
-  {
-    int n = Periodicities_GetNbOfPeriodicities(periodicities) ;
-    double* vector = (double*) Mry_New(double[n*3]) ;
     int i ;
     
-    for(i = 0 ; i < n ; i++) {
+    c = String_SkipLine(c) ;
+      
+    DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+    
+    for(i = 0 ; i < n_per ; i++) {
       Periodicity_t* periodicity = Periodicities_GetPeriodicity(periodicities) + i ;
       
-      Periodicity_GetPeriodVector(periodicity) = vector + 3*i ;
+      Message_Direct("Enter in %s %d","Periodicity",i+1) ;
+      Message_Direct("\n") ;
+
+      Periodicity_Scan(periodicity,datafile) ;
     }
   }
-  */
-
-
-  /* Reading */
-  {
-    int n = Periodicities_GetNbOfPeriodicities(periodicities) ;
-    int i ;
-    
-    for(i = 0 ; i < n ; i++) {
-      Periodicity_t* periodicity = Periodicities_GetPeriodicity(periodicities) + i ;
-      char* line = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
-      char* pline ;
-
-    
-      /* Master region */
-      if((pline = strstr(line,"MasterRegion"))) {
-        pline = strchr(pline,'=') + 1 ;
-        Periodicity_GetMasterRegion(periodicity) = atoi(pline) ;
-      } else {
-        arret("Periodicities_Create(3): no master region") ;
-      }
-
-    
-      /* Slave region */
-      if((pline = strstr(line,"SlaveRegion"))) {
-        pline = strchr(pline,'=') + 1 ;
-        Periodicity_GetSlaveRegion(periodicity) = atoi(pline) ;
-      } else {
-        arret("Periodicities_Create(4): no slave region") ;
-      }
-      
-      
-      /* Period vector */
-      if((pline = strstr(line,"PeriodVector"))) {
-        double* vector = Periodicity_GetPeriodVector(periodicity) ;
-        int    j ;
-        
-        pline = strchr(pline,'=') + 1 ;
-        
-        for(j = 0 ; j < 3 ; j++) {
-          vector[j] = strtod(pline,&pline) ;
-        }
-      } else {
-        arret("Periodicities_Create(5): no period vector") ;
-      }
-
-    }
-  }
-  
-  DataFile_CloseFile(datafile) ;
   
   return(periodicities) ;
 }
+
 
 
 
@@ -211,15 +138,18 @@ Graph_t*  (Periodicities_ComputeGraph)(Mesh_t* mesh)
     
       for(i_per = 0 ; i_per < n_per ; i_per++) {
         Periodicity_t* periodicity = Periodicities_GetPeriodicity(periodicities) + i_per ;
-        int masterreg = Periodicity_GetMasterRegion(periodicity) ;
-        int slavereg  = Periodicity_GetSlaveRegion(periodicity) ;
+        //int masterreg = Periodicity_GetMasterRegion(periodicity) ;
+        //int slavereg  = Periodicity_GetSlaveRegion(periodicity) ;
+        char* masterreg = Periodicity_GetMasterRegionName(periodicity) ;
+        char* slavereg  = Periodicity_GetSlaveRegionName(periodicity) ;
         int    ie ;
 
         for(ie = 0 ; ie < n_elts ; ie++) {
           Element_t*  elt_i = elt + ie ;
-          int eltreg_i = Element_GetRegionIndex(elt_i) ;
+          //int eltreg_i = Element_GetRegionTag(elt_i) ;
+          char* eltreg_i = Element_GetRegionName(elt_i) ;
           
-          if(eltreg_i == slavereg || eltreg_i == masterreg) {
+          if(String_Is(eltreg_i,slavereg) || String_Is(eltreg_i,masterreg)) {
             int nn  = Element_GetNbOfNodes(elt_i) ;
             int i ;
     
@@ -254,19 +184,22 @@ Graph_t*  (Periodicities_ComputeGraph)(Mesh_t* mesh)
     
     for(i_per = 0 ; i_per < n_per ; i_per++) {
       Periodicity_t* periodicity = Periodicities_GetPeriodicity(periodicities) + i_per ;
-      int masterreg = Periodicity_GetMasterRegion(periodicity) ;
-      int slavereg  = Periodicity_GetSlaveRegion(periodicity) ;
+      //int masterreg = Periodicity_GetMasterRegion(periodicity) ;
+      //int slavereg  = Periodicity_GetSlaveRegion(periodicity) ;
+      char* masterreg = Periodicity_GetMasterRegionName(periodicity) ;
+      char* slavereg  = Periodicity_GetSlaveRegionName(periodicity) ;
       double* periodvector = Periodicity_GetPeriodVector(periodicity) ;
       int    ie ;
 
       for(ie = 0 ; ie < n_elts ; ie++) {
         Element_t*  elt_i = elt + ie ;
         Material_t* mat_i = Element_GetMaterial(elt_i) ;
-        int eltreg_i = Element_GetRegionIndex(elt_i) ;
+        //int eltreg_i = Element_GetRegionTag(elt_i) ;
+        char* eltreg_i = Element_GetRegionName(elt_i) ;
       
         if(!mat_i) continue ;
           
-        if(eltreg_i == slavereg) {
+        if(String_Is(eltreg_i,slavereg)) {
           int nn_i  = Element_GetNbOfNodes(elt_i) ;
           int in_i ;
           
@@ -288,13 +221,14 @@ Graph_t*  (Periodicities_ComputeGraph)(Mesh_t* mesh)
             for(je = 0 ; je < n_elts ; je++) {
               Element_t*  elt_j = elt + je ;
               Material_t* mat_j = Element_GetMaterial(elt_j) ;
-              int eltreg_j = Element_GetRegionIndex(elt_j) ;
+              //int eltreg_j = Element_GetRegionTag(elt_j) ;
+              char* eltreg_j = Element_GetRegionName(elt_j) ;
       
               if(!mat_j) continue ;
               /* Skip material different from that of slave region */
               //if(mat_j != mat_i) continue ; /* Changed 29/02/2016 */
           
-              if(eltreg_j == masterreg) {
+              if(String_Is(eltreg_j,masterreg)) {
                 int nn_j  = Element_GetNbOfNodes(elt_j) ;
                 int in_j ;
           
@@ -529,17 +463,19 @@ void  (Periodicities_EliminateMatrixRowColumnIndexes)(Mesh_t* mesh)
     
     for(i_per = 0 ; i_per < n_per ; i_per++) {
       Periodicity_t* periodicity = Periodicities_GetPeriodicity(periodicities) + i_per ;
-      int slavereg  = Periodicity_GetSlaveRegion(periodicity) ;
+      //int slavereg  = Periodicity_GetSlaveRegion(periodicity) ;
+      char* slavereg  = Periodicity_GetSlaveRegionName(periodicity) ;
       int    ie ;
 
       for(ie = 0 ; ie < n_elts ; ie++) {
         Element_t*  elt_i = elt + ie ;
         Material_t* mat_i = Element_GetMaterial(elt_i) ;
-        int eltreg_i = Element_GetRegionIndex(elt_i) ;
+        //int eltreg_i = Element_GetRegionTag(elt_i) ;
+        char* eltreg_i = Element_GetRegionName(elt_i) ;
       
         if(!mat_i) continue ;
           
-        if(eltreg_i == slavereg) {
+        if(String_Is(eltreg_i,slavereg)) {
           int    nn  = Element_GetNbOfNodes(elt_i) ;
           int    neq = Element_GetNbOfEquations(elt_i) ;
           int i ;

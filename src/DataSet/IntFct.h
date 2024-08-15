@@ -1,6 +1,10 @@
 #ifndef INTFCT_H
 #define INTFCT_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -82,4 +86,8 @@ struct IntFct_s {             /* Interpolation function */
 #define MAX_PGAUSS                    IntFct_MaxNbOfIntPoints
 //#define fint_abs                      IntFct_ComputeIsoShapeFctInActualSpace
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

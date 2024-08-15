@@ -41,6 +41,112 @@ void  (TimeStep_Delete)(void* self)
 
 
 
+#if 1
+TimeStep_t*  (TimeStep_Create)(DataFile_t* datafile,ObVals_t* obvals)
+{
+  TimeStep_t* timestep = TimeStep_New() ;
+  
+  TimeStep_GetDataFile(timestep) = datafile ;
+  TimeStep_GetObVals(timestep) = obvals ;
+
+  {
+    char* filecontent = DataFile_GetFileContent(datafile) ;
+    char* c  = String_FindToken(filecontent,"ALGO,TIME,Time Steps",",") ;
+    
+    if(!c) {
+      Message_FatalError("TimeStep_Create: no Time Steps") ;
+    }
+
+    c = String_SkipLine(c) ;
+      
+    DataFile_SetCurrentPositionInFileContent(datafile,c) ;
+  
+    Message_Direct("Enter in %s","Time Steps") ;
+    Message_Direct("\n") ;
+  }
+  
+  
+  {
+    int cont = 1 ;
+    
+    do {
+      char* line = DataFile_ReadLineFromCurrentFilePositionInString(datafile) ;
+    
+      /* Dtini */
+      {
+        double dtini ;
+        int n = String_FindAndScanExp(line,"Dtini",","," = %lf",&dtini) ;
+        
+        if(n) {
+          TimeStep_GetInitialTimeStep(timestep) = dtini ;
+          continue ;
+        }
+      }
+    
+      /* Dtmax */
+      {
+        double dtmax ;
+        int n = String_FindAndScanExp(line,"Dtmax",","," = %lf",&dtmax) ;
+        
+        if(n) {
+          TimeStep_GetMaximumTimeStep(timestep) = dtmax ;
+          continue ;
+        }
+      }
+    
+      /* Dtmin */
+      {
+        double dtmin ;
+        int n = String_FindAndScanExp(line,"Dtmin",","," = %lf",&dtmin) ;
+        
+        if(n) {
+          TimeStep_GetMinimumTimeStep(timestep) = dtmin ;
+          continue ;
+        }
+      }
+    
+      /* Reduction factor */
+      {
+        double rfac ;
+        int n = String_FindAndScanExp(line,"Reduction Factor",","," = %lf",&rfac) ;
+        
+        if(n) {
+          TimeStep_GetReductionFactor(timestep) = rfac ;
+          continue ;
+        }
+      }
+    
+      /* Common ratio */
+      {
+        double ratio ;
+        int n = String_FindAndScanExp(line,"Common Ratio",","," = %lf",&ratio) ;
+        
+        if(n) {
+          TimeStep_GetMaximumCommonRatio(timestep) = ratio ;
+          continue ;
+        }
+      }
+      
+      cont = 0 ;
+    } while(cont) ;
+    
+    
+    /* Checkings */
+    if(TimeStep_GetInitialTimeStep(timestep) <= 0) {
+      arret("TimeStep_Create: Dtini is not > 0") ;
+    }
+    if(TimeStep_GetMaximumTimeStep(timestep) <= 0) {
+      arret("TimeStep_Create: Dtmax is not > 0") ;
+    }
+  }
+  
+  return(timestep) ;
+}
+#endif
+
+
+
+#if 0
 TimeStep_t*  (TimeStep_Create)(DataFile_t* datafile,ObVals_t* obvals)
 {
   TimeStep_t* timestep = TimeStep_New() ;
@@ -114,6 +220,7 @@ TimeStep_t*  (TimeStep_Create)(DataFile_t* datafile,ObVals_t* obvals)
   
   return(timestep) ;
 }
+#endif
 
 
 

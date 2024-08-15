@@ -24,7 +24,8 @@ Element_t*  (Element_New)(void)
     Element_GetPointerToNode(el)     = NULL ;
     Element_GetDimension(el)         = -1 ;
     Element_GetNbOfNodes(el)         = 0 ;
-    Element_GetRegionIndex(el)       = -1 ;
+    //Element_GetRegionTag(el)       = -1 ;
+    Element_GetRegion(el)            = NULL ;
     Element_GetMaterial(el)          = NULL ;
     Element_GetMaterialIndex(el)     = -1 ;
     Element_GetShapeFct(el)          = NULL ;
@@ -646,10 +647,12 @@ double* (Element_ComputeJacobianMatrix)(Element_t* el,double* dh,int nn,const in
           JC(i,j) += x[i]*DH(k,j) ;
         }
       }
+      /* The values JC(i,j) for (0 < i < dim , dim_h <= j < dim) are supplemented below. */
     }
     
-    /* Supplement with 1 */
-    for(i = dim_h ; i < 3 ; i++) {
+    /* Supplement with 1 the diagonal terms i >= dim. */
+    //for(i = dim_h ; i < 3 ; i++) {
+    for(i = dim ; i < 3 ; i++) {
       JC(i,i) = 1 ;
     }
   }
@@ -884,6 +887,7 @@ double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t* el,double* x)
     
     for(i = 0 ; i < nn ; i++) {
       x_e[i] = Element_GetNodeCoordinate(el,i) ;
+      //Math_PrintVector(x_e[i],dim) ;
     }
   }
 
@@ -916,7 +920,7 @@ double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t* el,double* x)
     int dim_h = ShapeFct_GetDimension(shapefct) ;
     int nf    = ShapeFct_GetNbOfNodes(shapefct) ;
     double* a = ShapeFct_GetCoordinate(shapefct) ;
-    int    max_iter = 10 ;
+    int    max_iter = 20 ;
     double tol = 1.e-6 ;
     int    iter ;
     double err ;
@@ -937,15 +941,20 @@ double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t* el,double* x)
       
       ShapeFct_ComputeValuesAtPoint(dim_h,nf,a,h,dh) ;
       
+      //Math_PrintVector(a,3) ;
+      
       {
         double* jac = Element_ComputeJacobianMatrix(el,dh,nf,dim_h) ;
+        
+        //Math_PrintMatrix(jac,3) ;
     
         for(i = 0 ; i < dim ; i++) {
           int   j,in ;
       
           r[i] = x[i] ;
       
-          for(in = 0 ; in < nn ; in++) {
+          //for(in = 0 ; in < nn ; in++) {
+          for(in = 0 ; in < nf ; in++) {
             r[i] -= h[in]*x_e[in][i] ;
           }
           
@@ -975,7 +984,7 @@ double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t* el,double* x)
       for(i = 0 ; i < dim ; i++) {
         if(fabs(r[i]) > err) err = fabs(r[i]) ;
       }
-    
+
       if(err < tol) break ;
     }
   
@@ -987,139 +996,6 @@ double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t* el,double* x)
   }
   
   return(NULL) ;
-}
-#endif
-
-
-
-#if 0
-double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t* el,double* x)
-/** Compute the local coordinates in the reference element frame 
- *  which map into coordinates "x" in the actual space */
-{
-#define DH(n,i)  (dh[(n)*3+(i)])
-//#define DH(n,i)  (dh[(n)*dim_e+(i)])
-  unsigned short int dim   = Element_GetDimensionOfSpace(el) ;
-  unsigned short int dim_e = Element_GetDimension(el) ;
-  int nn = Element_GetNbOfNodes(el) ;
-  double* x_e[Element_MaxNbOfNodes] ;
-  double diameter ;
-  
-  
-  /* Node coordinates */
-  {
-    int    i ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      x_e[i] = Element_GetNodeCoordinate(el,i) ;
-    }
-  }
-
-
-  /* Diameter of element */
-  {
-    double x_max[3],x_min[3] ;
-    int    i ;
-    
-    diameter = 0. ;
-    for(i = 0 ; i < dim ; i++) {
-      int   in ;
-    
-      x_max[i] = (x_min[i] = x_e[0][i]) ;
-    
-      for(in = 1 ; in < nn ; in++) {
-        x_max[i] = (x_e[in][i] > x_max[i]) ? x_e[in][i] : x_max[i] ;
-        x_min[i] = (x_e[in][i] < x_min[i]) ? x_e[in][i] : x_min[i] ;
-      }
-    
-      x_max[i] -= x_min[i] ;
-      diameter = (x_max[i] > diameter) ? x_max[i] : diameter ;
-    }
-  }
-
-
-  /* Compute the coordinates in the reference element */
-  {
-    ShapeFct_t* shapefct = Element_GetShapeFct(el) ;
-    double* a = ShapeFct_GetCoordinate(shapefct) ;
-    int    max_iter = 10 ;
-    double tol = 1.e-6 ;
-    int    iter ;
-    double err ;
-    int i ;
-    
-    for(i = 0 ; i < 3 ; i++) {
-      a[i] = 0 ;
-    }
-    
-    if(dim_e == 0) return(a) ;
-    
-    for(iter = 0 ; iter < max_iter ; iter++) {
-      double* h = ShapeFct_GetFunction(shapefct) ;
-      double* dh = ShapeFct_GetFunctionGradient(shapefct) ;
-      double r[3] ;
-      double k[9] ;
-      
-      ShapeFct_ComputeValuesAtPoint(dim_e,nn,a,h,dh) ;
-    
-      for(i = 0 ; i < dim ; i++) {
-        int   j,in ;
-      
-        r[i] = x[i] ;
-        for(j = 0 ; j < dim ; j++) k[dim*i+j] = 0. ;
-      
-        for(in = 0 ; in < nn ; in++) {
-          r[i] -= h[in]*x_e[in][i] ;
-          for(j = 0 ; j < dim_e ; j++) k[dim*i+j] += DH(in,j)*x_e[in][i] ;
-        }
-      }
-    
-      if(dim_e < dim) {
-        if(dim_e == dim-1) {
-          int  j = dim - 1 ;
-          
-          double* unorm = Element_ComputeNormalVector(el,dh,nn,dim_e) ;
-        
-          for(i = 0 ; i < dim ; i++) k[dim*i + j] = unorm[i] ;
-          
-        } else {
-          arret("Element_ComputeCoordinateInReferenceFrame(2)") ; /* a traiter plus tard */
-        }
-      }
-    
-      
-      if(diameter > 0) {
-       for(i = 0 ; i < dim ; i++) {
-          int  j ;
-      
-          r[i] /= diameter ;
-        
-          for(j = 0 ; j < dim ; j++) k[dim*i+j] /= diameter ;
-        }
-      }
-      
-    
-      Math_SolveByGaussElimination(k,r,dim) ;
-    
-      for(i = 0 ; i < dim ; i++) a[i] += r[i] ;
-    
-      err = 0 ;
-      for(i = 0 ; i < dim ; i++) {
-        if(fabs(r[i]) > err) err = fabs(r[i]) ;
-      }
-    
-      if(err < tol) break ;
-    }
-  
-    if(err > tol) {
-      arret("Element_ComputeCoordinateInReferenceFrame(3)") ;
-    }
-    
-    return(a) ;
-  }
-  
-  return(NULL) ;
-#undef DH
 }
 #endif
 

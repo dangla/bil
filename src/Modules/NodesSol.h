@@ -1,6 +1,10 @@
 #ifndef NODESSOL_H
 #define NODESSOL_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* class-like structures "NodesSol_t" and attributes */
 
 /* vacuous declarations and typedef names */
@@ -39,4 +43,8 @@ struct NodesSol_s {           /* Nodal Solutions */
   NodeSol_t* nodesol ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

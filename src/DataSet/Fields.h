@@ -1,6 +1,10 @@
 #ifndef FIELDS_H
 #define FIELDS_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -28,4 +32,8 @@ struct Fields_s {             /* fields */
   Field_t* ch ;               /* field */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

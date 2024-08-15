@@ -179,6 +179,19 @@ void (Field_Scan)(Field_t* field,DataFile_t* datafile)
         }
       }
       
+      /* Random range length */
+      {
+        double v ;
+        int n = String_FindAndScanExp(line,"Ran",","," = %lf",&v) ;
+        
+        if(n) {
+          srand(time(NULL)) ;
+          FieldConstant_GetRandomRangeLength(cst) = v ;
+        } else {
+          FieldConstant_GetRandomRangeLength(cst) = 0 ;
+        }
+      }
+      
       return ;
     }
 
@@ -355,7 +368,15 @@ double (Field_ComputeValueAtPoint)(Field_t* ch,double* x,int dim)
     v = champgrille(x,dim,*grille) ;
   } else if(!strcmp(type,"constant")) {
     FieldConstant_t* cst = (FieldConstant_t*) Field_GetFieldFormat(ch) ;
-    v = FieldConstant_GetValue(cst) ;
+    double value = FieldConstant_GetValue(cst) ;
+    double ranlen = FieldConstant_GetRandomRangeLength(cst) ;
+
+    {
+      double rmax = (double)RAND_MAX ;
+      double r = (double)rand() / rmax - 0.5 ;
+      
+      v = value + ranlen*r ;
+    }
   } else {
     arret("Field_ComputeValueAtPoint : type non prevu") ;
     return(0.) ;

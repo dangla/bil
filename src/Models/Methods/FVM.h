@@ -1,6 +1,10 @@
 #ifndef FVM_H
 #define FVM_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -104,4 +108,8 @@ struct FVM_s {                /* Finite Volume Method */
   GenericObject_Delete_t* Delete ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

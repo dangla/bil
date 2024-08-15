@@ -48,6 +48,9 @@
 /* Oxygen compounds */
 #define HenrysLawConstantForSolubilityOfGasInWater_O2(T)   (1.28e-5*exp(1500*(1/T - 1/T298)))
 
+/* Nitrogen compounds */
+#define HenrysLawConstantForSolubilityOfGasInWater_N2(T)   (6.40e-6*exp(1300*(1/T - 1/T298)))
+
 /* Carbon compounds */
 #define HenrysLawConstantForSolubilityOfGasInWater_CO2(T)  (3.45e-4*exp(2400*(1/T - 1/T298)))
 

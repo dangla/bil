@@ -30,7 +30,7 @@
 
 
 /* Nb of equations */
-#define NEQ    	  (8)
+#define NEQ       (8)
 
 
 /* Nb of nodes (el must be used below) */
@@ -38,7 +38,7 @@
 
 
 /* Nb of terms */
-#define NVE    	  ((12 + CementSolutionDiffusion_NbOfConcentrations)*NN)
+#define NVE       ((12 + CementSolutionDiffusion_NbOfConcentrations)*NN)
 #define NVI       (8*NN*NN + 3*NN)
 #define NV0       (2)
 
@@ -451,7 +451,7 @@ void ComputePhysicoChemicalProperties(double TK)
 
 
 
-static enum {
+enum {
 I_P_L  = NEQ     ,
 
 I_N_C          ,
@@ -495,7 +495,7 @@ static double dVariables[NbOfVariables] ;
 
 
 
-static enum {
+enum {
 I_W_C           ,
 I_W_Ca          ,
 I_W_Si          ,
@@ -1037,9 +1037,9 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
         if(c_co2 < 0 || c_oh <= 0 || c_h2o <= 0 || c_na < 0 || c_k < 0 || c_ca < 0 || n_si_s < 0. || n_ch < 0.) {
           double x0 = Element_GetNodeCoordinate(el,i)[0] ;
           double n_cc       = x[I_N_CC] ;
-          double c_naoh    	= HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaOH) ;
-          double c_nahco3  	= HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaHCO3) ;
-          double c_naco3 	  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaCO3) ;
+          double c_naoh     = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaOH) ;
+          double c_nahco3   = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaHCO3) ;
+          double c_naco3    = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaCO3) ;
           printf("\n") ;
           printf("en x     = %e\n",x0) ;
           printf("c_co2    = %e\n",c_co2) ;
@@ -1517,7 +1517,7 @@ void ComputeTransferCoefficients(Element_t* el,double** u,double* f)
 
     /* Porosity */
     double phi        = x[I_Phi] ;
-	
+  
     /* Permeabilities */
     double coeff_permeability = PermeabilityCoefficient(el,phi) ;
     double k_l  = (kl_int/mu_l)*RelativePermeabilityToLiquid(s_l)*coeff_permeability ;
@@ -2203,7 +2203,7 @@ double PermeabilityCoefficient_KozenyCarman(Element_t* el,double phi)
   
   {
     double kozeny_carman  = (phi > 0) ? pow(phi/phi0,3.)*pow(((1 - phi0)/(1 - phi)),2.) : 0 ;
-	
+  
     coeff_permeability = kozeny_carman ;
   }
   
@@ -2250,8 +2250,8 @@ double TortuosityToLiquid_OhJang(double phi,double s_l)
 {
   double phi_cap = (phi > 0) ? 0.5 * phi : 0  ;
   double phi_c = 0.17 ;         /* Percolation capilar porosity */
-  double n     = 2.7 ; 		      /* OPC n  = 2.7  --------  Fly ash n  = 4.5 */
-  double ds    = 1.e-4 ;	      /* OPC ds = 1e-4 --------  Fly ash ds = 5e-5 */
+  double n     = 2.7 ;          /* OPC n  = 2.7  --------  Fly ash n  = 4.5 */
+  double ds    = 1.e-4 ;        /* OPC ds = 1e-4 --------  Fly ash ds = 5e-5 */
   double dsn   = pow(ds,1/n) ;
   double m_phi = 0.5 * ((phi_cap - phi_c) + dsn * (1 - phi_c - phi_cap)) / (1 - phi_c) ;
   double tausat =  pow(m_phi + sqrt(m_phi*m_phi + dsn * phi_c/(1 - phi_c)),n) ;

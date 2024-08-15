@@ -1,6 +1,10 @@
 #ifndef INTFCTS_H
 #define INTFCTS_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -33,4 +37,8 @@ struct IntFcts_s {            /* interpolations */
 } ;
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

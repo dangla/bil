@@ -1,6 +1,10 @@
 #ifndef GENERICDATA_H
 #define GENERICDATA_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -67,7 +71,7 @@ extern GenericData_t* (GenericData_Find_)        (GenericData_t*,const int,const
         
         
 #define GenericData_FindData(GD,T,NAME) \
-        GenericData_GetData_(GenericData_Find(GD,T,NAME))
+        ((T*) GenericData_GetData_(GenericData_Find(GD,T,NAME)))
         
         
 #define GenericData_FindNbOfData(GD,T,NAME) \
@@ -109,4 +113,8 @@ struct GenericData_s {
 } ;
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

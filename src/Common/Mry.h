@@ -1,6 +1,10 @@
 #ifndef MRY_H
 #define MRY_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 #include <stdlib.h>
 
@@ -55,4 +59,8 @@ extern void      (Mry_Free)(void*) ;
         } while(0)
         
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

@@ -1,9 +1,31 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <stdarg.h>
+
+#include "Message.h"
+#include "Math_.h"
+#include "Plasticity.h"
+#include "autodiff.h"
+
+template<typename T>
+T* (PlasticityCamClay_YF)(Plasticity_t*,const T*,const T*);
+
+template<typename T>
+T* (PlasticityCamClay_FR)(Plasticity_t*,const T*,const T*);
+
+
 static Plasticity_ComputeTangentStiffnessTensor_t    PlasticityCamClay_CT ;
 static Plasticity_ReturnMapping_t                    PlasticityCamClay_RM ;
 static Plasticity_YieldFunction_t                    PlasticityCamClay_YF ;
 static Plasticity_FlowRules_t                        PlasticityCamClay_FR ;
+#ifdef HAVE_AUTODIFF
+static Plasticity_YieldFunctionDual_t                PlasticityCamClay_YF ;
+static Plasticity_FlowRulesDual_t                    PlasticityCamClay_FR ;
+#endif
 static Plasticity_SetParameters_t                    PlasticityCamClay_SP ;
-static Plasticity_SetModelProp_t                     PlasticityCamClay_SetModelProp ;
+extern Plasticity_SetModelProp_t                     PlasticityCamClay_SetModelProp ;
 
 
 #define Plasticity_GetSlopeSwellingLine(PL) \
@@ -31,9 +53,14 @@ void PlasticityCamClay_SetModelProp(Plasticity_t* plasty)
   {
     Plasticity_GetComputeTangentStiffnessTensor(plasty) = PlasticityCamClay_CT ;
     Plasticity_GetReturnMapping(plasty)                 = PlasticityCamClay_RM ;
-    Plasticity_GetYieldFunction(plasty)                 = PlasticityCamClay_YF ;
-    Plasticity_GetFlowRules(plasty)                     = PlasticityCamClay_FR ;
+    Plasticity_GetYieldFunction(plasty)                 = PlasticityCamClay_YF<double> ;
+    Plasticity_GetFlowRules(plasty)                     = PlasticityCamClay_FR<double> ;
+    #ifdef HAVE_AUTODIFF
+    Plasticity_GetYieldFunctionDual(plasty)             = PlasticityCamClay_YF<real> ;
+    Plasticity_GetFlowRulesDual(plasty)                 = PlasticityCamClay_FR<real> ;
+    #endif
     Plasticity_GetSetParameters(plasty)                 = PlasticityCamClay_SP ;
+    
     Plasticity_GetNbOfHardeningVariables(plasty)        = 1 ;
   }
   
@@ -374,7 +401,109 @@ double* (PlasticityCamClay_RM)(Plasticity_t* plasty,double* sig,double* eps_p,do
 
 
 
+template<typename T>
+T* (PlasticityCamClay_YF)(Plasticity_t* plasty,const T* stress,const T* hardv)
+/** Return the value of the yield function. 
+ **/
+{
+  size_t SizeNeeded = sizeof(T) ;
+  T* yield     = (T*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
+  double m     = Plasticity_GetSlopeCriticalStateLine(plasty) ;
+  T pc         = exp(hardv[0]) ;
+  double m2    = m*m ;
+  T p          = (stress[0] + stress[4] + stress[8])/3. ;
+  T q2         = 3*Math_ComputeSecondDeviatoricStressInvariant(stress) ;
+  
+  yield[0] = q2/m2 + p*(p + pc) ;
+  
+  return(yield) ;
+}
 
+
+
+
+template<typename T>
+T* (PlasticityCamClay_FR)(Plasticity_t* plasty,const T* stress,const T* hardv)
+/** Modified Cam-Clay criterion.
+ * 
+ *  Inputs are: 
+ *  the slope of the swelling line (kappa),
+ *  the slope of the virgin consolidation line (lambda),
+ *  the slope of the critical state line (M),
+ *  the pre-consolidation pressure (pc=hardv[0]),
+ *  the initial void ratio (e0).
+ * 
+ *  Return the direction of the plastic flows based on the flow rules:
+ *    - the plastic strain rate (i.e. the potential gradient)
+ *    - the rate of log(pre-consolidation pressure) (1/dlambda * d(ln(pc))/dt)
+ **/
+{
+  size_t SizeNeeded = (9+1)*(sizeof(T)) ;
+  T* flow        = (T*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
+  double m       = Plasticity_GetSlopeCriticalStateLine(plasty) ;
+  double kappa   = Plasticity_GetSlopeSwellingLine(plasty) ;
+  double lambda  = Plasticity_GetSlopeVirginConsolidationLine(plasty) ;
+  double e0      = Plasticity_GetInitialVoidRatio(plasty) ;
+  T pc           = exp(hardv[0]) ;
+  double m2      = m*m ;
+  double beta    = 1 ;
+  
+  double id[9] = {1,0,0,0,1,0,0,0,1} ;
+  
+  T p            = (stress[0] + stress[4] + stress[8])/3. ;
+  //double q     = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
+  
+  /*
+    Potential function: g = beta*q*q/m2 + p*(p + pc)
+  */
+  
+  /*
+    Plastic strain: deps^p_ij = dl * dg/dstress_ij
+    ----------------------------------------------
+    dp/dstress_ij = 1/3 delta_ij
+    dq/dstress_ij = 3/2 dev_ij/q 
+    dg/dstress_ij = 1/3 (dg/dp) delta_ij + 3/2 (dg/dq) dev_ij/q 
+    dg/dp      = 2*p + pc
+    dg/dq      = beta*2*q/m2
+    
+    dg/dstress_ij = 1/3 (2*p + pc) delta_ij + beta*(3/m2) dev_ij 
+  */
+  {
+    Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+    double bulk    = Elasticity_GetBulkModulus(elasty) ;
+    double pc0 = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
+    double N   = 4/(pc0*pc0*bulk) ;
+    int    i ;
+    
+    for(i = 0 ; i < 9 ; i++) {
+      T dev = stress[i] - p*id[i] ;
+    
+      flow[i] = N*((2*p + pc)*id[i]/3 + 3*beta/m2*dev) ;
+      //flow[i] = ((2*p + pc)*id[i]/3 + 3*beta/m2*dev) ;
+    }
+  }
+  
+  /*
+    The hardening flow: d(ln(pc)) = - (1 + e0)*v*deps_p
+   * --------------------------------------------------
+   * Using a = ln(pc) as hardening variable.
+   * d(a) = - dl * (1 + e0) * v * (dg/dp)
+   * So h(p,a) = - (1 + e0) * v * (dg/dp)
+   */
+  {
+    double v = 1./(lambda - kappa) ;
+    double v1  = (1+e0)*v ;
+    T h = flow[0] + flow[4] + flow[8] ;
+    
+    //flow[9] = - v1*h*pc ;
+    flow[9] = - v1*h ;
+  }
+  
+  return(flow) ;
+}
+
+
+#if 0
 double* (PlasticityCamClay_YF)(Plasticity_t* plasty,const double* stress,const double* hardv)
 /** Return the value of the yield function. 
  **/
@@ -473,6 +602,7 @@ double* (PlasticityCamClay_FR)(Plasticity_t* plasty,const double* stress,const d
   
   return(flow) ;
 }
+#endif
 
 
 

@@ -1,6 +1,10 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -19,8 +23,8 @@ extern void        (Material_Delete)          (void*) ;
 extern void        (Material_Scan)            (Material_t*,DataFile_t*,Geometry_t*) ;
 extern int         (Material_ReadProperties)  (Material_t*,DataFile_t*) ;
 extern void        (Material_ScanProperties)  (Material_t*,DataFile_t*,Model_ComputePropertyIndex_t*) ;
-extern void        (Material_ScanProperties1) (Material_t*,FILE*,Model_ComputePropertyIndex_t*,int) ;
-extern void        (Material_ScanProperties2) (Material_t*,FILE*,Model_ComputePropertyIndex_t*,int,int) ;
+//extern void        (Material_ScanProperties1) (Material_t*,FILE*,Model_ComputePropertyIndex_t*,int) ;
+//extern void        (Material_ScanProperties2) (Material_t*,FILE*,Model_ComputePropertyIndex_t*,int,int) ;
 
 
 
@@ -177,4 +181,8 @@ struct Material_s {           /* material */
 #define dmat                   Material_ScanProperties1
 #define lit_mate               Material_ScanProperties2
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

@@ -1,6 +1,10 @@
 #ifndef CURVESFILE_H
 #define CURVESFILE_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 
 /* vacuous declarations and typedef names */
@@ -100,4 +104,8 @@ struct CurvesFile_s {         /* File of discretized curves */
 } ;
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

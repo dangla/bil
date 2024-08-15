@@ -1,9 +1,20 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <stdarg.h>
+
+#include "Message.h"
+#include "Math_.h"
+#include "Plasticity.h"
+#include "autodiff.h"
+
 static Plasticity_ComputeTangentStiffnessTensor_t    PlasticityCamClayOffset_CT ;
 static Plasticity_ReturnMapping_t                    PlasticityCamClayOffset_RM ;
 static Plasticity_YieldFunction_t                    PlasticityCamClayOffset_YF ;
 static Plasticity_FlowRules_t                        PlasticityCamClayOffset_FR ;
 static Plasticity_SetParameters_t                    PlasticityCamClayOffset_SP ;
-static Plasticity_SetModelProp_t                     PlasticityCamClayOffset_SetModelProp ;
+extern Plasticity_SetModelProp_t                     PlasticityCamClayOffset_SetModelProp ;
 
 
 #define Plasticity_GetSlopeSwellingLine(PL) \

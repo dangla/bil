@@ -17,7 +17,7 @@
 #include "DataSet.h"
 #include "Units.h"
 #include "String_.h"
-#include "Parser.h"
+//#include "Parser.h"
 
 
 
@@ -455,6 +455,7 @@ void (DataSet_Delete)(void* self)
 
 
 
+#if 0
 DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
 {
   DataSet_t* dataset = DataSet_New() ;
@@ -483,6 +484,7 @@ DataSet_t*  (DataSet_Create1)(char* filename,Options_t* opt)
   
   return(dataset) ;
 }
+#endif
 
 
 
@@ -661,7 +663,7 @@ void DataSet_PrintData(DataSet_t* dataset,char* mot)
       
       n += PRINT(":") ;
       
-      n += PRINT("  reg(%d)",Element_GetRegionIndex(elt_i)) ;
+      n += PRINT("  reg(%s)",Element_GetRegionName(elt_i)) ;
       
       while(n < c2) n += PRINT(" ") ;
       
@@ -995,6 +997,7 @@ void DataSet_PrintData(DataSet_t* dataset,char* mot)
         FieldConstant_t* cst =  (FieldConstant_t*) Field_GetFieldFormat(CH + i) ;
         
         PRINT("\t Value    = %e\n",FieldConstant_GetValue(cst)) ;
+        PRINT("\t RandomRange = %e\n",FieldConstant_GetRandomRangeLength(cst)) ;
         
         PRINT("\n") ;
         
@@ -1049,14 +1052,16 @@ void DataSet_PrintData(DataSet_t* dataset,char* mot)
     
     
     for(i = 0 ; i < (int) N_IC ; i++) {
-      int reg = ICond_GetRegionIndex(IC + i) ;
+      //int reg = ICond_GetRegionTag(IC + i) ;
+      char* reg = ICond_GetRegionName(IC + i) ;
       char* name_unk =ICond_GetNameOfUnknown(IC + i) ;
       Field_t* ch = ICond_GetField(IC + i) ;
       Function_t* fn = ICond_GetFunction(IC + i) ;
       
       PRINT("Initial Condition(%d):\n",i) ;
       
-      PRINT("\t Region  = %d\n",reg) ;
+      //PRINT("\t Region  = %d\n",reg) ;
+      PRINT("\t Region  = %s\n",reg) ;
       
       PRINT("\t Unknown = %s\n",name_unk) ;
       
@@ -1090,14 +1095,16 @@ void DataSet_PrintData(DataSet_t* dataset,char* mot)
     PRINT("\n") ;
     
     for(i = 0 ; i < (int) N_CL ; i++) {
-      int reg = BCond_GetRegionIndex(CL + i) ;
+      //int reg = BCond_GetRegionTag(CL + i) ;
+      char* reg = BCond_GetRegionName(CL + i) ;
       char* name_unk =BCond_GetNameOfUnknown(CL + i) ;
       int ich = BCond_GetFieldIndex(CL + i) ;
       int ifn = BCond_GetFunctionIndex(CL + i) ;
       
       PRINT("Boundary Condition(%d):\n",i) ;
       
-      PRINT("\t Region  = %d\n",reg) ;
+      //PRINT("\t Region  = %d\n",reg) ;
+      PRINT("\t Region  = %s\n",reg) ;
       
       PRINT("\t Unknown = %s\n",name_unk) ;
       
@@ -1130,7 +1137,8 @@ void DataSet_PrintData(DataSet_t* dataset,char* mot)
     PRINT("\n") ;
     
     for(i = 0 ; i < (int) N_CG ; i++) {
-      int reg = Load_GetRegionIndex(CG + i) ;
+      //int reg = Load_GetRegionTag(CG + i) ;
+      char* reg = Load_GetRegionName(CG + i) ;
       char* name_eqn = Load_GetNameOfEquation(CG + i) ;
       char* type = Load_GetType(CG + i) ;
       Field_t* ch = Load_GetField(CG + i) ;
@@ -1138,7 +1146,8 @@ void DataSet_PrintData(DataSet_t* dataset,char* mot)
       
       PRINT("Load(%d):\n",i) ;
       
-      PRINT("\t Region   = %d\n",reg) ;
+      //PRINT("\t Region   = %d\n",reg) ;
+      PRINT("\t Region   = %s\n",reg) ;
       PRINT("\t Equation = %s\n",name_eqn) ;
       PRINT("\t Type     = %s\n",type) ;
       
@@ -1182,15 +1191,15 @@ void DataSet_PrintData(DataSet_t* dataset,char* mot)
       double y = (DIM > 1) ? coor[1] : 0. ;
       double z = (DIM > 2) ? coor[2] : 0. ;
       Element_t* elt = Point_GetEnclosingElement(point + i) ;
-      int reg_el = (elt) ? Element_GetRegionIndex(elt) : -1 ;
+      char* reg_el = (elt) ? Element_GetRegionName(elt) : NULL ;
       int index  = (elt) ? Element_GetElementIndex(elt) : -1 ;
       
       PRINT("\t Point(%d): ",i) ;
       
       PRINT("(%e,%e,%e)",x,y,z) ;
       
-      if(reg_el > 0) {
-        PRINT(" in region %d",reg_el) ;
+      if(reg_el) {
+        PRINT(" in region %s",reg_el) ;
       }
       
       if(index >= 0) {

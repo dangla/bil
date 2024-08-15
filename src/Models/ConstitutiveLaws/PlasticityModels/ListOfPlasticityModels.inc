@@ -1,0 +1,1 @@
+SELECTEDMODELS = PlasticityACC PlasticityACCPierre PlasticityBBM PlasticityBExM PlasticityCamClay PlasticityCamClayOffset PlasticityDruckerPrager PlasticityNSFS

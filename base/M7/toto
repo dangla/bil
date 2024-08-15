@@ -1,0 +1,90 @@
+# Consolidation d'un couche de sol
+#
+Geometry
+1 plan
+
+
+
+Mesh
+4 -1 -1 0 0
+0.01
+1 100 1
+1 1 1
+
+
+
+Material
+Model = M7
+gravite = 0
+rho_s = 0
+young = 0.833333
+poisson = 0.25
+phi = 0.3
+rho_l = 1
+p_l0 = 0
+k_int = 1
+mu_l = 1
+p_g = 0
+b = 1
+N = 0
+Courbes = sat
+
+
+
+Fields
+1
+Value = -1 Gradient = 0 Point = 0
+
+
+
+Initialization
+0
+
+
+
+Functions
+0
+
+
+
+Boundary Conditions
+2
+Reg = 1 Inc = u_1 Champ = 0 Fonction = 0
+Reg = 3 Inc = p_l Champ = 0 Fonction = 0
+
+
+
+Loads
+1
+Reg = 3 Equation = meca_1 Type = force Champ = 1 Fonction = 0
+
+
+
+Points
+1
+-0.005
+
+
+
+Dates
+3
+0 0.01 0.1 # 0.25 0.5 1. 2.5
+
+
+
+Objective Variations
+u_1 = 1. 
+p_l = 1.
+
+
+
+Iterative Process
+Iter = 2 
+Tol = 1.e-6 
+Rec = 0 
+
+
+
+Time Steps
+Dtini = 1.e-1 
+Dtmax = 1. 

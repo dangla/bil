@@ -1,0 +1,74 @@
+Geometry
+1 Axis
+
+
+
+Mesh
+3 0. 3.e-2 3.e-2
+3.e-4
+100 1
+1 1
+
+
+
+Material
+Model = Fick
+porosity = 0.379 
+
+
+
+Fields
+1
+Value = 19. 		Gradient = 0 0 0 	Point = 0 0 0
+
+
+
+Initialization
+1
+Region = 1 	Unknown = c_na  	    Field = 1
+
+
+
+Functions
+1
+N = 2   F(0) = 1.   F(3600) = 0.
+
+
+
+Boundary Conditions
+1
+Reg = 2 	Unknown = c_na      	Field = 1 	Function = 1
+
+
+
+Loads
+0
+
+
+
+Points
+0
+
+
+
+Dates
+4
+0	86400	259200 31536000
+
+
+
+Objective Variations
+c_na     = 1.e-1
+
+
+
+Iterative Process
+Iterations  = 20
+Tolerance   = 1.e-3
+Repetitions = 0
+
+
+
+Time Steps
+Dtini = 1
+Dtmax = 36000

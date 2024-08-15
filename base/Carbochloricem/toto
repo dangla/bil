@@ -1,0 +1,102 @@
+Geometry
+1 plan
+
+
+Mesh
+4 0. 0. 1.5 1.5
+0.015
+1 100 1
+1 1 1
+
+
+Material
+Model = Carbochloricem
+porosity = 0.1
+k_int = 3.6e-20
+N_CH = 2
+N_CSH = 0.7
+C_Na = 0.07
+C_K = 1.e-99
+frac = 0.8
+phi_r = 0.70
+Curves = CP1  p_c = Range{x1 = 0 , x2 = 500.e6 , n = 1000} s_l  = Expressions(1){a = 61.3e6 ; b = 1.95 ; s_l = (1 + (p_c/a)**(b/(b-1)))**(-1/b) ;}
+Curves = CP1-kr  s_l = Range{x1 = 0 , x2 = 1 , n = 100} kl_r = Expressions(1){b = 1.95 ; kl_r = sqrt(s_l)*(1 - (1 - s_l**b)**(1/b))**2}
+Curves = Adscoef  x = Range{x1 = 0.8 , x2 = 1.5 , n = 100}  alpha = Expressions(1){a0 = 1.7e-4 ; a1 = 6.69e-3 ; x0 = 0.8 ; x1 = 1.5 ; alpha = a0**((x1 - x)/(x1 - x0))*a1**((x - x0)/(x1 - x0)) ;}  beta = Expressions(1){b0 = 1.679e-3 ; b1 = 2.1e-2 ; x0 = 0.8 ; x1 = 1.5 ; beta = b0**((x1 - x)/(x1 - x0))*b1**((x - x0)/(x1 - x0)) ;}
+Curves = V_CSH  x = Range{x1 = 0 , x2 = 0.85 , n = 2} v_csh = Expressions(1){x0 = 0 ; v0 = 5.44e-2 ; x1 = 0.85 ; v1 = 8.14e-2 ;  v_csh = (x1 - x)/(x1 - x0)*v0 + (x - x0)/(x1 - x0)*v1}
+
+
+Fields
+2
+Value = 1   		          Gradient = 0.	  Point = 0.
+Value = -99   		      Gradient = 0.	  Point = 0.
+
+
+Functions
+7
+N = 2 F(0) = -45.5e6    F(86400)  = -48.3e6
+N = 2 F(0) = -45.5e6    F(86400)  = 0
+N = 2 F(0) = -15        F(3600)  = -2.4
+N = 2 F(0) = -15        F(86400)  = -15
+N = 2 F(0) = 1          F(86400)  = 1
+N = 2 F(0) = 1          F(86400)  = 1
+N = 2 F(0) = -99        F(86400)  = 2.51
+
+
+Initialization
+6
+Region = 2 	Unknown = p_l   		  Field = 1 	Function = 1
+Region = 2 	Unknown = logc_co2  	Field = 1 	Function = 3
+Region = 2 	Unknown = psi    		  Field = 0 	Function = 0
+Region = 2 	Unknown = z_si    	  Field = 1 	Function = 5
+Region = 2 	Unknown = z_ca 		    Field = 1 	Function = 6
+Region = 2 	Unknown = logc_cl 		    Field = 1 	Function = 7
+
+
+Boundary Conditions
+9
+Region = 2 	Unknown = logc_k   		  Field = 2 	Function = 0
+Region = 1 	Unknown = p_l   		  Field = 1 	Function = 1
+Region = 3 	Unknown = p_l   		  Field = 1 	Function = 2
+Region = 1 	Unknown = logc_co2  	Field = 1 	Function = 3
+Region = 3 	Unknown = logc_co2  	Field = 1 	Function = 4
+Region = 1 	Unknown = psi   		  Field = 0 	Function = 0
+Region = 3 	Unknown = z_si    	  Field = 1 	Function = 5
+Region = 3 	Unknown = z_ca 		    Field = 1 	Function = 6
+Region = 3 	Unknown = logc_cl 		    Field = 1 	Function = 7
+
+
+Loads
+0
+
+
+Points
+1
+0.14
+
+
+Dates
+2
+0	3.1536e7 #3.1536e8 3.1536e9
+
+
+Objective Variations
+logc_co2 = 0.1
+p_l      = 1.e4 
+z_ca     = 0.1
+psi      = 1.
+logc_na  = 1e-1
+logc_k   = 1e-1
+z_si     = 1e-1
+logc_cl  = 1e-1
+logc_oh  = 1e-1
+
+
+Iterative Process
+Iter        = 20
+Tol         = 1.e-3
+Repetitions = 0
+
+
+Time Steps
+Dtini = 10
+Dtmax = 1.e6

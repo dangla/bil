@@ -1,12 +1,32 @@
 /* Modified Cam-Clay model with NFSF theory*/
-
 /* Hao */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <stdarg.h>
+
+#include "Message.h"
+#include "Math_.h"
+#include "Plasticity.h"
+#include "autodiff.h"
+
+template<typename T>
+T* (PlasticityNSFS_YF)(Plasticity_t*,const T*,const T*);
+
+template<typename T>
+T* (PlasticityNSFS_FR)(Plasticity_t*,const T*,const T*);
+
 static Plasticity_ComputeTangentStiffnessTensor_t    PlasticityNSFS_CT;
 static Plasticity_ReturnMapping_t                    PlasticityNSFS_RM;
 static Plasticity_YieldFunction_t                    PlasticityNSFS_YF ;
 static Plasticity_FlowRules_t                        PlasticityNSFS_FR ;
+#ifdef HAVE_AUTODIFF
+static Plasticity_YieldFunctionDual_t                PlasticityNSFS_YF ;
+static Plasticity_FlowRulesDual_t                    PlasticityNSFS_FR ;
+#endif
 static Plasticity_SetParameters_t                    PlasticityNSFS_SP ;
-static Plasticity_SetModelProp_t                     PlasticityNSFS_SetModelProp ;
+extern Plasticity_SetModelProp_t                     PlasticityNSFS_SetModelProp ;
 
 static double (lnxgt1_smooth)(double) ;
 static double (dlnxgt1_smooth)(double) ;
@@ -78,10 +98,12 @@ void PlasticityNSFS_SetModelProp(Plasticity_t* plasty)
   {
     Plasticity_GetComputeTangentStiffnessTensor(plasty) = PlasticityNSFS_CT ;
     Plasticity_GetReturnMapping(plasty)                 = PlasticityNSFS_RM ;
-    //Plasticity_GetComputeTangentStiffnessTensor(plasty) = NULL ;
-    //Plasticity_GetReturnMapping(plasty)                 = NULL ;
-    Plasticity_GetYieldFunction(plasty)                 = PlasticityNSFS_YF ;
-    Plasticity_GetFlowRules(plasty)                     = PlasticityNSFS_FR ;
+    Plasticity_GetYieldFunction(plasty)                 = PlasticityNSFS_YF<double> ;
+    Plasticity_GetFlowRules(plasty)                     = PlasticityNSFS_FR<double> ;
+    #ifdef HAVE_AUTODIFF
+    Plasticity_GetYieldFunctionDual(plasty)             = PlasticityNSFS_YF<real> ;
+    Plasticity_GetFlowRulesDual(plasty)                 = PlasticityNSFS_FR<real> ;
+    #endif
     Plasticity_GetSetParameters(plasty)                 = PlasticityNSFS_SP ;
     Plasticity_GetNbOfHardeningVariables(plasty)        = 1 ;
     Plasticity_GetNbOfNonHardeningVariables(plasty)     = 3 ;
@@ -1437,7 +1459,132 @@ double* PlasticityNSFS_RM(Plasticity_t* plasty, double* sig, double* eps_p, doub
 
 
 
+template<typename T>
+T* (PlasticityNSFS_YF)(Plasticity_t* plasty,const T* stress,const T* hardv)
+/** Return the value of the yield functions. 
+ **/
+{
+  size_t SizeNeeded = sizeof(T) ;
+  T* yield        = (T*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
+  double m        = Plasticity_GetSlopeCriticalStateLine(plasty);
+  double pc_ref   = Plasticity_GetReferenceConsolidationPressure(plasty) ; 
+  Curve_t* lc     = Plasticity_GetLoadingCollapseFactorCurve(plasty) ;
+  Curve_t* sl     = Plasticity_GetSaturationDegreeCurve(plasty) ;
+  double CA       = Plasticity_GetViscousExponent(plasty);
+  double refstrainrate  = Plasticity_GetReferenceStrainRate(plasty);
+  T pc0         = hardv[0];
+  T s           = hardv[1];
+  T dt          = hardv[2];
+  T epsv_p_rate = hardv[3];
+  T sl_s        = Curve_ComputeValue(sl,s) ;
+  T lc_s        = Curve_ComputeValue(lc,s) ;
+  T ps          = sl_s*s ;
+  T strainrateratio = -epsv_p_rate/refstrainrate ;
+  T lnpc_strainrate = LNPC_STRAINRATE(strainrateratio,CA) ;
+  T pc_b        = pc_ref * pow(pc0/pc_ref,lc_s) * exp(lc_s*lnpc_strainrate) ;
+  T pc_p        = pc_b + ps;
+  T p           = (stress[0] + stress[4] + stress[8])/3.;
+  T q2          = 3*Math_ComputeSecondDeviatoricStressInvariant(stress) ;
+  double m2     = m*m ;
+  
+  yield[0] = q2/m2 + p*(p + pc_p);
 
+  return(yield) ;
+}
+
+
+template<typename T>
+T* (PlasticityNSFS_FR)(Plasticity_t* plasty,const T* sig,const T* hardv)
+/** 
+ **/
+{
+  size_t SizeNeeded = (9+4)*(sizeof(T)) ;
+  T* flow    = (T*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
+  Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+  double bulk     = Elasticity_GetBulkModulus(elasty) ;
+  double m        = Plasticity_GetSlopeCriticalStateLine(plasty);
+  double kappa    = Plasticity_GetSlopeSwellingLine(plasty);
+  double lambda   = Plasticity_GetSlopeVirginConsolidationLine(plasty);
+  double e0       = Plasticity_GetInitialVoidRatio(plasty);
+  double pc_ref   = Plasticity_GetReferenceConsolidationPressure(plasty) ;
+  Curve_t* lc     = Plasticity_GetLoadingCollapseFactorCurve(plasty) ;
+  Curve_t* sl     = Plasticity_GetSaturationDegreeCurve(plasty) ;
+  double CA       = Plasticity_GetViscousExponent(plasty);
+  double pc_ini   = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
+  double refstrainrate  = Plasticity_GetReferenceStrainRate(plasty);
+  T pc0         = hardv[0];
+  T s           = hardv[1];
+  T dt          = hardv[2];
+  T epsv_p_rate = hardv[3];
+  T sl_s        = Curve_ComputeValue(sl,s) ;
+  T lc_s        = Curve_ComputeValue(lc,s) ;
+  T ps          = sl_s*s ;
+  T strainrateratio = -epsv_p_rate/refstrainrate ;
+  T lnpc_strainrate = LNPC_STRAINRATE(strainrateratio,CA) ;
+  T pc_b        = pc_ref * pow(pc0/pc_ref,lc_s) * exp(lc_s*lnpc_strainrate) ;
+  T pc_p        = pc_b + ps;
+  double m2     = m*m;
+  
+  /*
+   * Potential function: g(p,q,pc) = q*q/m2 + p*(p + pc)
+   */
+  
+  /*
+   * Plastic strain flow:
+   * --------------------
+   * deps^p_ij     = dl * dg/dstress_ij
+   * dp/dstress_ij = 1/3 delta_ij
+   * dq/dstress_ij = 3/2 dev_ij/q 
+   * dg/dstress_ij = 1/3 (dg/dp) delta_ij + 3/2 (dg/dq) dev_ij/q 
+   * dg/dp         = 2*p + pc
+   * dg/dq         = 2*q/m2
+   * 
+   * dg/dstress_ij = 1/3 (2*p + pc) delta_ij + (3/m2) dev_ij 
+   */
+
+  {
+    double N        = 4/(pc_ini*pc_ini*bulk) ;
+    T p             = (sig[0] + sig[4] + sig[8]) / 3. ;
+    double id[9]    = { 1,0,0,0,1,0,0,0,1 };
+    int    i;
+
+    for (i = 0; i < 9; i++) {
+      T dev = sig[i] - p * id[i];
+
+      flow[i] = N*((2 * p + pc_p) * id[i] / 3. + 3. / m2 * dev) ;
+    }
+  }
+  
+  /*
+   * The hardening flows:
+   * --------------------
+   * d(ln(pc0)) = - (1 + e0)*v*d(volstrain)
+   * Using a = ln(pc0) as hardening variable.
+   * d(a) = - dl * (1 + e0) * v * (dg/dp)
+   * So h(p,a) = - (1 + e0) * v * (dg/dp)
+   * d(volstrainrate) = 1/dt d(volstrain - volstrain_n) = 1/dt d(volstrain)
+   */
+  {
+    double v = 1./(lambda - kappa) ;
+    double v1  = (1+e0)*v ;
+    /* The derivative of lnpc0 wrt epsv_p */
+    //double dstrainrateratiosdepsv_p = (dt > 0) ? -1/(dt*refstrainrate) : 0 ;
+    double dlnpc0sdepsv_p   = - v1 ;
+    //double dlnpc0sdepsv_p   = - v1 + DLNPC_STRAINRATE(strainrateratio,CA)*dstrainrateratiosdepsv_p ;
+    T h = flow[0] + flow[4] + flow[8] ;
+
+    flow[9]  = pc0*dlnpc0sdepsv_p*h ;
+    flow[10] = 0 ;
+    flow[11] = 0 ;
+    flow[12] = 0 ; //(dt > 0) ? h/dt : 0 ; // Not correct -> doesn't work at present
+  }
+  
+  return(flow) ;
+}
+
+
+
+#if 0
 double* (PlasticityNSFS_YF)(Plasticity_t* plasty,const double* stress,const double* hardv)
 /** Return the value of the yield functions. 
  **/
@@ -1559,6 +1706,7 @@ double* (PlasticityNSFS_FR)(Plasticity_t* plasty,const double* sig,const double*
   
   return(flow) ;
 }
+#endif
 
 
 #define A 0.3

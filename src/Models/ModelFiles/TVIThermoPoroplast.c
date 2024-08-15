@@ -486,7 +486,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double ad       = Material_GetPropertyValue(mat,"dilatancy")*M_PI/180. ;
         
         Plasticity_SetTo(plasty,DruckerPrager) ;
-        Plasticity_SetParameters(plasty,af,ad,cohesion) ;
+        Plasticity_SetParameters(plasty,af,ad,cohesion,NULL) ;
       }
       */
       

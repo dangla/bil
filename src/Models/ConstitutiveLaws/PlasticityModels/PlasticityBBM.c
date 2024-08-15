@@ -1,9 +1,30 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <stdarg.h>
+
+#include "Message.h"
+#include "Math_.h"
+#include "Plasticity.h"
+#include "autodiff.h"
+
+template<typename T>
+T* (PlasticityBBM_YF)(Plasticity_t*,const T*,const T*);
+
+template<typename T>
+T* (PlasticityBBM_FR)(Plasticity_t*,const T*,const T*);
+
 static Plasticity_ComputeTangentStiffnessTensor_t    PlasticityBBM_CT ;
 static Plasticity_ReturnMapping_t                    PlasticityBBM_RM ;
 static Plasticity_YieldFunction_t                    PlasticityBBM_YF ;
 static Plasticity_FlowRules_t                        PlasticityBBM_FR ;
+#ifdef HAVE_AUTODIFF
+static Plasticity_YieldFunctionDual_t                PlasticityBBM_YF ;
+static Plasticity_FlowRulesDual_t                    PlasticityBBM_FR ;
+#endif
 static Plasticity_SetParameters_t                    PlasticityBBM_SP ;
-static Plasticity_SetModelProp_t                     PlasticityBBM_SetModelProp ;
+extern Plasticity_SetModelProp_t                     PlasticityBBM_SetModelProp ;
 
 
 #define Plasticity_GetSlopeSwellingLine(PL) \
@@ -40,8 +61,12 @@ void PlasticityBBM_SetModelProp(Plasticity_t* plasty)
   {
     Plasticity_GetComputeTangentStiffnessTensor(plasty) = PlasticityBBM_CT ;
     Plasticity_GetReturnMapping(plasty)                 = PlasticityBBM_RM ;
-    Plasticity_GetYieldFunction(plasty)                 = PlasticityBBM_YF ;
-    Plasticity_GetFlowRules(plasty)                     = PlasticityBBM_FR ;
+    Plasticity_GetYieldFunction(plasty)                 = PlasticityBBM_YF<double> ;
+    Plasticity_GetFlowRules(plasty)                     = PlasticityBBM_FR<double> ;
+    #ifdef HAVE_AUTODIFF
+    Plasticity_GetYieldFunctionDual(plasty)             = PlasticityBBM_YF<real> ;
+    Plasticity_GetFlowRulesDual(plasty)                 = PlasticityBBM_FR<real> ;
+    #endif
     Plasticity_GetSetParameters(plasty)                 = PlasticityBBM_SP ;
     Plasticity_GetNbOfHardeningVariables(plasty)        = 2 ;
     
@@ -251,8 +276,10 @@ double* (PlasticityBBM_CT)(Plasticity_t* plasty,const double* sig,const double* 
       
       hm[0] /= (1 - dlambda*dhda) ;
     }
-       
-    Plasticity_UpdateElastoplasticTensor(plasty,c) ;
+      
+    {
+      int i = Plasticity_UpdateElastoplasticTensor(plasty,c) ;
+    }
   }
   
   yield[0] = crit ;
@@ -434,7 +461,128 @@ double* (PlasticityBBM_RM)(Plasticity_t* plasty,double* sig,double* eps_p,double
 
 
 
+template<typename T>
+T* (PlasticityBBM_YF)(Plasticity_t* plasty,const T* stress,const T* hardv)
+/** Return the value of the yield function. 
+ **/
+{
+  size_t SizeNeeded = sizeof(T) ;
+  T* yield     = (T*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
+  double m     = Plasticity_GetSlopeCriticalStateLine(plasty) ;
+  double k     = Plasticity_GetSuctionCohesionCoefficient(plasty) ;
+  double p_r   = Plasticity_GetReferenceConsolidationPressure(plasty) ;
+  Curve_t* lc  = Plasticity_GetLoadingCollapseFactorCurve(plasty) ;
+  T lnpc0      = hardv[0] ;
+  T s          = hardv[1] ;
+  T ps         = k*s ;
+  T lc_s       = Curve_ComputeValue(lc,s) ;
+  double lnp_r = log(p_r) ;
+  T lnpc       = lnp_r + lc_s * (lnpc0 - lnp_r) ;
+  T pc         = exp(lnpc) ;
+  double m2    = m*m ;
+  T p          = (stress[0] + stress[4] + stress[8])/3. ;
+  T q2         = 3*Math_ComputeSecondDeviatoricStressInvariant(stress) ;
+  
+  yield[0] = q2/m2 + (p - ps)*(p + pc) ;
 
+  return(yield) ;
+}
+
+
+
+template<typename T>
+T* (PlasticityBBM_FR)(Plasticity_t* plasty,const T* stress,const T* hardv)
+/** Barcelona Basic model criterion.
+ * 
+ *  Inputs are: 
+ *  the slope of the swelling line (kappa),
+ *  the slope of the virgin consolidation line (lambda),
+ *  the slope of the critical state line (M),
+ *  the suction cohesion coefficient (k),
+ *  the reference consolidation pressure (p_r),
+ *  the loading collapse factor curve (lc),
+ *  the pre-consolidation pressure at suction=0 (pc0=exp(hardv[0])),
+ *  the initial void ratio (e0).
+ *  the suction (s=hardv[1]),
+ * 
+ *  Return the direction of the plastic flows based on the flow rules:
+ *    - the plastic strain rate (i.e. the potential gradient)
+ *    - the rate of log(pre-consolidation pressure) (1/dlambda * d(ln(pc0))/dt)
+ **/
+{
+  size_t SizeNeeded = (9+2)*(sizeof(T)) ;
+  T* flow        = (T*) Plasticity_AllocateInBuffer(plasty,SizeNeeded) ;
+  double m       = Plasticity_GetSlopeCriticalStateLine(plasty) ;
+  double kappa   = Plasticity_GetSlopeSwellingLine(plasty) ;
+  double lambda  = Plasticity_GetSlopeVirginConsolidationLine(plasty) ;
+  double e0      = Plasticity_GetInitialVoidRatio(plasty) ;
+  double k       = Plasticity_GetSuctionCohesionCoefficient(plasty) ;
+  double p_r     = Plasticity_GetReferenceConsolidationPressure(plasty) ;
+  Curve_t* lc    = Plasticity_GetLoadingCollapseFactorCurve(plasty) ;
+  T lnpc0        = hardv[0] ;
+  T s            = hardv[1] ;
+  T ps           = k*s ;
+  T lc_s         = Curve_ComputeValue(lc,s) ;
+  double lnp_r   = log(p_r) ;
+  T lnpc         = lnp_r + lc_s * (lnpc0 - lnp_r) ;
+  T pc           = exp(lnpc) ;
+  double m2      = m*m ;
+  double beta    = 1 ;
+  
+  double id[9] = {1,0,0,0,1,0,0,0,1} ;
+  T p          = (stress[0] + stress[4] + stress[8])/3. ;
+  //double q    = sqrt(3*Math_ComputeSecondDeviatoricStressInvariant(stress)) ;
+  
+  /*
+    Potential function: g = beta*q*q/m2 + (p - ps)*(p + pc)
+  */
+  
+  /*
+    Plastic strain: deps^p_ij = dl * dg/dstress_ij
+    ----------------------------------------------
+    dp/dstress_ij = 1/3 delta_ij
+    dq/dstress_ij = 3/2 dev_ij/q 
+    dg/dstress_ij = 1/3 (dg/dp) delta_ij + 3/2 (dg/dq) dev_ij/q 
+    dg/dp      = 2*p + pc - ps
+    dg/dq      = beta*2*q/m2
+    
+    dg/dstress_ij = 1/3 (2*p + pc - ps) delta_ij + beta*(3/m2) dev_ij 
+  */
+  {
+    Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
+    double bulk    = Elasticity_GetBulkModulus(elasty) ;
+    double pc0 = Plasticity_GetInitialPreconsolidationPressure(plasty) ;
+    double N  = 4/(pc0*pc0*bulk) ;
+    int    i ;
+    
+    for(i = 0 ; i < 9 ; i++) {
+      T dev = stress[i] - p*id[i] ;
+
+      flow[i] = N*((2*p + pc - ps)*id[i]/3 + 3*beta/m2*dev) ;
+    }
+  }
+  
+  /*
+    The hardening flow: d(ln(pc0)) = - (1 + e0)*v*deps_p
+   * --------------------------------------------------
+   * Using a = ln(pc0) as hardening variable.
+   * d(a) = - dl * (1 + e0) * v * (dg/dp)
+   * So h(p,a) = - (1 + e0) * v * (2*p + pc(a) - ps)
+   */
+  {
+    double v = 1./(lambda - kappa) ;
+    T h      = flow[0] + flow[4] + flow[8] ;
+
+    flow[9]  = - (1 + e0)*v*h ;
+    flow[10] = 0 ;
+  }
+  
+  return(flow) ;
+}
+
+
+
+#if 0
 double* (PlasticityBBM_YF)(Plasticity_t* plasty,const double* stress,const double* hardv)
 /** Return the value of the yield function. 
  **/
@@ -551,6 +699,7 @@ double* (PlasticityBBM_FR)(Plasticity_t* plasty,const double* stress,const doubl
   
   return(flow) ;
 }
+#endif
 
 
 

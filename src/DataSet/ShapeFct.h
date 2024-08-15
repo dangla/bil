@@ -1,6 +1,10 @@
 #ifndef SHAPEFCT_H
 #define SHAPEFCT_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -39,4 +43,8 @@ struct ShapeFct_s {           /* Shape function */
 } ;
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

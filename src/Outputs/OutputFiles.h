@@ -1,6 +1,10 @@
 #ifndef OUTPUTFILES_H
 #define OUTPUTFILES_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* class-like structures "OutputFiles_t" */
 
@@ -112,4 +116,8 @@ struct OutputFiles_s {            /* Output files */
 } ;
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

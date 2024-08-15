@@ -32,6 +32,14 @@ BCond_t* BCond_New(void)
     
     BCond_GetNameOfEquation(bcond) = name ;
   }
+  
+  
+  /* Allocation of space for the region name */
+  {
+    char* name = (char*) Mry_New(char[BCond_MaxLengthOfRegionName]) ;
+    
+    BCond_GetRegionName(bcond) = name ;
+  }
 
   return(bcond) ;
 }
@@ -42,8 +50,29 @@ void (BCond_Delete)(void* self)
 {
   BCond_t* bcond = (BCond_t*) self ;
   
-  free(BCond_GetNameOfUnknown(bcond)) ;
-  free(BCond_GetNameOfEquation(bcond)) ;
+  {
+    char* name = BCond_GetNameOfUnknown(bcond) ;
+    
+    if(name) {
+      free(name) ;
+    }
+  }
+  
+  {
+    char* name = BCond_GetNameOfEquation(bcond) ;
+    
+    if(name) {
+      free(name) ;
+    }
+  }
+  
+  {
+    char* name = BCond_GetRegionName(bcond) ;
+    
+    if(name) {
+      free(name) ;
+    }
+  }
 }
 
 
@@ -54,11 +83,14 @@ void BCond_Scan(BCond_t* bcond,DataFile_t* datafile)
   
   /* Region */
   {
-    int i ;
-    int n = String_FindAndScanExp(line,"Reg",","," = %d",&i) ;
+    char name[BCond_MaxLengthOfRegionName] ;
+    int n = String_FindAndScanExp(line,"Reg",","," = %s",name) ;
+    //int i ;
+    //int n = String_FindAndScanExp(line,"Reg",","," = %d",&i) ;
     
     if(n) {
-      BCond_GetRegionIndex(bcond) = i ;
+      BCond_GetRegionTag(bcond) = atoi(name) ;
+      strncpy(BCond_GetRegionName(bcond),name,BCond_MaxLengthOfRegionName)  ;
     } else {
       arret("BCond_Scan: no region") ;
     }

@@ -1,6 +1,10 @@
 #ifndef LOCALVARIABLEVECTOR_H
 #define LOCALVARIABLEVECTOR_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -33,4 +37,8 @@ struct LocalVariableVector_s {
   double*   varderiv ;               /* Variable derivatives */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

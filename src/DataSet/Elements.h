@@ -1,6 +1,10 @@
 #ifndef ELEMENTS_H
 #define ELEMENTS_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -24,16 +28,16 @@ extern void         (Elements_InitializeMatrixRowColumnIndexes)(Elements_t*) ;
 
 
 /* Accessors */
-#define Elements_GetNbOfElements(ELTS)           ((ELTS)->n_el)
-#define Elements_GetNbOfConnectivities(ELTS)     ((ELTS)->n_con)
-#define Elements_GetElement(ELTS)                ((ELTS)->el)
-#define Elements_GetPointerToNode(ELTS)          ((ELTS)->node)
-#define Elements_GetShapeFcts(ELTS)              ((ELTS)->shapefcts)
-#define Elements_GetIntFcts(ELTS)                ((ELTS)->intfcts)
-#define Elements_GetBuffers(ELTS)                ((ELTS)->buffers)
-#define Elements_GetMaximumSizeOfElements(ELTS)  ((ELTS)->hmax)
-#define Elements_GetMinimumSizeOfElements(ELTS)  ((ELTS)->hmin)
-
+#define Elements_GetNbOfElements(ELTS)           ((ELTS)->NbOfElements)
+#define Elements_GetNbOfConnectivities(ELTS)     ((ELTS)->NbOfConnectivities)
+#define Elements_GetElement(ELTS)                ((ELTS)->Element)
+#define Elements_GetPointerToNode(ELTS)          ((ELTS)->PointerToNode)
+#define Elements_GetRegions(ELTS)                ((ELTS)->Regions)
+#define Elements_GetShapeFcts(ELTS)              ((ELTS)->ShapeFcts)
+#define Elements_GetIntFcts(ELTS)                ((ELTS)->IntFcts)
+#define Elements_GetBuffers(ELTS)                ((ELTS)->Buffers)
+#define Elements_GetMaximumSizeOfElements(ELTS)  ((ELTS)->MaximumSizeOfElements)
+#define Elements_GetMinimumSizeOfElements(ELTS)  ((ELTS)->MinimumSizeOfElements)
 
 
 
@@ -43,18 +47,24 @@ extern void         (Elements_InitializeMatrixRowColumnIndexes)(Elements_t*) ;
 #include "Buffers.h"
 #include "Element.h"
 #include "Node.h"
+#include "Regions.h"
 
 
-struct Elements_s {           /* Elements */
-  Element_t* el ;             /* Element */
-  Node_tt* node ;             /* pointers to nodes */
-  ShapeFcts_t* shapefcts ;    /* Shape functions */
-  IntFcts_t* intfcts ;        /* Interpolation functions */
-  Buffers_t*  buffers ;       /* Buffers */
-  double      hmax ;
-  double      hmin ;
-  unsigned int n_el ;         /* Nb of elements */
-  unsigned int n_con ;        /* Nb of connectivities */
+struct Elements_s {
+  Element_t* Element ;
+  Node_tt* PointerToNode ;
+  Regions_t*   Regions ;
+  ShapeFcts_t* ShapeFcts ;    /* Shape functions */
+  IntFcts_t*   IntFcts ;      /* Interpolation functions */
+  Buffers_t*  Buffers ;
+  double      MaximumSizeOfElements ;
+  double      MinimumSizeOfElements ;
+  unsigned int NbOfElements ;
+  unsigned int NbOfConnectivities ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

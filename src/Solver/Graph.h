@@ -1,6 +1,10 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 struct Graph_s          ; typedef struct Graph_s Graph_t ;
@@ -43,4 +47,8 @@ struct Graph_s {              /* Graph */
   AdjacencyList_t* adj ;      /* Adjacency list */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

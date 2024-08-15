@@ -1,6 +1,10 @@
 #ifndef ELEMENT_H
 #define ELEMENT_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -66,29 +70,28 @@ extern void        (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t*)
 
 #define Element_SizeOfBuffer \
         (IntFct_MaxNbOfIntPoints*Element_MaxNbOfNodes*100*sizeof(double))
+        
+//#define Element_MaxLengthOfRegionName  (50)
 
 
 
 /* Accessors */
-#define Element_GetElementIndex(ELT)           ((ELT)->index)
-#define Element_GetDimension(ELT)              ((ELT)->dim)
-#define Element_GetNbOfNodes(ELT)              ((ELT)->nn)
-#define Element_GetPointerToNode(ELT)          ((ELT)->node)
-#define Element_GetRegionIndex(ELT)            ((ELT)->reg)
-#define Element_GetMaterial(ELT)               ((ELT)->mat)
-#define Element_GetMaterialIndex(ELT)          ((ELT)->imat)
-#define Element_GetShapeFct(ELT)               ((ELT)->shapefct)
-#define Element_GetIntFct(ELT)                 ((ELT)->fi)
-#define Element_GetUnknownPosition(ELT)        ((ELT)->pin)
-#define Element_GetEquationPosition(ELT)       ((ELT)->peq)
-//#define Element_GetNbOfImplicitTerms(ELT)      ((ELT)->n_vi)
-//#define Element_GetNbOfExplicitTerms(ELT)      ((ELT)->n_ve)
-//#define Element_GetNbOfConstantTerms(ELT)      ((ELT)->nbofconstterms)
-//#define Element_GetElementSol(ELT)             ((ELT)->sol)
-#define Element_GetBuffers(ELT)                ((ELT)->buffers)
-#define Element_GetSolutions(ELT)              ((ELT)->solutions)
-#define Element_GetMatrix(ELT)                 ((ELT)->matrix)
-#define Element_GetResidu(ELT)                 ((ELT)->residu)
+#define Element_GetElementIndex(ELT)           ((ELT)->ElementIndex)
+#define Element_GetDimension(ELT)              ((ELT)->Dimension)
+#define Element_GetNbOfNodes(ELT)              ((ELT)->NbOfNodes)
+#define Element_GetPointerToNode(ELT)          ((ELT)->PointerToNode)
+//#define Element_GetRegionTag(ELT)              ((ELT)->RegionTag)
+#define Element_GetRegion(ELT)                 ((ELT)->Region)
+#define Element_GetMaterial(ELT)               ((ELT)->Material)
+#define Element_GetMaterialIndex(ELT)          ((ELT)->MaterialIndex)
+#define Element_GetShapeFct(ELT)               ((ELT)->ShapeFct)
+#define Element_GetIntFct(ELT)                 ((ELT)->IntFct)
+#define Element_GetUnknownPosition(ELT)        ((ELT)->UnknownPosition)
+#define Element_GetEquationPosition(ELT)       ((ELT)->EquationPosition)
+#define Element_GetBuffers(ELT)                ((ELT)->Buffers)
+#define Element_GetSolutions(ELT)              ((ELT)->Solutions)
+#define Element_GetMatrix(ELT)                 ((ELT)->Matrix)
+#define Element_GetResidu(ELT)                 ((ELT)->Residu)
 
 
 
@@ -425,6 +428,7 @@ extern void        (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t*)
 
 
 
+
 #include "IntFct.h"
 
 /* Loop on integration points */
@@ -439,31 +443,46 @@ extern void        (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t*)
         (Element_GetElementIndex(ELT) % DistributedMS_NbOfProcessors)
 
 
+/* Region name */
+#define Element_GetRegionName(ELT) \
+        Region_GetRegionName(Element_GetRegion(ELT))
+
+
+/* Set a default region to an element  */
+#define Element_SetDefaultRegion(ELT,REGS,I) \
+        do { \
+          char Element_name[Region_MaxLengthOfRegionName] ; \
+          sprintf(Element_name,"%d",I) ; \
+          Element_GetRegion(ELT) = Regions_FindRegion(REGS,Element_name) ; \
+        } while(0)
+        
+
 #include "ShapeFct.h"
 #include "Material.h"
 #include "Buffers.h"
-#include "ElementSol.h"
+//#include "ElementSol.h"
 #include "Solutions.h"
+#include "Region.h"
 
 
 /* Minmize the size of the struct by re-organizing the order of its members*/
-struct Element_s {            /* element */
-  Node_tt* node ;             /* pointers to nodes */
-  Material_t* mat ;           /* material */
-  ShapeFct_t* shapefct ;      /* Shape function */
-  IntFct_t* fi ;              /* interpolation function */
-  //ElementSol_t* sol ;         /* Element Solution */
-  Buffers_t*  buffers ;       /* Buffers */
-  Solutions_t* solutions ;    /* Pointer to the global solutions */
-  double* matrix ;            /* Elementary matrix */
-  double* residu ;            /* Elementary residu */
-  short int* pin ;            /* local position of unknowns at nodes */
-  short int* peq ;            /* local position of equations at nodes */
-  int    reg ;                /* region index */
-  int    imat ;               /* material index */
-  unsigned short int dim ;    /* dimension of the element (0,1,2,3) */
-  unsigned int index ;        /* element index */
-  unsigned short int nn ;     /* nb of nodes */
+struct Element_s {
+  Node_tt* PointerToNode ;
+  Material_t* Material ;
+  ShapeFct_t* ShapeFct ;      /* Shape function */
+  IntFct_t* IntFct ;          /* interpolation function */
+  Buffers_t*  Buffers ;
+  Solutions_t* Solutions ;    /* Pointer to the global solutions */
+  Region_t*  Region ;
+  double* Matrix ;            /* Elementary matrix */
+  double* Residu ;            /* Elementary residu */
+  short int* UnknownPosition ;  /* local position of unknowns at nodes */
+  short int* EquationPosition ; /* local position of equations at nodes */
+  //int    RegionTag ;
+  int    MaterialIndex ;
+  unsigned short int Dimension ;    /* dimension of the element (0,1,2,3) */
+  unsigned int ElementIndex ;
+  unsigned short int NbOfNodes ;
   /* n_vi and n_ve must be kept for old methods! */
   unsigned int n_vi ;         /* Nb of implicit terms */
   unsigned int n_ve ;         /* Nb of explicit terms */
@@ -475,4 +494,8 @@ struct Element_s {            /* element */
 #define elem_t         Element_t
 #define MAX_NOEUDS     Element_MaxNbOfNodes
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

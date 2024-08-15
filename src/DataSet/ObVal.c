@@ -83,12 +83,12 @@ void  (ObVal_Scan)(ObVal_t* obval,DataFile_t* datafile)
     ObVal_SetTypeToAbsolute(obval) ;
           
     /* Read the type "absolute" */
-    if(String_Is(type,"Absolute")) {
+    if(String_CaseIgnoredIs(type,"Absolute",3)) {
       ObVal_SetTypeToAbsolute(obval) ;
     }
           
     /* Read the type "relative" */
-    if(String_Is(type,"Relative")) {
+    if(String_CaseIgnoredIs(type,"Relative",3)) {
       ObVal_SetTypeToRelative(obval) ;
     }
   }

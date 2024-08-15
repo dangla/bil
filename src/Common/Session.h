@@ -1,6 +1,10 @@
 #ifndef SESSION_H
 #define SESSION_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -59,4 +63,8 @@ struct Session_s {
   Session_t*     prev ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

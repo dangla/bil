@@ -1,6 +1,10 @@
 #ifndef MATH_H
 #define MATH_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -33,6 +37,24 @@ extern double*  (Math_ComputeDeviatoricStress)(const double*) ;
 extern double*  (Math_SolveByGaussEliminationKIJ)(double*,double*,int,int*) ;
 extern double*  (Math_SolveByGaussEliminationJIK)(double*,double*,int,int*) ;
 
+
+
+template<typename T>
+extern T        (Math_ComputeSecondDeviatoricStressInvariant)(const T*);
+
+template<typename T>
+T (Math_ComputeSecondDeviatoricStressInvariant)(const T* sig)
+/** Second invariant of the deviatoric part of a stress tensor:
+    J2 = 1/2 tr(dev.dev)  (dev = sig - 1/3 tr(sig) Id) */
+{
+#define SIG(i,j) (sig[3*(i)+(j)])
+  T j2a = (SIG(0,0) - SIG(1,1))*(SIG(0,0) - SIG(1,1))
+             + (SIG(1,1) - SIG(2,2))*(SIG(1,1) - SIG(2,2))
+             + (SIG(2,2) - SIG(0,0))*(SIG(2,2) - SIG(0,0)) ;
+  T j2b = SIG(0,1)*SIG(1,0) + SIG(1,2)*SIG(2,1) + SIG(2,0)*SIG(0,2) ;
+  return(j2a/6. + j2b) ;
+#undef SIG
+}
 
 
 
@@ -149,4 +171,8 @@ struct Math_s {          /* some math methods */
 #define j2       Math_ComputeSecondDeviatoricStressInvariant
 //#define gausse   Math_SolveByGaussElimination
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

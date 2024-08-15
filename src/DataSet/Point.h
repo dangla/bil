@@ -16,17 +16,24 @@ extern void      (Point_SetEnclosingElement)  (Point_t*,Mesh_t*) ;
 extern void      (Point_Scan)                 (Point_t*,char*) ;
 
 
-#define Point_GetCoordinate(PT)                    ((PT)->coor)
-#define Point_GetEnclosingElement(PT)              ((PT)->elt)
-#define Point_GetRegionIndex(PT)                   ((PT)->reg)
+#include "Region.h"
+
+#define Point_MaxLengthOfRegionName      Region_MaxLengthOfRegionName
+
+
+#define Point_GetCoordinate(PT)                    ((PT)->Coordinate)
+#define Point_GetEnclosingElement(PT)              ((PT)->EnclosingElement)
+#define Point_GetRegionTag(PT)                     ((PT)->RegionTag)
+#define Point_GetRegionName(PT)                    ((PT)->RegionName)
 
 
 #include "Element.h"
 
 struct Point_s {
-  double* coor ;              /* Coordinates (x,y,z) */
-  int reg ;                   /* Region index */
-  Element_t* elt ;            /* Element inside which the point lies */
+  double* Coordinate ;
+  int   RegionTag ;
+  char* RegionName ;
+  Element_t* EnclosingElement ;  /* Element inside which the point lies */
 } ;
 
 

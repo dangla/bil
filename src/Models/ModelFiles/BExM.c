@@ -228,7 +228,7 @@ void GetProperties(Element_t* el)
   alpha   = Element_GetPropertyValue(el,"alpha_microstructure") ;
   kappa_m = Element_GetPropertyValue(el,"micro_elastic_stiffness_effective_pressure_changes") ;
   
-  plasty  = Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
+  plasty  = (Plasticity_t*) Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
   elasty  = Plasticity_GetElasticity(plasty) ;
   
   hardv0[0]  = Plasticity_GetHardeningVariable(plasty)[0] ;

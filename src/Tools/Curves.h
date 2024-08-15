@@ -1,6 +1,10 @@
 #ifndef CURVES_H
 #define CURVES_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 
 /* vacuous declarations and typedef names */
@@ -25,8 +29,8 @@ extern int       (Curves_CreateIntegral)(Curves_t*,Curve_t*) ;
 extern int       (Curves_CreateInverse)(Curves_t*,Curve_t*,const char) ;
 
 
-#define Curves_MaxLengthOfTextLine      (500)
-#define Curves_SizeOfBuffer             (Curves_MaxLengthOfTextLine*sizeof(char))
+//#define Curves_MaxLengthOfTextLine      (500)
+//#define Curves_SizeOfBuffer             (Curves_MaxLengthOfTextLine*sizeof(char))
 
 
 #define Curves_GetNbOfAllocatedCurves(CVS)    ((CVS)->n_allocatedcurves)
@@ -79,7 +83,6 @@ extern int       (Curves_CreateInverse)(Curves_t*,Curve_t*,const char) ;
 
 
 
-#include "Buffer.h"
 
 
 struct Curves_s {             /* Curves */
@@ -94,4 +97,8 @@ struct Curves_s {             /* Curves */
 #define lit_courbe(mat,b)      Curves_ReadCurves(Material_GetCurves(mat),(b))
 #define ecrit_courbe           Curves_WriteCurves
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

@@ -129,7 +129,7 @@ void (Material_Scan)(Material_t* mat,DataFile_t* datafile,Geometry_t* geom)
         if(String_Is(line,"Model",5)) {
           char* c = String_FindAndSkipToken(line,"=") ;
           
-          String_ScanStringUntil(c,codename + 1,"("String_SpaceChars) ;
+          String_ScanStringUntil(c,codename + 1,"(" String_SpaceChars) ;
           //String_Scan(line,"%*s = %s",codename + 1) ;
         } else {
           String_Scan(line,"%s",codename + 1) ;
@@ -447,6 +447,7 @@ void (Material_ScanProperties)(Material_t* mat,DataFile_t* datafile,int (*pm)(co
 
 
 
+#if 0
 void (Material_ScanProperties1)(Material_t* mat,FILE *ficd,int (*pm)(const char*),int nd)
 /** Read the material properties in the stream file ficd */
 {
@@ -568,3 +569,4 @@ void (Material_ScanProperties2)(Material_t* mat,FILE *ficd,int (*pm)(const char*
     }
   }
 }
+#endif

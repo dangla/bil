@@ -50,11 +50,14 @@ void (NodeSol_Copy)(NodeSol_t* nodesol_d,NodeSol_t* nodesol_s)
   {
     double* u_s = NodeSol_GetUnknown(nodesol_s) ;
     double* u_d = NodeSol_GetUnknown(nodesol_d) ;
-    unsigned int nu = NodeSol_GetNbOfUnknowns(nodesol_s) ;
-    unsigned int i ;
         
-    for(i = 0 ; i < nu ; i++) {
-      u_d[i] = u_s[i] ;
+    if(u_d != u_s) {
+      unsigned int nu = NodeSol_GetNbOfUnknowns(nodesol_s) ;
+      unsigned int i ;
+      
+      for(i = 0 ; i < nu ; i++) {
+        u_d[i] = u_s[i] ;
+      }
     }
   }
 }

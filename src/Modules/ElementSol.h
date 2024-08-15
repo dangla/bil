@@ -1,6 +1,10 @@
 #ifndef ELEMENTSOL_H
 #define ELEMENTSOL_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* class-like structures "ElementsSol_t" and attributes */
 
 /* vacuous declarations and typedef names */
@@ -122,4 +126,8 @@ struct ElementSol_s {              /* Element Solutions */
 } ;
 
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

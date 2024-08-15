@@ -968,7 +968,8 @@ double*  (FEM_ComputePoroelasticMatrix6)(FEM_t* fem,IntFct_t* fi,const double* c
  * 
  *  n_dif = nb of Biot-like coupling terms (pressure, temperature, etc...)
  * 
- *  idis = position index of the first displacement in the unknown vector
+ *  idis = position index:
+ *         of the first component of the displacement in the output matrix k.
  * 
  *  c = the entry matrix which should be given in the following order:
  * 
@@ -1000,9 +1001,9 @@ double*  (FEM_ComputePoroelasticMatrix6)(FEM_t* fem,IntFct_t* fi,const double* c
  *        | ..........................................  | .
  *        | Z0(1x1) ... ZI(1xD) ... ZJ(1x1) ... ZN(1x1) | PN
  * 
- *       | K11 ... K1n |
- *  k =  | ........... |  n = NN = nb of nodes
- *       | Kn1 ... Knn |
+ *        | K11 ... K1n |
+ *  k   = | ........... |  n = NN = nb of nodes
+ *        | Kn1 ... Knn |
  */
 {
 #define K(i,j)      (k[(i)*ndof + (j)])
@@ -1155,7 +1156,7 @@ double*  (FEM_ComputePoroelasticMatrixBis)(FEM_t* fem,IntFct_t* fi,const double*
  *   AI,BI,ZI = Hydraulic-mechanic coupling terms
  *   An,Bn,Zn = Hydraulic terms
  * 
- *  On outputs:
+ *  On outputs (same as in FEM_ComputePoroelasticMatrix6):
  *  the FE matrix k is provided in an order depending on "idis".
  *  The first displacement unknown U1 will be positionned at "idis".
  * 
@@ -1171,9 +1172,9 @@ double*  (FEM_ComputePoroelasticMatrixBis)(FEM_t* fem,IntFct_t* fi,const double*
  *        | ..........................................  | .
  *        | Z0(1x1) ... ZI(1xD) ... ZJ(1x1) ... ZN(1x1) | PN
  * 
- *       | K11 ... K1n |
- *  k =  | ........... |  n = NN = nb of nodes
- *       | Kn1 ... Knn |
+ *        | K11 ... K1n |
+ *  k   = | ........... |  n = NN = nb of nodes
+ *        | Kn1 ... Knn |
  */
 {
 #define K(i,j)      (k[(i)*ndof + (j)])
@@ -1903,21 +1904,14 @@ double* (FEM_ComputeSurfaceLoadResidu)(FEM_t* fem,IntFct_t* intfct,Load_t* load,
 
   /* flux or cumulative flux*/
   if(strncmp(load_type,"flux",4) == 0 || strncmp(load_type,"cumulflux",4) == 0) {
-    double ft = 1 ;
-    
-    
-    if(strncmp(load_type,"flux",4) == 0) {
-      ft = 1 ;
-      
-      if(function) {
-        ft = Function_ComputeValue(function,t) ;
+    double ft = dt ;
+
+    if(function) {
+      if(strncmp(load_type,"flux",4) == 0) {
+        ft = 0.5 * dt * (Function_ComputeValue(function,t) + Function_ComputeValue(function,t - dt)) ;
       }
-    }
     
-    if(strncmp(load_type,"cumulflux",4) == 0) {
-      ft = dt ;
-    
-      if(function) {
+      if(strncmp(load_type,"cumulflux",4) == 0) {
         ft = Function_ComputeValue(function,t) - Function_ComputeValue(function,t - dt) ;
       }
     }

@@ -46,6 +46,14 @@ Elements_t*  (Elements_New)(const int n,const int nc)
   }
   
   
+  /* Allocation of space for the regions */
+  {
+    Regions_t* regions = Regions_New() ;
+    
+    Elements_GetRegions(elts) = regions ;
+  }
+  
+  
   /* Initialization */
   {
     Node_t** pnode = Elements_GetPointerToNode(elts) ;
@@ -120,6 +128,15 @@ void (Elements_Delete)(void* self)
       
     Mry_Delete(el,nel,Element_Delete) ;
     free(el) ;
+  }
+
+  {
+    Regions_t* regions = Elements_GetRegions(elements) ;
+    
+    if(regions) {
+      Regions_Delete(regions) ;
+      free(regions) ;
+    }
   }
     
   {
@@ -446,206 +463,3 @@ void  (Elements_UpdateMatrixRowColumnIndexesOfOverlappingNodes)(Elements_t* elem
   }
 }
 
-
-
-/* Not used from here */
-
-#if 0
-Elements_t*  (Elements_New)(const int n,const int nc)
-{
-  Elements_t* elts = (Elements_t*) Mry_New(Elements_t) ;
-  
-  Elements_GetNbOfElements(elts) = n ;
-  Elements_GetNbOfConnectivities(elts) = nc ;
-  
-  
-  /* Allocation of space for the elements */
-  {
-    Element_t* el = (Element_t*) Mry_New(Element_t[n]) ;
-    
-    Elements_GetElement(elts) = el ;
-  }
-  
-  
-  /* Allocation of space for the pointers to "node" */
-  {
-    Node_t** pnode = (Node_t**) Mry_New(Node_t*[nc]) ;
-    Element_t* el = Elements_GetElement(elts) ;
-    int i ;
-    
-    for(i = 0 ; i < n ; i++) {
-      Element_t* el_i = el + i ;
-      
-      Element_GetPointerToNode(el_i) = pnode ;
-    }
-  }
-  
-  
-  /* Initialization */
-  
-  Elements_GetShapeFcts(elts) = NULL ;
-  Elements_GetIntFcts(elts) = NULL ;
-  
-  {
-    Element_t* el = Elements_GetElement(elts) ;
-    int i ;
-    
-    for(i = 0 ; i < n ; i++) {
-      Element_t* el_i = el + i ;
-      
-      Element_GetElementIndex(el_i)      = i ;
-      Element_GetDimension(el_i)         = -1 ;
-      Element_GetNbOfNodes(el_i)         = 0 ;
-      Element_GetRegionIndex(el_i)       = -1 ;
-      Element_GetMaterial(el_i)          = NULL ;
-      Element_GetMaterialIndex(el_i)     = -1 ;
-      Element_GetShapeFct(el_i)          = NULL ;
-      Element_GetIntFct(el_i)            = NULL ;
-      Element_GetUnknownPosition(el_i)   = NULL ;
-      Element_GetEquationPosition(el_i)  = NULL ;
-      Element_GetBuffers(el_i)           = NULL ;
-      //Element_GetElementSol(el_i)        = NULL ;
-      Element_GetSolutions(el_i)         = NULL ;
-    }
-  }
-  
-  return(elts) ;
-}
-#endif
-
-
-
-#if 0
-void (Elements_CreateMore)(Elements_t* elements)
-{
-  int n_el = Elements_GetNbOfElements(elements) ;
-  Element_t* el = Elements_GetElement(elements) ;
-  
-  /* Pointers to unknowns and equations positions at nodes */
-  {
-    int n_pos = 0 ;
-    int ie ;
-    
-    for(ie = 0 ; ie < n_el ; ie++) {
-      int imat = Element_GetMaterialIndex(el + ie) ;
-      //Material_t* mat = Element_GetMaterial(el + ie) ;
-    
-      if(imat >= 0) {
-        int nn = Element_GetNbOfNodes(el + ie) ;
-        int neq = Element_GetNbOfEquations(el + ie) ;
-        
-        n_pos += nn*neq ;
-      }
-    }
-  
-    /* Memory space allocation with initialization to 0 */
-    {
-      //short int* pos = (short int* ) calloc(2*n_pos,sizeof(short int)) ;
-      short int* upos = (short int* ) Mry_New(short int[2*n_pos]) ;
-      short int* epos = upos + n_pos ;
-      
-      for(ie = 0 ; ie < 2*n_pos ; ie++) upos[ie] = 0 ;
-      
-      for(ie = 0 ; ie < n_el ; ie++) {
-        int imat = Element_GetMaterialIndex(el + ie) ;
-        //Material_t* mat = Element_GetMaterial(el + ie) ;
-        
-        Element_GetUnknownPosition(el + ie)  = upos ;
-        Element_GetEquationPosition(el + ie) = epos ;
-      
-        if(imat >= 0) {
-          int nn = Element_GetNbOfNodes(el + ie) ;
-          int neq = Element_GetNbOfEquations(el + ie) ;
-          
-          upos += nn*neq ;
-          epos += nn*neq ;
-        }
-      }
-    }
-  }
-
-  /* Space allocation for buffer */
-  {
-    Buffers_t* buf = Buffers_Create(Element_SizeOfBuffer) ;
-    int ie ;
-  
-    /* ATTENTION: same memory space (buffer) for all the elements */
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Element_GetBuffers(el + ie) = buf ;
-    }
-  }
-  
-  /* Create shape functions */
-  {
-    ShapeFcts_t* shapefcts = ShapeFcts_Create() ;
-    int    ie ;
-  
-    Elements_GetShapeFcts(elements) = shapefcts ;
-    
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Element_t* el_i = el + ie ;
-      Material_t* mat = Element_GetMaterial(el_i) ;
-
-      /* Find or create the shape functions */
-      if(mat) {
-        int  nn = Element_GetNbOfNodes(el_i) ;
-        int  dim = Element_GetDimension(el_i) ;
-        ShapeFct_t*  shapefct  = ShapeFcts_GetShapeFct(shapefcts) ;
-        int  i = ShapeFcts_FindShapeFct(shapefcts,nn,dim) ;
-      
-        /* Element shape functions */
-        Element_GetShapeFct(el_i) = shapefct + i ;
-        
-        {
-          if(Element_HasZeroThickness(el_i)) {
-            int nf = nn - Element_NbOfOverlappingNodes(el_i) ;
-            int dim_h = dim - 1 ;
-            int j  = ShapeFcts_FindShapeFct(shapefcts,nf,dim_h) ;
-
-            Element_GetShapeFct(el_i) = shapefct + j ;
-          }
-        }
-      }
-    }
-  }
-  
-  /* Create interpolation functions */
-  {
-    IntFcts_t* intfcts = IntFcts_Create() ;
-    int    ie ;
-    
-    Elements_GetIntFcts(elements) = intfcts ;
-    
-    for(ie = 0 ; ie < n_el ; ie++) {
-      Element_t* el_i = el + ie ;
-      Material_t* mat = Element_GetMaterial(el_i) ;
-
-      /* Find or create default interpolation functions (Gauss type) */
-      if(mat) {
-        int  nn = Element_GetNbOfNodes(el_i) ;
-        int  dim = Element_GetDimension(el_i) ;
-        IntFct_t*  intfct  = IntFcts_GetIntFct(intfcts) ;
-        int  i = IntFcts_FindIntFct(intfcts,nn,dim,"Gauss") ;
-
-        /* Element interpolation functions */
-        Element_GetIntFct(el_i)   = intfct + i ;
-        
-        {
-          if(Element_HasZeroThickness(el_i)) {
-            int nf = nn - Element_NbOfOverlappingNodes(el_i) ;
-            int dim_h = dim - 1 ;
-            int j  = IntFcts_FindIntFct(intfcts,nf,dim_h,"Gauss") ;
-
-            Element_GetIntFct(el_i) = intfct + j ;
-          }
-        }
-      }
-    }
-  }
-  
-  /* The max and min sizes of elements */
-  Elements_GetMaximumSizeOfElements(elements) = Elements_ComputeMaximumSizeOfElements(elements) ;
-  Elements_GetMinimumSizeOfElements(elements) = Elements_ComputeMinimumSizeOfElements(elements) ;
-  
-}
-#endif

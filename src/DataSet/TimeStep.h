@@ -1,6 +1,10 @@
 #ifndef TIMESTEP_H
 #define TIMESTEP_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -73,4 +77,8 @@ struct TimeStep_s {           /* Time step management */
   //int sequentialindex ;
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

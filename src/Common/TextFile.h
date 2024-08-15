@@ -1,6 +1,10 @@
 #ifndef TEXTFILE_H
 #define TEXTFILE_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* vacuous declarations and typedef names */
 
@@ -110,4 +114,8 @@ struct TextFile_s {           /* File */
   /* int linelength ;            *//* Length of the longest line */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

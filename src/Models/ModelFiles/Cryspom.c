@@ -397,7 +397,7 @@ void GetProperties(Element_t* el)
   N       = GetProperty("N") ;
   sig0    = &GetProperty("sig0") ;
   
-  elasty  = Element_FindMaterialData(el,Elasticity_t,"Elasticity") ;
+  elasty  = (Elasticity_t*) Element_FindMaterialData(el,Elasticity_t,"Elasticity") ;
   cijkl   = Elasticity_GetStiffnessTensor(elasty) ;
 }
 

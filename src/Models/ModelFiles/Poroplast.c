@@ -45,7 +45,7 @@
 #define HARDV_n       (vim_n + 25)[0]
 
 /* We define some names for explicit terms */
-#define K_L           (vex)[0]
+#define K_H           (vex)[0]
 
 /* We define some names for constant terms */
 
@@ -59,7 +59,7 @@ static int    ComputeTransferCoefficients(FEM_t*,double,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double**,double*,double,double,int) ;
 //static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
-static int     ComputeSecondaryVariables(Element_t*,double,double,double*,double*) ;
+static int     ComputeSecondaryVariables(Element_t*,const double,const double,double*,double*) ;
 //static double* ComputeVariablesDerivatives(Element_t*,double,double,double*,double,int) ;
 
 
@@ -210,13 +210,14 @@ void GetProperties(Element_t* el)
   N       = GetProperty("N") ;
   beta    = GetProperty("beta") ;
   sig0    = &GetProperty("sig0") ;
-  hardv0  = GetProperty("hardv0") ;
+  //hardv0  = GetProperty("hardv0") ;
   
   plasty = Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
   {
     Elasticity_t* elasty = Plasticity_GetElasticity(plasty) ;
     
     cijkl   = Elasticity_GetStiffnessTensor(elasty) ;
+    hardv0  = Plasticity_GetHardeningVariable(plasty)[0] ;
   }
 }
 
@@ -304,7 +305,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
         double ad       = Material_GetPropertyValue(mat,"dilatancy")*M_PI/180. ;
         
         Plasticity_SetTo(plasty,DruckerPrager) ;
-        Plasticity_SetParameters(plasty,af,ad,cohesion) ;
+        Plasticity_SetParameters(plasty,af,ad,cohesion,NULL) ;
       
       /* Cam-Clay */
       } else if(plasticmodel == 2) {
@@ -506,7 +507,7 @@ int ComputeInitialState(Element_t* el)
       double rho_l = x[I_RHO_L] ;
       double k_h = rho_l*k_int/mu_l ;
     
-      K_L = k_h ;
+      K_H = k_h ;
     }
   }
   
@@ -537,17 +538,11 @@ int  ComputeExplicitTerms(Element_t* el,double t)
     /* Variables */
     double* x = ComputeVariables(el,u,u,vim0,t,0,p) ;
     
-    /* fluid mass density */
-    double rho_l = x[I_RHO_L] ;
-    
-    /* permeability */
-    double k_h = rho_l*k_int/mu_l ;
-    
     /* storage in vex */
     {
       double* vex  = vex0 + p*NVE ;
       
-      K_L = k_h ;
+      K_H = x[I_K_H] ;
     }
   }
   
@@ -759,7 +754,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 /** Compute the outputs (r) */
 {
-  int NbOfOutputs = 7 ;
+  int NbOfOutputs = 9 ;
   double* vex  = Element_GetExplicitTerm(el) ;
   double* vim  = Element_GetCurrentImplicitTerm(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
@@ -796,7 +791,9 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double eps_p[9] = {0,0,0,0,0,0,0,0,0} ;
     double w_l[3] = {0,0,0} ;
     double sig[9] = {0,0,0,0,0,0,0,0,0} ;
+    double effsig[9] = {0,0,0,0,0,0,0,0,0} ;
     double hardv = 0 ;
+    double crit = 0 ;
     double k_h = 0 ;
     int    i ;
     
@@ -806,17 +803,25 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     
     /* Averaging */
     for(i = 0 ; i < np ; i++ , vim += NVI , vex += NVE) {
+      double p_l1 = FEM_ComputeUnknown(fem,u,intfct,i,U_p_l) ;
       int j ;
       
       for(j = 0 ; j < 3 ; j++) w_l[j] += W_L[j]/np ;
 
       for(j = 0 ; j < 9 ; j++) sig[j] += SIG[j]/np ;
+
+      for(j = 0 ; j < 9 ; j++) effsig[j] += SIG[j]/np ;
+      effsig[0] += beta * p_l1 / np ;
+      effsig[4] += beta * p_l1 / np ;
+      effsig[8] += beta * p_l1 / np ;
       
       for(j = 0 ; j < 9 ; j++) eps_p[j] += EPS_P[j]/np ;
       
       hardv += HARDV/np ;
       
-      k_h += K_L/np ;
+      k_h += K_H/np ;
+      
+      crit += CRIT/np ;
     }
       
     i = 0 ;
@@ -827,6 +832,12 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     Result_Store(r + i++,eps_p    ,"Plastic strains",9) ;
     Result_Store(r + i++,&hardv   ,"Hardening variable",1) ;
     Result_Store(r + i++,&k_h     ,"Permeability",1) ;
+    Result_Store(r + i++,&crit    ,"Yield function",1) ;
+    Result_Store(r + i++,effsig   ,"Effective stresses",9) ;
+    
+    if(i != NbOfOutputs) {
+      Message_RuntimeError("ComputeOutputs: wrong number of outputs") ;
+    }
   }
   
   return(NbOfOutputs) ;
@@ -1043,9 +1054,9 @@ int ComputeTransferCoefficients(FEM_t* fem,double dt,double* c)
       double* vex  = vex0 + p*NVE ;
       
       /* Permeability tensor */
-      c1[0] = K_L ;
-      c1[4] = K_L ;
-      c1[8] = K_L ;
+      c1[0] = K_H ;
+      c1[4] = K_H ;
+      c1[8] = K_H ;
     }
   }
   
@@ -1135,7 +1146,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
       double* vex0 = Element_GetExplicitTerm(el) ;
       double* vex  = vex0 + p*NVE ;
       
-      x[I_K_H]  = K_L ;
+      x_n[I_K_H]  = K_H ;
     }
   }
     
@@ -1146,7 +1157,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
 
 
 
-int  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,double* x)
+int  ComputeSecondaryVariables(Element_t* el,const double t,const double dt,double* x_n,double* x)
 {
   int dim = Element_GetDimensionOfSpace(el) ;
   /* Strains */
@@ -1235,7 +1246,7 @@ int  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,doub
     /* Fluid mass flow */
     {
       /* Transfer coefficient */
-      double k_h = x[I_K_H] ;
+      double k_h = x_n[I_K_H] ;
     
       /* Pressure gradient */
       double* gpl = x + I_GRD_P_L ;
@@ -1246,6 +1257,9 @@ int  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,doub
     
       for(i = 0 ; i < 3 ; i++) w_l[i] = - k_h*gpl[i] ;
       w_l[dim - 1] += k_h*rho_l*gravite ;
+
+      /* permeability */
+      x[I_K_H] = rho_l*k_int/mu_l ;
     }
     
     /* Liquid mass content, body force */

@@ -1,0 +1,81 @@
+Geometry
+1 sphe
+
+
+Mesh
+4 0 0 5.e-3 5.e-3
+5.e-5
+1 100 1
+1 1 1
+
+
+Material
+Model = Frostaco3d
+porosity  = 0.2
+k_int  = 2.e-19
+C_s = 1.47e+06
+lam_s = 0.53
+k_s = 31.8e9
+g_s = 19.1e9
+alpha_s = 30.e-6
+Curves = sat p_c = Range{x1 = 0.,x2 = 1.e8,n = 2} s_l = Expressions(1){s_l = 1;} k_rl = Expressions(2) = {k_rl = 1;}
+
+
+Fields
+1
+Value = 1     Gradient = 0 Point = 0
+
+
+Initialization
+3
+Region = 2 Unknown = tem  Field = 1 Function = 1
+Region = 2 Unknown = c_s  Field = 1 Function = 2
+Region = 2 Unknown = p_l  Field = 1 Function = 3
+
+
+Functions
+3
+N = 2 F(0) = 273    F(10) = 323
+N = 2 F(0) = 0      F(10) = 1000
+N = 2 F(0) = 1.e5   F(10) = 1.e5
+
+
+Boundary Conditions
+4
+Region = 3 Unknown = tem    Field = 1 Function = 1
+Region = 3 Unknown = p_l    Field = 1 Function = 3
+Region = 3 Unknown = c_s    Field = 1 Function = 2
+Region = 1 Unknown = u_1    Field = 0 Function = 0
+
+
+
+Loads
+0
+
+
+Points
+1
+Region = 2   Coor = 5.e-3 0 0
+
+
+Dates
+2
+0 21600 43200 86400 8640000
+
+
+Objective Variations
+u_1  = 1.e-4
+p_l  = 1.e5
+c_s  = 100.
+tem  = 1.e1
+
+
+Iterative Process
+Iter = 40
+Tol = 1.e-4
+Rep = 0
+
+
+Time Steps
+Dtini = 1.
+Dtmax = 864000

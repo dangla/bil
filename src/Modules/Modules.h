@@ -1,6 +1,10 @@
 #ifndef MODULES_H
 #define MODULES_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* Vacuous declarations and typedef names */
 
@@ -33,4 +37,8 @@ struct Modules_s {              /* modules */
   Module_t* module ;            /* module */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

@@ -105,7 +105,8 @@ static double  p_g = 0 ;
 static double  k_int ;
 static double  mu_l ;
 static double  kappa ;
-static double  mu ;
+//static double  mu ;
+static double  poisson ;
 static double  e0 ;
 static double  phi0 ;
 static double  hardv0 ;
@@ -193,6 +194,8 @@ int pm(const char *s)
     return(22) ;
   } else if(!strcmp(s,"reference_consolidation_pressure")) {
     return(23) ;
+  } else if(!strcmp(s,"poisson")) {
+    return(24) ;
   } else return(-1) ;
 }
 
@@ -206,12 +209,13 @@ void GetProperties(Element_t* el)
   rho_l0  = Element_GetPropertyValue(el,"rho_l") ;
   sig0    = &Element_GetPropertyValue(el,"initial_stress") ;
   kappa   = Element_GetPropertyValue(el,"slope_of_swelling_line") ;
-  mu      = Element_GetPropertyValue(el,"shear_modulus") ;
+  //mu      = Element_GetPropertyValue(el,"shear_modulus") ;
+  poisson = Element_GetPropertyValue(el,"poisson") ;
   phi0    = Element_GetPropertyValue(el,"initial_porosity") ;
   e0      = phi0/(1 - phi0) ;
   kappa_s = Element_GetPropertyValue(el,"kappa_s") ;
   
-  plasty  = Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
+  plasty  = (Plasticity_t*) Element_FindMaterialData(el,Plasticity_t,"Plasticity") ;
   elasty  = Plasticity_GetElasticity(plasty) ;
   
   hardv0  = Plasticity_GetHardeningVariable(plasty)[0] ;
@@ -259,7 +263,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 /** Read the material properties in the stream file ficd 
  *  Return the nb of (scalar) properties of the model */
 {
-  int  NbOfProp = 24 ;
+  int  NbOfProp = 25 ;
   int i ;
 
   /* Par defaut tout a 0 */
@@ -888,9 +892,10 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
           double* sig_n   = SIG_n ;
           double signet_n = (sig_n[0] + sig_n[4] + sig_n[8])/3. + p_g ;
           double bulk     = - signet_n*(1 + e0)/kappa ;
-          double lame     = bulk - 2*mu/3. ;
-          double poisson  = 0.5 * lame / (lame + mu) ;
-          double young    = 2 * mu * (1 + poisson) ;
+          //double lame     = bulk - 2*mu/3. ;
+          //double poisson  = 0.5 * lame / (lame + mu) ;
+          //double young    = 2 * mu * (1 + poisson) ;
+          double young    = 3 * bulk * (1 - 2*poisson) ;
           
           Elasticity_SetParameters(elasty,young,poisson) ;
           Elasticity_UpdateStiffnessTensor(elasty) ;
@@ -1147,9 +1152,11 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
         double signet_n  = (sig_n[0] + sig_n[4] + sig_n[8])/3. + p_g ;
         double bulk      = - signet_n*(1 + e0)/kappa ;
         double dsigm     = bulk*trde - signet_n*kappa_s/kappa*dlns ;
-        double lame      = bulk - 2*mu/3. ;
-        double poisson   = 0.5 * lame / (lame + mu) ;
-        double young     = 2 * mu * (1 + poisson) ;
+        //double lame      = bulk - 2*mu/3. ;
+        //double poisson   = 0.5 * lame / (lame + mu) ;
+        //double young     = 2 * mu * (1 + poisson) ;
+        double young     = 3 * bulk * (1 - 2*poisson) ;
+        double mu        = 0.5*young/(1 + poisson) ;
           
         Elasticity_SetParameters(elasty,young,poisson) ;
         Elasticity_UpdateStiffnessTensor(elasty) ;

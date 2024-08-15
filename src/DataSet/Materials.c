@@ -79,7 +79,7 @@ Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* 
 
   
   /* Open for Material_ScanProperties1/2 */
-  DataFile_OpenFile(datafile,"r") ;
+  //DataFile_OpenFile(datafile,"r") ;
 
   /* Scan the datafile */
   {
@@ -92,12 +92,14 @@ Materials_t* (Materials_Create)(DataFile_t* datafile,Geometry_t* geom,Fields_t* 
       c = String_SkipLine(c) ;
       
       /* This for Material_ScanProperties1/2 */
+      /*
       {
         DataFile_SetFilePositionAfterKey(datafile,"MATE,Material",",",i + 1) ;
         {
           char* c1 = DataFile_ReadLineFromCurrentFilePosition(datafile) ;
         }
       }
+      */
       
       DataFile_SetCurrentPositionInFileContent(datafile,c) ;
   

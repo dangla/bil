@@ -1,6 +1,10 @@
 #ifndef ITERPROCESS_H
 #define ITERPROCESS_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
@@ -82,4 +86,8 @@ struct IterProcess_s {        /* Iterative process */
   ObVals_t* obvals ;          /* Objective variations */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

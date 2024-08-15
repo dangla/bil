@@ -1,17 +1,30 @@
 #ifndef PLASTICITY_H
 #define PLASTICITY_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
 struct Plasticity_s     ; typedef struct Plasticity_s     Plasticity_t ;
 
+#include "autodiff.h"
 
 /* Typedef names of methods */
 typedef double* (Plasticity_ComputeTangentStiffnessTensor_t)(Plasticity_t*,const double*,const double*,const double*) ;
 typedef double* (Plasticity_ReturnMapping_t)(Plasticity_t*,double*,double*,double*) ;
-typedef double* (Plasticity_YieldFunction_t)(Plasticity_t*,const double*,const double*) ;
-typedef double* (Plasticity_FlowRules_t)    (Plasticity_t*,const double*,const double*) ;
+
+
+template<typename T>
+using Plasticity_YieldFlow_t = T*(Plasticity_t*,const T*,const T*) ;
+
+using Plasticity_YieldFunction_t     = Plasticity_YieldFlow_t<double> ;
+using Plasticity_FlowRules_t         = Plasticity_YieldFlow_t<double> ;
+using Plasticity_YieldFunctionDual_t = Plasticity_YieldFlow_t<real> ;
+using Plasticity_FlowRulesDual_t     = Plasticity_YieldFlow_t<real> ;
+
 typedef void    (Plasticity_SetParameters_t)(Plasticity_t*,...) ;
 typedef void    (Plasticity_SetModelProp_t) (Plasticity_t*) ;
 
@@ -20,16 +33,20 @@ typedef void    (Plasticity_SetModelProp_t) (Plasticity_t*) ;
 
 extern Plasticity_t*  (Plasticity_Create)(void) ;
 extern void           (Plasticity_Delete)(void*) ;
-extern void           (Plasticity_Initialize)                  (Plasticity_t*) ;
-//extern void           (Plasticity_SetParameters)               (Plasticity_t*,...) ;
-//extern void           (Plasticity_SetParameter)                (Plasticity_t*,const char*,double) ;
-extern double         (Plasticity_UpdateElastoplasticTensor)   (Plasticity_t*,double*) ;
+extern void           (Plasticity_Initialize)                  (Plasticity_t*,const char*) ;
+extern int            (Plasticity_UpdateElastoplasticTensor)   (Plasticity_t*,double*) ;
 extern void           (Plasticity_PrintTangentStiffnessTensor) (Plasticity_t*) ;
 extern void           (Plasticity_CopyTangentStiffnessTensor)  (Plasticity_t*,double*) ;
-extern Plasticity_ComputeTangentStiffnessTensor_t (Plasticity_GenericTangentStiffnessTensor) ;
-extern Plasticity_ComputeTangentStiffnessTensor_t (Plasticity_GenericTangentStiffnessTensor1) ;
-extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMapping) ;
+extern Plasticity_ComputeTangentStiffnessTensor_t Plasticity_GenericTangentStiffnessTensor ;
+extern Plasticity_ComputeTangentStiffnessTensor_t Plasticity_GenericTangentStiffnessTensor1 ;
+extern Plasticity_ReturnMapping_t                 Plasticity_GenericReturnMapping ;
 
+
+template<typename Tfunc>
+extern double* (Plasticity_DerivativeOfFlowRules)(Tfunc,Plasticity_t*,const double*,const double*) ;
+
+template<typename Tfunc>
+extern double* (Plasticity_DerivativeOfYieldFunction)(Tfunc,Plasticity_t*,const double*,const double*) ;
 
 
 /* Accessors */
@@ -47,8 +64,19 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 #define Plasticity_GetParameter(PL)                  ((PL)->parameter)
 #define Plasticity_GetComputeTangentStiffnessTensor(PL)   ((PL)->computetangentstiffnesstensor)
 #define Plasticity_GetReturnMapping(PL)              ((PL)->returnmapping)
-#define Plasticity_GetYieldFunction(PL)              ((PL)->yieldfunction)
-#define Plasticity_GetFlowRules(PL)                  ((PL)->flowrules)
+
+#define Plasticity_GetYieldFunctionFtor(PL)          ((PL)->yieldfunction_ftor)
+//#define Plasticity_GetYieldFunction(PL)              ((PL)->yieldfunction)
+#define Plasticity_GetYieldFunction(PL)      (Plasticity_GetYieldFunctionFtor(PL).YieldFunction)
+//#define Plasticity_GetYieldFunctionDual(PL)          ((PL)->yieldfunctiondual)
+#define Plasticity_GetYieldFunctionDual(PL)  (Plasticity_GetYieldFunctionFtor(PL).YieldFunctionDual)
+
+#define Plasticity_GetFlowRulesFtor(PL)              ((PL)->flowrules_ftor)
+//#define Plasticity_GetFlowRules(PL)                  ((PL)->flowrules)
+#define Plasticity_GetFlowRules(PL)          (Plasticity_GetFlowRulesFtor(PL).FlowRules)
+//#define Plasticity_GetFlowRulesDual(PL)              ((PL)->flowrulesdual)
+#define Plasticity_GetFlowRulesDual(PL)      (Plasticity_GetFlowRulesFtor(PL).FlowRulesDual)
+
 #define Plasticity_GetSetParameters(PL)              ((PL)->setparameters)
 #define Plasticity_GetSetModelProp(PL)               ((PL)->setmodelprop)
 #define Plasticity_GetPlasticMultiplier(PL)          ((PL)->lambda)
@@ -60,6 +88,7 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 #define Plasticity_GetTypicalSmallIncrementOfStress(PL)              ((PL)->dstress)
 #define Plasticity_GetGenericData(PL)                ((PL)->genericdata)
 #define Plasticity_GetCurves(PL)                     ((PL)->curves)
+
 
 
 /* Buffer */
@@ -75,6 +104,15 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 
 #define Plasticity_SizeOfBuffer \
         (1000*sizeof(double))
+
+
+#include "PlasticityModels.h"
+
+#define Plasticity_NbOfModels                PlasticityModels_NbOfModels
+#define Plasticity_ListOfNames               PlasticityModels_ListOfNames
+#define Plasticity_ListOfSetModelProp        PlasticityModels_ListOfSetModelProp
+
+
 
 
 
@@ -139,11 +177,21 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
         Elasticity_CopyComplianceTensor(Plasticity_GetElasticity(PL),__VA_ARGS__)
 
 
-#define Plasticity_YieldFunction(PL,...) \
+//#define Plasticity_YieldFunction(PL,...) \
         Plasticity_GetYieldFunction(PL)(PL,__VA_ARGS__)
+#define Plasticity_YieldFunction(PL,...) \
+        Plasticity_GetYieldFunctionFtor(PL)(PL,__VA_ARGS__)
+        
+//#define Plasticity_YieldFunctionDual(PL,...) \
+        Plasticity_GetYieldFunctionDual(PL)(PL,__VA_ARGS__)
 
-#define Plasticity_FlowRules(PL,...) \
+//#define Plasticity_FlowRules(PL,...) \
         Plasticity_GetFlowRules(PL)(PL,__VA_ARGS__)
+#define Plasticity_FlowRules(PL,...) \
+        Plasticity_GetFlowRulesFtor(PL)(PL,__VA_ARGS__)
+
+//#define Plasticity_FlowRulesDual(PL,...) \
+        Plasticity_GetFlowRulesDual(PL)(PL,__VA_ARGS__)
 
 #define Plasticity_SetModelProp(PL) \
         Plasticity_GetSetModelProp(PL)(PL)
@@ -157,11 +205,10 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 #define Plasticity_Is(PL,STR) \
         (!strcmp(Plasticity_GetCodeNameOfModel(PL),STR))
 
+
 #define Plasticity_SetTo(PL,MOD) \
         do { \
-          Plasticity_CopyCodeName(PL,Utils_STR(MOD)) ; \
-          Plasticity_Initialize(PL) ; \
-          Plasticity_SetModelProp(PL) ; \
+          Plasticity_Initialize(PL,Utils_STR(Plasticity##MOD)) ; \
         } while(0)
           
 
@@ -209,6 +256,35 @@ extern Plasticity_ReturnMapping_t                 (Plasticity_GenericReturnMappi
 #include "Curves.h"
 #include "Buffers.h"
 
+
+
+// functors with overloaded function call operator
+struct Plasticity_YieldFunction_ftor {
+  Plasticity_YieldFunction_t*      YieldFunction ; 
+  Plasticity_YieldFunctionDual_t*  YieldFunctionDual ;
+  Plasticity_YieldFunction_ftor(Plasticity_YieldFunction_t* yd,Plasticity_YieldFunctionDual_t* yr): YieldFunction(yd),YieldFunctionDual(yr) {}
+  double* operator()(Plasticity_t* plasty,const double* stress,const double* hardv) {
+    return(YieldFunction(plasty,stress,hardv)) ;
+  }
+  real* operator()(Plasticity_t* plasty,const real* stress,const real* hardv) {
+    return(YieldFunctionDual(plasty,stress,hardv)) ;
+  }
+} ;
+
+struct Plasticity_FlowRules_ftor {
+  Plasticity_FlowRules_t*      FlowRules ; 
+  Plasticity_FlowRulesDual_t*  FlowRulesDual ;
+  Plasticity_FlowRules_ftor(Plasticity_FlowRules_t* fd,Plasticity_FlowRulesDual_t* fr): FlowRules(fd),FlowRulesDual(fr) {}
+  double* operator()(Plasticity_t* plasty,const double* stress,const double* hardv) {
+    return(FlowRules(plasty,stress,hardv)) ;
+  }
+  real* operator()(Plasticity_t* plasty,const real* stress,const real* hardv) {
+    return(FlowRulesDual(plasty,stress,hardv)) ;
+  }
+} ;
+
+
+
 struct Plasticity_s {
   char*   codenameofmodel ;
   double* dfsds ;  /** Yield function gradient */
@@ -230,13 +306,25 @@ struct Plasticity_s {
   GenericData_t* genericdata ;  /** Plastic properties */
   Curves_t* curves ;          /**< Curves */
   Elasticity_t* elasty ;
+  
   Plasticity_ComputeTangentStiffnessTensor_t* computetangentstiffnesstensor ;
   Plasticity_ReturnMapping_t*                 returnmapping ;
-  Plasticity_YieldFunction_t*                 yieldfunction ;
-  Plasticity_FlowRules_t*                     flowrules ;
+  //Plasticity_YieldFunction_t*                 yieldfunction ;
+  //Plasticity_YieldFunctionDual_t*             yieldfunctiondual ;
+  //Plasticity_FlowRules_t*                     flowrules ;
+  //Plasticity_FlowRulesDual_t*                 flowrulesdual ;
   Plasticity_SetParameters_t*                 setparameters ;
   Plasticity_SetModelProp_t*                  setmodelprop ;
+  
+  Plasticity_YieldFunction_ftor               yieldfunction_ftor ;
+  Plasticity_FlowRules_ftor                   flowrules_ftor ;
+  
   Buffers_t*  buffers ;
 } ;
 
+
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif

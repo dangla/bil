@@ -159,7 +159,7 @@ int    (Node_FindUnknownPositionIndex)(const Node_t* node,const char* s)
   int    i = String_FindPositionIndex(s,ss,n) ;
   
   return(i) ;
-
+  #if 0
   if(isdigit(s[0])) { /* donne sous forme numerique */
     i  = atoi(s) - 1 ;
   } else {            /* donne sous forme alphabetique */
@@ -170,6 +170,7 @@ int    (Node_FindUnknownPositionIndex)(const Node_t* node,const char* s)
   }
 
   return(i) ;
+  #endif
 }
 
 
@@ -182,7 +183,7 @@ int    (Node_FindEquationPositionIndex)(const Node_t* node,const char* s)
   int    i = String_FindPositionIndex(s,ss,n) ;
   
   return(i) ;
-
+  #if 0
   if(isdigit(s[0])) { /* donne sous forme numerique */
     i  = atoi(s) - 1 ;
   } else {            /* donne sous forme alphabetique */
@@ -191,6 +192,7 @@ int    (Node_FindEquationPositionIndex)(const Node_t* node,const char* s)
   }
 
   return(i) ;
+  #endif
 }
 
 

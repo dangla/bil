@@ -10,6 +10,10 @@
 #ifndef MODELS_H
 #define MODELS_H
 
+#ifdef __CPLUSPLUS
+extern "C" {
+#endif
+
 
 /* Vacuous declarations and typedef names */
 
@@ -56,4 +60,8 @@ struct Models_s {             /* Models */
   Model_t* model ;            /* Point to the first model */
 } ;
 
+
+#ifdef __CPLUSPLUS
+}
+#endif
 #endif
