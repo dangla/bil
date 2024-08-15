@@ -4,6 +4,7 @@
 #cmakedefine HAVE_OPENMP
 #cmakedefine HAVE_PTHREAD
 #cmakedefine HAVE_MPI
+#cmakedefine HAVE_AUTODIFF
 
 //#define BIL_CONFIG_OPTIONS "${BIL_CONFIG_OPTIONS}"
 
