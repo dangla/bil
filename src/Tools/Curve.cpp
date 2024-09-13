@@ -14,12 +14,12 @@
 #include "autodiff.h"
 
 
-static double courbe_nor(const double,Curve_t*) ;
-static double dcourbe_nor(const double,Curve_t*) ;
-static double icourbe_nor(const double,Curve_t*) ;
-static double courbe_log(const double,Curve_t*) ;
-static double dcourbe_log(const double,Curve_t*) ;
-static double icourbe_log(const double,Curve_t*) ;
+static double courbe_nor(const double,Curve_t const*) ;
+static double dcourbe_nor(const double,Curve_t const*) ;
+static double icourbe_nor(const double,Curve_t const*) ;
+static double courbe_log(const double,Curve_t const*) ;
+static double dcourbe_log(const double,Curve_t const*) ;
+static double icourbe_log(const double,Curve_t const*) ;
 
 
 /* Extern functions */
@@ -82,7 +82,7 @@ void (Curve_Delete)(void* self)
 
 
 
-Curve_t* Curve_CreateDerivative(Curve_t* curve)
+Curve_t* Curve_CreateDerivative(Curve_t const* curve)
 {
   int n_points    = Curve_GetNbOfPoints(curve) ;
   Curve_t* dcurve = Curve_Create(n_points) ;
@@ -106,7 +106,7 @@ Curve_t* Curve_CreateDerivative(Curve_t* curve)
 
 
 
-Curve_t* Curve_CreateIntegral(Curve_t* curve)
+Curve_t* Curve_CreateIntegral(Curve_t const* curve)
 {
   int n_points    = Curve_GetNbOfPoints(curve) ;
   Curve_t* icurve = Curve_Create(n_points) ;
@@ -130,7 +130,7 @@ Curve_t* Curve_CreateIntegral(Curve_t* curve)
 
 
 
-Curve_t* Curve_CreateInverse(Curve_t* curve,const char scale)
+Curve_t* Curve_CreateInverse(Curve_t const* curve,const char scale)
 /** Create the inverse of a function assumed as monotoneous.
  *  The sampling is defined by scale.
  *  Return a pointer to Curve_t.
@@ -211,7 +211,7 @@ Curve_t* Curve_CreateInverse(Curve_t* curve,const char scale)
 
 
 
-double* Curve_CreateSamplingOfX(Curve_t* curve)
+double* Curve_CreateSamplingOfX(Curve_t const* curve)
 {
   int n_points = Curve_GetNbOfPoints(curve) ;
   double* x    = Curve_GetXRange(curve) ;
@@ -254,7 +254,7 @@ double* Curve_CreateSamplingOfX(Curve_t* curve)
 
 
 template<>
-double (Curve_ComputeValue<double>)(Curve_t* cb,const double& a)
+double (Curve_ComputeValue<double>)(Curve_t const* cb,const double& a)
 /** Return the value at a */
 {
   if(cb) {
@@ -271,7 +271,7 @@ double (Curve_ComputeValue<double>)(Curve_t* cb,const double& a)
 
 #ifdef HAVE_AUTODIFF
 template<>
-real (Curve_ComputeValue<real>)(Curve_t* cb,const real& a)
+real (Curve_ComputeValue<real>)(Curve_t const* cb,const real& a)
 /** Return the dual number at a */
 {
   double value = Curve_ComputeValue(cb,a[0]) ;
@@ -287,7 +287,7 @@ real (Curve_ComputeValue<real>)(Curve_t* cb,const real& a)
 
 
 
-double Curve_ComputeDerivative(Curve_t* cb,const double& a)
+double Curve_ComputeDerivative(Curve_t const* cb,const double& a)
 /** Return the derivative at a */
 {
   if(cb) {
@@ -303,7 +303,7 @@ double Curve_ComputeDerivative(Curve_t* cb,const double& a)
 
 
 
-double Curve_ComputeIntegral(Curve_t* cb,const double& a)
+double Curve_ComputeIntegral(Curve_t const* cb,const double& a)
 /** Return the integral from begin to a */
 {
   if(cb) {
@@ -320,7 +320,7 @@ double Curve_ComputeIntegral(Curve_t* cb,const double& a)
 
 
 #if 0 // Suppress because it is not used and warning about tmpnam
-char* Curve_PrintInFile(Curve_t* curve)
+char* Curve_PrintInFile(Curve_t const* curve)
 {
   int     n = Curve_GetNbOfPoints(curve) ;
   double* x = Curve_CreateSamplingOfX(curve) ;
@@ -348,7 +348,7 @@ char* Curve_PrintInFile(Curve_t* curve)
 
 /* Intern functions */
 
-double courbe_nor(const double a,Curve_t* cb)
+double courbe_nor(const double a,Curve_t const* cb)
 {
   /* Retourne la valeur de la courbe en a */
   int    ni = Curve_GetNbOfPoints(cb) - 1 ;
@@ -370,7 +370,7 @@ double courbe_nor(const double a,Curve_t* cb)
 
 
 
-double dcourbe_nor(const double a,Curve_t* cb)
+double dcourbe_nor(const double a,Curve_t const* cb)
 {
   /* Retourne la derivee de la courbe en a */
   int    n_i = Curve_GetNbOfPoints(cb) - 1 ;
@@ -381,7 +381,7 @@ double dcourbe_nor(const double a,Curve_t* cb)
 
 
 
-double icourbe_nor(const double a,Curve_t* cb)
+double icourbe_nor(const double a,Curve_t const* cb)
 /* Return the integral computed from cb */ 
 {
   int    n_i = Curve_GetNbOfPoints(cb) - 1 ;
@@ -407,7 +407,7 @@ double icourbe_nor(const double a,Curve_t* cb)
 
 
 
-double courbe_log(const double a,Curve_t* cb)
+double courbe_log(const double a,Curve_t const* cb)
 /* Retourne la valeur en a de la courbe echantillonnee en base log10 */
 {
   int    ni = Curve_GetNbOfPoints(cb) - 1 ;
@@ -433,7 +433,7 @@ double courbe_log(const double a,Curve_t* cb)
 
 
 
-double dcourbe_log(const double a,Curve_t* cb)
+double dcourbe_log(const double a,Curve_t const* cb)
 {
   int    n_i = Curve_GetNbOfPoints(cb) - 1 ;
   double a1 = Curve_GetXRange(cb)[0] ;
@@ -450,7 +450,7 @@ double dcourbe_log(const double a,Curve_t* cb)
 
 
 
-double icourbe_log(const double a,Curve_t* cb)
+double icourbe_log(const double a,Curve_t const* cb)
 /* Return the integral curve computed from cb */ 
 {
   int    n_i = Curve_GetNbOfPoints(cb) - 1 ;

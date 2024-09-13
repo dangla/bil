@@ -34,9 +34,10 @@ Working with remotes
   adding a remote: git remote add <shortname> <url>
 
 Pushing
-  pushing to remote ifsttar: git push Universite-Gustave-Eiffel master
+  pushing to remote ifsttar: git push uge master
   pushing to remote dangla: git push dangla master
   adding a remote: git remote add <shortname> <url>
+  example: git remote add uge https://github.com/Universite-Gustave-Eiffel/bil
   Note: Github will no longer accept account passwords
   for authenticating Git operations and will require 
   a personal access token.

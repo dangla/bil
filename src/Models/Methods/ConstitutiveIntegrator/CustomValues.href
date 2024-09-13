@@ -1,0 +1,478 @@
+#ifndef CUSTOMVALUES_H
+#define CUSTOMVALUES_H
+
+#include "Message.h"
+
+
+template<class... C>
+struct CustomValues_t: C... {
+  /* Affectation */
+  template <typename T,typename U,class... D>
+  inline CustomValues_t& operator=(CustomValues_t<D...> const& a) {
+    if(this != &a) {
+      T* u = (T*) this;
+      U const* v = (U const*) &a;
+  
+      if(sizeof(CustomValues_t)/sizeof(T) != sizeof(CustomValues_t<D...>)/sizeof(U)) {
+        Message_FatalError("CustomValues_t::operator=: not the same size!");
+      }
+  
+      for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+        u[i] = v[i];
+      }
+    }
+        
+    return(*this) ;
+  }
+  
+  /* Unary operations */
+  CustomValues_t& operator+(void){return(*this);}
+  
+  template<typename T = double>
+  inline CustomValues_t& operator-(void) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] = -u[i];
+    }
+  
+    return(*this) ;
+  }
+  
+  /* Add and assign */
+  template<typename T = double>
+  inline CustomValues_t& operator+=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] += v[i];
+    }
+        
+    return(*this) ;
+  }
+  
+  template<typename T = double>
+  inline CustomValues_t& operator+=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] += a;
+    }
+        
+    return(*this) ;
+  }
+  
+  /* Substract and assign */
+  template<typename T = double>
+  inline CustomValues_t& operator-=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] -= v[i];
+    }
+        
+    return(*this) ;
+  }
+  
+  template<typename T = double>
+  inline CustomValues_t& operator-=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] -= a;
+    }
+        
+    return(*this) ;
+  }
+  
+  /* Multiply and assign */
+  template<typename T = double>
+  inline CustomValues_t& operator*=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] *= v[i];
+    }
+        
+    return(*this) ;
+  }
+  
+  template<typename T = double>
+  inline CustomValues_t& operator*=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] *= a;
+    }
+        
+    return(*this) ;
+  }
+  
+  /* Divide and assign */
+  template<typename T = double>
+  inline CustomValues_t& operator/=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] /= v[i];
+    }
+  
+    return(*this) ;
+  }
+
+  template<typename T = double>
+  inline CustomValues_t& operator/=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] /= a;
+    }
+  
+    return(*this) ;
+  }
+};
+
+
+/* Partial template specialization */
+template<class IM,class EX,class CO,class... OT>
+struct CustomValues_t<IM,EX,CO,OT...>: IM,EX,CO,OT... {
+  using ImplicitValues_type = IM;
+  using ExplicitValues_type = EX;
+  using ConstantValues_type = CO;
+  
+  /* Affectation */
+  template <typename T,typename U,class... D>
+  inline CustomValues_t& operator=(CustomValues_t<D...> const& a) {
+    if(this != &a) {
+      T* u = (T*) this;
+      U const* v = (U const*) &a;
+  
+      if(sizeof(CustomValues_t)/sizeof(T) != sizeof(CustomValues_t<D...>)/sizeof(U)) {
+        Message_FatalError("CustomValues_t::operator=: not the same size!");
+      }
+  
+      for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+        u[i] = v[i];
+      }
+    }
+        
+    return(*this) ;
+  }
+  
+  /* Unary operations */
+  CustomValues_t& operator+(void){return(*this);}
+  
+  template<typename T = double>
+  inline CustomValues_t& operator-(void) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] = -u[i];
+    }
+  
+    return(*this) ;
+  }
+  
+  /* Add and assign */
+  template<typename T = double>
+  inline CustomValues_t& operator+=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] += v[i];
+    }
+        
+    return(*this) ;
+  }
+  
+  template<typename T = double>
+  inline CustomValues_t& operator+=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] += a;
+    }
+        
+    return(*this) ;
+  }
+  
+  /* Substract and assign */
+  template<typename T = double>
+  inline CustomValues_t& operator-=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] -= v[i];
+    }
+        
+    return(*this) ;
+  }
+  
+  template<typename T = double>
+  inline CustomValues_t& operator-=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] -= a;
+    }
+        
+    return(*this) ;
+  }
+  
+  /* Multiply and assign */
+  template<typename T = double>
+  inline CustomValues_t& operator*=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] *= v[i];
+    }
+        
+    return(*this) ;
+  }
+  
+  template<typename T = double>
+  inline CustomValues_t& operator*=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] *= a;
+    }
+        
+    return(*this) ;
+  }
+  
+  /* Divide and assign */
+  template<typename T = double>
+  inline CustomValues_t& operator/=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] /= v[i];
+    }
+  
+    return(*this) ;
+  }
+
+  template<typename T = double>
+  inline CustomValues_t& operator/=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] /= a;
+    }
+  
+    return(*this) ;
+  }
+};
+
+
+/* Convert a pointer V to any type in pointer to type T */
+#define CustomValues_Convert(V,T) (((T)*) (V))
+
+#define CustomValues_Index(CV,V,T)  ((int) (((T*) (&(CV)->V)) - ((T*) (CV))))
+
+#define CustomValues_TypeOfImplicitValues(CV)  typename CV::ImplicitValues_type
+#define CustomValues_TypeOfExplicitValues(CV)  typename CV::ExplicitValues_type
+#define CustomValues_TypeOfConstantValues(CV)  typename CV::ConstantValues_type
+
+
+#define CustomValues_NbOfMembers(CV,T)  ((int) (sizeof(CV)/sizeof(T)))
+#define CustomValues_Size(CV,T)  ((int) (sizeof(CV)/sizeof(T)))
+
+#define CustomValues_SizeOfImplicitValues(CV,T) \
+        CustomValues_Size(CustomValues_TypeOfImplicitValues(CV),T)
+        
+#define CustomValues_SizeOfExplicitValues(CV,T) \
+        CustomValues_Size(CustomValues_TypeOfExplicitValues(CV),T)
+        
+#define CustomValues_SizeOfConstantValues(CV,T) \
+        CustomValues_Size(CustomValues_TypeOfConstantValues(CV),T)
+
+
+
+
+
+//----------------------------------------------------------------------
+// Math Operations as non-member functions
+//----------------------------------------------------------------------
+
+/* Addition */
+template<class... C>
+inline CustomValues_t<C...> operator + (CustomValues_t<C...> const& a)
+{  
+  return(a);
+}
+
+template<class... C>
+inline CustomValues_t<C...> operator + (CustomValues_t<C...> const& a, CustomValues_t<C...> const& b)
+{
+  CustomValues_t<C...> ret = a ;
+        
+  return(ret += b);
+}
+
+/* Substraction */
+template<class... C>
+inline CustomValues_t<C...> operator - (CustomValues_t<C...> const& a)
+{
+  return(-1.*a);
+}
+
+template<class... C>
+inline CustomValues_t<C...> operator - (CustomValues_t<C...> const& a, CustomValues_t<C...> const& b)
+{
+  CustomValues_t<C...> ret = a ;
+        
+  return(ret -= b);
+}
+
+
+/* Multiplication */
+template<class... C>
+inline CustomValues_t<C...> operator * (CustomValues_t<C...> const& a, CustomValues_t<C...> const& b)
+{
+  CustomValues_t<C...> ret = a ;
+        
+  return(ret *= b);
+}
+
+template<typename T,class... C>
+inline CustomValues_t<C...> operator * (CustomValues_t<C...> const& a, T const& b)
+{
+  CustomValues_t<C...> ret = a ;
+        
+  return(ret *= b);
+}
+
+template<typename T,class... C>
+inline CustomValues_t<C...> operator * (T const& b, CustomValues_t<C...> const& a)
+{
+  CustomValues_t<C...> ret = a ;
+        
+  return(ret *= b);
+}
+
+/* Division */
+template<class... C>
+inline CustomValues_t<C...> operator / (CustomValues_t<C...> const& a, CustomValues_t<C...> const& b)
+{
+  CustomValues_t<C...> ret = a ;
+        
+  return(ret /= b);
+}
+
+template<typename T,class... C>
+inline CustomValues_t<C...> operator / (CustomValues_t<C...> const& a, T const& b)
+{
+  CustomValues_t<C...> ret = a ;
+        
+  return(ret /= b);
+}
+
+template<typename T,class... C>
+inline CustomValues_t<C...> operator / (T const& b, CustomValues_t<C...> const& a)
+{
+  CustomValues_t<C...> ret = a ;
+        
+  return(ret /= b);
+}
+
+
+
+
+
+//----------------------------------------------------------------------
+// Math Operations as non-member functions
+//----------------------------------------------------------------------
+
+/* Addition */
+template<class IM,class EX,class CO,class... OT>
+inline CustomValues_t<IM,EX,CO,OT...> operator + (CustomValues_t<IM,EX,CO,OT...> const& a)
+{  
+  return(a);
+}
+
+template<class IM,class EX,class CO,class... OT>
+inline CustomValues_t<IM,EX,CO,OT...> operator + (CustomValues_t<IM,EX,CO,OT...> const& a, CustomValues_t<IM,EX,CO,OT...> const& b)
+{
+  CustomValues_t<IM,EX,CO,OT...> ret = a ;
+        
+  return(ret += b);
+}
+
+/* Substraction */
+template<class IM,class EX,class CO,class... OT>
+inline CustomValues_t<IM,EX,CO,OT...> operator - (CustomValues_t<IM,EX,CO,OT...> const& a)
+{
+  return(-1.*a);
+}
+
+template<class IM,class EX,class CO,class... OT>
+inline CustomValues_t<IM,EX,CO,OT...> operator - (CustomValues_t<IM,EX,CO,OT...> const& a, CustomValues_t<IM,EX,CO,OT...> const& b)
+{
+  CustomValues_t<IM,EX,CO,OT...> ret = a ;
+        
+  return(ret -= b);
+}
+
+
+/* Multiplication */
+template<class IM,class EX,class CO,class... OT>
+inline CustomValues_t<IM,EX,CO,OT...> operator * (CustomValues_t<IM,EX,CO,OT...> const& a, CustomValues_t<IM,EX,CO,OT...> const& b)
+{
+  CustomValues_t<IM,EX,CO,OT...> ret = a ;
+        
+  return(ret *= b);
+}
+
+template<typename T,class IM,class EX,class CO,class... OT>
+inline CustomValues_t<IM,EX,CO,OT...> operator * (CustomValues_t<IM,EX,CO,OT...> const& a, T const& b)
+{
+  CustomValues_t<IM,EX,CO,OT...> ret = a ;
+        
+  return(ret *= b);
+}
+
+template<typename T,class IM,class EX,class CO,class... OT>
+inline CustomValues_t<IM,EX,CO,OT...> operator * (T const& b, CustomValues_t<IM,EX,CO,OT...> const& a)
+{
+  CustomValues_t<IM,EX,CO,OT...> ret = a ;
+        
+  return(ret *= b);
+}
+
+/* Division */
+template<class IM,class EX,class CO,class... OT>
+inline CustomValues_t<IM,EX,CO,OT...> operator / (CustomValues_t<IM,EX,CO,OT...> const& a, CustomValues_t<IM,EX,CO,OT...> const& b)
+{
+  CustomValues_t<IM,EX,CO,OT...> ret = a ;
+        
+  return(ret /= b);
+}
+
+template<typename T,class IM,class EX,class CO,class... OT>
+inline CustomValues_t<IM,EX,CO,OT...> operator / (CustomValues_t<IM,EX,CO,OT...> const& a, T const& b)
+{
+  CustomValues_t<IM,EX,CO,OT...> ret = a ;
+        
+  return(ret /= b);
+}
+
+template<typename T,class IM,class EX,class CO,class... OT>
+inline CustomValues_t<IM,EX,CO,OT...> operator / (T const& b, CustomValues_t<IM,EX,CO,OT...> const& a)
+{
+  CustomValues_t<IM,EX,CO,OT...> ret = a ;
+        
+  return(ret /= b);
+}
+#endif
+

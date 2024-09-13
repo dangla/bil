@@ -1,0 +1,129 @@
+
+  /* Affectation */
+  template <typename T,typename U,class... D>
+  inline CustomValues_t& operator=(CustomValues_t<D...> const& a) {
+    if(this != &a) {
+      T* u = (T*) this;
+      U const* v = (U const*) &a;
+  
+      if(sizeof(CustomValues_t)/sizeof(T) != sizeof(CustomValues_t<D...>)/sizeof(U)) {
+        Message_FatalError("CustomValues_t::operator=: not the same size!");
+      }
+  
+      for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+        u[i] = v[i];
+      }
+    }
+        
+    return(*this) ;
+  }
+
+  /* Unary operations */
+  CustomValues_t& operator+(void){return(*this);}
+  
+  template<typename T = double>
+  inline CustomValues_t& operator-(void) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] = -u[i];
+    }
+  
+    return(*this) ;
+  }
+  
+  /* Add and assign */
+  template<typename T = double>
+  inline CustomValues_t& operator+=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] += v[i];
+    }
+        
+    return(*this) ;
+  }
+  
+  template<typename T = double>
+  inline CustomValues_t& operator+=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] += a;
+    }
+        
+    return(*this) ;
+  }
+  
+  /* Substract and assign */
+  template<typename T = double>
+  inline CustomValues_t& operator-=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] -= v[i];
+    }
+        
+    return(*this) ;
+  }
+  
+  template<typename T = double>
+  inline CustomValues_t& operator-=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] -= a;
+    }
+        
+    return(*this) ;
+  }
+  
+  /* Multiply and assign */
+  template<typename T = double>
+  inline CustomValues_t& operator*=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] *= v[i];
+    }
+        
+    return(*this) ;
+  }
+  
+  template<typename T = double>
+  inline CustomValues_t& operator*=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] *= a;
+    }
+        
+    return(*this) ;
+  }
+  
+  /* Divide and assign */
+  template<typename T = double>
+  inline CustomValues_t& operator/=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] /= v[i];
+    }
+  
+    return(*this) ;
+  }
+
+  template<typename T = double>
+  inline CustomValues_t& operator/=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] /= a;
+    }
+  
+    return(*this) ;
+  }

@@ -72,11 +72,15 @@ extern Solution_t*  (Solution_GetSolutionInDistantPast)(Solution_t*,unsigned int
 #define Solution_GetNbOfNodes(SOL) \
         NodesSol_GetNbOfNodes(Solution_GetNodesSol(SOL))
 
-//#define Solution_GetNbOfDOF(SOL) \
-//        NodesSol_GetNbOfDOF(Solution_GetNodesSol(SOL))
+/*
+#define Solution_GetNbOfDOF(SOL) \
+        NodesSol_GetNbOfDOF(Solution_GetNodesSol(SOL))
+*/
 
-//#define Solution_GetNodalValue(SOL) \
-//        NodesSol_GetNodalValue(Solution_GetNodesSol(SOL))
+/*
+#define Solution_GetNodalValue(SOL) \
+        NodesSol_GetNodalValue(Solution_GetNodesSol(SOL))
+*/
 
 
 
@@ -90,7 +94,8 @@ extern Solution_t*  (Solution_GetSolutionInDistantPast)(Solution_t*,unsigned int
 
 
 /* Copy the N solutions SOL+[0:N-1] in SOL+[1:N] */
-/* #define Solution_CopyInDistantFuture(SOL,N) \
+/* 
+#define Solution_CopyInDistantFuture(SOL,N) \
         do { \
           int dist = (N) - 1 ; \
           while(dist >= 0) { \
@@ -99,7 +104,8 @@ extern Solution_t*  (Solution_GetSolutionInDistantPast)(Solution_t*,unsigned int
             Solution_Copy(sol_dest,sol_src) ; \
             dist-- ; \
           } \
-        } while(0) */
+        } while(0)
+*/
         
         
 #define Solution_InitializeSequentialTimes(SOL) \

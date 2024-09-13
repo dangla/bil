@@ -47,8 +47,10 @@ extern void        (Options_Delete)(void*) ;
 #define Options_ResolutionMethodIs(OPT,...) \
         String_Is(Options_GetResolutionMethod(OPT),__VA_ARGS__)
         
-//#define Options_SetResolutionMethodTo(OPT,M) \
+/*
+#define Options_SetResolutionMethodTo(OPT,M) \
         (strncpy(Options_GetResolutionMethod(OPT),M,Options_MaxLengthOfKeyWord))
+*/
 
 
 /* Module */
@@ -117,23 +119,31 @@ extern void        (Options_Delete)(void*) ;
 
 
 /* Number of threads for multi-threaded solver */
-//#define Options_NbOfThreadsInSolver(OPT) \
+/*
+#define Options_NbOfThreadsInSolver(OPT) \
         Options_NbInResolutionMethod(OPT)
+*/
 
 
 /* Number of threads for multi-threaded solver */
-//#define Options_NbOfThreadsInSharedMemorySolver(OPT) \
+/*
+#define Options_NbOfThreadsInSharedMemorySolver(OPT) \
         Options_NbInResolutionMethod(OPT)
+*/
 
 
 /* Number of processors for distributed-memory solver */
-//#define Options_NbOfProcessorsInDistributedMemorySolver(OPT) \
+/*
+#define Options_NbOfProcessorsInDistributedMemorySolver(OPT) \
         Options_NbInResolutionMethod(OPT)
+*/
 
 
 /* Implementation */
-//#define Options_NbInResolutionMethod(OPT) \
+/*
+#define Options_NbInResolutionMethod(OPT) \
         ((String_pchar = String_FindAnyChar(Options_GetResolutionMethod(OPT),"0123456789")) ? atoi(String_pchar) : 1)
+*/
 
 
 

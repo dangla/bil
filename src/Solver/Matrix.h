@@ -96,7 +96,7 @@ extern void        (Matrix_SetValuesToZero)       (Matrix_t*) ;
         
 
 struct Matrix_s {             /* Matrix */
-  unsigned int index ;        /* Matrix index */
+  int index ;                 /* Matrix index */
   MatrixStorageFormat_t* fmt ; /* Storage format */
   unsigned int    n ;         /* Nb of rows/columns */
   unsigned int    nnz ;       /* Nb of non zero values */

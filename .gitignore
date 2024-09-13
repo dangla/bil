@@ -36,6 +36,7 @@ BilPath.h.in
 BilVersion.h
 BilVersion.h.in
 BilExtraLibs.h
+include/bil.h
 
 # Database
 

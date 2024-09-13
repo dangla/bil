@@ -82,7 +82,7 @@
 
 #define MolarVolumeOfCementHydrate_C4Ac0hH12          (285.e-6)
 
-#define MolarVolumeOfCementHydrate_C4Ac0hH10.5        (261.e-6)
+//#define MolarVolumeOfCementHydrate_C4Ac0hH10.5        (261.e-6)
 
 #define MolarVolumeOfCementHydrate_C4Ac0hH9           (249.e-6)
 
@@ -110,9 +110,9 @@
 
 #define MolarVolumeOfCementHydrate_C4ACl2H10          (272.e-6)
 
-#define MolarVolumeOfCementHydrate_C4A(NO3)2H10       (296.e-6)
+//#define MolarVolumeOfCementHydrate_C4A(NO3)2H10       (296.e-6)
 
-#define MolarVolumeOfCementHydrate_C4A(NO2)2H10       (275.e-6)
+//#define MolarVolumeOfCementHydrate_C4A(NO2)2H10       (275.e-6)
 
 #define MolarVolumeOfCementHydrate_C4FH13             (286.e-6)
 
@@ -122,7 +122,7 @@
 
 #define MolarVolumeOfCementHydrate_C4FsH12            (321.e-6)
 
-#define MolarVolumeOfCementHydrate_C2FSH8             (??)
+//#define MolarVolumeOfCementHydrate_C2FSH8             (??)
 
 #define MolarVolumeOfCementHydrate_C4FCl2H10          (278.e-6)
 

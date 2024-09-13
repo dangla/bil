@@ -167,13 +167,13 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
    * For advanced developments find below 
    * some examples of possible operations */
   
-  /* Compute some new interpolation functions */
+  /* Find (and compute) some new interpolation functions */
   {
     int dim = Element_GetDimension(el) ;
     int nn  = Element_GetNbOfNodes(el) ;
     /* Replace "Type1" and "Type2" by existing types */
-    int i   = IntFcts_AddIntFct(intfcts,nn,dim,"Type1") ;
-    int j   = IntFcts_AddIntFct(intfcts,nn,dim,"Type2") ; /* not used */
+    int i   = IntFcts_FindIntFct(intfcts,nn,dim,"Type1") ;
+    int j   = IntFcts_FindIntFct(intfcts,nn,dim,"Type2") ; /* not used */
     /* here j is equal to i + 1 ! */
     Element_GetIntFct(el) = IntFcts_GetIntFct(intfcts) + i ;
   }

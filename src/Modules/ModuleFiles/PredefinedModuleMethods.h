@@ -3,7 +3,9 @@
 
 static Module_SetModuleProp_t           SetModuleProp ;
 
-#include "BaseName_SetModuleProp.h"
+#include "BaseName.h"
+
+#define BaseName_SetModuleProp  BaseName(_SetModuleProp)
 
 extern Module_SetModuleProp_t BaseName_SetModuleProp ;
 

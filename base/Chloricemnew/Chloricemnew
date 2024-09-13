@@ -1,0 +1,109 @@
+Units
+Length = decimeter
+Mass   = hectogram
+
+
+Geometry
+1 plan
+
+
+Mesh
+4 0. 0. 0.5 0.5
+5.e-3
+1 100 1
+1 1 1
+
+
+Material
+Model = Chloricemnew
+porosity = 0.121
+kl_int = 1.4e-17
+N_CH = 1.64
+N_CSH = 0.635
+C_Na = -1
+C_K = -1
+frac = 0.8
+phi_r = 0.70
+Curves = sat  p_c = Range{x1 = 0 , x2 = 1 , n = 2}  s_l = Expressions(1){s_l = 1}
+Curves = relpermCN  s_l = Range{x1 = 0 , x2 = 1 , n = 101} kl_r = Mualem_liq(1){m = 0.45}
+Curves = V_CSH  x = Range{x1 = 0 , x2 = 0.85 , n=2} v_csh = Expressions(1){x0 = 0 ; v0 = 5.44e-2 ; x1 = 0.85 ; v1 = 8.14e-2 ;  v_csh = (x1 - x)/(x1 - x0)*v0 + (x - x0)/(x1 - x0)*v1}
+porosity_min = 0.01
+Curves = Adscl  x = Range{x1 = 0.5 , x2 = 1.5 , n = 100}  alpha = Expressions(1){alpha = 3.192 ;}  beta = Expressions(1){beta = 26.6 ;}
+Rate_Calcite = 1.e-6
+Rate_FriedelSalt = 1.e-6
+Curves = Adsna  x = Range{x1 = 0 , x2 = 1 , n = 2} adsna = Expressions(1){adsna = 0;}
+Curves = Adsk   x = Range{x1 = 0 , x2 = 1 , n = 2} adsk = Expressions(1){adsk = 0;}
+
+
+Fields
+1
+Value = 1.      Gradient = 0 0 0      Point = 0 0 0
+
+
+Initialization
+7
+Region = 2    Unknown = p_l       Field = 0    Function = 0
+Region = 2    Unknown = logc_cl   Field = 1    Function = 1
+Region = 2    Unknown = z_ca      Field = 1    Function = 2
+Region = 2    Unknown = z_si      Field = 1    Function = 0
+Region = 2    Unknown = logc_na   Field = 1    Function = 3
+Region = 2    Unknown = logc_k    Field = 1    Function = 4
+Region = 2    Unknown = psi       Field = 0    Function = 0
+
+
+
+Functions
+5
+N = 2     F(0) = -4         F(86400) = -0.28133
+N = 2     F(0) = 1          F(86400) = -2.7766
+N = 2     F(0) = -0.92082   F(86400) = -0.20761
+N = 2     F(0) = -0.63927   F(86400) = -2.4948
+N = 1     F(0) = -4
+
+
+
+Boundary Conditions
+7
+Region = 2    Unknown = p_l       Field = 0    Function = 0
+Region = 1    Unknown = logc_cl   Field = 1    Function = 1
+Region = 1    Unknown = z_ca      Field = 1    Function = 2
+Region = 1    Unknown = logc_na   Field = 1    Function = 3
+Region = 1    Unknown = logc_k    Field = 1    Function = 4
+Region = 1    Unknown = psi       Field = 0    Function = 0
+Region = 2    Unknown = z_si      Field = 1    Function = 0
+
+
+
+Loads
+0
+
+
+Points
+0
+
+
+Dates
+13
+0.  2.628e6 5.256e6 7.884e6 1.0512e7 1.314e7 1.5768e7 1.8396e7 2.1024e7 2.3652e7 2.628e7 2.8908e7 3.1536e7
+
+
+Objective Variations
+logc_cl    = 1.e-1
+p_l        = 1.e5
+z_ca       = 1.
+z_si       = 1.
+logc_na    = 1.
+logc_k     = 1.
+psi        = 1.e3
+logc_oh    = 1.e-2
+
+
+Iterative Process
+Iterations = 20 
+Tolerance = 1.e-6
+Repetition = 0
+
+
+Time Steps
+Dtini = 1.e-1 
+Dtmax = 1.e6

@@ -111,7 +111,7 @@ struct Module_s {              /* module */
   Module_Increment_t*          increment ;
   Module_StepForward_t*        stepforward ;
   Module_InitializeProblem_t*  initializeproblem ;
-  unsigned int nbofsequences ;
+  int nbofsequences ;
   int sequentialindex ;
   
   char*  codename ;          /* Code name of the module */

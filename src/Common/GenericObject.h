@@ -56,8 +56,10 @@ template <typename T> inline void* GenericObject_New_(const int n)
         Utils_CAT(GO,_t)
 
 
-//#define GenericObject_Delete(GO,...) \
-//        TypeId_Delete(TypeId_Create(GenericObject_Type(GO)),__VA_ARGS__)
+/*
+#define GenericObject_Delete(GO,...) \
+        TypeId_Delete(TypeId_Create(GenericObject_Type(GO)),__VA_ARGS__)
+*/
 
  
  

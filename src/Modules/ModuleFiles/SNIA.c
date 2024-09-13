@@ -566,10 +566,10 @@ int   Algorithm(DataSet_t* dataset,Solutions_t* sols,Solver_t* solver,OutputFile
   Dates_t*       dates       = DataSet_GetDates(dataset) ;
   IterProcess_t* iterprocess = DataSet_GetIterProcess(dataset) ;
   
-  unsigned int   nbofdates   = Dates_GetNbOfDates(dates) ;
+  int            nbofdates   = Dates_GetNbOfDates(dates) ;
   Date_t*        date        = Dates_GetDate(dates) ;
 
-  unsigned int   idate = Initialize(dataset,sols) ;
+  int            idate = Initialize(dataset,sols) ;
   
   
   /*

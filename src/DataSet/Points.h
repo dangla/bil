@@ -25,7 +25,7 @@ extern void       (Points_Delete)  (void*) ;
 #include "Point.h"
 
 struct Points_s {
-  unsigned int n_points ;     /* nb of points */
+  int n_points ;              /* nb of points */
   Point_t*  point ;           /* Point */
 } ;
 

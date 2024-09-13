@@ -1739,3 +1739,22 @@ void  (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t* el)
     }
   }
 }
+
+
+double** (Element_ConvertToNodalUnknown)(Element_t* el,double* f,int shift)
+/** Convert the node quantity pointed to by "f" into a simulated nodal unknown "u"
+ *  at position 0. */
+{
+  double uu[Element_MaxNbOfNodes][Node_MaxNbOfEquations];
+  double* u[Element_MaxNbOfNodes];
+  int nn = Element_GetNbOfNodes(el) ;
+  
+  {
+    for(int i = 0; i < nn; i++) {
+      u[i] = uu[i];
+      uu[i][Element_GetNodalUnknownPosition(el,i,0)] = f[i*shift] ;
+    }
+  }
+    
+  return(u);
+}

@@ -23,7 +23,7 @@ extern void      (Dates_Delete) (void*) ;
 #include "Date.h"
 
 struct Dates_s {
-  unsigned int n_dates ;      /* nb of dates */
+  int n_dates ;               /* nb of dates */
   Date_t* date ;              /* date */
 } ;
 

@@ -339,4 +339,4 @@ test:
 # To pass the variable "foo" to make use: make memcheck arg="foo"
 
 memcheck:
-	@( valgrind --tool=memcheck --leak-check=full ${BIL_EXE} ${arg} )
+	@( valgrind --tool=memcheck --leak-check=full bil ${arg} )

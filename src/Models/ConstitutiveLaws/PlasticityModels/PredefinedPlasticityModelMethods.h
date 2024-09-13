@@ -24,7 +24,9 @@ static Plasticity_FlowRulesDual_t                    FlowRules ;
 static Plasticity_SetParameters_t                    SetParameters ;
 
 
-#include "BaseName_SetPlasticityModelProp.h"
+#include "BaseName.h"
+
+#define BaseName_SetPlasticityModelProp  BaseName(_SetPlasticityModelProp)
 
 extern Plasticity_SetModelProp_t BaseName_SetPlasticityModelProp ;
 

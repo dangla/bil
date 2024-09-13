@@ -480,13 +480,13 @@ struct Element_s {
   short int* EquationPosition ; /* local position of equations at nodes */
   //int    RegionTag ;
   int    MaterialIndex ;
-  unsigned short int Dimension ;    /* dimension of the element (0,1,2,3) */
+  int Dimension ;              /* dimension of the element (0,1,2,3) */
   unsigned int ElementIndex ;
-  unsigned short int NbOfNodes ;
+  int NbOfNodes ;
   /* n_vi and n_ve must be kept for old methods! */
-  unsigned int n_vi ;         /* Nb of implicit terms */
-  unsigned int n_ve ;         /* Nb of explicit terms */
-//  unsigned int nbofconstterms ;   /* Nb of constant terms */
+  int n_vi ;                  /* Nb of implicit terms */
+  int n_ve ;                  /* Nb of explicit terms */
+//  int nbofconstterms ;        /* Nb of constant terms */
 } ;
 
 
