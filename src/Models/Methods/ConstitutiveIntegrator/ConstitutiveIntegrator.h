@@ -49,8 +49,10 @@ struct ConstitutiveIntegrator_t: public ConstitutiveIntegrator_base<SETIN,INTEG>
   
   public:
   /* Constructors */
-  ConstitutiveIntegrator_t(Element_t const* el,double const& t,double const& dt,double const* const* u,double const* const* u_n,double const* f_n,SETIN* setin,INTEG* integ):
-  ConstitutiveIntegrator_base<SETIN,INTEG>(setin,integ),LocalSpaceTime_t(el,t,dt),_var(el,t,dt,u,f_n),_var_n(el,t,dt,u_n,f_n) {}
+  ConstitutiveIntegrator_t(SETIN* setin,INTEG* integ,Element_t const* el,double const& t,double const& dt,double const* const* u_n,double const* f_n,double const* const* u,double const* f):
+  ConstitutiveIntegrator_base<SETIN,INTEG>(setin,integ),LocalSpaceTime_t(el,t,dt),_var(el,t,dt,u,f),_var_n(el,t,dt,u_n,f_n) {}
+  ConstitutiveIntegrator_t(SETIN* setin,INTEG* integ,Element_t const* el,double const& t,double const& dt,double const* const* u,double const* f):
+  ConstitutiveIntegrator_base<SETIN,INTEG>(setin,integ),LocalSpaceTime_t(el,t,dt),_var(el,t,dt,u,f),_var_n(el,t,dt,u,f) {}
   
   /* Destructor */
   //~ConstitutiveIntegrator_t(void) {}
@@ -99,16 +101,16 @@ struct ConstitutiveIntegrator_t: public ConstitutiveIntegrator_base<SETIN,INTEG>
     return(integ(el,t,dt,v_n[p],v[p]));
   }
   
-  void StoreImplicitTerms(int const& p,double* f) {
-    _var.StoreImplicitTerms(p,f) ;
+  void StoreImplicitTerms(int const& p) {
+    _var.StoreImplicitTerms(p) ;
   }
   
-  void StoreExplicitTerms(int const& p,double* f) {
-    _var.StoreExplicitTerms(p,f) ;
+  void StoreExplicitTerms(int const& p) {
+    _var.StoreExplicitTerms(p) ;
   }
   
-  void StoreConstantTerms(int const& p,double* f) {
-    _var.StoreConstantTerms(p,f) ;
+  void StoreConstantTerms(int const& p) {
+    _var.StoreConstantTerms(p) ;
   }
   
   T* Differentiate(int const& p,double const& dxi,int const& i) {

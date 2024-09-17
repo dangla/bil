@@ -357,7 +357,7 @@ double* (FVM_ComputeMassAndFluxResidu)(FVM_t* fvm,double* c)
 
 
 
-double* (FVM_ComputeMassBalanceEquationResidu)(FVM_t* fvm,double* f,double* f_n,double dt)
+double* (FVM_ComputeMassBalanceEquationResidu)(FVM_t* fvm,double const* f,double const* f_n,double const dt)
 /** Return a mass balance equation residu */
 {
   Element_t* el = FVM_GetElement(fvm) ;
@@ -388,6 +388,44 @@ double* (FVM_ComputeMassBalanceEquationResidu)(FVM_t* fvm,double* f,double* f_n,
     return(r) ;
   }
 }
+
+
+#if 0
+double* (FVM_ComputeMassBalanceEquationResidu)(FVM_t* fvm,double const* f,double const* f_n,double const dt,int const shift)
+/** Return a mass balance equation residu */
+{
+  Element_t* el = FVM_GetElement(fvm) ;
+  int nn  = Element_GetNbOfNodes(el) ;
+  double g[FVM_MaxNbOfNodes*FVM_MaxNbOfNodes] ;
+    
+  {
+    int i ;
+    
+    for(i = 0 ; i < nn ; i++) {
+      double const* mass = f + i*shift;
+      double const* mass_n = f_n + i*shift;
+      double const* massflow = mass + 1;
+      int j ;
+      
+      for(j = 0 ; j < nn ; j++) {
+        int p = i*nn + j ;
+        
+        if(i == j) {
+          g[p] = mass[0] - mass_n[0] ;
+        } else {
+          g[p] = dt * massflow[j] ;
+        }
+      }
+    }
+  }
+    
+  {
+    double* r = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+      
+    return(r) ;
+  }
+}
+#endif
 
 
 

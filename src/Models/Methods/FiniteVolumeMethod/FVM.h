@@ -31,7 +31,8 @@ extern double*    (FVM_ComputeSurfaceLoadResidu)(FVM_t*,Load_t*,double,double) ;
 extern double*    (FVM_ComputeBodyForceResidu)(FVM_t*,double*) ;
 extern double*    (FVM_ComputeFluxResidu)(FVM_t*,double*) ;
 extern double*    (FVM_ComputeMassAndFluxResidu)(FVM_t*,double*) ;
-extern double*    (FVM_ComputeMassBalanceEquationResidu)(FVM_t*,double*,double*,double) ;
+extern double*    (FVM_ComputeMassBalanceEquationResidu)(FVM_t*,double const*,double const*,double const) ;
+//extern double*    (FVM_ComputeMassBalanceEquationResidu)(FVM_t*,double const*,double const*,double const,int const) ;
 
 
 extern double*    (FVM_ComputeCellVolumes)(FVM_t*) ;

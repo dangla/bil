@@ -335,22 +335,22 @@ struct InputValues_t {
 template<typename T = double>
 struct ImplicitValues_t {
   T Mole_carbon;
-  T Mole_charge;
-  T Mass_total;
-  T Mole_calcium;
-  T Mole_sodium;
-  T Mole_potassium;
-  T Mole_silicon;
-  T Mole_chlorine;
-  T Mass_air;
   T MolarFlow_carbon[Element_MaxNbOfNodes];
+  T Mole_charge;
   T MolarFlow_charge[Element_MaxNbOfNodes];
+  T Mass_total;
   T MassFlow_total[Element_MaxNbOfNodes];
+  T Mole_calcium;
   T MolarFlow_calcium[Element_MaxNbOfNodes];
+  T Mole_sodium;
   T MolarFlow_sodium[Element_MaxNbOfNodes];
+  T Mole_potassium;
   T MolarFlow_potassium[Element_MaxNbOfNodes];
+  T Mole_silicon;
   T MolarFlow_silicon[Element_MaxNbOfNodes];
+  T Mole_chlorine;
   T MolarFlow_chlorine[Element_MaxNbOfNodes];
+  T Mass_air;
   T MassFlow_air[Element_MaxNbOfNodes];
   T Mole_solidportlandite;
   T Mole_solidcalcite;
@@ -1232,7 +1232,7 @@ int ComputeInitialState(Element_t* el)
   double* v0 = Element_GetConstantTerm(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   double** u = Element_ComputePointerToNodalUnknowns(el) ;
-  CI_t ci(el,0,0,u,u,f,&SetInputs,&Integrate) ;
+  CI_t ci(&SetInputs,&Integrate,el,0,0,u,f,u,f) ;
   
   /*
     Input data
@@ -1269,8 +1269,8 @@ int ComputeInitialState(Element_t* el)
       #endif
         
       /* storages */
-      ci.StoreImplicitTerms(i,f) ;
-      ci.StoreConstantTerms(i,v0) ;
+      ci.StoreImplicitTerms(i) ;
+      ci.StoreConstantTerms(i) ;
     }
   }
   
@@ -1283,7 +1283,7 @@ int ComputeInitialState(Element_t* el)
       if(!val) return(1) ;
         
       /* storage */
-      ci.StoreExplicitTerms(i,va) ;
+      ci.StoreExplicitTerms(i) ;
   
       if(Element_IsSubmanifold(el)) continue ;
       
@@ -1301,7 +1301,7 @@ int ComputeInitialState(Element_t* el)
   /* storages */
   {
     for(int i = 0 ; i < nn ; i++) {
-      ci.StoreImplicitTerms(i,f) ;
+      ci.StoreImplicitTerms(i) ;
     }
   }
   
@@ -1317,7 +1317,7 @@ int  ComputeExplicitTerms(Element_t* el,double t)
   double* va = Element_GetExplicitTerm(el) ;
   double** u = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   int nn = Element_GetNbOfNodes(el) ;
-  CI_t ci(el,t,0,u,u,f,&SetInputs,&Integrate) ;
+  CI_t ci(&SetInputs,&Integrate,el,t,0,u,f,u,f) ;
   
   if(Element_IsSubmanifold(el)) return(0) ;
   
@@ -1337,7 +1337,7 @@ int  ComputeExplicitTerms(Element_t* el,double t)
       if(!val) return(1) ;
         
       /* storage */
-      ci.StoreExplicitTerms(i,va) ;
+      ci.StoreExplicitTerms(i) ;
     }
   }
 
@@ -1353,7 +1353,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
   int nn = Element_GetNbOfNodes(el) ;
   double** u = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  CI_t ci(el,t,dt,u,u_n,f_n,&SetInputs,&Integrate) ;
+  CI_t ci(&SetInputs,&Integrate,el,t,dt,u_n,f_n,u,f) ;
   
   /*
     Input data
@@ -1421,7 +1421,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
   /* storage */
   {
     for(int i = 0 ; i < nn ; i++) {
-      ci.StoreImplicitTerms(i,f) ;
+      ci.StoreImplicitTerms(i) ;
     }
   }
 
@@ -1873,7 +1873,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   }
 
   {
-    CI_t ci(el,t,0,u,u,f,&SetInputs,&Integrate) ;
+    CI_t ci(&SetInputs,&Integrate,el,t,0,u,f,u,f) ;
     int j = FVM_FindLocalCellIndex(fvm,s) ;
     Values_t& val = *ci.Integrate(j) ;
       
@@ -2085,6 +2085,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 int TangentCoefficients(Element_t* el,double dt,double* c)
 /**  Tangent matrix coefficients (c) */
 {
+  double* f   = Element_GetCurrentImplicitTerm(el) ;
   double* f_n = Element_GetPreviousImplicitTerm(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int ndof = nn*NEQ ;
@@ -2095,7 +2096,7 @@ int TangentCoefficients(Element_t* el,double dt,double* c)
   double dui[NEQ] ;
   FVM_t* fvm   = FVM_GetInstance(el) ;
   double* dist = FVM_ComputeIntercellDistances(fvm) ;
-  CI_t ci(el,0,dt,u,u_n,f_n,&SetInputs,&Integrate) ;
+  CI_t ci(&SetInputs,&Integrate,el,0,dt,u_n,f_n,u,f) ;
   int    i ;
   
   /* Initialization */

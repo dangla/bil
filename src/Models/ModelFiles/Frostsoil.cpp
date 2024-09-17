@@ -768,7 +768,7 @@ int ComputeInitialState(Element_t* el,double t)
     int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
     int    p ;
     
-    CI_t ci(el,t,0,u,u,vi0,&SetInputs,&Integrate) ;
+    CI_t ci(&SetInputs,&Integrate,el,t,0,u,vi0,u,vi0) ;
 
     
     for(p = 0 ; p < NbOfIntPoints ; p++) {
@@ -777,10 +777,10 @@ int ComputeInitialState(Element_t* el,double t)
       if(!val) return(1);
       
       /* storage in vi */
-      ci.StoreImplicitTerms(p,vi0) ;
+      ci.StoreImplicitTerms(p) ;
 
       /* storage in ve */
-      ci.StoreExplicitTerms(p,ve0) ;
+      ci.StoreExplicitTerms(p) ;
     }
   }
 
@@ -817,7 +817,7 @@ int  ComputeExplicitTerms(Element_t* el,double t)
     int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
     int    p ;
     
-    CI_t ci(el,t,0,u,u,vi_n,&SetInputs,&Integrate) ;
+    CI_t ci(&SetInputs,&Integrate,el,t,0,u,vi_n,u,vi_n) ;
     
     for(p = 0 ; p < NbOfIntPoints ; p++) {
       Values_t* val = ci.Integrate(p) ;
@@ -825,7 +825,7 @@ int  ComputeExplicitTerms(Element_t* el,double t)
       if(!val) return(1);
     
       /* storage in ve */
-      ci.StoreExplicitTerms(p,ve0) ;
+      ci.StoreExplicitTerms(p) ;
     }
   }
   
@@ -837,7 +837,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
 /** Compute the (current) implicit terms 
  *  Return 0 if succeeded and -1 if failed */
 {
-  double* vi0  = Element_GetCurrentImplicitTerm(el) ;
+  double* vi    = Element_GetCurrentImplicitTerm(el) ;
   double* vi_n  = Element_GetPreviousImplicitTerm(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
@@ -857,7 +857,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
     int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
     int p ;
     
-    CI_t ci(el,t,dt,u,u_n,vi_n,&SetInputs,&Integrate) ;
+    CI_t ci(&SetInputs,&Integrate,el,t,dt,u_n,vi_n,u,vi) ;
     
     for(p = 0 ; p < NbOfIntPoints ; p++) {
       Values_t* val = ci.Integrate(p) ;
@@ -865,7 +865,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
       if(!val) return(1);
       
       /* storage in vi */
-      ci.StoreImplicitTerms(p,vi0) ;
+      ci.StoreImplicitTerms(p) ;
     }
   }
 
@@ -1141,7 +1141,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   GetProperties(el) ;
   
   
-  CI_t ci(el,t,0,u,u,vi,&SetInputs,&Integrate) ;
+  CI_t ci(&SetInputs,&Integrate,el,t,0,u,vi,u,vi) ;
   
   
   {
@@ -1264,6 +1264,7 @@ int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
 #define T2(a,i,j)      ((a)[(i)*3+(j)])
 #define C1(i,j,k,l)    T4(c1,i,j,k,l)
 #define B1(i,j)        T2(c1,i,j)
+  double*  vi   = Element_GetCurrentImplicitTerm(el) ;
   double*  vi_n = Element_GetPreviousImplicitTerm(el) ;
   double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
@@ -1290,7 +1291,7 @@ int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
     int np = IntFct_GetNbOfPoints(intfct) ;
     int    p ;
     
-    CI_t ci(el,t,dt,u,u_n,vi_n,&SetInputs,&Integrate) ;
+    CI_t ci(&SetInputs,&Integrate,el,t,dt,u_n,vi_n,u,vi) ;
     
     for(p = 0 ; p < np ; p++) {
       /* Variables */

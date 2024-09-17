@@ -94,24 +94,27 @@ struct LocalVariables_t: virtual public LocalSpaceTime_t {
     return(NULL);
   }
   
-  void StoreImplicitTerms(int const& p,double* f) const {
+  void StoreImplicitTerms(int const& p) {
     if(p < LocalVariables_MaxNbOfLocalValues) {
+      double* f = GetImplicitTerm();
       using U = CustomValues_TypeOfImplicitValues(T);
       
       _storevalues<U>(p,f);
     }
   }
   
-  void StoreExplicitTerms(int const& p,double* f) const {
+  void StoreExplicitTerms(int const& p) {
     if(p < LocalVariables_MaxNbOfLocalValues) {
+      double* f = GetExplicitTerm();
       using U = CustomValues_TypeOfExplicitValues(T);
       
       _storevalues<U>(p,f);
     }
   }
   
-  void StoreConstantTerms(int const& p,double* f) const {
+  void StoreConstantTerms(int const& p) {
     if(p < LocalVariables_MaxNbOfLocalValues) {
+      double* f = GetConstantTerm();
       using U = CustomValues_TypeOfConstantValues(T);
       
       _storevalues<U>(p,f);

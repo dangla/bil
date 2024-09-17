@@ -54,6 +54,8 @@ struct CustomValues_t<IM,EX,CO,OT...>: IM,EX,CO,OT... {
 #define CLASSLIST C...
 #include "CustomValues_Non-MemberOperations.in"
 
+#undef CLASSDEF
+#undef CLASSLIST
 
 #define CLASSDEF  class IM,class EX,class CO,class... OT
 #define CLASSLIST IM,EX,CO,OT...
