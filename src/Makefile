@@ -34,7 +34,7 @@ endif
 # -----------
 DIRMODELFILES  = Models/ModelFiles/
 DIRMODULEFILES = Modules/ModuleFiles/
-DIRSALL = ${shell ls -d */ ./ */*/}
+DIRSALL = ${shell ls -d */ ./ */*/ */*/*/}
 DIRSOTHER := ${filter-out ${DIRMODELFILES} ${DIRMODULEFILES},${DIRSALL}}
 
 

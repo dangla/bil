@@ -94,7 +94,7 @@ int DefineElementProp(Element_t *el,IntFcts_t *intfcts)
   Geometry_t *geom = Element_GetGeometry(el) ;
   IntFct_t *fi = IntFcts_GetIntFct(intfcts) ;
   unsigned int n_fi = IntFcts_GetNbOfIntFcts(intfcts) ;
-  unsigned short int dim = Geometry_GetDimension(geom) ;
+  unsigned int dim = Geometry_GetDimension(geom) ;
   
   TB(el,fi,&n_fi,dim) ;
   
@@ -111,8 +111,8 @@ int DefineElementProp(Element_t *el,IntFcts_t *intfcts)
 int ComputeInitialState(Element_t *el)
 {
   Geometry_t *geom = Element_GetGeometry(el) ;
-  unsigned short int dim = Geometry_GetDimension(geom) ;
-  unsigned short int neq = Element_GetNbOfEquations(el) ;
+  unsigned int dim = Geometry_GetDimension(geom) ;
+  unsigned int neq = Element_GetNbOfEquations(el) ;
   Node_t **no = Element_GetPointerToNode(el) ;
   Symmetry_t sym = Geometry_GetSymmetry(geom) ;
   double *vi = Element_GetImplicitTerm(el) ;
@@ -155,8 +155,8 @@ int ComputeInitialState(Element_t *el)
 int  ComputeExplicitTerms(Element_t *el,double t)
 {
   Geometry_t *geom = Element_GetGeometry(el) ;
-  unsigned short int dim = Geometry_GetDimension(geom) ;
-  unsigned short int neq = Element_GetNbOfEquations(el) ;
+  unsigned int dim = Geometry_GetDimension(geom) ;
+  unsigned int neq = Element_GetNbOfEquations(el) ;
   Node_t **no = Element_GetPointerToNode(el) ;
   Symmetry_t sym = Geometry_GetSymmetry(geom) ;
   double *vi = Element_GetPreviousImplicitTerm(el) ;
@@ -187,8 +187,8 @@ int  ComputeExplicitTerms(Element_t *el,double t)
 int  ComputeMatrix(Element_t *el,double t,double dt,double *k)
 {
   Geometry_t *geom = Element_GetGeometry(el) ;
-  unsigned short int dim = Geometry_GetDimension(geom) ;
-  unsigned short int neq = Element_GetNbOfEquations(el) ;
+  unsigned int dim = Geometry_GetDimension(geom) ;
+  unsigned int neq = Element_GetNbOfEquations(el) ;
   Node_t **no = Element_GetPointerToNode(el) ;
   Symmetry_t sym = Geometry_GetSymmetry(geom) ;
   double *vi = Element_GetCurrentImplicitTerm(el) ;
@@ -219,8 +219,8 @@ int  ComputeMatrix(Element_t *el,double t,double dt,double *k)
 int  ComputeResidu(Element_t *el,double t,double dt,double *r)
 {
   Geometry_t *geom = Element_GetGeometry(el) ;
-  unsigned short int dim = Geometry_GetDimension(geom) ;
-  unsigned short int neq = Element_GetNbOfEquations(el) ;
+  unsigned int dim = Geometry_GetDimension(geom) ;
+  unsigned int neq = Element_GetNbOfEquations(el) ;
   Node_t **no = Element_GetPointerToNode(el) ;
   Symmetry_t sym = Geometry_GetSymmetry(geom) ;
   double *vi = Element_GetCurrentImplicitTerm(el) ;
@@ -255,8 +255,8 @@ int  ComputeResidu(Element_t *el,double t,double dt,double *r)
 int  ComputeLoads(Element_t *el,double t,double dt,Load_t *cg,double *r)
 {
   Geometry_t *geom = Element_GetGeometry(el) ;
-  unsigned short int dim = Geometry_GetDimension(geom) ;
-  unsigned short int neq = Element_GetNbOfEquations(el) ;
+  unsigned int dim = Geometry_GetDimension(geom) ;
+  unsigned int neq = Element_GetNbOfEquations(el) ;
   Node_t **no = Element_GetPointerToNode(el) ;
   Symmetry_t sym = Geometry_GetSymmetry(geom) ;
   double *vi = Element_GetCurrentImplicitTerm(el) ;
@@ -291,8 +291,8 @@ int  ComputeLoads(Element_t *el,double t,double dt,Load_t *cg,double *r)
 int  ComputeImplicitTerms(Element_t *el,double t,double dt)
 {
   Geometry_t *geom = Element_GetGeometry(el) ;
-  unsigned short int dim = Geometry_GetDimension(geom) ;
-  unsigned short int neq = Element_GetNbOfEquations(el) ;
+  unsigned int dim = Geometry_GetDimension(geom) ;
+  unsigned int neq = Element_GetNbOfEquations(el) ;
   Node_t **no = Element_GetPointerToNode(el) ;
   Symmetry_t sym = Geometry_GetSymmetry(geom) ;
   double *vi = Element_GetCurrentImplicitTerm(el) ;
@@ -325,8 +325,8 @@ int  ComputeImplicitTerms(Element_t *el,double t,double dt)
 int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
 {
   Geometry_t *geom = Element_GetGeometry(el) ;
-  unsigned short int dim = Geometry_GetDimension(geom) ;
-  unsigned short int neq = Element_GetNbOfEquations(el) ;
+  unsigned int dim = Geometry_GetDimension(geom) ;
+  unsigned int neq = Element_GetNbOfEquations(el) ;
   Node_t **no = Element_GetPointerToNode(el) ;
   Symmetry_t sym = Geometry_GetSymmetry(geom) ;
   double *vi = Element_GetImplicitTerm(el) ;

@@ -56,7 +56,7 @@ Message_t*  (Message_Create)(void)
     Message_GetLaunchTime(msg) = now ;
   }
   
-  Message_GetDelete(msg) = Message_Delete ;
+  Message_GetDelete(msg) = &Message_Delete ;
   
   Message_Initialize(msg) ;
   

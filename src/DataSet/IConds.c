@@ -163,7 +163,7 @@ void (IConds_Delete)(void* self)
 void   (IConds_AssignInitialConditions)(IConds_t* iconds,Mesh_t* mesh,double t)
 /** Assign the initial conditions */
 {
-  unsigned short int dim = Mesh_GetDimension(mesh) ;
+  unsigned int dim = Mesh_GetDimension(mesh) ;
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
   unsigned int n_ic = IConds_GetNbOfIConds(iconds) ;

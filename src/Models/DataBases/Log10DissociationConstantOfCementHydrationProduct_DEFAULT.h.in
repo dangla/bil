@@ -4,9 +4,14 @@
 
 /*
  * Cement chemistry notation:
- * H  = H2O  ; K  = K2O  ; N  = Na2O  ;
- * C  = CaO  ; S  = SiO2 ; A  = Al2O3 ; 
- * c  = CO2  ; s  = SO3  ; F  = Fe2O3 ;
+ * H  = H2O  ; K  = K2O  ; N  = Na2O  ; M  = MgO
+ * C  = CaO  ; S  = SiO2 ; A  = Al2O3 ; T  = TiO
+ * c  = CO2  ; s  = SO3  ; F  = Fe2O3 ; P  = P2O5
+ */
+ 
+/* H  = hydrogen ;  Mg = magnesium  ; Ti = titanium    ; Fe = iron
+ * Ca = calcium  ;  Na = sodium     ; Al = aluminium   ; C  = carbon
+ * Si = silicon  ;  K  = potassium  ; P  = phosphorus  ; S  = sulfur
  */
 
 #include "TemperatureDependenceOfLog10EquilibriumConstant.h"

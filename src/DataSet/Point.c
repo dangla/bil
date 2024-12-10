@@ -103,7 +103,7 @@ void (Point_Scan)(Point_t* point,char* line)
 void (Point_SetEnclosingElement)(Point_t* point,Mesh_t* mesh)
 /** Set a pointer to the element which encloses the point */
 {
-  unsigned short int dim = Mesh_GetDimension(mesh) ;
+  unsigned int dim = Mesh_GetDimension(mesh) ;
   int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
   double* pt = Point_GetCoordinate(point) ;

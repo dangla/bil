@@ -80,7 +80,7 @@ enum {
 
 
 /* Nb of terms per point */
-#define NVE    	  (NN)
+#define NVE       (NN)
 #define NVI       (NN*NN)
 #define NV0       (0)
 
@@ -148,7 +148,6 @@ static Model_ComputePropertyIndex_t  pm ;
 static void    GetProperties(Element_t*) ;
 
 static double* ComputeVariables(Element_t*,double**,double*,double,double,int) ;
-//static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
 static int     ComputeSecondaryVariables(Element_t*,double,double,double*) ;
 static double* ComputeVariableDerivatives(Element_t*,double,double,double*,double,int) ;
 
@@ -253,10 +252,6 @@ int SetModelProp(Model_t* model)
 
 
   Model_GetComputePropertyIndex(model) = pm ;
-  
-  //Model_GetNbOfVariables(model) = NbOfVariables ;
-  //Model_GetNbOfVariableFluxes(model) = NbOfVariableFluxes ;
-  //Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
   
   ComputePhysicoChemicalProperties(TEMPERATURE) ;
   

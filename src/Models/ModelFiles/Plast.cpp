@@ -20,46 +20,111 @@
 /* Equation index */
 #define E_MECH   (0)
 
+/* Indices of unknowns (generic indices) */
+#define U_MECH     E_MECH
+
 /* Unknown index */
-#define U_DISP     (0)
+#define U_DISP     U_MECH
 
 
-/* Nb of implicit terms */
-#define NVI     (24)
+
+#include "BaseName.h"
+#include "CustomValues.h"
+#include "ConstitutiveIntegrator.h"
+#include "MaterialPointModel.h"
+
+#define ImplicitValues_t BaseName(_ImplicitValues_t)
+#define ExplicitValues_t BaseName(_ExplicitValues_t)
+#define ConstantValues_t BaseName(_ConstantValues_t)
+#define OtherValues_t    BaseName(_OtherValues_t)
+
+
+
+template<typename T>
+struct ImplicitValues_t ;
+
+template<typename T>
+struct ExplicitValues_t;
+
+template<typename T>
+struct ConstantValues_t;
+
+template<typename T>
+struct OtherValues_t;
+
+
+
+using Values_d = CustomValues_t<double,ImplicitValues_t,ExplicitValues_t,ConstantValues_t,OtherValues_t> ;
+
+#define Values_Index(V)  CustomValues_Index(Values_d,V,double)
+
+
+#define MPM_t      BaseName(_MPM_t)
+
+
+
+
+struct MPM_t: public MaterialPointModel_t<Values_d> {
+  MaterialPointModel_SetInputs_t<Values_d> SetInputs;
+  MaterialPointModel_Integrate_t<Values_d> Integrate;
+  MaterialPointModel_Initialize_t<Values_d>  Initialize;
+  MaterialPointModel_SetTangentMatrix_t<Values_d> SetTangentMatrix;
+} ;
+
+
+
+//using CI_t = ConstitutiveIntegrator_t<Values_d,MPM_t>;
+using CI_t = ConstitutiveIntegrator_t<Values_d>;
+
+
+
+
 /* We define some names for implicit terms */
-#define SIG           (vim + 0)
-#define F_MASS        (vim + 9)
-#define EPS_P         (vim + 12)
-#define HARDV         (vim + 21)[0]
-#define CRIT          (vim + 22)[0]
-#define DLAMBDA       (vim + 23)[0]
+template<typename T = double>
+struct ImplicitValues_t {
+  T Displacement[3];
+  T Strain[9];
+  T Stress[9];
+  T BodyForce[3];
+  T PlasticStrain[9];
+  T HardeningVariable;
+  T CriterionValue;
+  T PlasticMultiplier;
+} ;
 
-#define SIG_n         (vim_n + 0)
-#define EPS_P_n       (vim_n + 12)
-#define HARDV_n       (vim_n + 21)[0]
+
+template<typename T = double>
+struct OtherValues_t {
+};
 
 
-/* Nb of explicit terms */
-#define NVE     (0)
+
 /* We define some names for explicit terms */
+template<typename T = double>
+struct ExplicitValues_t {
+} ;
 
 
-/* Nb of constant terms */
-#define NV0     (9)
-/* We define some names for constant terms */
-#define SIG0          (v0  + 0)
+
+/* We define some names for constant terms (v0 must be used as pointer below) */
+template<typename T = double>
+struct ConstantValues_t {
+  T InitialStress[9];
+};
+
+static MPM_t mpm1;
+//static MPM_t* mpm = &mpm1;
+static MaterialPointModel_t<Values_d>* mpm = &mpm1;
+
+static CI_t ci(mpm) ;
+
+
+
 
 
 /* Functions */
 static Model_ComputePropertyIndex_t  pm ;
-static void   GetProperties(Element_t*,double) ;
-
-static int    ComputeTangentCoefficients(FEM_t*,double,double*) ;
-
-static double* ComputeVariables(Element_t*,double**,double**,double*,double,double,int) ;
-static void    ComputeSecondaryVariables(Element_t*,double,double,double*,double*) ;
-//static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
-//static double* ComputeVariablesDerivatives(Element_t*,double,double,double*,double,int) ;
+static void   GetProperties(Element_t*) ;
 
 static double* MacroGradient(Element_t*,double) ;
 static double* MacroStrain(Element_t*,double) ;
@@ -102,30 +167,10 @@ static int     plasticmodel ;
 #define ItIsPeriodic  (Geometry_IsPeriodic(Element_GetGeometry(el)))
 
 
-/* We define some indices for the local variables */
-enum {
-I_U      = 0,
-I_U2     = I_U + 2,
-I_EPS,
-I_EPS8   = I_EPS + 8,
-I_SIG,
-I_SIG8   = I_SIG + 8,
-I_EPS_P,
-I_EPS_P8 = I_EPS_P + 8,
-I_FMASS,
-I_FMASS2 = I_FMASS + 2,
-I_HARDV,
-I_CRIT,
-I_DLAMBDA,
-I_Last
-} ;
 
-
-#define NbOfVariables     (I_Last)
-static double  Variable[NbOfVariables] ;
-static double  Variable_n[NbOfVariables] ;
-//static double dVariable[NbOfVariables] ;
+/* To treat later */
 #if SharedMS_APIis(OpenMP)
+  #error "Not available yet" 
   #pragma omp threadprivate(Variable,Variable_n)
 #endif
 
@@ -257,7 +302,7 @@ double* MacroStrain(Element_t* el,double t)
 
 
 
-void GetProperties(Element_t* el,double t)
+void GetProperties(Element_t* el)
 {
   gravity = GetProperty("gravity") ;
   rho_s   = GetProperty("rho_s") ;
@@ -310,10 +355,8 @@ int SetModelProp(Model_t* model)
     Model_CopyNameOfUnknown(model,U_DISP + i,name_unk) ;
   }
   
-  Model_GetComputePropertyIndex(model) = pm ;
-  
-  Model_GetNbOfVariables(model) = NbOfVariables ;
-  //Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
+  Model_GetComputePropertyIndex(model) = &pm ;
+  Model_GetComputeMaterialProperties(model) = &GetProperties;
   
   return(0) ;
 }
@@ -441,11 +484,15 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
+  int const nvi = ((int) sizeof(ImplicitValues_t<char>));
+  int const nve = ((int) sizeof(ExplicitValues_t<char>));
+  int const nv0 = ((int) sizeof(ConstantValues_t<char>));
 
   /** Define the length of tables */
-  Element_GetNbOfImplicitTerms(el) = NVI*NbOfIntPoints ;
-  Element_GetNbOfExplicitTerms(el) = NVE*NbOfIntPoints ;
-  Element_GetNbOfConstantTerms(el) = NV0*NbOfIntPoints ;
+  Element_GetNbOfImplicitTerms(el) = nvi*NbOfIntPoints ;
+  Element_GetNbOfExplicitTerms(el) = nve*NbOfIntPoints ;
+  Element_GetNbOfConstantTerms(el) = nv0*NbOfIntPoints ;
+  
   return(0) ;
 }
 
@@ -478,12 +525,9 @@ int  ComputeLoads(Element_t* el,double t,double dt,Load_t* cg,double* r)
 int ComputeInitialState(Element_t* el,double t)
 {
   double* vim0 = Element_GetImplicitTerm(el) ;
-  double* v00  = Element_GetConstantTerm(el) ;
   double** u   = Element_ComputePointerToNodalUnknowns(el) ;
-  IntFct_t*  intfct = Element_GetIntFct(el) ;
-  int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-  DataFile_t* datafile = Element_GetDataFile(el) ;
-  int    p ;
+      
+  ci.Set(el,t,0,u,vim0,u,vim0) ;
   
   /* We skip if the element is a submanifold */
   if(Element_IsSubmanifold(el)) return(0) ;
@@ -491,55 +535,13 @@ int ComputeInitialState(Element_t* el,double t)
   /*
     Input data
   */
-  GetProperties(el,t) ;
-
-
-  /* Pre-initialization */
-  for(p = 0 ; p < NbOfIntPoints ; p++) {
-    /* storage in vim */
-    {
-      double* vim  = vim0 + p*NVI ;
-      double* v0   = v00 + p*NV0 ;
-      int    i ;
-      
-      /* Initial stresses, hardening variable */
-      if(DataFile_ContextIsPartialInitialization(datafile)) {
-        for(i = 0 ; i < 9 ; i++) SIG0[i] = SIG[i] ;
-      } else {
-        for(i = 0 ; i < 9 ; i++) SIG0[i] = sig0[i] ;
-        for(i = 0 ; i < 9 ; i++) SIG[i]  = sig0[i] ;
-        HARDV = hardv0 ;
-      }
-      
-      /* Initial plastic strains */
-      for(i = 0 ; i < 9 ; i++) EPS_P[i]  = 0 ;
-    }
-  }
+  Element_ComputeMaterialProperties(el) ;
   
-
-  /* If there are initial displacements */
-  for(p = 0 ; p < NbOfIntPoints ; p++) {
-    /* Variables */
-    double* x = ComputeVariables(el,u,u,vim0,t,0,p) ;
-    
-    /* storage in vim */
-    {
-      double* vim  = vim0 + p*NVI ;
-      int    i ;
-    
-      for(i = 0 ; i < 9 ; i++) SIG[i] = x[I_SIG + i] ;
-      
-      for(i = 0 ; i < 3 ; i++) F_MASS[i] = x[I_FMASS + i] ;
-      
-      for(i = 0 ; i < 9 ; i++) EPS_P[i]  = x[I_EPS_P + i] ;
-    
-      CRIT = x[I_CRIT] ;
-      HARDV = x[I_HARDV] ;
-      DLAMBDA = x[I_DLAMBDA] ;
-    }
-  }
+  {
+    int i = ci.ComputeInitialStateByFEM();
   
-  return(0) ;
+    return(i);
+  }
 }
 
 
@@ -557,42 +559,22 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
   double* vim_n  = Element_GetPreviousImplicitTerm(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  IntFct_t*  intfct = Element_GetIntFct(el) ;
-  int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-  int    p ;
   
   /* We skip if the element is a submanifold */
   if(Element_IsSubmanifold(el)) return(0) ;
+    
+  ci.Set(el,t,dt,u_n,vim_n,u,vim0) ;
 
   /*
     Input data
   */
-  GetProperties(el,t) ;
+  Element_ComputeMaterialProperties(el) ;
   
+  {
+    int i = ci.ComputeImplicitTermsByFEM();
     
-  /* Loop on integration points */
-  for(p = 0 ; p < NbOfIntPoints ; p++) {
-    /* Variables */
-    double* x = ComputeVariables(el,u,u_n,vim_n,t,dt,p) ;
-    
-    /* storage in vim */
-    {
-      double* vim  = vim0 + p*NVI ;
-      int    i ;
-    
-      for(i = 0 ; i < 9 ; i++) SIG[i] = x[I_SIG + i] ;
-      
-      for(i = 0 ; i < 3 ; i++) F_MASS[i] = x[I_FMASS + i] ;
-      
-      for(i = 0 ; i < 9 ; i++) EPS_P[i]  = x[I_EPS_P + i] ;
-    
-      CRIT = x[I_CRIT] ;
-      HARDV = x[I_HARDV] ;
-      DLAMBDA = x[I_DLAMBDA] ;
-    }
+    return(i);
   }
-  
-  return(0) ;
 }
 
 
@@ -601,20 +583,22 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 /** Compute the matrix (k) */
 {
 #define K(i,j)    (k[(i)*ndof + (j)])
-  IntFct_t*  intfct = Element_GetIntFct(el) ;
+
+  double*  vi   = Element_GetCurrentImplicitTerm(el) ;
+  double*  vi_n = Element_GetPreviousImplicitTerm(el) ;
+  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
   int ndof = nn*NEQ ;
-  FEM_t* fem = FEM_GetInstance(el) ;
-
+  
+  int    dec = 81 ;
+      
+  ci.Set(el,t,dt,u_n,vi_n,u,vi) ;
+  
 
   /* Initialization */
-  {
-    double zero = 0. ;
-    int    i ;
-    
-    for(i = 0 ; i < ndof*ndof ; i++) k[i] = zero ;
-  }
+  for(int i = 0 ; i < ndof*ndof ; i++) k[i] = 0 ;
 
 
   /* We skip if the element is a submanifold */
@@ -624,23 +608,18 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   /*
     Input data
   */
-  GetProperties(el,t) ;
+  Element_ComputeMaterialProperties(el) ;
 
 
   /*
   ** Elastoplastic matrix
   */
+
   {
-    double c[IntFct_MaxNbOfIntPoints*81] ;
-    int dec = ComputeTangentCoefficients(fem,dt,c) ;
-    double* kp = FEM_ComputeElasticMatrix(fem,intfct,c,dec) ;
-    
-    {
-      int i ;
-      
-      for(i = 0 ; i < ndof*ndof ; i++) {
-        k[i] = kp[i] ;
-      }
+    double* kp = ci.ComputeTangentStiffnessMatrixByFEM() ;
+
+    for(int i = 0 ; i < ndof*ndof ; i++) {
+      k[i] = kp[i] ;
     }
   }
   
@@ -655,43 +634,31 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 /** Comput the residu (r) */
 {
 #define R(n,i)    (r[(n)*NEQ+(i)])
-  double* vim = Element_GetCurrentImplicitTerm(el) ;
+  double*  vi   = Element_GetCurrentImplicitTerm(el) ;
+  double*  vi_n = Element_GetPreviousImplicitTerm(el) ;
+  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
-  IntFct_t*  intfct = Element_GetIntFct(el) ;
   int ndof = nn*NEQ ;
-  FEM_t* fem = FEM_GetInstance(el) ;
-  int    i ;
-  double zero = 0. ;
 
   /* Initialization */
-  for(i = 0 ; i < ndof ; i++) r[i] = zero ;
+  for(int i = 0 ; i < ndof ; i++) r[i] = 0 ;
 
   if(Element_IsSubmanifold(el)) return(0) ;
+      
+  ci.Set(el,t,dt,u_n,vi_n,u,vi) ;
 
-
-  /* 1. Mechanics */
-  
-  /* 1.1 Stresses */
   {
-    double* rw = FEM_ComputeStrainWorkResidu(fem,intfct,SIG,NVI) ;
+    int istress = Values_Index(Stress[0]);
+    int ibforce = Values_Index(BodyForce[0]);
+    double* rw = ci.ComputeMechanicalEquilibiumResiduByFEM(istress,ibforce);
     
-    for(i = 0 ; i < nn ; i++) {
+    for(int i = 0 ; i < nn ; i++) {
       int j ;
       
       for(j = 0 ; j < dim ; j++) R(i,E_MECH + j) -= rw[i*dim + j] ;
     }
-    
-  }
-  
-  /* 1.2 Body forces */
-  {
-    double* rbf = FEM_ComputeBodyForceResidu(fem,intfct,F_MASS + dim - 1,NVI) ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      R(i,E_MECH + dim - 1) -= -rbf[i] ;
-    }
-    
   }
   
   return(0) ;
@@ -709,7 +676,6 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
-  FEM_t* fem = FEM_GetInstance(el) ;
 
   //if(Element_IsSubmanifold(el)) return(0) ;
 
@@ -725,30 +691,32 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   /*
     Input data
   */
-  GetProperties(el,t) ;
+  Element_ComputeMaterialProperties(el) ;
+  
+  
+  //CI_t ci(&SetInputs,&Integrate,el,t,0,u,vim0,u,vim0) ;
+  
+  ci.Set(el,t,0,u,vim0,u,vim0) ;
 
   {
     /* Interpolation functions at s */
     double* a = Element_ComputeCoordinateInReferenceFrame(el,s) ;
     int p = IntFct_ComputeFunctionIndexAtPointOfReferenceFrame(intfct,a) ;
     /* Displacement */
-    double pdis[3] = {0,0,0} ;
+    double* pdis = Element_ComputeDisplacementVector(el,u,intfct,p,U_DISP) ;
     double dis[3] = {0,0,0} ;
     /* strains */
     double eps_p[9] = {0,0,0,0,0,0,0,0,0} ;
     double sig[9] = {0,0,0,0,0,0,0,0,0} ;
     double hardv = 0 ;
     double crit = 0 ;
-    int    i ;
     
-    for(i = 0 ; i < dim ; i++) {
-      pdis[i] = FEM_ComputeUnknown(fem,u,intfct,p,U_DISP + i) ;
+    for(int i = 0 ; i < dim ; i++) {
       dis[i] = pdis[i] ;
     }
 
     if(ItIsPeriodic) {
-      
-      for(i = 0 ; i < dim ; i++) {
+      for(int i = 0 ; i < dim ; i++) {
         int j ;
         
         for(j = 0 ; j < dim ; j++) {
@@ -759,28 +727,30 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     
     /* Averaging */
     for(p = 0 ; p < np ; p++) {
-      double* vim  = vim0 + p*NVI ;
-      int j ;
+      Values_d& val1 = *ci.ExtractValues(p);
 
-      for(j = 0 ; j < 9 ; j++) sig[j] += SIG[j]/np ;
+      for(int j = 0 ; j < 9 ; j++) sig[j] += val1.Stress[j]/np ;
       
-      for(j = 0 ; j < 9 ; j++) eps_p[j] += EPS_P[j]/np ;
+      for(int j = 0 ; j < 9 ; j++) eps_p[j] += val1.PlasticStrain[j]/np ;
       
-      hardv += HARDV/np ;
+      hardv += val1.HardeningVariable/np ;
       
-      crit += CRIT/np ;
+      crit += val1.CriterionValue/np ;
     }
-      
-    i = 0 ;
-    Result_Store(r + i++,dis   ,"Displacements",3) ;
-    Result_Store(r + i++,sig   ,"Stresses",9) ;
-    Result_Store(r + i++,pdis  ,"Perturbated-displacements",3) ;
-    Result_Store(r + i++,eps_p ,"Plastic-strains",9) ;
-    Result_Store(r + i++,&hardv,"Hardening variable",1) ;
-    Result_Store(r + i++,&crit ,"Yield function",1) ;
     
-    if(i != NbOfOutputs) {
-      Message_RuntimeError("ComputeOutputs: wrong number of outputs") ;
+    {
+      int i = 0 ;
+      
+      Result_Store(r + i++,dis   ,"Displacements",3) ;
+      Result_Store(r + i++,sig   ,"Stresses",9) ;
+      Result_Store(r + i++,pdis  ,"Perturbated-displacements",3) ;
+      Result_Store(r + i++,eps_p ,"Plastic-strains",9) ;
+      Result_Store(r + i++,&hardv,"Hardening variable",1) ;
+      Result_Store(r + i++,&crit ,"Yield function",1) ;
+    
+      if(i != NbOfOutputs) {
+        Message_RuntimeError("ComputeOutputs: wrong number of outputs") ;
+      }
     }
   }
   
@@ -788,68 +758,31 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 }
 
 
-
-int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
-/*
-**  Tangent matrix (c), return the shift (dec).
-*/
+int MPM_t::SetTangentMatrix(Element_t* el,double const& t,double const& dt,int const& p,Values_d const& val,Values_d const& dval,int const& k,double* c)
 {
-#define T4(a,i,j,k,l)  ((a)[(((i)*3+(j))*3+(k))*3+(l)])
-#define C1(i,j,k,l)    T4(c1,i,j,k,l)
-  Element_t* el  = FEM_GetElement(fem) ;
-  double*  vim0   = Element_GetCurrentImplicitTerm(el) ;
-  IntFct_t*  intfct = Element_GetIntFct(el) ;
-  int np = IntFct_GetNbOfPoints(intfct) ;
-  
   int    dec = 81 ;
-  int    p ;
-  double zero = 0. ;
+  double* c0 = c + p*dec ;
   
-  /*
-  ObVal_t* obval = Element_GetObjectiveValue(el) ;
-  double dxi[Model_MaxNbOfEquations] ;
-  
-  {
-    int i ;
-    
-    for(i = 0 ; i < NEQ ; i++) {
-      dxi[i] =  1.e-2*ObVal_GetValue(obval + i) ;
-    }
-  }
-  */
-
-  
-  for(p = 0 ; p < np ; p++) {
-    double* vim  = vim0 + p*NVI ;
-    double* c0 = c + p*dec ;
-    /* Variables */
-    //double* x = ComputeVariables(el,u,u_n,vim_n,t,dt,p) ;
-    
-    /* Initialization */
-    {
-      int i ;
-      
-      for(i = 0 ; i < dec ; i++) c0[i] = zero ;
-    }
-    
-
     /* Mechanics */
-    {
+    if(k == 0) {
       double* c1 = c0 ;
       
       
       /* Tangent stiffness matrix */
       {
         /* Criterion */
-        double crit = CRIT ;
+        double crit = val.CriterionValue ;
         
         if(crit >= 0.) {
+          double* sig = val.Stress;
+          double hardv = val.HardeningVariable;
+          double dlambda = val.PlasticMultiplier;
           //Plasticity_FreeBuffer(plasty) ;
           
           /* Continuum tangent stiffness matrix */
           //ComputeTangentStiffnessTensor(SIG,&HARDV) ;
           /* Consistent tangent stiffness matrix */
-          ComputeTangentStiffnessTensor(SIG,&HARDV,&DLAMBDA) ;
+          ComputeTangentStiffnessTensor(sig,&hardv,&dlambda) ;
       
           CopyTangentStiffnessTensor(c1) ;
           
@@ -859,114 +792,46 @@ int ComputeTangentCoefficients(FEM_t* fem,double dt,double* c)
         }
       }
     }
-  }
   
   return(dec) ;
-#undef C1
-#undef T4
 }
 
 
 
-
-
-double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,double t,double dt,int p)
+Values_d* MPM_t::SetInputs(Element_t* el,const double& t,const int& p,double const* const* u,Values_d& val)
 {
-  IntFct_t* intfct = Element_GetIntFct(el) ;
-  FEM_t*    fem    = FEM_GetInstance(el) ;
-//  Model_t*  model  = Element_GetModel(el) ;
-  int dim = Element_GetDimensionOfSpace(el) ;
-//  double*   x      = Model_GetVariable(model,p) ;
-  double*   x      = Variable ;
-  double*   x_n    = Variable_n ;
+  LocalVariables_t<Values_d> var(u,NULL);
   
-    
-  /* Primary Variables */
-  {
-    int    i ;
-    
-    /* Displacements */
-    for(i = 0 ; i < dim ; i++) {
-      x[I_U + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_DISP + i) ;
-    }
-    
-    for(i = dim ; i < 3 ; i++) {
-      x[I_U + i] = 0 ;
+  /* Displacements and strains */
+  var.DisplacementVectorAndStrainFEM(el,p,U_MECH,val.Displacement) ;
+  
+  if(ItIsPeriodic) {
+    for(int i = 0 ; i < 9 ; i++) {
+      val.Strain[i]   += MacroStrain(el,t)[i] ;
     }
   }
-    
-  /* Strains */
-  {
-    double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_DISP) ;
-    int    i ;
-      
-    if(ItIsPeriodic) {
-      
-      for(i = 0 ; i < 9 ; i++) {
-        eps[i] += MacroStrain(el,t)[i] ;
-      }
-    }
-    
-    for(i = 0 ; i < 9 ; i++) {
-      x[I_EPS + i] = eps[i] ;
-    }
-      
-    FEM_FreeBufferFrom(fem,eps) ;
-  }
   
-  
-  /* Needed variables to compute secondary variables */
-  {
-    int    i ;
-    
-    /* Stresses, strains at previous time step */
-    {
-      double* eps_n =  FEM_ComputeLinearStrainTensor(fem,u_n,intfct,p,U_DISP) ;
-      double* vim_n = f_n + p*NVI ;
-      
-      if(ItIsPeriodic) {
-        
-        for(i = 0 ; i < 9 ; i++) {
-          eps_n[i] += MacroStrain(el,t-dt)[i] ;
-        }
-      }
-    
-      for(i = 0 ; i < 9 ; i++) {
-        x_n[I_EPS   + i] = eps_n[i] ;
-        x_n[I_SIG   + i] = SIG_n[i] ;
-        x_n[I_EPS_P + i] = EPS_P_n[i] ;
-      }
-      
-      x_n[I_HARDV] = HARDV_n ;
-      
-      FEM_FreeBufferFrom(fem,eps_n) ;
-    }
-  }
-    
-  ComputeSecondaryVariables(el,t,dt,x_n,x) ;
-  
-  return(x) ;
+  return(&val) ;
 }
 
 
 
-void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,double* x)
+Values_d*  MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Values_d const& val_n,Values_d& val)
+/** Compute the secondary variables from the primary ones. */
 {
   int dim = Element_GetDimensionOfSpace(el) ;
   /* Strains */
-  double* eps   =  x + I_EPS ;
-  double* eps_n =  x_n + I_EPS ;
+  double* eps = val.Strain ;
+  double* eps_n = val_n.Strain ;
   /* Plastic strains */
-  double* eps_p  = x + I_EPS_P ;
-  double* eps_pn = x_n + I_EPS_P ;
-    
-
+  double* eps_p  = val.PlasticStrain ;
+  double const* eps_pn = val_n.PlasticStrain ;
 
   /* Backup stresses, plastic strains */
   {
-    double* sig   = x + I_SIG ;
-    double* sig_n = x_n + I_SIG ;
-    double  hardv = x_n[I_HARDV] ;
+    double* sig   = val.Stress ;
+    double const* sig_n = val_n.Stress ;
+    double  hardv = val_n.HardeningVariable ;
     
     
     {
@@ -999,9 +864,9 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
         double* crit = ReturnMapping(sig,eps_p,&hardv) ;
         double* dlambda = Plasticity_GetPlasticMultiplier(plasty) ;
         
-        x[I_CRIT]  = crit[0] ;
-        x[I_HARDV] = hardv ;
-        x[I_DLAMBDA] = dlambda[0] ;
+        val.CriterionValue  = crit[0] ;
+        val.HardeningVariable = hardv ;
+        val.PlasticMultiplier = dlambda[0] ;
       }
     }
   }
@@ -1010,41 +875,37 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,double* x_n,dou
   /* Backup body force */
   {
     {
-      double* fmass = x + I_FMASS ;
+      double* fmass = val.BodyForce ;
       int i ;
       
       for(i = 0 ; i < 3 ; i++) fmass[i] = 0 ;
       fmass[dim - 1] = (rho_s)*gravity ;
     }
   }
+  
+  return(&val) ;
 }
 
 
 
 
-
-#if 0
-double* ComputeVariablesDerivatives(Element_t* el,double t,double dt,double* x,double dxi,int i)
+Values_d* MPM_t::Initialize(Element_t* el,double const& t,Values_d& val)
 {
-  double* dx = dVariable ;
-  int j ;
+  DataFile_t* datafile = Element_GetDataFile(el) ;
   
-  /* Primary Variables */
-  for(j = 0 ; j < NbOfVariables ; j++) {
-    dx[j] = x[j] ;
-  }
+    {
+      /* Initial stresses, hardening variable */
+      if(DataFile_ContextIsPartialInitialization(datafile)) {
+        for(int i = 0 ; i < 9 ; i++) val.InitialStress[i] = val.Stress[i] ;
+      } else {
+        for(int i = 0 ; i < 9 ; i++) val.InitialStress[i] = sig0[i] ;
+        for(int i = 0 ; i < 9 ; i++) val.Stress[i]  = sig0[i] ;
+        val.HardeningVariable = hardv0 ;
+      }
+      
+      /* Initial plastic strains */
+      for(int i = 0 ; i < 9 ; i++) val.PlasticStrain[i]  = 0 ;
+    }
   
-  /* We increment the variable as (x + dx) */
-  dx[i] += dxi ;
-  
-  ComputeSecondaryVariables(el,t,dt,dx) ;
-  
-  /* The numerical derivative as (f(x + dx) - f(x))/dx */
-  for(j = 0 ; j < NbOfVariables ; j++) {
-    dx[j] -= x[j] ;
-    dx[j] /= dxi ;
-  }
-
-  return(dx) ;
+  return(&val) ;
 }
-#endif

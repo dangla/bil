@@ -51,15 +51,15 @@ void PlasticityCamClay_SetModelProp(Plasticity_t* plasty)
 {
   
   {
-    Plasticity_GetComputeTangentStiffnessTensor(plasty) = PlasticityCamClay_CT ;
-    Plasticity_GetReturnMapping(plasty)                 = PlasticityCamClay_RM ;
-    Plasticity_GetYieldFunction(plasty)                 = PlasticityCamClay_YF<double> ;
-    Plasticity_GetFlowRules(plasty)                     = PlasticityCamClay_FR<double> ;
+    Plasticity_GetComputeTangentStiffnessTensor(plasty) = &PlasticityCamClay_CT ;
+    Plasticity_GetReturnMapping(plasty)                 = &PlasticityCamClay_RM ;
+    Plasticity_GetYieldFunction(plasty)                 = &PlasticityCamClay_YF<double> ;
+    Plasticity_GetFlowRules(plasty)                     = &PlasticityCamClay_FR<double> ;
     #ifdef HAVE_AUTODIFF
-    Plasticity_GetYieldFunctionDual(plasty)             = PlasticityCamClay_YF<real> ;
-    Plasticity_GetFlowRulesDual(plasty)                 = PlasticityCamClay_FR<real> ;
+    Plasticity_GetYieldFunctionDual(plasty)             = &PlasticityCamClay_YF<real> ;
+    Plasticity_GetFlowRulesDual(plasty)                 = &PlasticityCamClay_FR<real> ;
     #endif
-    Plasticity_GetSetParameters(plasty)                 = PlasticityCamClay_SP ;
+    Plasticity_GetSetParameters(plasty)                 = &PlasticityCamClay_SP ;
     
     Plasticity_GetNbOfHardeningVariables(plasty)        = 1 ;
   }
@@ -310,12 +310,14 @@ double* (PlasticityCamClay_RM)(Plasticity_t* plasty,double* sig,double* eps_p,do
   if(crit > 0.) {
     double pc_n  = pc ;
     double fcrit = crit ;
-    int nf    = 0 ;
-    double tol = 1.e-8 ;
+    int iter  = 0 ;
+    int niter = 20 ;
     double v1     = (1+e0)*v ;
     double klub   = 1/bulk ;
+    int convergencenotattained = 1 ;
     
-    while(fabs(fcrit) > tol*pc_n*pc_n) {
+    //while(fabs(fcrit) > tol*pc_n*pc_n) {
+    while(convergencenotattained) {
       /*
        * Flow rule
        * ---------
@@ -342,9 +344,9 @@ double* (PlasticityCamClay_RM)(Plasticity_t* plasty,double* sig,double* eps_p,do
       /* Variables (pc,dl,q) are explicit in p */
       /* Plastic multiplier (dl):
        * ------------------------
-       * deps_e = (p - p_n) / bulk ; 
-       * deps   = (p_t - p_n) / bulk ; 
-       * deps_p = (p_t - p) / bulk = dl (2*p + pc)
+       * deps_e = (p   - p_n) / bulk
+       * deps   = (p_t - p_n) / bulk 
+       * deps_p = (p_t - p  ) / bulk = dl (2*p + pc)
        * Hence 
        * dl = (p_t - p) / (bulk*(2*p + pc))
        * Pre-consolidation pressure (pc):
@@ -366,7 +368,18 @@ double* (PlasticityCamClay_RM)(Plasticity_t* plasty,double* sig,double* eps_p,do
       q      = q_t*m2/(m2 + 6*mu*beta*dl) ;
       fcrit  = q*q/m2 + p*(p + pc) ;
       
-      if(nf++ > 20) {
+      /* Convergence check */
+      {
+        double tol = 1.e-8 ;
+        
+        convergencenotattained = 0 ;
+        
+        if(fabs(fcrit) > tol*pc_n*pc_n) {
+          convergencenotattained = 1 ;
+        }
+      }
+      
+      if(iter++ > niter) {
         Message_FatalError("PlasticityCamClay_RM: no convergence") ;
       }
     }

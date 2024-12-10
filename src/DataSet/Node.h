@@ -257,13 +257,13 @@ struct Node_s {
   char**   NameOfUnknown ;
   char**   NameOfEquation ;
   int*     SequentialIndexOfUnknown ;  /* Sequential indexes of unknowns/equations */
-  unsigned short int* ObValIndex ;     /* indices des inconnues dans obj */
+  unsigned int* ObValIndex ;     /* indices des inconnues dans obj */
   int*    MatrixColumnIndex ;          /* column index (unknowns) */
   int*    MatrixRowIndex ;             /* row index (equations) */
   unsigned int NodeIndex ;             /* node index */
-  unsigned short int NbOfElements ;
-  unsigned short int NbOfEquations ;   /* nombre d'equations au noeud */
-  unsigned short int NbOfUnknowns ;    /* nombre d'inconnues au noeud */
+  unsigned int NbOfElements ;
+  unsigned int NbOfEquations ;   /* nombre d'equations au noeud */
+  unsigned int NbOfUnknowns ;    /* nombre d'inconnues au noeud */
 } ;
 
 

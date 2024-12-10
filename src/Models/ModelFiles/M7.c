@@ -605,7 +605,7 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
 
   {
     /* Interpolation functions at s */
-    double *h_s = FEM_ComputeIsoShapeFctInActualSpace(fem,s) ;
+    double *h_s = Element_ComputeIsoShapeFctInActualSpace(el,s) ;
     
     /* pressures */
     double pl  =  FEM_ComputeCurrentUnknown(fem,h_s,nn,I_p_l) ;

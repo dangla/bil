@@ -91,7 +91,7 @@
 static int    pm(const char *s) ;
 static void   GetProperties(Element_t*) ;
 
-static int    ComputeTangentCoefficients(FEM_t*,double,double,double*) ;
+static int    ComputeTangentCoefficients(Element_t*,double,double,double*) ;
 static int    ComputeTransferCoefficients(FEM_t*,double,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double**,double*,double,double,int) ;
@@ -416,10 +416,7 @@ int SetModelProp(Model_t* model)
   }
   
   Model_GetComputePropertyIndex(model) = pm ;
-  
-  Model_GetNbOfVariables(model) = NbOfVariables ;
-  //Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
-  
+    
   return(0) ;
 }
 
@@ -996,7 +993,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   */
   {
     double c[IntFct_MaxNbOfIntPoints*121] ;   //! changed
-    int dec = ComputeTangentCoefficients(fem,t,dt,c) ; //t ADDED
+    int dec = ComputeTangentCoefficients(el,t,dt,c) ; //t ADDED
     double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,2,U_mec) ;  //the last int describes fluid mass and temperature
     /* The matrix kp is stored as (u for displacement, p for pressure, t for temperature)
      * | Kuu(9x9) Kup(9x1) Kut(9x1)|
@@ -1315,7 +1312,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 
 
 
-int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
+int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
 /*
 **  Tangent matrix (c), return the shift (dec).
 */
@@ -1327,7 +1324,6 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
 #define T2(a,i,j)      ((a)[axis_v[i]*3+axis_v[j]])
 #define C1(i,j,k,l)    T4(c1,i,j,k,l)
 #define B1(i,j)        T2(c1,i,j)
-  Element_t* el  = FEM_GetElement(fem) ;
   double*  vim0  = Element_GetCurrentImplicitTerm(el) ;
   double*  vim_n = Element_GetPreviousImplicitTerm(el) ;
   double*  vc    = Element_GetConstantTerm(el) ;              //ADDED
@@ -1338,6 +1334,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
   int np = IntFct_GetNbOfPoints(intfct) ;
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
   double dui[NEQ] ; //ADDED for numerical derivative
+  FEM_t* fem = FEM_GetInstance(el) ;
   
   int    dec = 121 ;   //CHANGED
   int    p ;
@@ -1609,9 +1606,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   FEM_t*    fem    = FEM_GetInstance(el) ;
-//  Model_t*  model  = Element_GetModel(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
-//  double*   x      = Model_GetVariable(model,p) ;
   double*   x  = Variable ;
   double*  x_n = Variable_n ;
     

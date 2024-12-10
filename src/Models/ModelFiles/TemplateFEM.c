@@ -404,7 +404,7 @@ int  ComputeLoads(Element_t* el,double t,double dt,Load_t* load,double* r)
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   int nn = Element_GetNbOfNodes(el) ;
-  unsigned short int dim = Element_GetDimensionOfSpace(el) ;
+  unsigned int dim = Element_GetDimensionOfSpace(el) ;
   int ndof = nn*NEQ ;
   FEM_t* fem = FEM_GetInstance(el) ;
 
@@ -1182,9 +1182,6 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
   double*  f_n = (double*)  vf_n ;
   double*  x   = Variable ;
   double*  x_n = Variable_n ;
-  /* Variables is a locally defined array of array */
-  //Model_t*  model  = Element_GetModel(el) ;
-  //double*   x      = Model_GetVariable(model,p) ;
 
   /*
    * The variables are stored in the array x by using some indexes.

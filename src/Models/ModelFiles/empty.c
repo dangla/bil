@@ -1,7 +1,7 @@
 #if 1
 #include "Model.h"
 
-extern Model_SetModelProp_t empty_SetModelProp ;
+extern Model_SetModelProperties_t empty_SetModelProp ;
 
 int empty_SetModelProp(Model_t* model)
 {

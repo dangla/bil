@@ -8,7 +8,7 @@ extern "C" {
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
-struct Damage_s     ; typedef struct Damage_s     Damage_t ;
+struct Damage_t     ; typedef struct Damage_t     Damage_t ;
 
 
 /* Typedef names of methods */
@@ -119,13 +119,14 @@ extern void           (Damage_CopyDamagedStiffnessTensor)  (Damage_t*,double*) ;
 #define Damage_Is(D,STR) \
         (!strcmp(Damage_GetCodeNameOfModel(D),STR))
 
-
-//#define Damage_SetTo(D,MOD) \
+#if 0
+#define Damage_SetTo(D,MOD) \
         do { \
           Damage_CopyCodeName(D,Utils_STR(MOD)) ; \
           Damage_Initialize(D) ; \
           Damage_SetModelProp(D) ; \
         } while(0)
+#endif
 
 #define Damage_SetTo(D,MOD) \
         do { \
@@ -135,7 +136,7 @@ extern void           (Damage_CopyDamagedStiffnessTensor)  (Damage_t*,double*) ;
 
 
 
-struct Damage_s {
+struct Damage_t {
   char*   codenameofmodel ;
   double* dfsds ;  /** Yield function gradient */
   double* dgsds ;  /** Potential function gradient */

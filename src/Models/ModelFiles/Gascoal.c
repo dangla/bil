@@ -1158,9 +1158,6 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
   int dim = Element_GetDimensionOfSpace(el) ; 
   double*  x   = Variable ;
   double*  x_n = Variable_n ;
-  /* Variables is a locally defined array of array */
-  //Model_t*  model  = Element_GetModel(el) ;
-  //double*   x      = Model_GetVariable(model,p) ;
   
     
   /* Load the primary variables in x */

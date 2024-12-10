@@ -8,7 +8,7 @@ extern "C" {
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
-struct Plasticity_s     ; typedef struct Plasticity_s     Plasticity_t ;
+struct Plasticity_t     ; typedef struct Plasticity_t     Plasticity_t ;
 
 #include "autodiff.h"
 
@@ -176,22 +176,26 @@ extern double* (Plasticity_DerivativeOfYieldFunction)(Tfunc,Plasticity_t*,const 
 #define Plasticity_CopyElasticComplianceTensor(PL,...) \
         Elasticity_CopyComplianceTensor(Plasticity_GetElasticity(PL),__VA_ARGS__)
 
-
-//#define Plasticity_YieldFunction(PL,...) \
+#if 0
+#define Plasticity_YieldFunction(PL,...) \
         Plasticity_GetYieldFunction(PL)(PL,__VA_ARGS__)
+        
+#define Plasticity_YieldFunctionDual(PL,...) \
+        Plasticity_GetYieldFunctionDual(PL)(PL,__VA_ARGS__)
+#endif
 #define Plasticity_YieldFunction(PL,...) \
         Plasticity_GetYieldFunctionFtor(PL)(PL,__VA_ARGS__)
         
-//#define Plasticity_YieldFunctionDual(PL,...) \
-        Plasticity_GetYieldFunctionDual(PL)(PL,__VA_ARGS__)
 
-//#define Plasticity_FlowRules(PL,...) \
+#if 0
+#define Plasticity_FlowRules(PL,...) \
         Plasticity_GetFlowRules(PL)(PL,__VA_ARGS__)
+
+#define Plasticity_FlowRulesDual(PL,...) \
+        Plasticity_GetFlowRulesDual(PL)(PL,__VA_ARGS__)
+#endif
 #define Plasticity_FlowRules(PL,...) \
         Plasticity_GetFlowRulesFtor(PL)(PL,__VA_ARGS__)
-
-//#define Plasticity_FlowRulesDual(PL,...) \
-        Plasticity_GetFlowRulesDual(PL)(PL,__VA_ARGS__)
 
 #define Plasticity_SetModelProp(PL) \
         Plasticity_GetSetModelProp(PL)(PL)
@@ -285,7 +289,7 @@ struct Plasticity_FlowRules_ftor {
 
 
 
-struct Plasticity_s {
+struct Plasticity_t {
   char*   codenameofmodel ;
   double* dfsds ;  /** Yield function gradient */
   double* dgsds ;  /** Potential function gradient */

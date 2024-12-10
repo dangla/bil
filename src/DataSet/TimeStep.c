@@ -239,8 +239,8 @@ double (TimeStep_ComputeTimeStep)(TimeStep_t* timestep,Solution_t* soln,double t
   double dtn = Solution_GetSequentialTimeStep(soln)[sequentialindex] ;
   double dt ;
   double zero = 0. ;
-  //static unsigned short int step ;
-  //unsigned short int debut=0,entre=1,fin=2 ;
+  //static unsigned int step ;
+  //unsigned int debut=0,entre=1,fin=2 ;
   
   if(tn < t1) {
     Message_RuntimeError("TimeStep_ComputeTimeStep: tn=%g outside the range t1=%g-t2=%g",tn,t1,t2) ;

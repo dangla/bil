@@ -46,14 +46,12 @@
 
 /* Functions */
 static Model_ComputePropertyIndex_t  pm ;
-static void   GetProperties(Element_t*,double) ;
+static void   GetProperties(Element_t*) ;
 
-static int    ComputeTangentCoefficients(FEM_t*,double,double,double*) ;
+static int    ComputeTangentCoefficients(Element_t*,double,double,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double**,double*,double,double,int) ;
 static void    ComputeSecondaryVariables(Element_t*,double,double,double*,double*) ;
-//static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
-//static double* ComputeVariablesDerivatives(Element_t*,double,double,double*,double,int) ;
 
 static double* MacroGradient(Element_t*,double) ;
 static double* MacroStrain(Element_t*,double) ;
@@ -238,7 +236,7 @@ double* MacroStrain(Element_t* el,double t)
 
 
 
-void GetProperties(Element_t* el,double t)
+void GetProperties(Element_t* el)
 {
   gravity = GetProperty("gravity") ;
   rho_s   = GetProperty("rho_s") ;
@@ -278,10 +276,7 @@ int SetModelProp(Model_t* model)
   }
   
   Model_GetComputePropertyIndex(model) = pm ;
-  
-  Model_GetNbOfVariables(model) = NbOfVariables ;
-  //Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
-  
+    
   return(0) ;
 }
 
@@ -457,7 +452,7 @@ int ComputeInitialState(Element_t* el,double t)
   /*
     Input data
   */
-  GetProperties(el,t) ;
+  GetProperties(el) ;
 
 
   /* Pre-initialization */
@@ -531,7 +526,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
   /*
     Input data
   */
-  GetProperties(el,t) ;
+  GetProperties(el) ;
   
     
   /* Loop on integration points */
@@ -586,7 +581,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   /*
     Input data
   */
-  GetProperties(el,t) ;
+  GetProperties(el) ;
 
 
   /*
@@ -594,7 +589,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   */
   {
     double c[IntFct_MaxNbOfIntPoints*81] ;
-    int dec = ComputeTangentCoefficients(fem,t,dt,c) ;
+    int dec = ComputeTangentCoefficients(el,t,dt,c) ;
     double* kp = FEM_ComputeElasticMatrix(fem,intfct,c,dec) ;
     
     {
@@ -687,7 +682,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   /*
     Input data
   */
-  GetProperties(el,t) ;
+  GetProperties(el) ;
 
   {
     /* Interpolation functions at s */
@@ -748,14 +743,13 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 
 
 
-int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
+int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
 /*
 **  Tangent matrix (c), return the shift (dec).
 */
 {
 #define T4(a,i,j,k,l)  ((a)[(((i)*3+(j))*3+(k))*3+(l)])
 #define C1(i,j,k,l)    T4(c1,i,j,k,l)
-  Element_t* el = FEM_GetElement(fem) ;
   double*  vim0 = Element_GetCurrentImplicitTerm(el) ;
   double*  vim0_n = Element_GetPreviousImplicitTerm(el) ;
   double** u    = Element_ComputePointerToCurrentNodalUnknowns(el) ;
@@ -834,9 +828,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   FEM_t*    fem    = FEM_GetInstance(el) ;
-//  Model_t*  model  = Element_GetModel(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
-//  double*   x      = Model_GetVariable(model,p) ;
   double*   x      = Variable ;
   double*   x_n    = Variable_n ;
   

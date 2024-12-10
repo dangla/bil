@@ -31,7 +31,7 @@ InternationalSystemOfUnits_t* (InternationalSystemOfUnits_Create)(void)
   
   InternationalSystemOfUnits_UpdateDerivedUnits(si) ;
   
-  //InternationalSystemOfUnits_GetDelete(si) = InternationalSystemOfUnits_Delete ;
+  //InternationalSystemOfUnits_GetDelete(si) = &InternationalSystemOfUnits_Delete ;
 
   return(si) ;
 }

@@ -89,7 +89,7 @@ void  (Node_CreateMore)(Node_t* node,Buffers_t* buf)
   /* Allocation of space for the index of objective values */
   {
     unsigned int n_dof = Node_GetNbOfUnknowns(node) ;
-    unsigned short int* index = (unsigned short int*) Mry_New(unsigned short int[n_dof]) ;
+    unsigned int* index = (unsigned int*) Mry_New(unsigned int[n_dof]) ;
     
     Node_GetObValIndex(node) = index ;
   }
@@ -140,7 +140,7 @@ void (Node_Delete)(void* self)
   }
 
   {
-    unsigned short int* index = Node_GetObValIndex(node) ;
+    unsigned int* index = Node_GetObValIndex(node) ;
     
     if(index) {
       free(index) ;

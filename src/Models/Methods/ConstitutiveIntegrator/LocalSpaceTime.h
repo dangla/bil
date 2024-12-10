@@ -6,24 +6,36 @@
 
 struct LocalSpaceTime_t {
   private:
-  Element_t const* _el;
-  double const& _t;
-  double const& _dt;
+  Element_t* _el;
+  double _t;
+  double _dt;
   
   public:
   /* Constructors */
-  LocalSpaceTime_t(Element_t const* el,double const& t,double const& dt):
+  LocalSpaceTime_t(void) {}
+  LocalSpaceTime_t(Element_t* el,double const& t,double const& dt):
   _el(el),_t(t),_dt(dt) {}
-  //LocalSpaceTime_t(void) {}
+  LocalSpaceTime_t(LocalSpaceTime_t const& a) {
+    _el = a.GetElement();
+    _t  = a.GetCurrentTime();
+    _dt = a.GetTimeIncrement();
+  }
   
   /* Destructor */
   ~LocalSpaceTime_t(void) {}
   
-  /* Function call operator */
-  //double* operator()(int const) ;
+  /* Assignement operator */
+  inline LocalSpaceTime_t& operator=(LocalSpaceTime_t const& a) {
+    if(this != &a) {
+      _el = a.GetElement();
+      _t  = a.GetCurrentTime();
+      _dt = a.GetTimeIncrement();
+    }
+    return(*this);
+  }
   
   /* Accessors */
-  Element_t const* GetElement(void) const {return _el;}
+  Element_t*        GetElement(void) const {return _el;}
   double const&     GetCurrentTime(void) const {return _t;}
   double const&     GetTimeIncrement(void) const {return _dt;}
 } ;

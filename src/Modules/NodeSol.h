@@ -26,7 +26,7 @@ extern void       (NodeSol_Copy)(NodeSol_t*,NodeSol_t*) ;
 
 
 struct NodeSol_s {            /* Nodal Solutions */
-  unsigned short int nu ;     /* Nb of unknowns */
+  unsigned int nu ;     /* Nb of unknowns */
   double* u ;                 /* Nodal Unknowns */
   //NodeSol_t* prev ;           /* Previous Nodal Solutions */
   //NodeSol_t* next ;           /* Next Nodal Solutions */

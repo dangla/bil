@@ -1,12 +1,12 @@
 
   /* Affectation */
-  template <typename T,typename U,class... D>
-  inline CustomValues_t& operator=(CustomValues_t<D...> const& a) {
-    if(this != &a) {
+  template <typename U,template<typename> class... D>
+  inline CustomValues_t& operator=(CustomValues_t<U,D...> const& a) {
+    if(this != (CustomValues_t*) &a) {
       T* u = (T*) this;
       U const* v = (U const*) &a;
   
-      if(sizeof(CustomValues_t)/sizeof(T) != sizeof(CustomValues_t<D...>)/sizeof(U)) {
+      if(sizeof(CustomValues_t)/sizeof(T) != sizeof(CustomValues_t<U,D...>)/sizeof(U)) {
         Message_FatalError("CustomValues_t::operator=: not the same size!");
       }
   
@@ -18,10 +18,11 @@
     return(*this) ;
   }
 
+
   /* Unary operations */
   CustomValues_t& operator+(void){return(*this);}
   
-  template<typename T = double>
+
   inline CustomValues_t& operator-(void) {
     T* u = (T*) this;
   
@@ -33,7 +34,6 @@
   }
   
   /* Add and assign */
-  template<typename T = double>
   inline CustomValues_t& operator+=(CustomValues_t const& a) {
     T* u = (T*) this;
     T const* v = (T const*) &a;
@@ -45,7 +45,7 @@
     return(*this) ;
   }
   
-  template<typename T = double>
+
   inline CustomValues_t& operator+=(T const& a) {
     T* u = (T*) this;
   
@@ -56,8 +56,8 @@
     return(*this) ;
   }
   
+  
   /* Substract and assign */
-  template<typename T = double>
   inline CustomValues_t& operator-=(CustomValues_t const& a) {
     T* u = (T*) this;
     T const* v = (T const*) &a;
@@ -69,7 +69,7 @@
     return(*this) ;
   }
   
-  template<typename T = double>
+
   inline CustomValues_t& operator-=(T const& a) {
     T* u = (T*) this;
   
@@ -80,8 +80,8 @@
     return(*this) ;
   }
   
+  
   /* Multiply and assign */
-  template<typename T = double>
   inline CustomValues_t& operator*=(CustomValues_t const& a) {
     T* u = (T*) this;
     T const* v = (T const*) &a;
@@ -93,7 +93,7 @@
     return(*this) ;
   }
   
-  template<typename T = double>
+
   inline CustomValues_t& operator*=(T const& a) {
     T* u = (T*) this;
   
@@ -104,8 +104,8 @@
     return(*this) ;
   }
   
+  
   /* Divide and assign */
-  template<typename T = double>
   inline CustomValues_t& operator/=(CustomValues_t const& a) {
     T* u = (T*) this;
     T const* v = (T const*) &a;
@@ -117,7 +117,7 @@
     return(*this) ;
   }
 
-  template<typename T = double>
+
   inline CustomValues_t& operator/=(T const& a) {
     T* u = (T*) this;
   

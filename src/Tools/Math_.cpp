@@ -59,7 +59,7 @@ Math_t*  (Math_Create)(void)
   }
   
   
-  Math_GetDelete(math) = Math_Delete ;
+  Math_GetDelete(math) = &Math_Delete ;
   
   return(math) ;
 }

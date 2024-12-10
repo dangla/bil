@@ -686,7 +686,7 @@ void  (Nodes_CreateMore)(Nodes_t* nodes)
   /* Allocation of space for the index of objective values */
   {
     unsigned int n_dof = Nodes_GetNbOfDOF(nodes) ;
-    unsigned short int* index = (unsigned short int*) Mry_New(unsigned short int[n_dof]) ;
+    unsigned int* index = (unsigned int*) Mry_New(unsigned int[n_dof]) ;
     
     {
       int i ;
@@ -915,7 +915,7 @@ void  (Nodes_CreateMore)(Nodes_t* nodes)
   /* Allocation of space for the index of objective values */
   {
     unsigned int n_dof = Nodes_GetNbOfDOF(nodes) ;
-    unsigned short int* index = (unsigned short int*) Mry_New(unsigned short int[n_dof]) ;
+    unsigned int* index = (unsigned int*) Mry_New(unsigned int[n_dof]) ;
     
     {
       int i ;

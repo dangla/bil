@@ -489,8 +489,11 @@ void Entry_PrintInfo(void)
   char bil_url[]       = "Web site          : " BIL_URL ;
   char bil_email[]     = "Contact           : " BIL_EMAIL ;
   char bil_mtapi[]     = "Multithreading API: " Utils_STR(SharedMS_API) ;
+  char bil_distapi[]   = "Parallel prog. API: " Utils_STR(DistributedMS_API) ;
   char bil_nthreads[]  = "Nb of CPU threads : " ;
+  char bil_nprocs[]    = "Nb of processors  : " ;
   int nthreads = SharedMS_NbOfLogicalCores ;
+  int nprocs = DistributedMS_NbOfProcessors ;
   
   Message_Direct("%s\n", bil_progname) ;
   Message_Direct("%s\n", bil_copyright) ;
@@ -503,5 +506,7 @@ void Entry_PrintInfo(void)
   Message_Direct("%s\n", bil_url) ;
   Message_Direct("%s\n", bil_email) ;
   Message_Direct("%s\n", bil_mtapi) ;
+  Message_Direct("%s\n", bil_distapi) ;
   Message_Direct("%s%d\n",bil_nthreads,nthreads) ;
+  Message_Direct("%s%d\n",bil_nprocs,nprocs) ;
 }

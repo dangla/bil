@@ -8,7 +8,7 @@ extern "C" {
 /* vacuous declarations and typedef names */
 
 /* class-like structure */
-struct Elasticity_s     ; typedef struct Elasticity_s     Elasticity_t ;
+struct Elasticity_t     ; typedef struct Elasticity_t     Elasticity_t ;
 
 
 /* 1. Elasticity_t */
@@ -129,7 +129,7 @@ extern double*        (Elasticity_Convert6TermStressVectorIntoStressTensor)(doub
         } while(0)
 
 
-struct Elasticity_s {
+struct Elasticity_t {
   double* cijkl ;
   double* lijkl ;
   char*   type ;

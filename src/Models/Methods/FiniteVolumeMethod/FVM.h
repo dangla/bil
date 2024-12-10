@@ -28,9 +28,11 @@ extern double*    (FVM_ComputeIsotropicConductionMatrix)(FVM_t*,double*,int) ;
 extern double*    (FVM_ComputeMassAndIsotropicConductionMatrix)(FVM_t*,double*,int) ;
 
 extern double*    (FVM_ComputeSurfaceLoadResidu)(FVM_t*,Load_t*,double,double) ;
-extern double*    (FVM_ComputeBodyForceResidu)(FVM_t*,double*) ;
-extern double*    (FVM_ComputeFluxResidu)(FVM_t*,double*) ;
-extern double*    (FVM_ComputeMassAndFluxResidu)(FVM_t*,double*) ;
+extern double*    (FVM_ComputeBodyForceResidu)(FVM_t*,double const*,int const) ;
+//extern double*    (FVM_ComputeFluxResidu)(FVM_t*,double const*) ;
+extern double*    (FVM_ComputeFluxResidu)(FVM_t*,double const*,int const) ;
+//extern double*    (FVM_ComputeMassAndFluxResidu)(FVM_t*,double*) ;
+extern double*    (FVM_ComputeMassAndFluxResidu)(FVM_t*,double const*,int const) ;
 extern double*    (FVM_ComputeMassBalanceEquationResidu)(FVM_t*,double const*,double const*,double const) ;
 //extern double*    (FVM_ComputeMassBalanceEquationResidu)(FVM_t*,double const*,double const*,double const,int const) ;
 
@@ -40,9 +42,6 @@ extern double*    (FVM_ComputeCellSurfaceAreas)(FVM_t*) ;
 extern double*    (FVM_ComputeCellVolumesAndSurfaceAreas)(FVM_t*) ;
 extern short int  (FVM_FindLocalCellIndex)(FVM_t*,double*) ;
 extern double*    (FVM_ComputeIntercellDistances)(FVM_t*) ;
-
-
-extern double*    (FVM_ComputeVariableFluxes)(FVM_t*,FVM_ComputeFluxes_t*,int,int) ;
 
 extern double*    (FVM_ComputeTheNodalFluxVector)(FVM_t*,double*) ;
 

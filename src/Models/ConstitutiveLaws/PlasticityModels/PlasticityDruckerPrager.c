@@ -760,6 +760,10 @@ double* (PlasticityDruckerPrager_RM)(Plasticity_t* plasty,double* sig,double* ep
             if(fabs(ddl) > tol*fabs(dl)) {
               convergencenotattained = 1 ;
             }
+          
+            if((fabs(ddl*3*mu) < tol*fabs(q_t)) && (fabs(ddl*k*dd) < tol*fabs(p_t))) {
+              convergencenotattained = 0 ;
+            }
           }
         }
         
@@ -865,6 +869,10 @@ double* (PlasticityDruckerPrager_RM)(Plasticity_t* plasty,double* sig,double* ep
           
             if(fabs(ddl) > tol*fabs(dl)) {
               convergencenotattained = 1 ;
+            }
+          
+            if(fabs(ddl*k*dd) < tol*fabs(p_t)) {
+              convergencenotattained = 0 ;
             }
           }
         }

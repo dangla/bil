@@ -764,7 +764,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     }
     
     {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g,nn) ;
       
       for(i = 0 ; i < nn ; i++) {
         R(i,E_Mass) -= r1[i] ;
@@ -791,7 +791,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     }
     
     {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g,nn) ;
       
       for(i = 0 ; i < nn ; i++) {
         R(i,E_Salt) -= r1[i] ;
@@ -818,7 +818,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     }
     
     {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g,nn) ;
       
       for(i = 0 ; i < nn ; i++) {
         R(i,E_The) -= r1[i] ;

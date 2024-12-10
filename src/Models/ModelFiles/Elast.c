@@ -45,12 +45,11 @@
 
 /* Functions */
 static Model_ComputePropertyIndex_t  pm ;
-static void    GetProperties(Element_t*,double) ;
+static void    GetProperties(Element_t*) ;
 static double* MicrostructureElasticTensor(DataSet_t*,double*) ;
 
 static double* ComputeVariables(Element_t*,double**,double*,double,double,int) ;
 static void    ComputeSecondaryVariables(Element_t*,double,double,double*) ;
-//static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
 
 static void    ComputeMicrostructure(DataSet_t*,double*,double*) ;
 static void    CheckMicrostructureDataSet(DataSet_t*) ;
@@ -191,7 +190,7 @@ double* MacroStrain(Element_t* el,double t)
 }
 
 
-void GetProperties(Element_t* el,double t)
+void GetProperties(Element_t* el)
 {
   gravity = Element_GetPropertyValue(el,"gravity") ;
   rho_s   = Element_GetPropertyValue(el,"rho_s") ;
@@ -227,10 +226,7 @@ int SetModelProp(Model_t* model)
   }
   
   Model_GetComputePropertyIndex(model) = pm ;
-  
-  Model_GetNbOfVariables(model) = NbOfVariables ;
-  //Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
-  
+    
   return(0) ;
 }
 
@@ -392,7 +388,7 @@ int ComputeInitialState(Element_t* el,double t)
   /*
     Input Data
   */
-  GetProperties(el,t) ;
+  GetProperties(el) ;
     
     
   /* Pre-initialization */
@@ -460,7 +456,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
   /*
     Input data
   */
-  GetProperties(el,t) ;
+  GetProperties(el) ;
     
   /* Loop on integration points */
   for(p = 0 ; p < NbOfIntPoints ; p++) {
@@ -504,7 +500,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   /*
     Input Data
   */
-  GetProperties(el,t) ;
+  GetProperties(el) ;
   
   /*
   ** Elastic Matrix
@@ -582,14 +578,13 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
-  FEM_t* fem = FEM_GetInstance(el) ;
 
   if(Element_IsSubmanifold(el)) return(0) ;
   
   /*
     Input data
   */
-  GetProperties(el,t) ;
+  GetProperties(el) ;
 
   {
     /* Interpolation functions at s */
@@ -598,14 +593,13 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     /* Variables */
     //double* x = ComputeVariables(el,u,vim0,t,0,p) ;
     
-    double* dis  = FEM_ComputeDisplacementVector(fem,u,intfct,p,U_DISP) ;
+    double* dis  = Element_ComputeDisplacementVector(el,u,intfct,p,U_DISP) ;
     double dis_tot[3] = {0,0,0} ;
     double sig[9] = {0,0,0,0,0,0,0,0,0} ;
     int    i ;
     
     /* Displacement */
     for(i = 0 ; i < dim ; i++) {
-      //dis[i] = FEM_ComputeUnknown(fem,u,intfct,p,U_DISP + i) ;
       dis_tot[i] = dis[i] ;
     }
 
@@ -644,12 +638,10 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 double* ComputeVariables(Element_t* el,double** u,double* f_n,double t,double dt,int p)
 {
   Model_t*  model  = Element_GetModel(el) ;
-  //double*   x      = Model_GetVariable(model,p) ;
   double*   x      = Variable ;
   
   {
     IntFct_t* intfct = Element_GetIntFct(el) ;
-    FEM_t*    fem    = FEM_GetInstance(el) ;
     int dim = Element_GetDimensionOfSpace(el) ;
     
     /* Primary Variables */
@@ -657,7 +649,7 @@ double* ComputeVariables(Element_t* el,double** u,double* f_n,double t,double dt
       int i ;
     
       for(i = 0 ; i < dim ; i++) {
-        x[U_DISP + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_DISP + i) ;
+        x[U_DISP + i] = Element_ComputeUnknown(el,u,intfct,p,U_DISP + i) ;
       }
     
       for(i = dim ; i < 3 ; i++) {
@@ -667,7 +659,7 @@ double* ComputeVariables(Element_t* el,double** u,double* f_n,double t,double dt
     
     /* Strains */
     {
-      double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_DISP) ;
+      double* eps =  Element_ComputeLinearStrainTensor(el,u,intfct,p,U_DISP) ;
       int i ;
       
       if(ItIsPeriodic) {
@@ -681,7 +673,7 @@ double* ComputeVariables(Element_t* el,double** u,double* f_n,double t,double dt
         x[I_EPS + i] = eps[i] ;
       }
       
-      FEM_FreeBufferFrom(fem,eps) ;
+      Element_FreeBufferFrom(el,eps) ;
     }
     
     /* Initial stresses */
@@ -933,48 +925,3 @@ void CheckMicrostructureDataSet(DataSet_t* dataset)
     }
   }
 }
-
-
-
-
-/* Not used from here */
-#if 0
-int Cijkl(FEM_t* fem,double* c)
-/*
-**  Elastic matrix (c), return the shift (dec)
-*/
-{
-#define C1(i,j,k,l)  (c1[(((i)*3+(j))*3+(k))*3+(l)])
-  Element_t* el = FEM_GetElement(fem) ;
-  IntFct_t*  intfct = Element_GetIntFct(el) ;
-  int np = IntFct_GetNbOfPoints(intfct) ;
-  double twomu,lame,mu ;
-  int    dec = 81 ;
-  int    p ;
-  
-  twomu   = young/(1 + poisson) ;
-  mu      = twomu/2 ;
-  lame    = twomu*poisson/(1 - 2*poisson) ;
-   
-  for(p = 0 ; p < np ; p++) {
-    int    i,j ;
-    double* c1 = c + p*dec ;
-    
-    /* initialisation */
-    for(i = 0 ; i < dec ; i++) c1[i] = 0. ;
-      
-    /* Mechanics */
-    /* derivative of sig with respect to eps */
-    for(i = 0 ; i < 3 ; i++) for(j = 0 ; j < 3 ; j++) {
-      C1(i,i,j,j) += lame ;
-      C1(i,j,i,j) += mu ;
-      C1(i,j,j,i) += mu ;
-    }
-
-  }
-  
-  return(dec) ;
-  
-#undef C1
-}
-#endif

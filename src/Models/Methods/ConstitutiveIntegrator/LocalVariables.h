@@ -2,7 +2,6 @@
 #define LOCALVARIABLES_H
 
 
-#include "LocalSpaceTime.h"
 #include "Math_.h"
 #include "Element.h"
 #include "IntFct.h"
@@ -16,15 +15,15 @@
 
 
 template<typename T>
-struct LocalVariables_t: virtual public LocalSpaceTime_t {
+struct LocalVariables_t {
   private:
   double const* const* _u;
-  double const* _f;
+  double* _f;
   T  _localvalue[LocalVariables_MaxNbOfLocalValues];
   T  _localderivative[LocalVariables_MaxNbOfLocalValues];
 
   template<typename U>
-  void _setvalues(int const& p,double const* f) {
+  void _extract(int const& p,double const* f) {
     if(f) {
       U const* val1 = (U const*) f ;
       U* val2 = _localvalue + p ;
@@ -34,7 +33,7 @@ struct LocalVariables_t: virtual public LocalSpaceTime_t {
   }
   
   template<typename U>
-  void _storevalues(int const& p,double* f) const {
+  void _store(int const& p,double* f) {
     if(f) {
       U* val1 = (U*) f ;
       U* val2 = _localvalue + p ;
@@ -45,47 +44,67 @@ struct LocalVariables_t: virtual public LocalSpaceTime_t {
   
   public:
   /* Constructors */
-  LocalVariables_t(Element_t const* el,double const& t,double const& dt,double const* const* u,double const* f): LocalSpaceTime_t(el,t,dt),_u(u),_f(f) {}
+  LocalVariables_t(void) {}
+  LocalVariables_t(double const* const* u,double* f): _u(u),_f(f) {}
+  LocalVariables_t(LocalVariables_t const& a) {
+    _u = a.GetPointerToNodalUnknowns();
+    _f = a.GetImplicitTerm();
+    {
+      T* localvalue = a.GetLocalValue();
+      T* localderivative = a.GetLocalDerivative();
+      
+      for(int i = 0 ; i < LocalVariables_MaxNbOfLocalValues ; i++) {
+        _localvalue[i] = localvalue[i];
+        _localderivative[i] = localderivative[i];
+      }
+    }
+  }
   
   /* Destructor */
-  //~LocalVariables_t(void) {}
+  ~LocalVariables_t(void) {}
   
   /* Function call operator */
   //virtual T& operator()(int const&) {}
   
-  /* Functions */
-  #if 0
-  template<typename F>
-  T* SetInputs(F setin,int const& p) {
-    if(p < LocalVariables_MaxNbOfLocalValues) {
-      T* v = setin(*this,p,_localvalue[p]);
-      return(v);
+  /* Assignement operator */
+  inline LocalVariables_t& operator=(LocalVariables_t const& a) {
+    if(this != &a) {
+      _u = a.GetPointerToNodalUnknowns();
+      _f = a.GetImplicitTerm();
+      {
+        T* localvalue = a.GetLocalValue();
+        T* localderivative = a.GetLocalDerivative();
+      
+        for(int i = 0 ; i < LocalVariables_MaxNbOfLocalValues ; i++) {
+          _localvalue[i] = localvalue[i];
+          _localderivative[i] = localderivative[i];
+        }
+      }
     }
-    return(NULL);
+    return(*this);
   }
-  #endif
 
-  T* SetValues(int const& p) {
+  T* Extract(Element_t const* el,int const& p) {
     if(p < LocalVariables_MaxNbOfLocalValues) {
       {
         double const* f = GetImplicitTerm();
         using U = CustomValues_TypeOfImplicitValues(T);
       
-        _setvalues<U>(p,f);
+        _extract<U>(p,f);
       }
   
       {
-        double const* f = GetExplicitTerm();
+        double const* f = Element_GetExplicitTerm(el);
         using U = CustomValues_TypeOfExplicitValues(T);
     
-        _setvalues<U>(p,f);
+        _extract<U>(p,f);
       }
   
       {
-        double const* f = GetConstantTerm();
+        double const* f = Element_GetConstantTerm(el);
         using U = CustomValues_TypeOfConstantValues(T);
       
-        _setvalues<U>(p,f);
+        _extract<U>(p,f);
       }
     
       return(_localvalue + p);
@@ -99,39 +118,38 @@ struct LocalVariables_t: virtual public LocalSpaceTime_t {
       double* f = GetImplicitTerm();
       using U = CustomValues_TypeOfImplicitValues(T);
       
-      _storevalues<U>(p,f);
+      _store<U>(p,f);
     }
   }
   
-  void StoreExplicitTerms(int const& p) {
+  void StoreExplicitTerms(Element_t* el,int const& p) {
     if(p < LocalVariables_MaxNbOfLocalValues) {
-      double* f = GetExplicitTerm();
+      double* f = Element_GetExplicitTerm(el);
       using U = CustomValues_TypeOfExplicitValues(T);
       
-      _storevalues<U>(p,f);
+      _store<U>(p,f);
     }
   }
   
-  void StoreConstantTerms(int const& p) {
+  void StoreConstantTerms(Element_t* el,int const& p) {
     if(p < LocalVariables_MaxNbOfLocalValues) {
-      double* f = GetConstantTerm();
+      double* f = Element_GetConstantTerm(el);
       using U = CustomValues_TypeOfConstantValues(T);
       
-      _storevalues<U>(p,f);
+      _store<U>(p,f);
     }
   }
 
-  double* DisplacementVectorAndStrainFEM(int const& p,int const& u_mech,double* x) const {
-    Element_t const* el = GetElement();
-    double const* const* u = _u; //GetPointerToNodalUnknowns();
+  double* DisplacementVectorAndStrainFEM(Element_t const* el,int const& p,int const& u_mech,double* x) const {
+    double const* const* u = _u;
     IntFct_t* intfct = Element_GetIntFct(el) ;
-    FEM_t*    fem    = FEM_GetInstance(el) ;
+    //FEM_t*    fem    = FEM_GetInstance(el) ;
     int dim = Element_GetDimensionOfSpace(el) ;
     
     /* Displacements */
     {
       for(int i = 0 ; i < dim ; i++) {
-        x[i] = FEM_ComputeUnknown(fem,u,intfct,p,u_mech + i) ;
+        x[i] = Element_ComputeUnknown(el,u,intfct,p,u_mech + i) ;
       }
     
       for(int i = dim ; i < 3 ; i++) {
@@ -141,46 +159,43 @@ struct LocalVariables_t: virtual public LocalSpaceTime_t {
     
     /* Strain */
     {
-      double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,u_mech) ;
+      double* eps =  Element_ComputeLinearStrainTensor(el,u,intfct,p,u_mech) ;
     
       for(int i = 0 ; i < 9 ; i++) {
         x[3 + i] = eps[i] ;
       }
       
-      FEM_FreeBufferFrom(fem,eps) ;
+      Element_FreeBufferFrom(el,eps) ;
     }
     
     return(x);
   }
 
-  double* ValueAndGradientFEM(int const& p,int const& u_mass,double* x) const {
-    Element_t const* el = GetElement();
-    double const* const* u = _u; //GetPointerToNodalUnknowns();
+  double* ValueAndGradientFEM(Element_t const* el,int const& p,int const& u_mass,double* x) const {
+    double const* const* u = _u;
     IntFct_t* intfct = Element_GetIntFct(el) ;
-    FEM_t*    fem    = FEM_GetInstance(el) ;
+    //FEM_t*    fem    = FEM_GetInstance(el) ;
   
     /* Scalar */
-    x[0] = FEM_ComputeUnknown(fem,u,intfct,p,u_mass) ;
+    x[0] = Element_ComputeUnknown(el,u,intfct,p,u_mass) ;
     
     /* Scalar gradient */
     {
-      double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,u_mass) ;
+      double* grd = Element_ComputeUnknownGradient(el,u,intfct,p,u_mass) ;
     
       for(int i = 0 ; i < 3 ; i++) {
         x[1 + i] = grd[i] ;
       }
       
-      FEM_FreeBufferFrom(fem,grd) ;
+      Element_FreeBufferFrom(el,grd) ;
     }
     
     return(x);
   }
 
   #if 0
-  double* ValueFVM(int const& n,int const& u_mass,double* x) const {
-    Element_t const* el = GetElement();
+  double* ValueFVM(Element_t const* el,int const& n,int const& u_mass,double* x) const {
     double const* const* u = _u;
-    //IntFct_t* intfct = Element_GetIntFct(el) ;
   
     /* Scalar */
     x[0] = Element_GetValueOfNodalUnknown(el,u,n,u_mass);
@@ -189,10 +204,9 @@ struct LocalVariables_t: virtual public LocalSpaceTime_t {
   }
   #endif
   
-  T* GradientFVM(int const& i,int const& j,T& grdv) const {
-    Element_t const* el = GetElement();
-    FVM_t* fvm   = FVM_GetInstance(el) ;
-    double* dist = FVM_ComputeIntercellDistances(fvm) ;
+  T* GradientFVM(Element_t const* el,int const& i,int const& j,T& grdv) const {
+    //FVM_t* fvm   = FVM_GetInstance(el) ;
+    double* dist = Element_ComputeInternodeDistances(el) ;
     int nn = Element_GetNbOfNodes(el) ;
     double dij  = dist[nn*i + j] ;
     T const* val = _localvalue;
@@ -207,31 +221,12 @@ struct LocalVariables_t: virtual public LocalSpaceTime_t {
     return(NULL);
   }
   
-  //void   SetPointerToNodalUnknowns(double const* const* u) {_u = u;}
-  //void   SetImplicitTerm(double const* f) {_f = f;}
-  //void  SetLocalValue(T* v) {_localvalue = v;}
-  //void  ResetLocalValue(void) {_localvalue = _savedlocalvalue;}
-  
   /* Accessors */
-  double const* const*   GetPointerToNodalUnknowns(void) const {return _u;}
-  double const*    GetImplicitTerm(void) const {return _f;}
-  double const*    GetExplicitTerm(void) const {
-    if(Element_GetNbOfExplicitTerms(GetElement())) {
-      return Element_GetExplicitTerm(GetElement());
-    } else {
-      return NULL;
-    }
-  }
-  double const*    GetConstantTerm(void) const {
-    if(Element_GetNbOfConstantTerms(GetElement())) {
-      return Element_GetConstantTerm(GetElement());
-    } else {
-      return NULL;
-    }
-  }
-  T*    GetLocalValue() {return _localvalue;}
-  T*    GetLocalDerivative() {return _localderivative;}
-  int   GetSizeOfLocalValues() const {return (sizeof(T)/sizeof(double));}
+  double const* const* GetPointerToNodalUnknowns(void) const {return _u;}
+  double*              GetImplicitTerm(void) const {return _f;}
+  T*   GetLocalValue() {return _localvalue;}
+  T*   GetLocalDerivative() {return _localderivative;}
+  int  GetSizeOfLocalValues() const {return (sizeof(T)/sizeof(double));}
 } ;
 
 

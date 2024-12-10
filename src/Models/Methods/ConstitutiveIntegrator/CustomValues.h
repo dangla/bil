@@ -1,47 +1,83 @@
 #ifndef CUSTOMVALUES_H
 #define CUSTOMVALUES_H
 
+#include <type_traits>
 #include "Message.h"
 
-
-template<class... C>
-struct CustomValues_t: C... {
-  #include "CustomValues_MemberOperations.in"
-};
-
-
-/* Partial template specialization */
-template<class IM,class EX,class CO,class... OT>
-struct CustomValues_t<IM,EX,CO,OT...>: IM,EX,CO,OT... {
-  using ImplicitValues_type = IM;
-  using ExplicitValues_type = EX;
-  using ConstantValues_type = CO;
+/* Primary template */
+template<typename T,template<typename> class... C>
+struct CustomValues_t: C<T>... {
+  using Value_type = T;
   
   #include "CustomValues_MemberOperations.in"
 };
 
 
-/* Convert a pointer V to any type in pointer to type T */
-#define CustomValues_Convert(V,T) (((T)*) (V))
+/* Partial template specialization */
+template<typename T,template<typename> class IM,template<typename> class EX,template<typename> class CO,template<typename> class... OT>
+struct CustomValues_t<T,IM,EX,CO,OT...>: IM<T>,EX<T>,CO<T>,OT<T>... {
+  using ImplicitValues_type = IM<T>;
+  using ExplicitValues_type = EX<T>;
+  using ConstantValues_type = CO<T>;
+  using Value_type = T;
+  
+  #include "CustomValues_MemberOperations.in"
+};
 
-#define CustomValues_Index(CV,V,T)  ((int) (((T*) (&(CV)->V)) - ((T*) (CV))))
+
+#if 0
+template<class... C>
+struct CustomValues_t: C... {
+  #define T double
+  #include "CustomValuesTest_MemberOperations.in"
+  #undef T
+};
+
+
+template<double,class IM,class EX,class CO,class... OT>
+struct CustomValues_t<IM,EX,CO,OT...>: IM,EX,CO,OT... {
+  using ImplicitValues_type = IM;
+  using ExplicitValues_type = EX;
+  using ConstantValues_type = CO;
+  
+  #define T double
+  #include "CustomValuesTest_MemberOperations.in"
+  #undef T
+};
+#endif
+
+
+
+/* Below CV (=TCV<T>) stands for a class. */
+#include "Utils.h"
+
+#define CustomValues_Index(...) \
+        Utils_CAT_NARG(CustomValues_Index,__VA_ARGS__)(__VA_ARGS__)
+        
+#define CustomValues_Index2(TCV,V) \
+        CustomValues_Index3(TCV<char>,V,char)
+        
+#define CustomValues_Index3(CV,V,T)  ((int) ((T*)&((CV*)(0))->V - (T*)0))
+
 
 #define CustomValues_TypeOfImplicitValues(CV)  typename CV::ImplicitValues_type
 #define CustomValues_TypeOfExplicitValues(CV)  typename CV::ExplicitValues_type
 #define CustomValues_TypeOfConstantValues(CV)  typename CV::ConstantValues_type
+#define CustomValues_TypeOfValue(CV)           typename CV::Value_type
+
+#define CustomValues_IsValueType(CV,T) \
+        std::is_same_v<CustomValues_TypeOfValue(CV),T>
 
 
-#define CustomValues_NbOfMembers(CV,T)  ((int) (sizeof(CV)/sizeof(T)))
-#define CustomValues_Size(CV,T)  ((int) (sizeof(CV)/sizeof(T)))
 
-#define CustomValues_SizeOfImplicitValues(CV,T) \
-        CustomValues_Size(CustomValues_TypeOfImplicitValues(CV),T)
+#define CustomValues_NbOfImplicitValues(CV) \
+        ((int) (sizeof(CustomValues_TypeOfImplicitValues(CV))/sizeof(CustomValues_TypeOfValue(CV))))
         
-#define CustomValues_SizeOfExplicitValues(CV,T) \
-        CustomValues_Size(CustomValues_TypeOfExplicitValues(CV),T)
+#define CustomValues_NbOfExplicitValues(CV) \
+        ((int) (sizeof(CustomValues_TypeOfExplicitValues(CV))/sizeof(CustomValues_TypeOfValue(CV))))
         
-#define CustomValues_SizeOfConstantValues(CV,T) \
-        CustomValues_Size(CustomValues_TypeOfConstantValues(CV),T)
+#define CustomValues_NbOfConstantValues(CV) \
+        ((int) (sizeof(CustomValues_TypeOfConstantValues(CV))/sizeof(CustomValues_TypeOfValue(CV))))
 
 
 
@@ -50,17 +86,15 @@ struct CustomValues_t<IM,EX,CO,OT...>: IM,EX,CO,OT... {
 //----------------------------------------------------------------------
 // Math Operations as non-member functions
 //----------------------------------------------------------------------
-#define CLASSDEF  class... C
-#define CLASSLIST C...
+#define CLASSDEF  typename U,template<typename> class... A
+#define CLASSLIST U,A...
 #include "CustomValues_Non-MemberOperations.in"
-
 #undef CLASSDEF
 #undef CLASSLIST
 
-#define CLASSDEF  class IM,class EX,class CO,class... OT
-#define CLASSLIST IM,EX,CO,OT...
+#define CLASSDEF  typename U,template<typename> class A,template<typename> class B,template<typename> class C,template<typename> class... D
+#define CLASSLIST U,A,B,C,D...
 #include "CustomValues_Non-MemberOperations.in"
-
 #undef CLASSDEF
 #undef CLASSLIST
 

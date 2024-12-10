@@ -69,6 +69,18 @@
 #define MolarMassOfMolecule_Fe          (55.85e-3)
 #define MolarMassOfMolecule_Fe2O3       (159.7e-3)
 
+/* Magnesium compounds */
+#define MolarMassOfMolecule_Mg          (24.3e-3)
+#define MolarMassOfMolecule_MgO         (40.3e-3)
+
+/* Phosphorus compounds */
+#define MolarMassOfMolecule_P           (30.97e-3)
+#define MolarMassOfMolecule_P2O5        (141.93e-3)
+
+/* Titanium */
+#define MolarMassOfMolecule_Ti          (47.867e-3)
+#define MolarMassOfMolecule_TiO         (63.863e-3)
+
 /* Calcium-Silicium compounds */
 #define MolarMassOfMolecule_CaH2SiO4    (134.e-3)
 #define MolarMassOfMolecule_CaH3SiO4    (135.e-3)

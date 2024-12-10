@@ -670,7 +670,7 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
 
   {
     /* Interpolation functions at s */
-    double *h_s = FEM_ComputeIsoShapeFctInActualSpace(fem,s) ;
+    double *h_s = Element_ComputeIsoShapeFctInActualSpace(el,s) ;
     /* pressures */
     double pl  =  FEM_ComputeCurrentUnknown(fem,h_s,nn,I_p_l) ;
     double pc  = p_g - pl ;
@@ -1024,8 +1024,8 @@ double rn15(double *sig,double *sig_n,double *p_co,double *eps_p,Element_t *el)
       fcrit  = q*q/m2 + p*(p + pc) ;
       
       if(nf++ > 20) {
-	      printf("pas de convergence (rn15)") ;
-	      exit(0) ;
+        printf("pas de convergence (rn15)") ;
+        exit(0) ;
       }
     }
   }

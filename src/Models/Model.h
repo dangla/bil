@@ -18,15 +18,15 @@ extern "C" {
 /* Vacuous declarations and typedef names */
 
 /* class-like structure "Model_t" */
-struct Model_s        ; typedef struct Model_s        Model_t ;
+struct Model_t        ; typedef struct Model_t        Model_t ;
 
 
 /*  Typedef names of Methods */
 #include <stdio.h>
 
-typedef int    (Model_SetModelProp_t)        (Model_t*) ;
+typedef int    (Model_SetModelProperties_t)  (Model_t*) ;
 typedef int    (Model_ComputePropertyIndex_t)(const char*) ;
-typedef int    (Model_PrintModelProp_t)      (Model_t*,FILE*) ;
+typedef int    (Model_PrintModelProperties_t)(Model_t*,FILE*) ;
 
 #include "Element.h"
 
@@ -36,10 +36,6 @@ typedef int    (Model_ComputeImplicitTerms_t)(Element_t*,double,double) ;
 typedef int    (Model_ComputeMatrix_t)       (Element_t*,double,double,double*) ;
 typedef int    (Model_ComputeResidu_t)       (Element_t*,double,double,double*) ;
 
-typedef void*  (Model_ComputeVariables_t)(Element_t*,void*,void*,void*,const double,const double,const int) ;
-//typedef double*   (Model_ComputeVariableFluxes_t)(Element_t* el,double** u,double t,double dt,int i,int j,...) ;
-typedef int    (Model_ComputeSecondaryVariables_t)(Element_t*,const double,const double,double*,double*) ;
-typedef void*  (Model_ComputeVariableDerivatives_t)(Element_t*,const double,const double,void*,const double,const int) ;
 
 #include "IntFcts.h"
 #include "ShapeFcts.h"
@@ -59,6 +55,9 @@ typedef int    (Model_ComputeOutputs_t)(Element_t*,double,double*,Result_t*) ;
 
 typedef int    (Model_ReadMaterialProperties_t)(Material_t*,DataFile_t*) ;
 
+typedef void   (Model_ComputeMaterialProperties_t)(Element_t*) ;
+
+
 
 
 /* 2. Model_t */
@@ -68,7 +67,6 @@ typedef int    (Model_ReadMaterialProperties_t)(Material_t*,DataFile_t*) ;
 extern Model_t*  (Model_New)       (void) ;
 extern void      (Model_Delete)    (void*) ;
 extern Model_t*  (Model_Initialize)(Model_t*,const char*,Geometry_t*,DataFile_t*) ;
-extern double*   (Model_ComputeVariableDerivatives)(Element_t*,double,double,double,int,int) ;
 extern void      (Model_Scan)(Model_t*,DataFile_t*,Geometry_t*) ;
 
 
@@ -97,10 +95,6 @@ extern void      (Model_Scan)(Model_t*,DataFile_t*,Geometry_t*) ;
 #define Model_GetNumericalMethod(MOD)      ((MOD)->numericalmethod)
 #define Model_GetObjectiveValue(MOD)       ((MOD)->obval)
 #define Model_GetViews(MOD)                ((MOD)->views)
-#define Model_GetLocalVariableVectors(MOD) ((MOD)->localvariable)
-#define Model_GetLocalFluxVectors(MOD)     ((MOD)->localflux)
-//#define Model_GetNbOfVariables(MOD)        ((MOD)->nbofvariables)
-//#define Model_GetNbOfVariableFluxes(MOD)   ((MOD)->nbofvariablefluxes)
 
 
 #define Model_GetSetModelProp(MOD)            ((MOD)->setmodelprop)
@@ -115,8 +109,7 @@ extern void      (Model_Scan)(Model_t*,DataFile_t*,Geometry_t*) ;
 #define Model_GetComputeLoads(MOD)            ((MOD)->computeloads)
 #define Model_GetComputeOutputs(MOD)          ((MOD)->computeoutputs)
 #define Model_GetComputePropertyIndex(MOD)    ((MOD)->computepropertyindex)
-
-#define Model_GetComputeSecondaryVariables(MOD)  ((MOD)->computesecondaryvariables)
+#define Model_GetComputeMaterialProperties(MOD)   ((MOD)->ComputeMaterialProperties)
 
 
 
@@ -144,53 +137,28 @@ extern void      (Model_Scan)(Model_t*,DataFile_t*,Geometry_t*) ;
 
 /* Short hands */
 #define Model_SetModelProp(MOD) \
-        Model_GetSetModelProp(MOD)(MOD)
+        do {\
+          if(Model_GetSetModelProp(MOD)) {\
+            Model_GetSetModelProp(MOD)(MOD);\
+          }\
+        } while(0)
 
 #define Model_PrintModelProp(MOD,file) \
-        Model_GetPrintModelProp(MOD)(MOD,file)
-
-
-
-#include "LocalVariableVectors.h"
-
-/* Operations on local variables */
-#define Model_GetNbOfVariables(MOD) \
-        LocalVariableVectors_GetNbOfVariables(Model_GetLocalVariableVectors(MOD))
-
-#define Model_GetVariable(MOD,n) \
-        LocalVariableVectors_GetVariable(Model_GetLocalVariableVectors(MOD),n)
-
-#define Model_GetPreviousVariable(MOD,n) \
-        LocalVariableVectors_GetPreviousVariable(Model_GetLocalVariableVectors(MOD),n)
-
-#define Model_GetVariableDerivative(MOD,n) \
-        LocalVariableVectors_GetVariableDerivative(Model_GetLocalVariableVectors(MOD),n)
-
-
-#define Model_GetNbOfVariableFluxes(MOD) \
-        LocalVariableVectors_GetNbOfVariables(Model_GetLocalFluxVectors(MOD))
-
-#define Model_GetVariableFlux(MOD,n) \
-        LocalVariableVectors_GetVariable(Model_GetLocalFluxVectors(MOD),n)
-
-#define Model_GetVariableFluxDerivative(MOD,n) \
-        LocalVariableVectors_GetVariableDerivative(Model_GetLocalFluxVectors(MOD),n)
-
-
-
-
-
-
+        do {\
+          if(Model_GetPrintModelProp(MOD)) {\
+            Model_GetPrintModelProp(MOD)(MOD,file);\
+          }\
+        } while(0)
 
 
 
 #include "ObVal.h"
 
 
-struct Model_s {              /* model */
-  Model_SetModelProp_t*             setmodelprop ;
+struct Model_t {              /* model */
+  Model_SetModelProperties_t*             setmodelprop ;
   Model_ReadMaterialProperties_t*   readmatprop ;
-  Model_PrintModelProp_t*           printmodelprop ;
+  Model_PrintModelProperties_t*           printmodelprop ;
   Model_DefineElementProperties_t*  defineelementprop ;
   Model_ComputeInitialState_t*      computeinitialstate ;
   Model_ComputeExplicitTerms_t*     computeexplicitterms ;
@@ -200,9 +168,8 @@ struct Model_s {              /* model */
   Model_ComputeLoads_t*             computeloads ;
   Model_ComputeOutputs_t*           computeoutputs ;
   Model_ComputePropertyIndex_t*     computepropertyindex ;
-  
-  Model_ComputeSecondaryVariables_t* computesecondaryvariables ;
-  
+  Model_ComputeMaterialProperties_t* ComputeMaterialProperties ;
+    
   char*   codename ;          /* code name of the model */
   char*   shorttitle ;        /* Short title of the model */
   char*   authors ;           /* Authors of the model */
@@ -218,12 +185,6 @@ struct Model_s {              /* model */
   void*    numericalmethod ;  /* Numerical method */
   ObVal_t* obval ;            /* Objective values of unknowns */
   Views_t* views ;            /* Views */
-  
-  LocalVariableVectors_t* localvariable ;
-  LocalVariableVectors_t* localflux ;
-  
-  //unsigned int nbofvariables ;
-  //unsigned int nbofvariablefluxes ;
 } ;
 
 

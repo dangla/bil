@@ -3,10 +3,12 @@
 UNAME = Linux
 
 
-# Compilers (C++11 for variadic macros)
+# Compilers (C++11 for variadic macros, C++17 for autodiff)
 #----------
 CC     := gcc -x c   -std=c11
-CPP    := gcc -x c++ -std=c++11
+CPP    := gcc -x c++ -std=c++17
+# Force c++ compiler
+CC     := ${CPP}
 F77    := gfortran -cpp
 LEX    := flex #-d
 YACC   := bison #-t
@@ -34,7 +36,7 @@ IFLAGS-SRC = -iprefix ${BIL_PATH}/src/ -iwithprefix . -iwithprefix Common -iwith
 IFLAGS-SOLVER = -iprefix ${BIL_PATH}/src/Solver/ -iwithprefix MatrixStorageFormats -iwithprefix ResolutionMethods -iwithprefix VectorStorageFormats
 
 # Additional flags for models
-IFLAGS-MODELS = -iprefix ${BIL_PATH}/src/Models/ -iwithprefix .  -iwithprefix DataBases  -iwithprefix Libraries  -iwithprefix Methods  -iwithprefix ConstitutiveLaws
+IFLAGS-MODELS = -iprefix ${BIL_PATH}/src/Models/ -iwithprefix .  -iwithprefix DataBases  -iwithprefix Libraries  -iprefix ${BIL_PATH}/src/Models/Methods/ -iwithprefix .  -iwithprefix ConstitutiveIntegrator -iwithprefix FiniteElementMethod -iwithprefix FiniteVolumeMethod -iprefix ${BIL_PATH}/src/Models/ConstitutiveLaws/ -iwithprefix . -iwithprefix PlasticityModels -iwithprefix DamageModels
 
 # Additional flags for modules
 IFLAGS-MODULES =  -iprefix ${BIL_PATH}/src/Modules/ -iwithprefix .

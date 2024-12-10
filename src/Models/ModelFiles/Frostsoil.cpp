@@ -4,6 +4,12 @@
 #include <math.h>
 #include "CommonModel.h"
 
+#ifdef HAVE_AUTODIFF
+#define USE_AUTODIFF 0
+#else
+#define USE_AUTODIFF 0
+#endif
+
 
 /* Choose the finite element method */
 #include "FEM.h"
@@ -52,16 +58,64 @@
 
 
 
-#include <BaseName.h>
+#include "BaseName.h"
+#include "CustomValues.h"
+#include "ConstitutiveIntegrator.h"
+#include "MaterialPointModel.h"
 
 #define ImplicitValues_t BaseName(_ImplicitValues_t)
 #define ExplicitValues_t BaseName(_ExplicitValues_t)
 #define ConstantValues_t BaseName(_ConstantValues_t)
+#define OtherValues_t    BaseName(_OtherValues_t)
+
+
+
+template<typename T>
+struct ImplicitValues_t ;
+
+template<typename T>
+struct ExplicitValues_t;
+
+template<typename T>
+struct ConstantValues_t;
+
+template<typename T>
+struct OtherValues_t;
+
+template<typename T>
+using Values_t = CustomValues_t<T,ImplicitValues_t,ExplicitValues_t,ConstantValues_t,OtherValues_t> ;
+
+using Values_d = Values_t<double> ;
+
+#define Values_Index(V)  CustomValues_Index(Values_d,V,double)
+
+
+#define MPM_t      BaseName(_MPM_t)
+
+
+
+
+struct MPM_t: public MaterialPointModel_t<Values_d> {
+  MaterialPointModel_SetInputs_t<Values_d> SetInputs;
+  template<typename T>
+  MaterialPointModel_Integrate_t<Values_d,Values_t<T>> Integrate;
+  MaterialPointModel_Initialize_t<Values_d>  Initialize;
+  MaterialPointModel_SetTangentMatrix_t<Values_d> SetTangentMatrix;
+  MaterialPointModel_SetTransferMatrix_t<Values_d> SetTransferMatrix;
+  MaterialPointModel_SetIndexes_t SetIndexes;
+  MaterialPointModel_SetIncrements_t SetIncrements;
+} ;
+
+
+
+using CI_t = ConstitutiveIntegrator_t<Values_d,MPM_t>;
+//using CI_t = ConstitutiveIntegrator_t<Values_d>;
+
+
+
+
 
 /* We define some names for implicit terms */
-#define NVI \
-        ((int) sizeof(ImplicitValues_t<char>))
-
 template<typename T = double>
 struct ImplicitValues_t {
   T Displacement[3];
@@ -80,6 +134,12 @@ struct ImplicitValues_t {
   T HeatFlow[3];
   T Stress[9];
   T BodyForce[3];
+} ;
+
+
+
+template<typename T = double>
+struct OtherValues_t {
   T SaturationDegree_liquid;
   T Pressure_liquid;
   T Pressure_ice;
@@ -87,14 +147,11 @@ struct ImplicitValues_t {
   T MassDensity_ice;
   T ChemicalPotential_liquid;
   T ChemicalPotential_ice;
-} ;
+};
 
 
 
 /* We define some names for explicit terms */
-#define NVE \
-        ((int) sizeof(ExplicitValues_t<char>))
-
 template<typename T = double>
 struct ExplicitValues_t {
   T Permeability_liquid;
@@ -107,43 +164,13 @@ struct ExplicitValues_t {
 
 
 /* We define some names for constant terms (v0 must be used as pointer below) */
-#define NV0 \
-        ((int) sizeof(ConstantValues_t<char>))
-
 template<typename T = double>
 struct ConstantValues_t {};
 
 
-
-#include <CustomValues.h>
-
-using Values_t = CustomValues_t<ImplicitValues_t<>,ExplicitValues_t<>,ConstantValues_t<>> ;
-
-#define SetInputs_t BaseName(_SetInputs_t)
-#define Integrate_t BaseName(_Integrate_t)
-
-
-#include <ConstitutiveIntegrator.h>
-
-#define USEFUNCTOR 0
-
-#if USEFUNCTOR
-struct SetInputs_t {
-  ConstitutiveIntegrator_SetInputs_t<Values_t> operator();
-} ;
-
-struct Integrate_t {
-  ConstitutiveIntegrator_Integrate_t<Values_t> operator();
-} ;
-#else
-using SetInputs_t = ConstitutiveIntegrator_SetInputs_t<Values_t> ;
-using Integrate_t = ConstitutiveIntegrator_Integrate_t<Values_t> ;
-#endif
-
-using CI_t = ConstitutiveIntegrator_t<Values_t,SetInputs_t,Integrate_t>;
-
-static Integrate_t Integrate;
-static SetInputs_t SetInputs;
+static MPM_t mpm1;
+//static MPM_t* mpm = (MPM_t*) &mpm1;
+static MaterialPointModel_t<Values_d>* mpm = &mpm1;
 
 
 
@@ -319,11 +346,17 @@ static double thickness ;
 static double youngfraction ;
 static double capillarypressurefraction ;
 
-static double  effectivediffusioncoef(double,double) ;
-double effectivediffusioncoef(double phi,double s)
+template<typename T>
+static T effectivediffusioncoef(double,T);
+template static double  effectivediffusioncoef(double,double) ;
+#if USE_AUTODIFF
+template static real  effectivediffusioncoef(double,real) ;
+#endif
+template<typename T>
+T effectivediffusioncoef(double phi,T s)
 {
-  double tau_l_sat = 0.296e-3*exp(9.95*phi)/phi ;
-  double tau = 0 ;
+  T tau_l_sat = 0.296e-3*exp(9.95*phi)/phi ;
+  T tau = 0 ;
   
   if(s > 0.) {
     tau = tau_l_sat/(s*(1 + 625*pow(1 - s,4))) ;
@@ -334,12 +367,19 @@ double effectivediffusioncoef(double phi,double s)
   return(thickness*phi*s*tau*D_salt) ;
 }
 
-static double thermalconductivity(double,double) ;
-double thermalconductivity(double phi,double sd_l)
+
+template<typename T>
+static T thermalconductivity(double,T);
+template static double thermalconductivity(double,double) ;
+#if USE_AUTODIFF
+template static real thermalconductivity(double,real) ;
+#endif
+template<typename T>
+T thermalconductivity(double phi,T sd_l)
 {
-  double sd_i = 1 - sd_l ;
-  double lam_h2o = sd_l*lam_l + sd_i*lam_i ;
-  double lam_hom = lam_s*(1 - 3*phi*(lam_s - lam_h2o)/(3*lam_s - (1 - phi)*(lam_s - lam_h2o))) ;
+  T sd_i = 1 - sd_l ;
+  T lam_h2o = sd_l*lam_l + sd_i*lam_i ;
+  T lam_hom = lam_s*(1 - 3*phi*(lam_s - lam_h2o)/(3*lam_s - (1 - phi)*(lam_s - lam_h2o))) ;
   
   return(thickness*lam_hom) ;
 }
@@ -412,15 +452,23 @@ void GetProperties(Element_t* el)
 
 
 /* Functions used below */
-static int     ComputeTransferCoefficients(Element_t*,double,double*) ;
-
-static int     ComputeTangentCoefficients(Element_t*,double,double,double*) ;
-
 static void    ComputePhysicoChemicalProperties(void) ;
 
-static double  activity(double,double) ;
+template<typename T>
+static T activity(T,T);
+template static double  activity(double,double) ;
+#if USE_AUTODIFF
+template static real  activity(real,real) ;
+#endif
+
 static double  activity_w_ideal(double,double) ;
-static double  lna_i(double,double,double,double,double,double) ;
+
+template<typename T>
+static T lna_i(T,T,double,double,double,T);
+template static double  lna_i(double,double,double,double,double,double) ;
+#if USE_AUTODIFF
+template static real  lna_i(real,real,double,double,double,real) ;
+#endif
 
 
 
@@ -511,7 +559,8 @@ int SetModelProp(Model_t* model)
     Model_CopyNameOfUnknown(model,U_MECH + i,name_unk[i]) ;
   }
   
-  Model_GetComputePropertyIndex(model) = pm ;
+  Model_GetComputePropertyIndex(model) = &pm ;
+  Model_GetComputeMaterialProperties(model) = &GetProperties;
   
   Model_GetSequentialIndexOfUnknown(model)[E_THER] = 0 ;
   Model_GetSequentialIndexOfUnknown(model)[E_MASS] = 1 ;
@@ -669,17 +718,21 @@ int PrintModelProp(Model_t* model,FILE* ficd)
 }
 
 
+
 int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
 /** Define some properties attached to each element 
  *  Return 0 */
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) + 1 ;
-
+  int const nvi = ((int) sizeof(ImplicitValues_t<char>));
+  int const nve = ((int) sizeof(ExplicitValues_t<char>));
+  int const nv0 = ((int) sizeof(ConstantValues_t<char>));
+  
   /** Define the length of tables */
-  Element_GetNbOfImplicitTerms(el) = NbOfIntPoints*NVI ;
-  Element_GetNbOfExplicitTerms(el) = NbOfIntPoints*NVE ;
-  Element_GetNbOfConstantTerms(el) = NbOfIntPoints*NV0 ;
+  Element_GetNbOfImplicitTerms(el) = NbOfIntPoints*nvi ;
+  Element_GetNbOfExplicitTerms(el) = NbOfIntPoints*nve ;
+  Element_GetNbOfConstantTerms(el) = NbOfIntPoints*nv0 ;
 
 
   /* Continuity of unknowns across zero-thickness element */
@@ -739,6 +792,7 @@ int  ComputeLoads(Element_t* el,double t,double dt,Load_t* cg,double* r)
 
 
 
+
 int ComputeInitialState(Element_t* el,double t)
 /** Compute the initial state i.e. 
  *  the constant terms,
@@ -748,44 +802,22 @@ int ComputeInitialState(Element_t* el,double t)
  */ 
 {
   double* vi0 = Element_GetImplicitTerm(el) ;
-  double* ve0 = Element_GetExplicitTerm(el) ;
   double** u  = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  CI_t ci(mpm) ;
   
   /* Usually we have to skip if the element is a submanifold, 
    * e.g. a surface in 3D or a line in 2D */
   if(Element_IsSubmanifold(el)) return(0) ;
 
+    
+  ci.Set(el,t,0,u,vi0,u,vi0) ;
 
   /*
     We load some input data
   */
-  GetProperties(el) ;
-
-
-  /* Loop on integration points */
-  {
-    IntFct_t*  intfct = Element_GetIntFct(el) ;
-    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-    int    p ;
-    
-    CI_t ci(&SetInputs,&Integrate,el,t,0,u,vi0,u,vi0) ;
-
-    
-    for(p = 0 ; p < NbOfIntPoints ; p++) {
-      Values_t* val = ci.Integrate(p) ;
-      
-      if(!val) return(1);
-      
-      /* storage in vi */
-      ci.StoreImplicitTerms(p) ;
-
-      /* storage in ve */
-      ci.StoreExplicitTerms(p) ;
-    }
-  }
-
+  Element_ComputeMaterialProperties(el) ;
   
-  return(0) ;
+  return(ci.ComputeInitialStateByFEM());
 }
 
 
@@ -795,41 +827,22 @@ int  ComputeExplicitTerms(Element_t* el,double t)
  *  whatever they are, nodal values or implicit terms.
  *  Return 0 if succeeded and -1 if failed */
 {
-  double* ve0 = Element_GetExplicitTerm(el) ;
-  /* If you need the implicit terms, use the previous ones */
   double* vi_n = Element_GetPreviousImplicitTerm(el) ;
   /* If you need the nodal values, use the previous ones */
   double** u = Element_ComputePointerToPreviousNodalUnknowns(el) ;
+  CI_t ci(mpm) ;
   
   /* If needed ! */
   if(Element_IsSubmanifold(el)) return(0) ;
+    
+  ci.Set(el,t,0,u,vi_n,u,vi_n) ;
 
   /*
     We load some input data
   */
-  GetProperties(el) ;
+  Element_ComputeMaterialProperties(el) ;
   
-  
-  /* Compute here ve */
-  /* Loop on integration points */
-  if(NVE) {
-    IntFct_t*  intfct = Element_GetIntFct(el) ;
-    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-    int    p ;
-    
-    CI_t ci(&SetInputs,&Integrate,el,t,0,u,vi_n,u,vi_n) ;
-    
-    for(p = 0 ; p < NbOfIntPoints ; p++) {
-      Values_t* val = ci.Integrate(p) ;
-      
-      if(!val) return(1);
-    
-      /* storage in ve */
-      ci.StoreExplicitTerms(p) ;
-    }
-  }
-  
-  return(0) ;
+  return(ci.ComputeExplicitTermsByFEM());
 }
 
 
@@ -841,35 +854,18 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
   double* vi_n  = Element_GetPreviousImplicitTerm(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
+  CI_t ci(mpm) ;
 
   if(Element_IsSubmanifold(el)) return(0) ;
+    
+  ci.Set(el,t,dt,u_n,vi_n,u,vi) ;
   
   /*
     We load some input data
   */
-  GetProperties(el) ;
+  Element_ComputeMaterialProperties(el) ;
   
-  
-  /* Compute here vi (with the help of vi_n if needed) */
-  /* Loop on integration points */
-  {
-    IntFct_t*  intfct = Element_GetIntFct(el) ;
-    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-    int p ;
-    
-    CI_t ci(&SetInputs,&Integrate,el,t,dt,u_n,vi_n,u,vi) ;
-    
-    for(p = 0 ; p < NbOfIntPoints ; p++) {
-      Values_t* val = ci.Integrate(p) ;
-      
-      if(!val) return(1);
-      
-      /* storage in vi */
-      ci.StoreImplicitTerms(p) ;
-    }
-  }
-
-  return(0) ;
+  return(ci.ComputeImplicitTermsByFEM()) ;
 }
 
 
@@ -877,19 +873,17 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 /** Compute the matrix (k) 
  *  Return 0 if succeeded and -1 if failed */
 {
-#define K(i,j)    (k[(i)*ndof + (j)])
-  IntFct_t*  intfct = Element_GetIntFct(el) ;
+  double*  vi   = Element_GetCurrentImplicitTerm(el) ;
+  double*  vi_n = Element_GetPreviousImplicitTerm(el) ;
+  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
   int ndof = nn*NEQ ;
-  FEM_t* fem = FEM_GetInstance(el) ;
+  CI_t ci(mpm) ;
 
   /* Initialization */
-  {
-    int    i ;
-    
-    for(i = 0 ; i < ndof*ndof ; i++) k[i] = 0. ;
-  }
+  for(int i = 0 ; i < ndof*ndof ; i++) k[i] = 0. ;
 
 
   /* We skip if the element is a submanifold */
@@ -899,56 +893,30 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   /*
     We load some input data
   */
-  GetProperties(el) ;
+  Element_ComputeMaterialProperties(el) ;
+  
+
+  ci.Set(el,t,dt,u_n,vi_n,u,vi) ;
 
 
   /*
-  ** Poromechanics matrix
+  ** Poromechanical matrix
   */
   {
-    int const n = 81 + 3*9 + 3*(9 + 3) ;
-    double c[IntFct_MaxNbOfIntPoints*n] ;
-    int dec = ComputeTangentCoefficients(el,t,dt,c) ;
-    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,3,E_MECH) ;
     {
-      int i ;
-      
-      for(i = 0 ; i < ndof*ndof ; i++) {
+      #if USE_AUTODIFF
+      double* kp = ci.ComputeAutodiffPoromechanicalMatrixByFEM<Values_t<real>>(E_MECH);
+      #else
+      double* kp = ci.ComputePoromechanicalMatrixByFEM(E_MECH);
+      #endif
+
+      for(int i = 0 ; i < ndof*ndof ; i++) {
         k[i] = kp[i] ;
       }
     }
   }
   
-  
-  /*
-  ** Conduction Matrix
-  */
-  {
-    int const n = 9*9 ;
-    double c[IntFct_MaxNbOfIntPoints*n] ;
-    int dec = ComputeTransferCoefficients(el,dt,c) ;
-    double* k_mass    = FEM_ComputeConductionMatrix(fem,intfct,c,dec) ;
-    double* k_salt_pl = FEM_ComputeConductionMatrix(fem,intfct,c+9*3,dec) ;
-    double* k_salt    = FEM_ComputeConductionMatrix(fem,intfct,c+9*4,dec) ;
-    double* k_the_pl  = FEM_ComputeConductionMatrix(fem,intfct,c+9*6,dec) ;
-    double* k_the     = FEM_ComputeConductionMatrix(fem,intfct,c+9*8,dec) ;
-    int    i ;
-  
-    for(i = 0 ; i < nn ; i++) {
-      int    j ;
-      
-      for(j = 0 ; j < nn ; j++) {
-        K(E_MASS + i*NEQ,U_MASS + j*NEQ) += dt*k_mass[i*nn + j] ;
-        K(E_SALT + i*NEQ,U_MASS + j*NEQ) += dt*k_salt_pl[i*nn + j] ;
-        K(E_SALT + i*NEQ,U_SALT + j*NEQ) += dt*k_salt[i*nn + j] ;
-        K(E_THER  + i*NEQ,U_MASS + j*NEQ) += dt*k_the_pl[i*nn + j] ;
-        K(E_THER  + i*NEQ,U_THER  + j*NEQ) += dt*k_the[i*nn + j] ;
-      }
-    }
-  }
-  
   return(0) ;
-#undef K
 }
 
 
@@ -959,148 +927,72 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 #define R(n,i)    (r[(n)*NEQ + (i)])
   double* vi1   = Element_GetCurrentImplicitTerm(el) ;
   double* vi1_n = Element_GetPreviousImplicitTerm(el) ;
+  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
-  IntFct_t*  intfct = Element_GetIntFct(el) ;
-  int np = IntFct_GetNbOfPoints(intfct) ;
   int ndof = nn*NEQ ;
-  FEM_t* fem = FEM_GetInstance(el) ;
-  using TI = CustomValues_TypeOfImplicitValues(Values_t);
-  TI* val   = (TI*) vi1 ;
-  TI* val_n = (TI*) vi1_n ;
-  
+  CI_t ci(mpm) ;
   
   /* Initialization */
-  {
-    int i ;
-    
-    for(i = 0 ; i < ndof ; i++) r[i] = 0. ;
+  {    
+    for(int i = 0 ; i < ndof ; i++) r[i] = 0. ;
   }
 
   if(Element_IsSubmanifold(el)) return(0) ;
+      
+  ci.Set(el,t,dt,u_n,vi1_n,u,vi1) ;
   
 
   /* Compute here the residu R(n,i) */
   
 
   /* 1. Mechanics */
-  
-  /* 1.1 Stresses */
   if(Element_EquationIsActive(el,E_MECH)) 
   {
-    double* rw = FEM_ComputeStrainWorkResidu(fem,intfct,val[0].Stress,NVI) ;
-    int i ;
+    int istress = Values_Index(Stress[0]);
+    int ibforce = Values_Index(BodyForce[0]);
+    double* rw = ci.ComputeMechanicalEquilibiumResiduByFEM(istress,ibforce);
     
-    for(i = 0 ; i < nn ; i++) {
-      int j ;
-      
-      for(j = 0 ; j < dim ; j++) R(i,E_MECH + j) -= rw[i*dim + j] ;
+    for(int i = 0 ; i < nn ; i++) {      
+      for(int j = 0 ; j < dim ; j++) R(i,E_MECH + j) -= rw[i*dim + j] ;
     }
-    
   }
-  
-  /* 1.2 Body forces */
-  #if 1
-  if(Element_EquationIsActive(el,E_MECH)) 
-  {
-    double* rbf = FEM_ComputeBodyForceResidu(fem,intfct,val[0].BodyForce + dim - 1,NVI) ;
-    int i ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      R(i,E_MECH + dim - 1) -= -rbf[i] ;
-    }
-    
-  }
-  #endif
   
   
   
   /* 2. Conservation of total mass */
-  
-  /* 2.1 Accumulation Terms */
-  if(Element_EquationIsActive(el,E_MASS)) 
-  {
-    double g1[IntFct_MaxNbOfIntPoints] ;
-    int i ;
+  if(Element_EquationIsActive(el,E_MASS))
+  {  
+    int imass = Values_Index(Mass_total);
+    int iflow = Values_Index(MassFlow_total[0]);
+    double* ra =  ci.ComputeMassConservationResiduByFEM(imass,iflow);
     
-    for(i = 0 ; i < np ; i++) {
-      g1[i] = val[i].Mass_total - val_n[i].Mass_total ;
-    }
-    
-    {
-      double* ra = FEM_ComputeBodyForceResidu(fem,intfct,g1,1) ;
-    
-      for(i = 0 ; i < nn ; i++) R(i,E_MASS) -= ra[i] ;
-    }
-  }
-  
-  /* 2.2 Transport Terms */
-  if(Element_EquationIsActive(el,E_MASS)) 
-  {
-    double* rf = FEM_ComputeFluxResidu(fem,intfct,val[0].MassFlow_total,NVI) ;
-    int i ;
-    
-    for(i = 0 ; i < nn ; i++) R(i,E_MASS) -= -dt*rf[i] ;
+    for(int i = 0 ; i < nn ; i++) R(i,E_MASS) -= ra[i] ;
   }
   
   
   
   /* 3. Conservation of salt */
-  
-  /* 3.1 Accumulation Terms */
-  if(Element_EquationIsActive(el,E_SALT)) 
-  {
-    double g1[IntFct_MaxNbOfIntPoints] ;
-    int i ;
+  if(Element_EquationIsActive(el,E_SALT))
+  {  
+    int imass = Values_Index(Mass_salt);
+    int iflow = Values_Index(MassFlow_salt[0]);
+    double* ra =  ci.ComputeMassConservationResiduByFEM(imass,iflow);
     
-    for(i = 0 ; i < np ; i++) {
-      g1[i] = val[i].Mass_salt - val_n[i].Mass_salt ;
-    }
-    
-    {
-      double* ra = FEM_ComputeBodyForceResidu(fem,intfct,g1,1) ;
-    
-      for(i = 0 ; i < nn ; i++) R(i,E_SALT) -= ra[i] ;
-    }
-  }
-  
-  /* 3.2 Transport Terms */
-  if(Element_EquationIsActive(el,E_SALT)) 
-  {
-    double* rf = FEM_ComputeFluxResidu(fem,intfct,val[0].MassFlow_salt,NVI) ;
-    int i ;
-    
-    for(i = 0 ; i < nn ; i++) R(i,E_SALT) -= -dt*rf[i] ;
+    for(int i = 0 ; i < nn ; i++) R(i,E_SALT) -= ra[i] ;
   }
   
   
   
   /* 4. Entropy balance */
-  
-  /* 3.1 Accumulation Terms */
-  if(Element_EquationIsActive(el,E_THER)) 
-  {
-    double g1[IntFct_MaxNbOfIntPoints] ;
-    int i ;
+  if(Element_EquationIsActive(el,E_THER))
+  {  
+    int imass = Values_Index(Entropy_total);
+    int iflow = Values_Index(HeatFlow[0]);
+    double* ra =  ci.ComputeMassConservationResiduByFEM(imass,iflow);
     
-    for(i = 0 ; i < np ; i++) {
-      g1[i] = val[i].Entropy_total - val_n[i].Entropy_total ;
-    }
-    
-    {
-      double* ra = FEM_ComputeBodyForceResidu(fem,intfct,g1,1) ;
-    
-      for(i = 0 ; i < nn ; i++) R(i,E_THER) -= ra[i] ;
-    }
-  }
-  
-  /* 3.2 Transport Terms */
-  if(Element_EquationIsActive(el,E_THER)) 
-  {
-    double* rf = FEM_ComputeFluxResidu(fem,intfct,val[0].HeatFlow,NVI) ;
-    int i ;
-    
-    for(i = 0 ; i < nn ; i++) R(i,E_THER) -= -dt*rf[i] ;
+    for(int i = 0 ; i < nn ; i++) R(i,E_THER) -= ra[i] ;
   }
   
   return(0) ;
@@ -1114,23 +1006,19 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
  *  Return the nb of views (scalar, vector or tensor) */
 {
   int NbOfOutputs  = 17 ;
-  double* ve  = Element_GetExplicitTerm(el) ;
   double* vi  = Element_GetCurrentImplicitTerm(el) ;
   double** u  = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   double** u_n  = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
-  //int dim = Element_GetDimensionOfSpace(el) ;
-  FEM_t* fem = FEM_GetInstance(el) ;
+  CI_t ci(mpm) ;
 
   if(Element_IsSubmanifold(el)) return(0) ;
   
   
   /* Initialization */
   {
-    int i ;
-    
-    for(i = 0 ; i < NbOfOutputs ; i++) {
+    for(int i = 0 ; i < NbOfOutputs ; i++) {
       Result_SetValuesToZero(r + i) ;
     }
   }
@@ -1138,10 +1026,10 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   /*
     Input data
   */
-  GetProperties(el) ;
+  Element_ComputeMaterialProperties(el) ;
+
   
-  
-  CI_t ci(&SetInputs,&Integrate,el,t,0,u,vi,u,vi) ;
+  ci.Set(el,t,0,u,vi,u,vi) ;
   
   
   {
@@ -1149,19 +1037,37 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double* a = Element_ComputeCoordinateInReferenceFrame(el,s) ;
     int p = IntFct_ComputeFunctionIndexAtPointOfReferenceFrame(intfct,a) ;
     /* Variables */
-    Values_t& val = *ci.Integrate(p) ;
+    //Values_d& val = *ci.IntegrateValues(p) ;
+    /* displacements */
+    double* disp = Element_ComputeDisplacementVector(el,u,intfct,p,U_MECH) ;
     /* strains */
-    double* eps = val.Strain ;
-    double* eps_n =  FEM_ComputeLinearStrainTensor(fem,u_n,intfct,p,U_MECH) ;
+    double* eps =  Element_ComputeLinearStrainTensor(el,u,intfct,p,U_MECH) ;
+    double* eps_n =  Element_ComputeLinearStrainTensor(el,u_n,intfct,p,U_MECH) ;
     double  epsv = eps[0] + eps[4] + eps[8] ;
     double  epsv_n = eps_n[0] + eps_n[4] + eps_n[8] ;
-    /* pressures */
-    double p_l  = val.Pressure_liquid ;
-    double p_i  = val.Pressure_ice ;
-    double dp_l = val.Pressure_liquid - p0 ;
-    double dp_i = val.Pressure_ice - p0 ;
     /* temperature */
-    double dtem = val.Temperature - T0 ;
+    double tem = Element_ComputeUnknown(el,u,intfct,p,U_THER) ;
+    double dtem = tem - T0 ;
+    /* salt concentration */
+    double c_salt = Element_ComputeUnknown(el,u,intfct,p,U_SALT) ;
+    /* Log of water activity */
+    double lna = LogActivityOfWater(c_salt,tem) ;
+    /* pressures */
+    double u_mass = Element_ComputeUnknown(el,u,intfct,p,U_MASS) ;
+    #if defined (U_P_MAX)
+    double  p_max = u_mass ;
+    //     0 = V_Ice*(p_i   - p_m) - V_H2O*(p_l   - p_m) + S_m*(tem - T_m) - R_g*tem*lna
+    double c = V_Ice*(p_max - p_m) - V_H2O*(p_max - p_m) + S_m*(tem - T_m) - R_g*tem*lna ;
+    double p_min = (c > 0) ? p_max - c/V_Ice : p_max + c/V_H2O ;
+    double p_i   = (c > 0) ? p_min : p_max ;
+    double p_l   = (c > 0) ? p_max : p_min ;
+    #elif defined (U_P_L)
+    double p_l   = u_mass ;
+    double p_i   = p_m + (V_H2O*(p_l - p_m) - S_m*(tem - T_m) + R_g*tem*lna)/V_Ice ;
+    #endif
+    double dp_l = p_l - p0 ;
+    double dp_i = p_i - p0 ;
+    double p_c  = p_i - p_l ;
     /* fluxes */
     double w_tot[3]  = {0,0,0} ;
     double w_salt[3] = {0,0,0} ;
@@ -1170,7 +1076,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double K = young1 / (3 - 6*poisson) ;
     double G = 0.5 * young1 / (1 + poisson) ;
     double b = biot ;
-    double sd_l = val.SaturationDegree_liquid ;
+    double sd_l = SaturationDegree(p_c*CapillaryPressureFactor(epsv)) ;
     double sd_i = 1 - sd_l ;
     double b_i  = b*sd_i ;
     double b_l  = b*sd_l ;
@@ -1185,35 +1091,43 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double Kk_oedo = (1 + poisson)/(3 - 3*poisson) ; /* K/k_oedo */
     /* stresses */
     double sig[9] = {0,0,0,0,0,0,0,0,0} ;
-    //using TI = CustomValues_TypeOfImplicitValues(Values_t) ;
-    //TI* val1 = (TI*) vi ;
     int i;
     
     /* Averaging */
-    for(i = 0 ; i < np ; i++) {
-      Values_t& val1 = *ci.SetValues(i);
-      int j ;
+    for(int i = 0 ; i < np ; i++) {
+      Values_d& val1 = *ci.ExtractValues(i);
       
-      for(j = 0 ; j < 3 ; j++) w_tot[j]  += val1.MassFlow_total[j]/np ;
-      for(j = 0 ; j < 3 ; j++) w_salt[j] += val1.MassFlow_salt[j]/np ;
-      for(j = 0 ; j < 3 ; j++) w_the[j]  += val1.HeatFlow[j]/np ;
-      for(j = 0 ; j < 9 ; j++) sig[j]    += val1.Stress[j]/np ;
+      for(int j = 0 ; j < 3 ; j++) w_tot[j]  += val1.MassFlow_total[j]/np ;
+      for(int j = 0 ; j < 3 ; j++) w_salt[j] += val1.MassFlow_salt[j]/np ;
+      for(int j = 0 ; j < 3 ; j++) w_the[j]  += val1.HeatFlow[j]/np ;
+      for(int j = 0 ; j < 9 ; j++) sig[j]    += val1.Stress[j]/np ;
     }
     
     i = 0  ;
     /* quantites exploitees */
-    Result_Store(r + i++,&val.Pressure_liquid,"Liquid pressure",1) ;
-    Result_Store(r + i++,&val.Concentration_salt,"Salt concentration",1) ;
-    Result_Store(r + i++,&val.Temperature,"Temperature",1) ;
-    Result_Store(r + i++,&val.SaturationDegree_liquid,"Liquid saturation",1) ;
+    Result_Store(r + i++,&p_l,"Liquid pressure",1) ;
+    Result_Store(r + i++,&c_salt,"Salt concentration",1) ;
+    Result_Store(r + i++,&tem,"Temperature",1) ;
+    Result_Store(r + i++,&sd_l,"Liquid saturation",1) ;
     Result_Store(r + i++,w_tot,"Liquid mass flux vector",3) ;
     Result_Store(r + i++,w_salt,"Salt mass flux vector",3) ;
-    Result_Store(r + i++,&val.Pressure_ice,"Ice pressure",1) ;
-    Result_Store(r + i++,&val.MassDensity_liquid,"Solution density",1) ;
-    Result_Store(r + i++,&val.MassDensity_ice,"Ice density",1) ;
-    Result_Store(r + i++,val.Strain,"Strain tensor",9) ;
+    Result_Store(r + i++,&p_i,"Ice pressure",1) ;
+    /* Mass densities */
+    {
+      double alpha_l   = ALPHA_l(tem - T_m) ;
+      double rho_salt  = M_Salt*c_salt ;
+      double rho_l     = rho_h2o_l0*(1. + (p_l - p_m)/K_l - alpha_l*(tem - T_m) - vr_salt*rho_salt) ;
+      
+      Result_Store(r + i++,&rho_l,"Solution density",1) ;
+    }
+    {
+      double rho_i     = rho_h2o_i0*(1. + (p_i - p_m)/K_i - alpha_i*(tem - T_m)) ;
+      
+      Result_Store(r + i++,&rho_i,"Ice density",1) ;
+    }
+    Result_Store(r + i++,eps,"Strain tensor",9) ;
     Result_Store(r + i++,sig,"Stress tensor",9) ;
-    Result_Store(r + i++,val.Displacement,"Displacement vector",3) ;
+    Result_Store(r + i++,disp,"Displacement vector",3) ;
       
     {
       double Eps_T  = alpha_s*Kk_oedo*dtem ;
@@ -1240,7 +1154,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     }
     
     {
-      double lnaw = LogActivityOfWater(val.Concentration_salt,val.Temperature) ;
+      double lnaw = LogActivityOfWater(c_salt,tem) ;
       
       Result_Store(r + i++,&lnaw,"Lna_w",1) ;
     }
@@ -1255,293 +1169,216 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 
 
 
-int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
-/*
-**  Tangent matrix (c), return the shift (dec).
-*/
+
+
+int MPM_t::SetTangentMatrix(Element_t* el,double const& t,double const& dt,int const& p,Values_d const& val,Values_d const& dval,int const& k,double* c)
 {
-#define T4(a,i,j,k,l)  ((a)[(((i)*3+(j))*3+(k))*3+(l)])
-#define T2(a,i,j)      ((a)[(i)*3+(j)])
-#define C1(i,j,k,l)    T4(c1,i,j,k,l)
-#define B1(i,j)        T2(c1,i,j)
-  double*  vi   = Element_GetCurrentImplicitTerm(el) ;
-  double*  vi_n = Element_GetPreviousImplicitTerm(el) ;
-  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
-  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  int dim = Element_GetDimensionOfSpace(el) ;
-  double dui[Model_MaxNbOfEquations] ;
-  int    dec = 81 + 3*9 + 3*(9 + 3) ;
-  
-  
-  if(Element_IsSubmanifold(el)) return(0) ;
-  
-  
-  {
-    ObVal_t* obval = Element_GetObjectiveValue(el) ;
-    int i ;
-    
-    for(i = 0 ; i < NEQ ; i++) {
-      dui[i] =  1.e-2*ObVal_GetValue(obval + i) ;
-    }
-  }
+  int   ncols = 9 + 3;
+  int   dec = ncols*ncols ;
+  double* c0 = c + p*dec ;
 
-
-  {
-    IntFct_t*  intfct = Element_GetIntFct(el) ;
-    int np = IntFct_GetNbOfPoints(intfct) ;
-    int    p ;
-    
-    CI_t ci(&SetInputs,&Integrate,el,t,dt,u_n,vi_n,u,vi) ;
-    
-    for(p = 0 ; p < np ; p++) {
-      /* Variables */
-      Values_t* val = ci.Integrate(p) ;
-      double* c0 = c + p*dec ;
-      #define Index(V)  CustomValues_Index(val,V,double)
-
-
-      /* initialization */
+    /* Derivatives w.r.t strains */
+    #if 0
+    if(k >= 0 && k < 9) {
+      /* Tangent stiffness matrix */
       {
-        int i ;
-      
-        for(i = 0 ; i < dec ; i++) c0[i] = 0. ;
-      }
-      
-      
-      /* The derivative of equations w.r.t unknowns */
-      
-
-      /* Derivatives w.r.t strains */
-      {
-        /* Tangent stiffness matrix */
-        {
-          double* c1 = c0 ;
-          int i ;
+        double* c1 = c0 ;
          
-          /* Already updated in ComputeVariables */
-          for(i = 0 ; i < 81 ; i++) {
-            c1[i] = cijkl[i] ;
-          }
-
-          //Elasticity_ComputeStiffnessTensor(elasty,c1) ;
+        /* Already updated in Integrate */
+        #define C1(i,j)     ((c1)[(i)*9+(j)])
+        #define Cijkl(i,j)  ((cijkl)[(i)*9+(j)])
+        for(int i = 0 ; i < 9 ; i++) {
+          C1(i,k) = Cijkl(i,k) ;
         }
-        
-        /* Coupling matrices */
-        {
-          double deps = 1.e-6 ;
-          int i_eps = Index(Strain[0]);
-          Values_t& dval = *ci.Differentiate(p,deps,i_eps) ;
-          double* c00 = c0 + 81 + 3*9 ;
-          
-          /* assuming to be the same for the derivatives wrt I_EPS+4 and I_EPS+8
-           * and zero for the derivatives w.r.t others */
-          {
-            double* c1 = c00 ;
-            int i ;
+        #undef C1
+        #undef Cijkl
 
-            for(i = 0 ; i < 3 ; i++) B1(i,i) = dval.Mass_total ;
-          }
-          {
-            double* c1 = c00 + 12 ;
-            int i ;
-
-            for(i = 0 ; i < 3 ; i++) B1(i,i) = dval.Mass_salt ;
-          }
-          {
-            double* c1 = c00 + 2*12 ;
-            int i ;
-
-            for(i = 0 ; i < 3 ; i++) B1(i,i) = dval.Entropy_total ;
-          }
-        }
+        //Elasticity_ComputeStiffnessTensor(elasty,c1) ;
       }
-      
-      /* Derivatives w.r.t U_MASS */
+        
+      /* Coupling matrices */
       {
-        double  dp = dui[U_MASS] ;
-        int i_u_mass = Index(U_mass);
-        Values_t& dval = *ci.Differentiate(p,dp,i_u_mass) ;
-        
-        /* Tangent Biot's coefficient */
-        {
-          double* c1 = c0 + 81 ;
-          int i ;
-
-          for(i = 0 ; i < 9 ; i++) c1[i] = dval.Stress[i] ;
-        }
-        
-    
-        /* General storage matrix */
-        {
-          double* c00 = c0 + 81 + 3*9 + 9 ;
+        double* c00 = c0 + 9*ncols ;
           
-          {
-            double* c1 = c00 ;
-        
-            c1[0] = dval.Mass_total ;
-          }
-          {
-            double* c1 = c00 + 12 ;
-        
-            c1[0] = dval.Mass_salt ;
-          }
-          {
-            double* c1 = c00 + 2*12 ;
-        
-            c1[0] = dval.Entropy_total ;
-          }
+        /* assuming to be the same for the derivatives wrt I_EPS+4 and I_EPS+8
+          * and zero for the derivatives w.r.t others */
+        {
+          double* c1 = c00 + ncols*U_MASS ;
+          
+          if(k == 0 || k == 4 || k == 8) c1[k] = dval.Mass_total ;
+        }
+        {
+          double* c1 = c00 + ncols*U_SALT ;
+
+          if(k == 0 || k == 4 || k == 8) c1[k] = dval.Mass_salt ;
+        }
+        {
+          double* c1 = c00 + ncols*U_THER ;
+
+          if(k == 0 || k == 4 || k == 8) c1[k] = dval.Entropy_total ;
         }
       }
-      
-      /* Derivatives w.r.t U_SALT */
-      {
-        double  dc = dui[U_SALT] ;
-        int i_c_salt = Index(Concentration_salt);
-        Values_t& dval = *ci.Differentiate(p,dc,i_c_salt) ;
-        
-        /* Tangent Biot's coefficient */
-        {
-          double* c1 = c0 + 81 + 9 ;
-          int i ;
-
-          for(i = 0 ; i < 9 ; i++) c1[i] = dval.Stress[i] ;
-        }
-        
-    
-        /* General storage matrix */
-        {
-          double* c00 = c0 + 81 + 3*9 + 9 + 1 ;
-          
-          {
-            double* c1 = c00 ;
-        
-            c1[0] = dval.Mass_total ;
-          }
-          {
-            double* c1 = c00 + 12 ;
-        
-            c1[0] = dval.Mass_salt ;
-          }
-          {
-            double* c1 = c00 + 2*12 ;
-        
-            c1[0] = dval.Entropy_total ;
-          }
-        }
-      }
-      
-      /* Derivatives w.r.t  U_THER */
-      {
-        double  dtem = dui[U_THER] ;
-        int i_tem = Index(Temperature);
-        Values_t& dval = *ci.Differentiate(p,dtem,i_tem) ;
-        
-        /* Tangent Biot's coefficient */
-        {
-          double* c1 = c0 + 81 + 2*9 ;
-          int i ;
-
-          for(i = 0 ; i < 9 ; i++) c1[i] = dval.Stress[i] ;
-        }
-        
-    
-        /* General storage matrix */
-        {
-          double* c00 = c0 + 81 + 3*9 + 9 + 2 ;
-          
-          {
-            double* c1 = c00 ;
-        
-            c1[0] = dval.Mass_total ;
-          }
-          {
-            double* c1 = c00 + 12 ;
-        
-            c1[0] = dval.Mass_salt ;
-          }
-          {
-            double* c1 = c00 + 2*12 ;
-        
-            c1[0] = dval.Entropy_total ;
-          }
-        }
-      }
-      #undef Index
+      return(dec) ;
     }
-  }
+    #else
+    if(k == 0) {
+      /* Tangent stiffness matrix */
+      {
+        double* c1 = c0 ;
+         
+        /* Already updated in Integrate */
+        for(int i = 0 ; i < 81 ; i++) {
+          c1[i] = cijkl[i] ;
+        }
+
+        //Elasticity_ComputeStiffnessTensor(elasty,c1) ;
+      }
+        
+      /* Coupling matrices */
+      {
+        double* c00 = c0 + 9*ncols ;
+          
+        /* assuming to be the same for the derivatives wrt I_EPS+4 and I_EPS+8
+          * and zero for the derivatives w.r.t others */
+        #define B1(i,j)  ((c1)[(i)*3+(j)])
+        {
+          double* c1 = c00 + ncols*U_MASS ;
+          
+          for(int i = 0 ; i < 3 ; i++) B1(i,i) = dval.Mass_total ;
+        }
+        {
+          double* c1 = c00 + ncols*U_SALT ;
+
+          for(int i = 0 ; i < 3 ; i++) B1(i,i) = dval.Mass_salt ;
+        }
+        {
+          double* c1 = c00 + ncols*U_THER ;
+
+          for(int i = 0 ; i < 3 ; i++) B1(i,i) = dval.Entropy_total ;
+        }
+        #undef B1
+      }
+      return(dec) ;
+    }
+    #endif
+      
+    /* Derivatives w.r.t U_MASS/U_SALT/U_THER */
+    if(k >= 9) {
+      {
+        /* Tangent Biot's coefficient */
+        {
+          double* c1 = c0 + 9*k ;
+
+          for(int i = 0 ; i < 9 ; i++) c1[i] = dval.Stress[i] ;
+        }
+      }
+        
+      /* General storage matrix */
+      {
+        double* c00 = c0 + 9*ncols + k ;
+          
+        {
+          double* c1 = c00 + ncols*U_MASS ;
+        
+          c1[0] = dval.Mass_total ;
+        }
+        {
+          double* c1 = c00 + ncols*U_SALT ;
+        
+          c1[0] = dval.Mass_salt ;
+        }
+        {
+          double* c1 = c00 + ncols*U_THER ;
+        
+          c1[0] = dval.Entropy_total ;
+        }
+      }
+      return(dec) ;
+    }
 
   return(dec) ;
-#undef C1
-#undef B1
-#undef T2
-#undef T4
+}
+
+  
+
+
+void MPM_t::SetIndexes(Element_t* el,int* ind) {
+    ind[0] = Values_Index(Strain[0]);
+    
+    for(int i = 1 ; i < 9 ; i++) {
+      ind[i] = ind[0] + i;
+    }
+    
+    ind[9]  = Values_Index(U_mass);  
+    ind[10] = Values_Index(Concentration_salt);
+    ind[11] = Values_Index(Temperature);
 }
 
 
 
-int ComputeTransferCoefficients(Element_t* el,double dt,double* c)
-/*
-**  Conduction matrix (c) and shift (dec)
-*/
-{
-  double* ve0 = Element_GetExplicitTerm(el) ;
-  double* vi0 = Element_GetPreviousImplicitTerm(el) ;
-  IntFct_t*  intfct = Element_GetIntFct(el) ;
-  int np = IntFct_GetNbOfPoints(intfct) ;
-  int    dec = 9 * 9 ;
-  int    p ;
-  using TE = CustomValues_TypeOfExplicitValues(Values_t);
-  TE* val0 = (TE*) ve0 ;
-  
 
-  for(p = 0 ; p < np ; p++) {
-    int i ;
-    double* c1 = c + p*dec ;
-    TE& val = val0[p] ;
+void MPM_t::SetIncrements(Element_t* el,double* dui) {  
+    ObVal_t* obval = Element_GetObjectiveValue(el) ;
+        
+    for(int i = 0 ; i < 9 ; i++) {
+      dui[i] =  1.e-6 ;
+    }
     
-    /* initialization */
-    for(i = 0 ; i < dec ; i++) c1[i] = 0. ;
+    dui[9]  = 1.e-2*ObVal_GetValue(obval + U_MASS) ;
+    dui[10] = 1.e-2*ObVal_GetValue(obval + U_SALT) ;
+    dui[11] = 1.e-2*ObVal_GetValue(obval + U_THER) ;
+}
+
+
+
+
+int MPM_t::SetTransferMatrix(Element_t* el,double const& dt,int const& p,Values_d const& val,double* c)
+{
+  int    dec = 9 * 9 ;
+
+  {
+    double* c0 = c + p*dec ;
     
     {
       /* Transfer coefficients for the liquid mass flux */
       {
-        double* c2 = c1 ;
+        double* c1 = c0 ;
         
-        c2[0] = val.Permeability_liquid ;
-        c2[4] = c2[0] ;
-        c2[8] = c2[0] ;
+        c1[0] = dt*val.Permeability_liquid ;
+        c1[4] = c1[0] ;
+        c1[8] = c1[0] ;
       }
       
       /* Transfer coefficients for the salt mass flux */
       {
-        double* c2 = c1 + 3 * 9 ;
+        double* c1 = c0 + 3 * 9 ;
         
-        c2[0] = val.MassFraction_salt*val.Permeability_liquid ;
-        c2[4] = c2[0] ;
-        c2[8] = c2[0] ;
+        c1[0] = dt*val.MassFraction_salt*val.Permeability_liquid ;
+        c1[4] = c1[0] ;
+        c1[8] = c1[0] ;
       }
       {
-        double* c2 = c1 + 4 * 9 ;
+        double* c1 = c0 + 4 * 9 ;
         
-        c2[0] = val.Diffusion_salt ;
-        c2[4] = c2[0] ;
-        c2[8] = c2[0] ;
+        c1[0] = dt*val.Diffusion_salt ;
+        c1[4] = c1[0] ;
+        c1[8] = c1[0] ;
       }
       
       /* Transfer coefficients for the entropy flux */
       {
-        double* c2 = c1 + 6 * 9 ;
+        double* c1 = c0 + 6 * 9 ;
         
-        c2[0] = val.Entropy_liquid*val.Permeability_liquid ;
-        c2[4] = c2[0] ;
-        c2[8] = c2[0] ;
+        c1[0] = dt*val.Entropy_liquid*val.Permeability_liquid ;
+        c1[4] = c1[0] ;
+        c1[8] = c1[0] ;
       }
       {
-        double* c2 = c1 + 8 * 9 ;
+        double* c1 = c0 + 8 * 9 ;
         
-        c2[0] = val.ThermalConductivity ;
-        c2[4] = c2[0] ;
-        c2[8] = c2[0] ;
+        c1[0] = dt*val.ThermalConductivity ;
+        c1[4] = c1[0] ;
+        c1[8] = c1[0] ;
       }
     }
   }
@@ -1552,73 +1389,65 @@ int ComputeTransferCoefficients(Element_t* el,double dt,double* c)
 
 
 
-
-#if USEFUNCTOR
-Values_t* SetInputs_t::operator()(Element_t const* el,const double& t,const double& dt,double const* const* u,const int& p,Values_t& val)
-#else
-Values_t* SetInputs(Element_t const* el,const double& t,const double& dt,double const* const* u,const int& p,Values_t& val)
-#endif
+Values_d* MPM_t::SetInputs(Element_t* el,const double& t,const int& p,double const* const* u,Values_d& val)
 {
-  LocalVariables_t<Values_t> var(el,t,dt,u,NULL);
+  LocalVariables_t<Values_d> var(u,NULL);
   
   /* Displacements and strains */
-  var.DisplacementVectorAndStrainFEM(p,U_MECH,val.Displacement) ;
+  var.DisplacementVectorAndStrainFEM(el,p,U_MECH,val.Displacement) ;
     
   /* Pressure and pressure gradient */
-  var.ValueAndGradientFEM(p,U_MASS,&val.U_mass) ;
+  var.ValueAndGradientFEM(el,p,U_MASS,&val.U_mass) ;
   
   /* Salt concentration and concentration gradient */
-  var.ValueAndGradientFEM(p,U_SALT,&val.Concentration_salt) ;
+  var.ValueAndGradientFEM(el,p,U_SALT,&val.Concentration_salt) ;
   
   /* Temperature and temperature gradient */
-  var.ValueAndGradientFEM(p,U_THER,&val.Temperature) ;
+  var.ValueAndGradientFEM(el,p,U_THER,&val.Temperature) ;
   
   return(&val) ;
 }
 
 
 
-#if USEFUNCTOR
-Values_t* Integrate_t::operator()(const Element_t* el,const double& t,const double& dt,const Values_t& val_n,Values_t& val)
-#else
-Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const Values_t& val_n,Values_t& val)
-#endif
+template <typename T>
+Values_t<T>* MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Values_d const& val_n,Values_t<T>& val)
 /** Compute the secondary variables from the primary ones. */
 {
   int dim = Element_GetDimensionOfSpace(el) ;
   /* Retrieve the primary variables */
   /* Strains */
-  double* eps   = val.Strain ;
+  T* eps   = val.Strain ;
   double const* eps_n = val_n.Strain ;
-  double  epsv  = eps[0] + eps[4] + eps[8] ;
+  T  epsv  = eps[0] + eps[4] + eps[8] ;
   double  epsv_n = eps_n[0] + eps_n[4] + eps_n[8] ;
   /* Salt concentration */
-  double c_s    = val.Concentration_salt ;
+  T c_s    = val.Concentration_salt ;
   /* Temperature */
-  double tem    = val.Temperature ;
+  T tem    = val.Temperature ;
   /* Log of water activity */
-  double lna = LogActivityOfWater(c_s,tem) ;
+  T lna = LogActivityOfWater(c_s,tem) ;
   
   /* Pressures */
 #if defined (U_P_MAX)
-  double  p_max = val.U_mass ;
+  T  p_max = val.U_mass ;
   //     0 = V_Ice*(p_i   - p_m) - V_H2O*(p_l   - p_m) + S_m*(tem - T_m) - R_g*tem*lna
-  double c = V_Ice*(p_max - p_m) - V_H2O*(p_max - p_m) + S_m*(tem - T_m) - R_g*tem*lna ;
-  double p_min = (c > 0) ? p_max - c/V_Ice : p_max + c/V_H2O ;
-  double p_i   = (c > 0) ? p_min : p_max ;
-  double p_l   = (c > 0) ? p_max : p_min ;
+  T c = V_Ice*(p_max - p_m) - V_H2O*(p_max - p_m) + S_m*(tem - T_m) - R_g*tem*lna ;
+  T p_min = (c > 0) ? p_max - c/V_Ice : p_max + c/V_H2O ;
+  T p_i   = (c > 0) ? p_min : p_max ;
+  T p_l   = (c > 0) ? p_max : p_min ;
 #elif defined (U_P_L)
-  double p_l   = val.U_mass ;
-  double p_i   = p_m + (V_H2O*(p_l - p_m) - S_m*(tem - T_m) + R_g*tem*lna)/V_Ice ;
+  T p_l   = val.U_mass ;
+  T p_i   = p_m + (V_H2O*(p_l - p_m) - S_m*(tem - T_m) + R_g*tem*lna)/V_Ice ;
 #endif
-  double p_c = p_i - p_l ;
+  T p_c = p_i - p_l ;
   
   /* Porosity */
-  double phi1 = Porosity(epsv) ;
+  T phi1 = Porosity(epsv) ;
   
   /* Saturations */
-  double sd_l = SaturationDegree(p_c*CapillaryPressureFactor(epsv)) ;
-  double sd_i = 1 - sd_l ;
+  T sd_l = SaturationDegree(p_c*CapillaryPressureFactor(epsv)) ;
+  T sd_i = 1 - sd_l ;
   
   /* Backup */
     
@@ -1630,21 +1459,21 @@ Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const 
   /* Mass contents and entropies */
   {
     /* Mass densities */
-    double alpha_l   = ALPHA_l(tem - T_m) ;
-    double rho_i     = rho_h2o_i0*(1. + (p_i - p_m)/K_i - alpha_i*(tem - T_m)) ;
-    double rho_salt  = M_Salt*c_s ;
-    double rho_l     = rho_h2o_l0*(1. + (p_l - p_m)/K_l - alpha_l*(tem - T_m) - vr_salt*rho_salt) ;
+    T alpha_l   = ALPHA_l(tem - T_m) ;
+    T rho_i     = rho_h2o_i0*(1. + (p_i - p_m)/K_i - alpha_i*(tem - T_m)) ;
+    T rho_salt  = M_Salt*c_s ;
+    T rho_l     = rho_h2o_l0*(1. + (p_l - p_m)/K_l - alpha_l*(tem - T_m) - vr_salt*rho_salt) ;
   
     /* Mass contents */
-    double m_l     = phi1*sd_l*rho_l ;
-    double m_i     = phi1*sd_i*rho_i ;
-    double m_salt  = phi1*sd_l*rho_salt ;
+    T m_l     = phi1*sd_l*rho_l ;
+    T m_i     = phi1*sd_i*rho_i ;
+    T m_salt  = phi1*sd_l*rho_salt ;
   
     /* Entropies */
-    double s_l   = C_l*log(tem/T_m) - alpha_l/rho_h2o_l0*(p_l - p_m) ;
-    double s_i   = C_i*log(tem/T_m) - alpha_i/rho_h2o_i0*(p_i - p_m) - S_m/M_H2O ;
-    double s_sol = C_s*log(tem/T_m) ;
-    double s_tot = s_sol + m_l*s_l + m_i*s_i ;
+    T s_l   = C_l*log(tem/T_m) - alpha_l/rho_h2o_l0*(p_l - p_m) ;
+    T s_i   = C_i*log(tem/T_m) - alpha_i/rho_h2o_i0*(p_i - p_m) - S_m/M_H2O ;
+    T s_sol = C_s*log(tem/T_m) ;
+    T s_tot = s_sol + m_l*s_l + m_i*s_i ;
   
     /*
     if(dphi > 0) {
@@ -1663,8 +1492,8 @@ Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const 
   
   /* Chemical potentials */
   {
-    double mu_l = V_H2O*(p_l - p_m) + R_g*tem*lna ;
-    double mu_i = V_Ice*(p_i - p_m) + S_m*(tem - T_m) ;
+    T mu_l = V_H2O*(p_l - p_m) + R_g*tem*lna ;
+    T mu_i = V_Ice*(p_i - p_m) + S_m*(tem - T_m) ;
     
     val.ChemicalPotential_liquid = mu_l ;
     val.ChemicalPotential_ice = mu_i ;
@@ -1675,29 +1504,25 @@ Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const 
     double young1 = YoungModulus(epsv_n) ;
     double K = young1 / (3 - 6*poisson) ;
     double b    = biot ;
-    double b_i  = b*sd_i ;
-    double b_l  = b*sd_l ;
+    T b_i  = b*sd_i ;
+    T b_l  = b*sd_l ;
     
-    double dp_l = p_l - p0 ;
-    double dp_i = p_i - p0 ;
-    double dtem = tem - T0 ;
+    T dp_l = p_l - p0 ;
+    T dp_i = p_i - p0 ;
+    T dtem = tem - T0 ;
     
-    double* sig = val.Stress ;
+    T* sig = val.Stress ;
           
     Elasticity_SetParameters(elasty,young1,poisson) ;
     Elasticity_UpdateStiffnessTensor(elasty) ;
     
-    {
-      int    i ;
-    
+    {    
       /* Initialize stresses */
-      for(i = 0 ; i < 9 ; i++) sig[i] = 0 ;
+      for(int i = 0 ; i < 9 ; i++) sig[i] = 0 ;
       
       #define C(i,j)  (cijkl[(i)*9+(j)])
-      for(i = 0 ; i < 9 ; i++) {
-        int  j ;
-      
-        for(j = 0 ; j < 9 ; j++) {
+      for(int i = 0 ; i < 9 ; i++) {
+        for(int j = 0 ; j < 9 ; j++) {
           sig[i] += C(i,j)*eps[j] ;
         }
       }
@@ -1721,33 +1546,32 @@ Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const 
     double  s_l     = val_n.Entropy_liquid ;
     
     /* Fluxes */
-    double* w_tot   = val.MassFlow_total ;
-    double* w_salt  = val.MassFlow_salt ;
-    double* w_the   = val.HeatFlow ; 
+    T* w_tot   = val.MassFlow_total ;
+    T* w_salt  = val.MassFlow_salt ;
+    T* w_the   = val.HeatFlow ; 
     
     /* Gradients */
-    double* grd_c_s   = val.GradConcentration_salt ;
-    double* grd_tem   = val.GradTemperature ;
-    int i ;
+    T* grd_c_s   = val.GradConcentration_salt ;
+    T* grd_tem   = val.GradTemperature ;
     
 #if defined (U_P_MAX)
-    double  grd_p_l[3] ;
-    double* grd_p_max = val.GradU_mass ;  
+    T  grd_p_l[3] ;
+    T* grd_p_max = val.GradU_mass ;  
     ObVal_t* obval = Element_GetObjectiveValue(el) ;
     double dc_s = 1.e-2 * ObVal_GetValue(obval + U_SALT) ;
-    double dtlnadc_s = (tem * LogActivityOfWater(c_s + dc_s,tem) - tem * lna) / dc_s ;
+    T dtlnadc_s = (tem * LogActivityOfWater(c_s + dc_s,tem) - tem * lna) / dc_s ;
     double dtem = 1.e-2 * ObVal_GetValue(obval + U_THER) ;
-    double dtlnadtem = ((tem + dtem) * LogActivityOfWater(c_s,tem + dtem) - tem * lna) / dtem ;
+    T dtlnadtem = ((tem + dtem) * LogActivityOfWater(c_s,tem + dtem) - tem * lna) / dtem ;
     
-    for(i = 0 ; i < 3 ; i++) {
-      double grd_tlna = dtlnadc_s * grd_c_s[i] + dtlnadtem * grd_tem[i] ;
-      double grd_c    = (V_Ice - V_H2O) * grd_p_max[i] + S_m * grd_tem[i] - R_g * grd_tlna ;
-      double grd_p_min = (c > 0) ? grd_p_max[i] - grd_c/V_Ice : grd_p_max[i] + grd_c/V_H2O ;
+    for(int i = 0 ; i < 3 ; i++) {
+      T grd_tlna = dtlnadc_s * grd_c_s[i] + dtlnadtem * grd_tem[i] ;
+      T grd_c    = (V_Ice - V_H2O) * grd_p_max[i] + S_m * grd_tem[i] - R_g * grd_tlna ;
+      T grd_p_min = (c > 0) ? grd_p_max[i] - grd_c/V_Ice : grd_p_max[i] + grd_c/V_H2O ;
       
       grd_p_l[i]   = (c > 0) ? grd_p_max[i] : grd_p_min ;
     }
 #elif defined (U_P_L)
-    double* grd_p_l = val.GradU_mass ;   
+    T* grd_p_l = val.GradU_mass ;   
 #endif
     
     /*
@@ -1768,16 +1592,16 @@ Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const 
     {
       double rho_l = rho_h2o_l0 ;
       
-      for(i = 0 ; i < 3 ; i++) {
+      for(int i = 0 ; i < 3 ; i++) {
         w_tot[i] = - kd_liq * grd_p_l[i] ;
       }
       w_tot[dim - 1] += kd_liq*rho_l*gravity ;
     }
 
-    for(i = 0 ; i < 3 ; i++) {
-      double w_l     = w_tot[i] ;
-      double j_salt  = - kf_salt * grd_c_s[i] ;
-      double q       = - kth * grd_tem[i] ;
+    for(int i = 0 ; i < 3 ; i++) {
+      T w_l     = w_tot[i] ;
+      T j_salt  = - kf_salt * grd_c_s[i] ;
+      T q       = - kth * grd_tem[i] ;
 
       w_salt[i]  = mc_salt * w_l + j_salt ;
       w_the[i]   =     s_l * w_l + q ;
@@ -1786,14 +1610,14 @@ Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const 
   
   /* Transfer coefficients at the current time */
   {
-    double rho_l   = val.MassDensity_liquid ;
-    double mu_l    = WaterViscosity(tem) ;
-    double kr_l    = RelativePermeabilityToLiquid(p_c) ;
-    double kd_liq  = rho_l*k_int/mu_l*kr_l ;
-    double kf_salt = M_Salt*effectivediffusioncoef(phi0,sd_l) ;
-    double lam_hom = thermalconductivity(phi0,sd_l) ;
-    double kth     = lam_hom/tem ;
-    double mc_salt = M_Salt * c_s / rho_l ;
+    T rho_l   = val.MassDensity_liquid ;
+    T mu_l    = WaterViscosity(tem) ;
+    T kr_l    = RelativePermeabilityToLiquid(p_c) ;
+    T kd_liq  = rho_l*k_int/mu_l*kr_l ;
+    T kf_salt = M_Salt*effectivediffusioncoef(phi0,sd_l) ;
+    T lam_hom = thermalconductivity(phi0,sd_l) ;
+    T kth     = lam_hom/tem ;
+    T mc_salt = M_Salt * c_s / rho_l ;
       
     val.Permeability_liquid  = kd_liq ;
     val.Diffusion_salt       = kf_salt ;
@@ -1803,11 +1627,10 @@ Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const 
 
   /* Body force */
   {
-    double m_tot = val.Mass_total ;
-    double* f_mass = val.BodyForce ;
-    int i ;
+    T m_tot = val.Mass_total ;
+    T* f_mass = val.BodyForce ;
       
-    for(i = 0 ; i < 3 ; i++) f_mass[i] = 0 ;
+    for(int i = 0 ; i < 3 ; i++) f_mass[i] = 0 ;
     f_mass[dim - 1] = (rho_s + m_tot)*gravity ;
   }
   
@@ -1817,16 +1640,20 @@ Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const 
 
 
 
+Values_d* MPM_t::Initialize(Element_t* el,double const& t,Values_d& val)
+{
+  return(NULL);
+}
 
 
 
-
-double activity(double c_s1,double tem1)
+template<typename T>
+T activity(T c_s1,T tem1)
 /* activity of water */
 {
-  double c_s = (c_s1 > 0) ? c_s1 : 0 ;
-  double tem = (tem1 > 200) ? tem1 : 200 ;
-  double T_0  = T_m ;
+  T c_s = (c_s1 > 0) ? c_s1 : 0 ;
+  T tem = (tem1 > 200) ? tem1 : 200 ;
+  T T_0  = T_m ;
   /* References */
   double b0   = sqrt(M_H2O) ;
   double S0   = pow(M_H2O,1.29) ;
@@ -1841,16 +1668,16 @@ double activity(double c_s1,double tem1)
   double S_ca_cacl2 = 18.321/S0 ;
   double S_cl_cacl2 = 10.745/S0 ;
 
-  double epsi = 0.0007*(tem - T_0)*(tem - T_0) - 0.3918*(tem - T_0) + 87.663 ;
-  double A    = 1398779.816/pow(epsi*tem,1.5)/b0 ;
+  T epsi = 0.0007*(tem - T_0)*(tem - T_0) - 0.3918*(tem - T_0) + 87.663 ;
+  T A    = 1398779.816/pow(epsi*tem,1.5)/b0 ;
 
   /* depend du sel */
   double b_cat ;
   double b_ani ;
   double S_cat ;
   double S_ani ;
-  double c_ani ;
-  double c_cat ;
+  T c_ani ;
+  T c_cat ;
   double z_ani ;
   double z_cat ;
 
@@ -1884,36 +1711,37 @@ double activity(double c_s1,double tem1)
   
   {
     /* concentrations */
-    double c_h2o = (1 - c_s*(NU_A*V_A + NU_C*V_C))/V_H2O ;
+    T c_h2o = (1 - c_s*(NU_A*V_A + NU_C*V_C))/V_H2O ;
     /* molalites * M_H2O */
-    double m_ani  = c_ani/c_h2o ;
-    double m_cat  = c_cat/c_h2o ;
+    T m_ani  = c_ani/c_h2o ;
+    T m_cat  = c_cat/c_h2o ;
 
     /* ionic strength */
-    double I     =  0.5*(z_ani*z_ani*m_ani + z_cat*z_cat*m_cat);
+    T I     =  0.5*(z_ani*z_ani*m_ani + z_cat*z_cat*m_cat);
   
-    double II_ani   = lna_i(tem,I,z_ani,b_ani,S_ani,A) ;
-    double II_cat   = lna_i(tem,I,z_cat,b_cat,S_cat,A) ;
+    T II_ani   = lna_i(tem,I,z_ani,b_ani,S_ani,A) ;
+    T II_cat   = lna_i(tem,I,z_cat,b_cat,S_cat,A) ;
 
     /* activity of water */
-    double lna_h2o = m_ani*II_ani + m_cat*II_cat ;
+    T lna_h2o = m_ani*II_ani + m_cat*II_cat ;
     /* linearized activity of water */
-    //double lna_h2o = - (m_ani + m_cat) ;
+    //T lna_h2o = - (m_ani + m_cat) ;
 
     return(lna_h2o) ;
   }
 }
 
 
-double lna_i(double T,double I,double z,double b,double S,double A)
+template<typename T>
+T lna_i(T tem,T I,double z,double b,double S,T A)
 /* Contribution de chaque ion au log de l'activite du solvant 
    lna_w = sum_i ( m_i*lna_i ) (T.Q Nguyen) */ 
 {
   double alpha = 1.29 ;
   double a1 = alpha/(1+alpha) ;
-  double II = sqrt(I) ;
-  double lna = A*II/(1 + b*II) - a1*S*pow(I,alpha)/T ;
-  double lna_i = -1 + lna*z*z ;
+  T II = sqrt(I) ;
+  T lna = A*II/(1 + b*II) - a1*S*pow(I,alpha)/tem ;
+  T lna_i = -1 + lna*z*z ;
   
   return(lna_i) ;
 }

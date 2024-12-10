@@ -221,7 +221,7 @@ void (OutputFiles_BackupSolutionAtTime_)(OutputFiles_t* outputfiles,DataSet_t* d
 /* Backup solutions at a given time in the appropriate output file */
 {
   Mesh_t* mesh = DataSet_GetMesh(dataset) ;
-  unsigned short int dim = Mesh_GetDimension(mesh) ;
+  unsigned int dim = Mesh_GetDimension(mesh) ;
   int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
   Materials_t* materials = DataSet_GetMaterials(dataset) ;
@@ -259,7 +259,7 @@ void (OutputFiles_BackupSolutionAtTime_)(OutputFiles_t* outputfiles,DataSet_t* d
   
   
   {
-    unsigned short int headings[10] = {0,0,0,0,0,0,0,0,0,0} ;
+    unsigned int headings[10] = {0,0,0,0,0,0,0,0,0,0} ;
     int    ie ;
     
     if(n_usedmodels > 10) {
@@ -272,7 +272,7 @@ void (OutputFiles_BackupSolutionAtTime_)(OutputFiles_t* outputfiles,DataSet_t* d
       Material_t* mat = Element_GetMaterial(elt) ;
       char*  codename = (mat) ? Material_GetCodeNameOfModel(mat) : NULL ;
       int usedmodelindex = Models_FindModelIndex(usedmodels,codename) ;
-      unsigned short int entete = headings[usedmodelindex] ;
+      unsigned int entete = headings[usedmodelindex] ;
       
       /* if(!strcmp(codename,ucodename)) { */
       if(mat) {
@@ -359,7 +359,7 @@ void (OutputFiles_BackupSolutionAtPoint_)(OutputFiles_t* outputfiles,DataSet_t* 
 {
   Mesh_t* mesh = DataSet_GetMesh(dataset) ;
   Points_t* points = DataSet_GetPoints(dataset) ;
-  unsigned short int dim = Mesh_GetDimension(mesh) ;
+  unsigned int dim = Mesh_GetDimension(mesh) ;
   int npt = Points_GetNbOfPoints(points) ;
   
   OutputFile_t* outputfile = OutputFiles_GetPointOutputFile(outputfiles) ;

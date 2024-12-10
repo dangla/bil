@@ -116,18 +116,18 @@
 
 
 /* Physical constant */
-#define RT        	(2436.)   /* product of R=8.3143 and T=293 (Pa.m3/mol) */ 
-#define M_w		  	(18.e-3)	// water molar mass (kg/mol)
+#define RT          (2436.)   /* product of R=8.3143 and T=293 (Pa.m3/mol) */ 
+#define M_w       (18.e-3)  // water molar mass (kg/mol)
 
-//constant for solute activity 	//coupled homo 
-#define beta_0			(0.0068)		// kg mol^-1
-#define beta_1			(0.1783)		// kg mol^-1
-#define C_gamma			(-0.00108)		// kg^2 mol^-2
-#define A_phi			(0.392)			//Debye-Huckel constant 	kg^0.5 mol^-0.5
-#define b_gamma			(1.2)			// kg^0.5 mol^-0.5
-#define alpha_gamma		(2.)			// kg^0.5 mol^-0.5
-#define v_spv			(-6.E-4)		//difference of specific partial volume of salt v_spv_s and water v_spv_w. v_spv = v_spv_s - v_spv_w. 
-#define nu				(2.0)			// dissociation coefficient of NaNO3 
+//constant for solute activity  //coupled homo 
+#define beta_0      (0.0068)    // kg mol^-1
+#define beta_1      (0.1783)    // kg mol^-1
+#define C_gamma     (-0.00108)    // kg^2 mol^-2
+#define A_phi     (0.392)     //Debye-Huckel constant   kg^0.5 mol^-0.5
+#define b_gamma     (1.2)     // kg^0.5 mol^-0.5
+#define alpha_gamma   (2.)      // kg^0.5 mol^-0.5
+#define v_spv     (-6.E-4)    //difference of specific partial volume of salt v_spv_s and water v_spv_w. v_spv = v_spv_s - v_spv_w. 
+#define nu        (2.0)     // dissociation coefficient of NaNO3 
 
 /* Fluid properties
  * ---------------- */
@@ -155,7 +155,7 @@
 #define BiotModulusMoriTanaka(Ks,Gs,n) \
         ((3*(n)*(Ks) + 4*(Gs))/(3*(n)*(1-(n))))
 
-/* Permeability */		//faut pas ecrire des commentaires apres \ la ligne dessous !!!!!!
+/* Permeability */    //faut pas ecrire des commentaires apres \ la ligne dessous !!!!!!
 #define Permeability(n,w_s,rho_l) \
         ((K_dep == 0) ? k_i : ((K_dep == 1) ? Permeability_Coupled_homogenization_MT(n,w_s,rho_l) : ((K_dep == 2) ? IntrinsicPermeability_Maxwell(n) : 0)))
 
@@ -165,7 +165,7 @@
 #define IntrinsicPermeability_Maxwell(n) \
         (k_i * (1 + 3*(n)/(1 - (n))))
 #define Permeability_Coupled_homogenization_MT(n,w_s,rho_l) \
-		((1+2*(n))/((1-(n))*RT*((rho_l)*(rho_l)))*((1-(w_s)*(rho_l)*v_spv)*rho_w_bit*M_w*d_w_bit + (1.+(1.-(w_s))*(rho_l)*v_spv)*alpha_s_bit*(w_s)*(rho_l)*Molarm_s*d_s_bit))
+    ((1+2*(n))/((1-(n))*RT*((rho_l)*(rho_l)))*((1-(w_s)*(rho_l)*v_spv)*rho_w_bit*M_w*d_w_bit + (1.+(1.-(w_s))*(rho_l)*v_spv)*alpha_s_bit*(w_s)*(rho_l)*Molarm_s*d_s_bit))
 // for coupled homogenization 
         
 /* Diffusion coefficient */
@@ -201,7 +201,7 @@
 #define OsmoticEfficiencyCoefficient_Sigmoid(n) \
         (tau_i * (1 - 1/(1 + exp(-A_tau*((n) - B_tau)))))
 #define Osmosis_Coupled_homogenization_MT(n,w_s,rho_l,tau0) \
-		((tau0)*(1.-1./((w_s)*(1.+(1.-(w_s))*(rho_l)*v_spv)+(1.-(w_s)*(rho_l)*v_spv)*((rho_w_bit*M_w*d_w_bit)/(alpha_s_bit*(rho_l)*Molarm_s*d_s_bit)))))
+    ((tau0)*(1.-1./((w_s)*(1.+(1.-(w_s))*(rho_l)*v_spv)+(1.-(w_s)*(rho_l)*v_spv)*((rho_w_bit*M_w*d_w_bit)/(alpha_s_bit*(rho_l)*Molarm_s*d_s_bit)))))
 // for coupled homogenization 
 #define A_tau  30
 #define B_tau  0.3
@@ -275,11 +275,11 @@ static double SampleSurface;  //Sample exchange surface [m²]
 static double ElementSize;     //Element size [m]  
 /**********************************************************************/
 // new parameters for coupled homogeneization
-static double  d_w_bit;		// water diffusion coefficient in bitumen	
-static double  d_s_bit;		// salt diffusion coefficient in bitumen
-static double  rho_w_bit;	// water concentration in bitumen
+static double  d_w_bit;   // water diffusion coefficient in bitumen 
+static double  d_s_bit;   // salt diffusion coefficient in bitumen
+static double  rho_w_bit; // water concentration in bitumen
 static double  alpha_s_bit; // constant linked with salt concentration in bitumen: rho_s_bit = alpha_s_bit*w_s*rho_w
-static double  tau_sat ;	// osmotic coefficient at w_s = w_s_sat
+static double  tau_sat ;  // osmotic coefficient at w_s = w_s_sat
 
 
 
@@ -391,10 +391,10 @@ int pm(const char* s)
   else if(!strcmp(s,"rho_l_dep"))         return(27); 
   else if(!strcmp(s,"SampleSurface"))     return(28);
   else if(!strcmp(s,"ElementSize"))       return(29); 
-  else if(!strcmp(s,"d_w_bit"))       	  return(30); 		
-  else if(!strcmp(s,"d_s_bit"))           return(31); 		
-  else if(!strcmp(s,"rho_w_bit"))         return(32); 		
-  else if(!strcmp(s,"alpha_s_bit"))       return(33); 		
+  else if(!strcmp(s,"d_w_bit"))           return(30);     
+  else if(!strcmp(s,"d_s_bit"))           return(31);     
+  else if(!strcmp(s,"rho_w_bit"))         return(32);     
+  else if(!strcmp(s,"alpha_s_bit"))       return(33);     
   else return(-1);
 }
 //coupled homo
@@ -438,7 +438,7 @@ void GetProperties(Element_t* el)// copy the value of material properties
   rho_l_dep     = GetProperty("rho_l_dep");
   SampleSurface  = GetProperty("SampleSurface");
   ElementSize  = GetProperty("ElementSize");
-  d_w_bit  = GetProperty("d_w_bit");	
+  d_w_bit  = GetProperty("d_w_bit");  
   d_s_bit  = GetProperty("d_s_bit");
   rho_w_bit  = GetProperty("rho_w_bit");
   alpha_s_bit  = GetProperty("alpha_s_bit");
@@ -653,7 +653,7 @@ int ComputeInitialState(Element_t* el)
         //double biot = BiotCoefficientMoriTanaka(K_s,G_s,n) ;
         double sigm = (SIG[0]+SIG[4]+SIG[8])/3 ;
         //~ double biot_v = 1 ;
-        double biot_v = BiotCoefficientMoriTanaka(eta_v,eta_d,n) ;		//mechanic improvement
+        double biot_v = BiotCoefficientMoriTanaka(eta_v,eta_d,n) ;    //mechanic improvement
       
         for(i = 0 ; i < 9 ; i++) SIG_D[i] = SIG[i] ;
         
@@ -669,35 +669,35 @@ int ComputeInitialState(Element_t* el)
     /* storage in vex */
     {
       double * vex = vex0 + m*NVE ;
-      /** transfert coefficient */	//coupled homo
-	  double molality = w_s/((1.-w_s)*Molarm_s) ;	//number of moles of solute per kg of solvent
-      double sqm = sqrt(molality) ;					//square root of molality
+      /** transfert coefficient */  //coupled homo
+    double molality = w_s/((1.-w_s)*Molarm_s) ; //number of moles of solute per kg of solvent
+      double sqm = sqrt(molality) ;         //square root of molality
       double Q = 1./(w_s*(1.-w_s))+1./(Molarm_s*((1.-w_s)*(1.-w_s)))*(-A_phi*(3.+2.*b_gamma*sqm)/(2.*sqm*(1.+b_gamma*sqm)*(1.+b_gamma*sqm))+2.*beta_0+2.*beta_1/(alpha_gamma*alpha_gamma)*exp(-alpha_gamma*sqm)*(alpha_gamma*alpha_gamma-0.25*alpha_gamma*alpha_gamma*alpha_gamma*sqm)+2.*molality*C_gamma) ;
-      double tau0 = nu*w_s*Q/((1.-w_s)*(1.-w_s*rho_l*v_spv))	;
+      double tau0 = nu*w_s*Q/((1.-w_s)*(1.-w_s*rho_l*v_spv))  ;
       double n    = phi_l_i ;
       
       // to calculate tau_sat 
-	  double molality_sat = w_s_sat/((1.-w_s_sat)*Molarm_s) ;	//number of moles of solute per kg of solvent
-      double sqm_sat = sqrt(molality_sat) ;					//square root of molality
+    double molality_sat = w_s_sat/((1.-w_s_sat)*Molarm_s) ; //number of moles of solute per kg of solvent
+      double sqm_sat = sqrt(molality_sat) ;         //square root of molality
       double Q_sat = 1./(w_s_sat*(1.-w_s_sat))+1./(Molarm_s*((1.-w_s_sat)*(1.-w_s_sat)))*(-A_phi*(3.+2.*b_gamma*sqm_sat)/(2.*sqm_sat*(1.+b_gamma*sqm_sat)*(1.+b_gamma*sqm_sat))+2.*beta_0+2.*beta_1/(alpha_gamma*alpha_gamma)*exp(-alpha_gamma*sqm_sat)*(alpha_gamma*alpha_gamma-0.25*alpha_gamma*alpha_gamma*alpha_gamma*sqm_sat)+2.*molality_sat*C_gamma) ;
       double rho_l_sat = LiquidDensity(p_i,w_s_sat) ;      //liquid density at atmosphetic pressure and w_s_sat
-      double tau0_sat = nu*w_s_sat*Q_sat/((1.-w_s_sat)*(1.-w_s_sat*rho_l_sat*v_spv))	;
-	  tau_sat = OsmoticEfficiencyCoefficient(phi_l_i,w_s_sat,rho_l_sat,tau0_sat) ;
+      double tau0_sat = nu*w_s_sat*Q_sat/((1.-w_s_sat)*(1.-w_s_sat*rho_l_sat*v_spv))  ;
+    tau_sat = OsmoticEfficiencyCoefficient(phi_l_i,w_s_sat,rho_l_sat,tau0_sat) ;
       
       
-      double k_l  = Permeability(n,w_s,rho_l) ;		//modified for coupled homogenization k_l here is already k_eff instead of k_intrinsic
-      double tau  = OsmoticEfficiencyCoefficient(n,w_s,rho_l,tau0)/tau_sat ;	//normalized by tau_sat
+      double k_l  = Permeability(n,w_s,rho_l) ;   //modified for coupled homogenization k_l here is already k_eff instead of k_intrinsic
+      double tau  = OsmoticEfficiencyCoefficient(n,w_s,rho_l,tau0)/tau_sat ;  //normalized by tau_sat
       double d    = DiffusionCoefficient(n,tau,rho_l,tau0,Q,w_s) ;
     
-      K_l = k_l ;	//k printed in step files (ex. .t101) are k_eff instead of k_intrinsic
+      K_l = k_l ; //k printed in step files (ex. .t101) are k_eff instead of k_intrinsic
       D   = d ;
       Tau = tau ;
       
       {
         //~ double k_darcy = rho_l * k_l / viscosity_w ;
-        double k_darcy = rho_l * k_l ;		//modified for coupled homo
+        double k_darcy = rho_l * k_l ;    //modified for coupled homo
         double d_fick = rho_l * d ;
-        double k_osmosis = k_darcy*(RT*rho_l/Molarm_s)*tau*tau_sat ;		//tau is normalized by tau_sat
+        double k_osmosis = k_darcy*(RT*rho_l/Molarm_s)*tau*tau_sat ;    //tau is normalized by tau_sat
       
         K_Darcy = k_darcy ;
         D_Fick  = d_fick ;
@@ -773,19 +773,19 @@ int  ComputeExplicitTerms(Element_t *el,double t)
     /* eulerian porosity */
     double n     = x[I_Poro_E] ;
     
-    /* solute mass fraction */			//for coupled homo
+    /* solute mass fraction */      //for coupled homo
     double w_s = x[I_W_S] ;
 
     /* Transfer coefficients */
-    double molality = w_s/((1.-w_s)*Molarm_s) ;	//number of moles of solute per kg of solvent
-    double sqm = sqrt(molality) ;					//square root of molality
+    double molality = w_s/((1.-w_s)*Molarm_s) ; //number of moles of solute per kg of solvent
+    double sqm = sqrt(molality) ;         //square root of molality
     double Q = 1./(w_s*(1.-w_s))+1./(Molarm_s*((1.-w_s)*(1.-w_s)))*(-A_phi*(3.+2.*b_gamma*sqm)/(2.*sqm*(1.+b_gamma*sqm)*(1.+b_gamma*sqm))+2.*beta_0+2*beta_1/(alpha_gamma*alpha_gamma)*exp(-alpha_gamma*sqm)*(alpha_gamma*alpha_gamma-0.25*alpha_gamma*alpha_gamma*alpha_gamma*sqm)+2.*molality*C_gamma) ;
-    double tau0 = nu*w_s*Q/((1.-w_s)*(1.-w_s*rho_l*v_spv))	;
+    double tau0 = nu*w_s*Q/((1.-w_s)*(1.-w_s*rho_l*v_spv))  ;
     
-    double k_l  = Permeability(n,w_s,rho_l) ;		//modified for coupled homogenization k_l here is already k_eff instead of k_intrinsic
+    double k_l  = Permeability(n,w_s,rho_l) ;   //modified for coupled homogenization k_l here is already k_eff instead of k_intrinsic
     double tau  = OsmoticEfficiencyCoefficient(n,w_s,rho_l,tau0)/tau_sat ;
     double d    = DiffusionCoefficient(n,tau,rho_l,tau0,Q,w_s) ;
-	//~ printf("\n tau = %.5e | tau0 = %.5e | w_s = %.5e | tau_sat = %.5e",tau, tau0, w_s, tau_sat);
+  //~ printf("\n tau = %.5e | tau0 = %.5e | w_s = %.5e | tau_sat = %.5e",tau, tau0, w_s, tau_sat);
     
     /* Storage in vex */
     {
@@ -795,9 +795,9 @@ int  ComputeExplicitTerms(Element_t *el,double t)
     }
       
     {
-      double k_darcy = rho_l * k_l ;				//modified for coupled homogenization
+      double k_darcy = rho_l * k_l ;        //modified for coupled homogenization
       double d_fick = rho_l * d ;
-      double k_osmosis = k_darcy*(RT*rho_l/Molarm_s)*tau*tau_sat ;		//modified for coupled homogenization
+      double k_osmosis = k_darcy*(RT*rho_l/Molarm_s)*tau*tau_sat ;    //modified for coupled homogenization
       
       K_Darcy = k_darcy ;
       D_Fick  = d_fick ;
@@ -1157,7 +1157,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       //~ printf("\n valeur i %i | valeur np  %i | valeur 3 %i ",i,np,2);
      ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-	  double testtre = 0.;		//debug 
+    double testtre = 0.;    //debug 
 
       {
         double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,i,U_Mech) ;
@@ -1176,41 +1176,41 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       
       phil_Eulerian += Poro_E/np ;
 
-	  double* coor = Element_GetNodeCoordinate(el, 0) ;		//for debug
+    double* coor = Element_GetNodeCoordinate(el, 0) ;   //for debug
       double coorX = *coor ;
 
       //~ if (coorX == 0.){
-		  //~ printf("\n Outputs %i : coorX = %.5E | phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",i, coorX, Phi_l, testtre, Phi_l / (1 + testtre), Poro_E);
-	  //~ }
+      //~ printf("\n Outputs %i : coorX = %.5E | phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",i, coorX, Phi_l, testtre, Phi_l / (1 + testtre), Poro_E);
+    //~ }
 
-	  double tmp = coorX - 4E-5 ;			//debug
-	  //~ printf("\n tmp = %.5e \n",tmp);
-	  if (tmp < 0.){
-		  tmp = -tmp ;
-	  }
+    double tmp = coorX - 4E-5 ;     //debug
+    //~ printf("\n tmp = %.5e \n",tmp);
+    if (tmp < 0.){
+      tmp = -tmp ;
+    }
 
       //~ if (tmp < 1E-10){
-		  //~ printf("\n Outputs %i : coorX = %.5E | phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",i, coorX, Phi_l, testtre, Phi_l / (1 + testtre), Poro_E);
-	  //~ }
+      //~ printf("\n Outputs %i : coorX = %.5E | phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",i, coorX, Phi_l, testtre, Phi_l / (1 + testtre), Poro_E);
+    //~ }
     }
 
 // for debug 
-	//~ printf("\n phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E | np = %i \n",phil, tre, phil / (1 + tre), phil_Eulerian, np);
+  //~ printf("\n phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E | np = %i \n",phil, tre, phil / (1 + tre), phil_Eulerian, np);
     double* coor = Element_GetNodeCoordinate(el, 0) ;
     double coorX = *coor ;
     
     //~ if (coorX == 0.){
-	//~ printf("\n Final Outputs: coorX = %.5E | phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",coorX, phil, tre, phil / (1 + tre), phil_Eulerian);
-	//~ }
+  //~ printf("\n Final Outputs: coorX = %.5E | phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",coorX, phil, tre, phil / (1 + tre), phil_Eulerian);
+  //~ }
 
-	double tmp = coorX - 4E-5 ;			//debug
-	if (tmp < 0.){
-		tmp = -tmp ;
-	}
+  double tmp = coorX - 4E-5 ;     //debug
+  if (tmp < 0.){
+    tmp = -tmp ;
+  }
 
     //~ if (tmp < 1E-10){
-	//~ printf("\n Final Outputs: coorX = %.5E | phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",coorX, phil, tre, phil / (1 + tre), phil_Eulerian);
-	//~ }
+  //~ printf("\n Final Outputs: coorX = %.5E | phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",coorX, phil, tre, phil / (1 + tre), phil_Eulerian);
+  //~ }
 
     msaltleached = -mwcsalt * SampleSurface *1e6 ;
     mwaterabsorbed = mwcwater * SampleSurface *1e6;
@@ -1483,20 +1483,20 @@ int ComputeTransferCoefficients(Element_t* el,double dt,double* c)
       /* 2. Transport of salt 
        * -------------------- */
       /* Advective term */
-	//coupled homo 
-	double molality = w_s_n/((1.-w_s_n)*Molarm_s) ;	//number of moles of solute per kg of solvent
-    double sqm = sqrt(molality) ;					//square root of molality
+  //coupled homo 
+  double molality = w_s_n/((1.-w_s_n)*Molarm_s) ; //number of moles of solute per kg of solvent
+    double sqm = sqrt(molality) ;         //square root of molality
     double rho_l_n = K_Darcy/K_l ;
     double Q = 1./(w_s_n*(1.-w_s_n))+1./(Molarm_s*((1.-w_s_n)*(1.-w_s_n)))*(-A_phi*(3.+2.*b_gamma*sqm)/(2.*sqm*(1.+b_gamma*sqm)*(1.+b_gamma*sqm))+2.*beta_0+2*beta_1/(alpha_gamma*alpha_gamma)*exp(-alpha_gamma*sqm)*(alpha_gamma*alpha_gamma-0.25*alpha_gamma*alpha_gamma*alpha_gamma*sqm)+2.*molality*C_gamma) ;
-	double a2 = (1.-w_s_n)/(nu*w_s_n*Q) ;
-	double a1 = (D*Molarm_s/(K_l*RT)+(1.-w_s_n)*rho_l_n*tau_sat*tau_sat*Tau*Tau/(nu*Q))/(1./v_spv+(1.-w_s_n)*rho_l_n*Tau*tau_sat/(nu*Q));
-	double test = 1 - a2*(tau_sat*Tau-a1);
-	//~ printf("\n Coef_Tau = %.5e | rho_l_n =%.5e | a = %.5e | test = %.5e | Tau = %.5e | w_s = %.5e",Coef_Tau, rho_l_n, a, test, Tau, w_s_n);
+  double a2 = (1.-w_s_n)/(nu*w_s_n*Q) ;
+  double a1 = (D*Molarm_s/(K_l*RT)+(1.-w_s_n)*rho_l_n*tau_sat*tau_sat*Tau*Tau/(nu*Q))/(1./v_spv+(1.-w_s_n)*rho_l_n*Tau*tau_sat/(nu*Q));
+  double test = 1 - a2*(tau_sat*Tau-a1);
+  //~ printf("\n Coef_Tau = %.5e | rho_l_n =%.5e | a = %.5e | test = %.5e | Tau = %.5e | w_s = %.5e",Coef_Tau, rho_l_n, a, test, Tau, w_s_n);
       
       {
         double* c2 = c1 + 2 * 9 ;
         
-        c2[0] = -(1 - a2*(tau_sat*Tau-a1)) * w_s_n * K_Darcy ;		//modified for coupled homogenization
+        c2[0] = -(1 - a2*(tau_sat*Tau-a1)) * w_s_n * K_Darcy ;    //modified for coupled homogenization
         //~ c2[0] = -(1 - Tau) * w_s_n * K_Darcy ;
         c2[4] = c2[0] ;
         c2[8] = c2[0] ;
@@ -1506,8 +1506,8 @@ int ComputeTransferCoefficients(Element_t* el,double dt,double* c)
       {
         double* c2 = c1 + 3 * 9 ;
         
-        c2[0] = -D_Fick + (1 - a2*(tau_sat*Tau-a1)) * w_s_n * K_Osmosis ;	//modified for coupled homogenization
-        //~ c2[0] = -D_Fick + (1 - Tau) * w_s_n * K_Osmosis ;	//modified for coupled homogenization
+        c2[0] = -D_Fick + (1 - a2*(tau_sat*Tau-a1)) * w_s_n * K_Osmosis ; //modified for coupled homogenization
+        //~ c2[0] = -D_Fick + (1 - Tau) * w_s_n * K_Osmosis ; //modified for coupled homogenization
         c2[4] = c2[0] ;
         c2[8] = c2[0] ;
       }
@@ -1526,9 +1526,7 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   FEM_t*    fem    = FEM_GetInstance(el) ;
-  //Model_t*  model  = Element_GetModel(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
-  //double*   x      = Model_GetVariable(model,p) ;
   double*  x   = Variable ;
   double*  x_n = Variable_n ;
   
@@ -1676,10 +1674,10 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
     double G_s = young/(2 + 2*poisson) ;
     double n_n = x_n[I_Poro_E] ;
     double biot = BiotCoefficientMoriTanaka(K_s,G_s,n_n) ;
-    double biot_v = BiotCoefficientMoriTanaka(eta_v,eta_d,n_n) ;		//mechanical improvement
+    double biot_v = BiotCoefficientMoriTanaka(eta_v,eta_d,n_n) ;    //mechanical improvement
     double Nbiot = BiotModulusMoriTanaka(K_s,G_s,n_n) ;
-    double eta_v_mt = BulkModulusMoriTanaka(eta_v,eta_d,n_n) ;		//mechanical improvement
-    double effsig_m_n = x_n[I_EFFSIG_M] ;		//mechanical improvement
+    double eta_v_mt = BulkModulusMoriTanaka(eta_v,eta_d,n_n) ;    //mechanical improvement
+    double effsig_m_n = x_n[I_EFFSIG_M] ;   //mechanical improvement
     /** Strain */
     double tre   = eps[0] + eps[4] + eps[8] ;
     double tre_n   = eps_n[0] + eps_n[4] + eps_n[8] ;
@@ -1689,32 +1687,32 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
     /** Porosity evolution */
     double phi_l_n = x_n[I_PHI_L] ;
     //~ double dphi_l_epsi = biot*(tre - tre_n) + (p - p_n)/Nbiot ;
-    //~ double dphi_l_epsi = biot*(tre - tre_n) + (1 + tre)*(p - p_n)/Nbiot + (biot_v - biot)*(1 + tre)*dt*effsig_m_n/eta_v_mt ;			//mechanical improvement written in delta phi
-    //~ double dphi_l_epsi = exp(biot*(log(1.+tre) - log(1.+tre_n))/n_n + (p - p_n)/(Nbiot*n_n) + (biot_v - biot)*dt*effsig_m_n/(eta_v_mt*n_n)) ;			//mechanical improvement written in delta log phi
+    //~ double dphi_l_epsi = biot*(tre - tre_n) + (1 + tre)*(p - p_n)/Nbiot + (biot_v - biot)*(1 + tre)*dt*effsig_m_n/eta_v_mt ;      //mechanical improvement written in delta phi
+    //~ double dphi_l_epsi = exp(biot*(log(1.+tre) - log(1.+tre_n))/n_n + (p - p_n)/(Nbiot*n_n) + (biot_v - biot)*dt*effsig_m_n/(eta_v_mt*n_n)) ;     //mechanical improvement written in delta log phi
     double dphi_l_salt = phi_c_n - phi_c ;
-    double dphi_l = exp(biot*(log(1.+tre) - log(1.+tre_n))/n_n + (p - p_n)/(Nbiot*n_n) + (biot_v - biot)*dt*effsig_m_n/(eta_v_mt*n_n)+dphi_l_salt/(phi_l_n)) ;			//mechanical improvement written in delta log phi
+    double dphi_l = exp(biot*(log(1.+tre) - log(1.+tre_n))/n_n + (p - p_n)/(Nbiot*n_n) + (biot_v - biot)*dt*effsig_m_n/(eta_v_mt*n_n)+dphi_l_salt/(phi_l_n)) ;      //mechanical improvement written in delta log phi
     //~ double phi_l = phi_l_n + dphi_l_epsi + dphi_l_salt ;
-    //~ double phi_l = phi_l_n * dphi_l_epsi + dphi_l_salt ;		//mechanical improvement
-    double phi_l = phi_l_n * dphi_l;		//mechanical improvement
+    //~ double phi_l = phi_l_n * dphi_l_epsi + dphi_l_salt ;    //mechanical improvement
+    double phi_l = phi_l_n * dphi_l;    //mechanical improvement
     double n   = phi_l / (1 + tre) ;
     
     double* coor = Element_GetNodeCoordinate(el, 0) ; //for debug
     double coorX = *coor ;
-	//~ printf("\n coor = %.5e \n",coorX);
+  //~ printf("\n coor = %.5e \n",coorX);
     
     //~ if (coorX == 0.){
-	//~ printf("\n Secondary: coorX = %.5E | phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",coorX, phi_l, tre, phi_l / (1 + tre), n);
-	//~ }
-	//~ printf("\n phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",phi_l, tre, phi_l / (1 + tre), n);
-	
-	double tmp = coorX - 4E-5 ;			//debug
-	if (tmp < 0.){
-		tmp = -tmp ;
-	}
-	//~ printf("\n tmp = %.5e \n",tmp);
+  //~ printf("\n Secondary: coorX = %.5E | phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",coorX, phi_l, tre, phi_l / (1 + tre), n);
+  //~ }
+  //~ printf("\n phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",phi_l, tre, phi_l / (1 + tre), n);
+  
+  double tmp = coorX - 4E-5 ;     //debug
+  if (tmp < 0.){
+    tmp = -tmp ;
+  }
+  //~ printf("\n tmp = %.5e \n",tmp);
     //~ if (tmp < 1E-10){
-	//~ printf("\n Secondary: coorX = %.5E | phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",coorX, phi_l, tre, phi_l / (1 + tre), n);
-	//~ }
+  //~ printf("\n Secondary: coorX = %.5E | phi_l = %.5E | tre = %.5E | n_calculated = %.5E | n = %.5E \n",coorX, phi_l, tre, phi_l / (1 + tre), n);
+  //~ }
 
 
     if (phi_l < 0) {
@@ -1762,13 +1760,13 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
     int i ;
     
     // for coupled homogenization
-    double molality = w_s_n/((1.-w_s_n)*Molarm_s) ;	//number of moles of solute per kg of solvent
-    double sqm = sqrt(molality) ;					//square root of molality
+    double molality = w_s_n/((1.-w_s_n)*Molarm_s) ; //number of moles of solute per kg of solvent
+    double sqm = sqrt(molality) ;         //square root of molality
     double rho_l_n = x[I_RHO_L] ;
     double Q = 1./(w_s_n*(1.-w_s_n))+1./(Molarm_s*((1.-w_s_n)*(1.-w_s_n)))*(-A_phi*(3.+2.*b_gamma*sqm)/(2.*sqm*(1.+b_gamma*sqm)*(1.+b_gamma*sqm))+2.*beta_0+2*beta_1/(alpha_gamma*alpha_gamma)*exp(-alpha_gamma*sqm)*(alpha_gamma*alpha_gamma-0.25*alpha_gamma*alpha_gamma*alpha_gamma*sqm)+2.*molality*C_gamma) ;
-	double a2 = (1.-w_s_n)/(nu*w_s_n*Q) ;
-	double a1 = (d_fick*Molarm_s/(k_darcy*RT)+(1.-w_s_n)*rho_l_n*tau_sat*tau_sat*tau*tau/(nu*Q))/(1./v_spv+(1.-w_s_n)*rho_l_n*tau_sat*tau/(nu*Q));
-	//~ printf("\n Coef_Tau = %.5e | rho_w_n = %.5e | rho_l_n =%.5e",Coef_Tau, rho_w_n, rho_l_n);
+  double a2 = (1.-w_s_n)/(nu*w_s_n*Q) ;
+  double a1 = (d_fick*Molarm_s/(k_darcy*RT)+(1.-w_s_n)*rho_l_n*tau_sat*tau_sat*tau*tau/(nu*Q))/(1./v_spv+(1.-w_s_n)*rho_l_n*tau_sat*tau/(nu*Q));
+  //~ printf("\n Coef_Tau = %.5e | rho_w_n = %.5e | rho_l_n =%.5e",Coef_Tau, rho_w_n, rho_l_n);
     
     
     for(i = 0 ; i < 3 ; i++){
@@ -1776,7 +1774,7 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
       w_o[i]    =   k_osmosis * grd_w_s[i] ;
       w_l[i]    =   w_d[i] + w_o[i] ;
       w_f[i]    = - d_fick * grd_w_s[i] ;
-      w_salt[i] =   w_f[i] + (1 - a2*(tau_sat*tau-a1))*w_s_n*w_l[i] ;	//modified for coupled homogenization
+      w_salt[i] =   w_f[i] + (1 - a2*(tau_sat*tau-a1))*w_s_n*w_l[i] ; //modified for coupled homogenization
     }
   }
   
@@ -1825,7 +1823,7 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
     {     
       double  deps_d[9] ;
       double trde = deps[0] + deps[4] + deps[8] ;
-      double tre   = eps[0] + eps[4] + eps[8] ;		//added for mechanical improvement
+      double tre   = eps[0] + eps[4] + eps[8] ;   //added for mechanical improvement
 
       /* Deviatoric strains */
       for(i = 0 ; i < 9 ; i++) deps_d[i] = deps[i] ;
@@ -1853,9 +1851,9 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
         double dp = p - p_n ;
         //double sig_m   = (sig_m_n + K*trde)/(1 + (K*dt)/eta_v_mt) ;
         //~ double biot_v  = 1 ;
-        double biot_v = BiotCoefficientMoriTanaka(eta_v,eta_d,n) ;		//mechanic improvement
+        double biot_v = BiotCoefficientMoriTanaka(eta_v,eta_d,n) ;    //mechanic improvement
         //~ double effsig_m   = (effsig_m_n + K*trde + (biot_v - biot)*dp)/(1 + (K*dt)/eta_v_mt) ;
-        double effsig_m   = (effsig_m_n + K*trde/(1 + tre) + (biot_v - biot)*dp)/(1 + (K*dt)/eta_v_mt) ;		//mechanic improvement
+        double effsig_m   = (effsig_m_n + K*trde/(1 + tre) + (biot_v - biot)*dp)/(1 + (K*dt)/eta_v_mt) ;    //mechanic improvement
       
         x[I_EFFSIG_M] = effsig_m ;
       }
@@ -1863,7 +1861,7 @@ void  ComputeSecondaryVariables(Element_t* el,double dt,double* x_n,double* x)
       /* Total stresses */
       {
         //~ double biot_v  = 1 ;
-        double biot_v = BiotCoefficientMoriTanaka(eta_v,eta_d,n) ;		//mechanic improvement
+        double biot_v = BiotCoefficientMoriTanaka(eta_v,eta_d,n) ;    //mechanic improvement
         //double sig_m = x[I_EFFSIG_M] - biot*(p - p_i) ;
         double sig_m = x[I_EFFSIG_M] - biot_v * p ;
         

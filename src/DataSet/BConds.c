@@ -279,7 +279,7 @@ void  BConds_EliminateMatrixRowColumnIndexes(BConds_t* bconds,Mesh_t* mesh)
 void   BConds_AssignBoundaryConditions(BConds_t* bconds,Mesh_t* mesh,double t)
 /** Assign the boundary conditions */
 {
-  unsigned short int dim = Mesh_GetDimension(mesh) ;
+  unsigned int dim = Mesh_GetDimension(mesh) ;
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
   unsigned int n_bconds = BConds_GetNbOfBConds(bconds) ;
@@ -328,7 +328,7 @@ void   BConds_AssignBoundaryConditions(BConds_t* bconds,Mesh_t* mesh,double t)
 void   BConds_AssignBoundaryConditions(BConds_t* bconds,Mesh_t* mesh,double t)
 /** Assign the boundary conditions */
 {
-  unsigned short int dim = Mesh_GetDimension(mesh) ;
+  unsigned int dim = Mesh_GetDimension(mesh) ;
   unsigned int n_el = Mesh_GetNbOfElements(mesh) ;
   Element_t* el = Mesh_GetElement(mesh) ;
   unsigned int n_bconds = BConds_GetNbOfBConds(bconds) ;

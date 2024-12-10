@@ -33,9 +33,9 @@
 
 #include "Model.h"
 
-static Model_SetModelProp_t             SetModelProp ;
+static Model_SetModelProperties_t       SetModelProp ;
 static Model_ReadMaterialProperties_t   ReadMatProp ;
-static Model_PrintModelProp_t           PrintModelProp ;
+static Model_PrintModelProperties_t     PrintModelProp ;
 static Model_DefineElementProperties_t  DefineElementProp_ ;
 static Model_ComputeInitialState_t      ComputeInitialState_ ;
 static Model_ComputeExplicitTerms_t     ComputeExplicitTerms ;
@@ -50,25 +50,25 @@ static Model_ComputePropertyIndex_t     ComputePropertyIndex ;
 
 #define BaseName_SetModelProp  BaseName(_SetModelProp)
 
-extern Model_SetModelProp_t BaseName_SetModelProp ;
+extern Model_SetModelProperties_t BaseName_SetModelProp ;
 
 int BaseName_SetModelProp(Model_t* model)
 {
-  Model_GetSetModelProp(model) = SetModelProp ;
-  Model_GetReadMaterialProperties(model) = ReadMatProp ;
-  Model_GetPrintModelProp(model) = PrintModelProp ;
-  Model_GetDefineElementProperties(model) = DefineElementProp_ ;
-  Model_GetComputeInitialState(model) = ComputeInitialState_ ;
-  Model_GetComputeExplicitTerms(model) = ComputeExplicitTerms ;
-  Model_GetComputeImplicitTerms(model) = ComputeImplicitTerms ;
-  Model_GetComputeLoads(model) = ComputeLoads ;
-  Model_GetComputeMatrix(model) = ComputeMatrix ;
-  Model_GetComputeResidu(model) = ComputeResidu ;
-  Model_GetComputeOutputs(model) = ComputeOutputs ;
+  Model_GetSetModelProp(model) = &SetModelProp ;
+  Model_GetReadMaterialProperties(model) = &ReadMatProp ;
+  Model_GetPrintModelProp(model) = &PrintModelProp ;
+  Model_GetDefineElementProperties(model) = &DefineElementProp_ ;
+  Model_GetComputeInitialState(model) = &ComputeInitialState_ ;
+  Model_GetComputeExplicitTerms(model) = &ComputeExplicitTerms ;
+  Model_GetComputeImplicitTerms(model) = &ComputeImplicitTerms ;
+  Model_GetComputeLoads(model) = &ComputeLoads ;
+  Model_GetComputeMatrix(model) = &ComputeMatrix ;
+  Model_GetComputeResidu(model) = &ComputeResidu ;
+  Model_GetComputeOutputs(model) = &ComputeOutputs ;
   
   /* ComputePropertyIndex must be defined in the model file */
   #if defined (ComputePropertyIndex) || defined (COMPUTEPROPERTYINDEX)
-  Model_GetComputePropertyIndex(model) = ComputePropertyIndex ;
+  Model_GetComputePropertyIndex(model) = &ComputePropertyIndex ;
   #endif
   
   #ifdef TITLE

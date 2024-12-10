@@ -738,8 +738,6 @@ void GetProperties(Element_t* el)
 int SetModelProp(Model_t* model)
 {
   Model_GetNbOfEquations(model) = NEQ ;
-  Model_GetNbOfVariables(model) = NbOfVariables ;
-  Model_GetNbOfVariableFluxes(model) = NbOfVariableFluxes ;
   
   Model_CopyNameOfEquation(model,E_Sulfur, "sulfur") ;
   Model_CopyNameOfEquation(model,E_Calcium,"calcium") ;
@@ -1459,7 +1457,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     }
     
     {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g,nn) ;
       
       for(i = 0 ; i < nn ; i++) {
         R(i,E_Sulfur) -= r1[i] ;
@@ -1486,7 +1484,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     }
     
     {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g,nn) ;
       
       for(i = 0 ; i < nn ; i++) {
         R(i,E_Calcium) -= r1[i] ;
@@ -1513,7 +1511,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     }
     
     {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g,nn) ;
       
       for(i = 0 ; i < nn ; i++) {
         R(i,E_Potassium) -= r1[i] ;
@@ -1540,7 +1538,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     }
     
     {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g,nn) ;
       
       for(i = 0 ; i < nn ; i++) {
         R(i,E_Aluminium) -= r1[i] ;
@@ -1567,7 +1565,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     }
     
     {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g,nn) ;
       
       for(i = 0 ; i < nn ; i++) {
         R(i,E_charge) -= r1[i] ;
@@ -1596,7 +1594,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     }
     
     {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g,nn) ;
       
       for(i = 0 ; i < nn ; i++) {
         R(i,E_eneutral) -= r1[i] ;
@@ -1920,10 +1918,6 @@ int TangentCoefficients(Element_t* el,double t,double dt,double* c)
 double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,double t,double dt,int n)
 {
   double* va = Element_GetExplicitTerm(el) ;
-  /*
-  Model_t* model = Element_GetModel(el) ;
-  double* x      = Model_GetVariable(model,n) ;
-  */
   double* x   = Variables[n] ;
   double* x_n = Variables_n(x) ;
   

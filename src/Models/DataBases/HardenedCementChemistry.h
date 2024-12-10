@@ -114,7 +114,7 @@ extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemi
 
 /* Indexes for the primary variables
  * ---------------------------------*/
-#define HardenedCementChemistry_NbOfPrimaryVariables  (10)
+#define HardenedCementChemistry_NbOfPrimaryVariables  (14)
 
 
 /* Different primary variables may be used */
@@ -153,6 +153,7 @@ extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemi
 #define HardenedCementChemistry_LogC_CO2  \
         (6 + HardenedCementChemistry_NbOfPrimaryVariables)
 
+#define HardenedCementChemistry_OH           (7)
 #define HardenedCementChemistry_LogA_OH      (7)
 #define HardenedCementChemistry_LogC_OH   \
         (7 + HardenedCementChemistry_NbOfPrimaryVariables)
@@ -170,6 +171,26 @@ extern void (HardenedCementChemistry_PrintChemicalConstants)(HardenedCementChemi
 #define HardenedCementChemistry_LogA_Cl      (9)
 #define HardenedCementChemistry_LogC_Cl  \
         (9 + HardenedCementChemistry_NbOfPrimaryVariables)
+
+#define HardenedCementChemistry_Fe2O3        (10)
+#define HardenedCementChemistry_LogA_Fe      (10)
+#define HardenedCementChemistry_LogC_Fe \
+        (10 + HardenedCementChemistry_NbOfPrimaryVariables)
+
+#define HardenedCementChemistry_MgO          (11)
+#define HardenedCementChemistry_LogA_Mg      (11)
+#define HardenedCementChemistry_LogC_Mg \
+        (11 + HardenedCementChemistry_NbOfPrimaryVariables)
+
+#define HardenedCementChemistry_TiO2         (12)
+#define HardenedCementChemistry_LogA_Ti      (12)
+#define HardenedCementChemistry_LogC_Ti \
+        (12 + HardenedCementChemistry_NbOfPrimaryVariables)
+
+#define HardenedCementChemistry_P2O5         (13)
+#define HardenedCementChemistry_LogA_P       (13)
+#define HardenedCementChemistry_LogC_P \
+        (13 + HardenedCementChemistry_NbOfPrimaryVariables)
 
 
 

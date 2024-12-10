@@ -13,17 +13,7 @@
 #include "Mry.h"
 
 
-extern  Model_SetModelProp_t  Models_ListOfSetModelProp ;
-
-
-
-/*
-static int Return0(void) ;
-int Return0(void)
-{
-  return(0) ;
-}
-*/
+extern  Model_SetModelProperties_t  Models_ListOfSetModelProp ;
 
 
 
@@ -124,43 +114,7 @@ Model_t* (Model_New)(void)
       
       Model_GetViews(model) = views ;
     }
-  
-  
-    /* Allocation of space for the local variables */
-    {
-      int nvar = Model_MaxNbOfVariables ;
-      LocalVariableVectors_t* lvv = LocalVariableVectors_Create(nvar) ;
-    
-      Model_GetLocalVariableVectors(model) = lvv ;
-    }
-  
-  
-    /* Allocation of space for the local fluxes */
-    {
-      int nvar = Model_MaxNbOfVariableFluxes ;
-      LocalVariableVectors_t* lvv = LocalVariableVectors_Create(nvar) ;
-    
-      Model_GetLocalFluxVectors(model) = lvv ;
-    }
   }
-  
-  /* Default initialization of methods (to be checked) */
-  #if 0
-  {
-    Model_GetSetModelProp(model)             = Return0 ;
-    Model_GetReadMaterialProperties(model)   = Return0 ;
-    Model_GetPrintModelProp(model)           = Return0 ;
-    Model_GetDefineElementProperties(model)  = Return0 ;
-    Model_GetComputeInitialState(model)      = Return0 ;
-    Model_GetComputeExplicitTerms(model)     = Return0 ;
-    Model_GetComputeImplicitTerms(model)     = Return0 ;
-    Model_GetComputeMatrix(model)            = Return0 ;
-    Model_GetComputeResidu(model)            = Return0 ;
-    Model_GetComputeLoads(model)             = Return0 ;
-    Model_GetComputeOutputs(model)           = Return0 ;
-    Model_GetComputePropertyIndex(model)     = Return0 ;
-  }
-  #endif
   
   return(model) ;
 }
@@ -172,32 +126,85 @@ void  (Model_Delete)(void* self)
   Model_t* model = (Model_t*) self ;
   
   {
-    free(Model_GetNameOfEquation(model)[0]) ;
-    free(Model_GetNameOfEquation(model)) ;
-    free(Model_GetNameOfUnknown(model)[0]) ;
-    free(Model_GetNameOfUnknown(model)) ;
-    free(Model_GetSequentialIndexOfUnknown(model)) ;
-    free(Model_GetCodeNameOfModel(model)) ;
-    free(Model_GetShortTitle(model)) ;
-    free(Model_GetNameOfAuthors(model)) ;
-    free(Model_GetObjectiveValue(model)) ;
+    {
+      char* name = Model_GetNameOfEquation(model)[0] ;
+    
+      if(name) {
+        free(name) ;
+      }
+    }
+    
+    {
+      char** names = Model_GetNameOfEquation(model) ;
+      
+      if(names) {
+        free(names) ;
+      }
+    }
+    
+    {
+      char* name = Model_GetNameOfUnknown(model)[0] ;
+    
+      if(name) {
+        free(name) ;
+      }
+    }
+    
+    {
+      char** names = Model_GetNameOfUnknown(model) ;
+      
+      if(names) {
+        free(names) ;
+      }
+    }
+    
+    {
+      int* ind = Model_GetSequentialIndexOfUnknown(model) ;
+    
+      if(ind) {
+        free(ind) ;
+      }
+    }
+    
+    {
+      char* name = Model_GetCodeNameOfModel(model) ;
+      
+      if(name) {
+        free(name) ;
+      }
+    }
+    
+    {
+      char* name = Model_GetShortTitle(model) ;
+      
+      if(name) {
+        free(name) ;
+      }
+    }
+    
+    {
+      char* name = Model_GetNameOfAuthors(model) ;
+      
+      if(name) {
+        free(name) ;
+      }
+    }
+    
+    {
+      ObVal_t* obval = Model_GetObjectiveValue(model) ;
+      
+      if(obval) {
+        free(obval) ;
+      }
+    }
+    
     {
       Views_t* views = Model_GetViews(model) ;
       
-      Views_Delete(views) ;
-      free(views) ;
-    }
-    {
-      LocalVariableVectors_t* lvv = Model_GetLocalVariableVectors(model) ;
-      
-      LocalVariableVectors_Delete(lvv) ;
-      free(lvv) ;
-    }
-    {
-      LocalVariableVectors_t* lvv = Model_GetLocalFluxVectors(model) ;
-      
-      LocalVariableVectors_Delete(lvv) ;
-      free(lvv) ;
+      if(views) {
+        Views_Delete(views) ;
+        free(views) ;
+      }
     }
   }
 }
@@ -208,7 +215,7 @@ Model_t* (Model_Initialize)(Model_t* model,const char* codename,Geometry_t* geom
 {
   int n_models = Models_NbOfModels ;
   const char* modelnames[] = {Models_ListOfNames} ;
-  Model_SetModelProp_t* xModel_SetModelProp[] = {Models_ListOfSetModelProp} ;
+  Model_SetModelProperties_t* xModel_SetModelProp[] = {Models_ListOfSetModelProp} ;
   int i = 0 ;
   
   Model_GetGeometry(model) = geom ; /* Important! */
@@ -285,44 +292,5 @@ void (Model_Scan)(Model_t* model,DataFile_t* datafile,Geometry_t* geom)
         Model_CopyNameOfUnknown(model,i,name) ;
       }
     }
-  }
-}
-
-
-
-
-double* (Model_ComputeVariableDerivatives)(Element_t* el,double t,double dt,double dxi,int i,int n)
-{
-  Model_t* model = Element_GetModel(el) ;
-  int NbOfVariables = Model_GetNbOfVariables(model) ;
-  
-  if(NbOfVariables > Model_MaxNbOfVariables) {
-    arret("Model_ComputeVariableDerivatives") ;
-  }
-  
-  {
-    double* x  = Model_GetVariable(model,n) ;
-    double* xn = Model_GetPreviousVariable(model,n) ;
-    double* dx = Model_GetVariableDerivative(model,n) ;
-    int j ;
-  
-    for(j = 0 ; j < NbOfVariables ; j++) {
-      dx[j] = x[j] ;
-    }
-  
-    dx[i] += dxi ;
-  
-    {
-      Model_ComputeSecondaryVariables_t* computesecondaryvariables = Model_GetComputeSecondaryVariables(model) ;
-      
-      computesecondaryvariables(el,t,dt,xn,dx) ;
-    }
-  
-    for(j = 0 ; j < NbOfVariables ; j++) {
-      dx[j] -= x[j] ;
-      dx[j] /= dxi ;
-    }
-
-    return(dx) ;
   }
 }

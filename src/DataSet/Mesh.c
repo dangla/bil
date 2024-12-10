@@ -2146,7 +2146,7 @@ void (Mesh_ReadFormatGmsh_1)(Mesh_t* mesh,const char* name)
     n_c = 0 ;
     for(i = 0 ; i < n_el_lu ; i++) {
       int n ;
-      unsigned short int   nn ;
+      unsigned int   nn ;
       
       /* le numero d'element */
       fscanf(strfile,"%d",&n) ;

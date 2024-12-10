@@ -70,13 +70,13 @@ extern double     (IntFct_InterpolateAtPoint)(IntFct_t*,double*,int,int) ;
 
 struct IntFct_s {             /* Interpolation function */
   char*   type ;              /* Type of the function */
-  int nn ;                    /* Number of functions/nodes */
-  int np ;                    /* Number of integration points */
+  unsigned int nn ;     /* Number of functions/nodes */
+  unsigned int np ;     /* Number of integration points */
   double* a ;                 /* Reference coordinates of integration points */
   double* w ;                 /* Weights */
   double* h ;                 /* Values of interpolation functions */
   double* dh ;                /* Values of function gradients */
-  int dim ;                   /* sous-dimension (0,1,2,3) */
+  unsigned int dim ;          /* sous-dimension (0,1,2,3) */
   //IntFct_ComputeValuesAtPoint_t* computevaluesatpoint ;
 } ;
 

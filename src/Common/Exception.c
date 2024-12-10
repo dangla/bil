@@ -54,7 +54,7 @@ Exception_t*  (Exception_Create)(void)
 {
   Exception_t* exception = (Exception_t*) Mry_New(Exception_t) ;
   
-  Exception_GetDelete(exception) = Exception_Delete ;
+  Exception_GetDelete(exception) = &Exception_Delete ;
   
   Exception_Initialize() ;
   

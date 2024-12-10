@@ -303,14 +303,15 @@ static int     pm(const char *s) ;
 static void    GetProperties(Element_t*) ;
 
 static double* ComputeVariables(Element_t*,double**,double*,double,double,int) ;
-//static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
 static int     ComputeSecondaryVariables(Element_t*,double,double,double*) ;
 
 static double* ComputeVariableDerivatives(Element_t*,double,double,double,int,int) ;
 
 static void    ComputeTransferCoefficients(FVM_t*,double**,double*) ;
-//static double* ComputeVariableFluxes(Element_t*,double**) ;
-static FVM_ComputeFluxes_t    ComputeFluxes ;
+
+static double* (ComputeVariableFluxes)(Element_t*,int,int);
+static double* (ComputeFluxes)(Element_t*,double*,int,int);
+
 static int     TangentCoefficients(FVM_t*,double,double*) ;
 
 static void    ComputePhysicoChemicalProperties(double) ;
@@ -415,10 +416,9 @@ I_H_R          ,
 I_Last
 } ;
 
-//#define NN                (2)
 #define NbOfVariables    (I_Last)
-//static double Variables[NN][NbOfVariables] ;
-//static double dVariables[NbOfVariables] ;
+static double Variables[Element_MaxNbOfNodes][NbOfVariables] ;
+static double dVariables[NbOfVariables] ;
   
   
 
@@ -436,7 +436,7 @@ I_W_Last
 } ;
 
 #define NbOfVariableFluxes    (I_W_Last)
-//static double VariableFluxes[NbOfVariableFluxes] ;
+static double VariableFluxes[NbOfVariableFluxes] ;
 
 
 
@@ -479,10 +479,6 @@ int SetModelProp(Model_t *model)
 #elif defined (U_C_s) && !defined (U_LogC_s)
   Model_CopyNameOfUnknown(model,E_Salt,"c_s") ;
 #endif
-
-  //Model_GetNbOfVariables(model) = NbOfVariables ;
-  //Model_GetNbOfVariableFluxes(model) = NbOfVariableFluxes ;
-  //Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
   
   return(0) ;
 }
@@ -668,7 +664,7 @@ int ComputeInitialState(Element_t *el)
       int j ;
       
       for(j = i + 1 ; j < nn ; j++) {
-        double* w = FVM_ComputeVariableFluxes(fvm,ComputeFluxes,i,j) ;
+        double* w = ComputeVariableFluxes(el,i,j) ;
 
         W_T(i,j)     = w[I_W_T] ;
         W_A(i,j)     = w[I_W_A] ;
@@ -771,7 +767,7 @@ int  ComputeImplicitTerms(Element_t *el,double t,double dt)
       int j ;
       
       for(j = i + 1 ; j < nn ; j++) {
-        double* w = FVM_ComputeVariableFluxes(fvm,ComputeFluxes,i,j) ;
+        double* w = ComputeVariableFluxes(el,i,j) ;
 
         W_T(i,j)     = w[I_W_T] ;
         W_A(i,j)     = w[I_W_A] ;
@@ -898,7 +894,6 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
 /* Les valeurs exploitees (s) */
 {
   double*  f = Element_GetCurrentImplicitTerm(el) ;
-  Model_t* model = Element_GetModel(el) ;
   FVM_t* fvm = FVM_GetInstance(el) ;
   double** u = Element_ComputePointerToNodalUnknowns(el) ;
   int nn = Element_GetNbOfNodes(el) ;
@@ -927,10 +922,9 @@ int  ComputeOutputs(Element_t *el,double t,double *s,Result_t *r)
   {
     int    j = FVM_FindLocalCellIndex(fvm,s) ;
     /* Variables */
-    //double* x    = ComputeVariables(el,u,f,t,0,j) ;
-    double* x    = Model_GetVariable(model,j) ;
+    double* x    = Variables[j] ;
     /* Fluxes */
-    double* w    = FVM_ComputeVariableFluxes(fvm,ComputeFluxes,0,1) ;
+    double* w    = ComputeVariableFluxes(el,0,1) ;
     
     /* quantites exploitees */
     i = 0 ;
@@ -975,7 +969,6 @@ void ComputeTransferCoefficients(FVM_t* fvm,double **u,double *f)
 /* Termes explicites (va)  */
 {
   Element_t* el = FVM_GetElement(fvm) ;
-  Model_t* model = Element_GetModel(el) ;
   double *va = Element_GetExplicitTerm(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int i ;
@@ -987,8 +980,7 @@ void ComputeTransferCoefficients(FVM_t* fvm,double **u,double *f)
   /* Transfer coefficients */
   for(i = 0 ; i < nn ; i++) {
     /* Variables */
-    //double *x = ComputeVariables(el,u,f,0,0,i) ;
-    double *x = Model_GetVariable(model,i) ;
+    double *x = Variables[i] ;
     
     double p_l    = x[I_P_L] ;
     double p_g    = x[I_P_G] ;
@@ -1050,10 +1042,47 @@ void ComputeTransferCoefficients(FVM_t* fvm,double **u,double *f)
 
 
 
-void ComputeFluxes(FVM_t* fvm,double* grd,double* w,int i,int j)
+double* (ComputeVariableFluxes)(Element_t* el,int i,int j)
+/** Compute the variable fluxes from cell i to cell j. 
+ *  The variables at cell nodes should have been computed
+ *  and stored in the specific locations of the model. */
 {
-  Element_t* el = FVM_GetElement(fvm) ;
+  double* grdij = dVariables ;
+
+  {
+    {
+      double* xi  = Variables[i] ;
+      double* xj  = Variables[j] ;
+      FVM_t* fvm = FVM_GetInstance(el);
+      double* dist = FVM_ComputeIntercellDistances(fvm) ;
+      int nn = Element_GetNbOfNodes(el) ;
+      double dij   = dist[nn*i + j] ;
+      int k ;
+      
+      for(k = 0 ; k < NbOfVariables ; k++)  {
+        grdij[k] = (xj[k] - xi[k])/dij ;
+      }
+    }
+  }
+  
+  /* Fluxes */
+  {
+    {
+      /* Indices i,j of cell nodes should be present because 
+       * transfer coefficients may depend on them */
+      double* w = ComputeFluxes(el,grdij,i,j) ;
+    
+      return(w) ;
+    }
+  }
+}
+
+
+
+double* ComputeFluxes(Element_t* el,double* grd,int i,int j)
+{
   double* va = Element_GetExplicitTerm(el) ;
+  double* w = VariableFluxes;
   
 
   /* Gradients */
@@ -1101,7 +1130,7 @@ void ComputeFluxes(FVM_t* fvm,double* grd,double* w,int i,int j)
   w[I_W_Ani] = w_ani ;
   w[I_W_Cat] = w_cat ;
    
-  //return(w) ;
+  return(w) ;
 }
 
 
@@ -1296,7 +1325,7 @@ int TangentCoefficients(FVM_t* fvm,double dt,double *c)
 /**  Tangent matrix coefficients (c) */
 {
   Element_t* el = FVM_GetElement(fvm) ;
-  Model_t* model = Element_GetModel(el) ;
+  //Model_t* model = Element_GetModel(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int ndof = nn*NEQ ;
   ObVal_t *obval = Element_GetObjectiveValue(el) ;
@@ -1330,9 +1359,6 @@ int TangentCoefficients(FVM_t* fvm,double dt,double *c)
   
   
   for(i = 0 ; i < nn ; i++) {
-    /* Variables */
-    //double *x         = ComputeVariables(el,u,f_n,t,dt,i) ;
-    //double *x = Model_GetVariable(model,i) ;
     int k ;
   
     #if defined (U_LogC_s)
@@ -1356,14 +1382,13 @@ int TangentCoefficients(FVM_t* fvm,double dt,double *c)
       
       /* Transfer terms from node i to node j */
       {
-        double* dw = Model_GetVariableFluxDerivative(model,i) ;
         int j ;
       
         for(j = 0 ; j < nn ; j++) {
           if(j != i) {
             double *cij = c + (i*nn + j)*NEQ*NEQ ;
         
-            ComputeFluxes(fvm,dx,dw,i,j) ;
+            double* dw = ComputeFluxes(el,dx,i,j) ;
           
             cij[E_Mass*NEQ   + k] = - dtdij*dw[I_W_T] ;
 #if defined (E_Air)
@@ -1385,8 +1410,7 @@ int TangentCoefficients(FVM_t* fvm,double dt,double *c)
 
 double* ComputeVariables(Element_t* el,double **u,double *f_n,double t,double dt,int n)
 {
-  Model_t* model = Element_GetModel(el) ;
-  double *x = Model_GetVariable(model,n) ;
+  double *x = Variables[n] ;
   
   /* Primary Variables */
   x[E_Mass ] = H_r(n) ;
@@ -1406,16 +1430,15 @@ double* ComputeVariables(Element_t* el,double **u,double *f_n,double t,double dt
 
 double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double dxi,int i,int n)
 {
-  Model_t* model = Element_GetModel(el) ;
-  //int NbOfVariables = Model_GetNbOfVariables(model) ;
+  //Model_t* model = Element_GetModel(el) ;
   
   if(NbOfVariables > Model_MaxNbOfVariables) {
     arret("ComputeVariableDerivatives") ;
   }
   
   {
-    double* x  = Model_GetVariable(model,n) ;
-    double* dx = Model_GetVariableDerivative(model,n) ;
+    double* x  = Variables[n] ;
+    double* dx = dVariables ;
     int j ;
   
     for(j = 0 ; j < NbOfVariables ; j++) {
@@ -1424,9 +1447,7 @@ double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double dxi,i
   
     dx[i] += dxi ;
   
-    {
-      //Model_ComputeSecondaryVariables_t* computesecondaryvariables = Model_GetComputeSecondaryVariables(model) ;
-      
+    {      
       ComputeSecondaryVariables(el,t,dt,dx) ;
     }
   

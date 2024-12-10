@@ -48,7 +48,8 @@ GenericData_t* (GenericData_New)(void)
   }
   
   {
-    GenericData_GetTypeId(gdat) = TypeId_Create(char) ;
+    //GenericData_GetTypeId(gdat) = TypeId_Create(char) ;
+    GenericData_GetTypeId(gdat) = NULL ;
     strcpy(GenericData_GetName(gdat),"\0") ;
     GenericData_GetNbOfData(gdat) = 0 ;
     GenericData_GetData(gdat) = NULL ;
@@ -56,7 +57,7 @@ GenericData_t* (GenericData_New)(void)
     GenericData_GetPreviousGenericData(gdat) = NULL ;
   }
   
-  GenericData_GetDelete(gdat) = GenericData_Delete ;
+  GenericData_GetDelete(gdat) = &GenericData_Delete ;
   
   return(gdat) ;
 }
@@ -91,9 +92,9 @@ void (GenericData_Delete)(void* self)
     
     {
       void* data = GenericData_GetData(gdat) ;
+      TypeId_t* typ = GenericData_GetTypeId(gdat) ;
     
-      if(data) {
-        TypeId_t* typ = GenericData_GetTypeId(gdat) ;
+      if(data && typ) {
         int n = GenericData_GetNbOfData(gdat) ;
 
         {
@@ -108,7 +109,12 @@ void (GenericData_Delete)(void* self)
         }
       
         free(data) ;
+        
+        TypeId_Delete(typ); // Do nothing!
+        free(typ);
+        
         GenericData_GetData(gdat) = NULL ;
+        GenericData_GetTypeId(gdat) = NULL ;
         //GenericObject_Delete(&data) ;
       }
     }

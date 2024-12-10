@@ -48,7 +48,7 @@
 
 
 /* Nb of (im/ex)plicit and constant terms */
-#define NVE    	((1 + CementSolutionDiffusion_NbOfConcentrations)*NN)
+#define NVE     ((1 + CementSolutionDiffusion_NbOfConcentrations)*NN)
 #define NVI     (7*NN*NN + 10*NN)  //(41)
 #define NV0     (2)
 
@@ -512,8 +512,6 @@ void GetProperties(Element_t* el)
 int SetModelProp(Model_t* model)
 {
   Model_GetNbOfEquations(model) = NEQ ;
-  Model_GetNbOfVariables(model) = NbOfVariables ;
-  Model_GetNbOfVariableFluxes(model) = NbOfVariableFluxes ;
   
   Model_CopyNameOfEquation(model,E_S, "sulfur") ;
   Model_CopyNameOfEquation(model,E_Ca,"calcium") ;
@@ -1255,7 +1253,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     }
     
     {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g,nn) ;
       
       for(i = 0 ; i < nn ; i++) {
         R(i,E_q) -= r1[i] ;
@@ -1284,7 +1282,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     }
     
     {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g,nn) ;
       
       for(i = 0 ; i < nn ; i++) {
         R(i,E_el) -= r1[i] ;
@@ -1960,8 +1958,8 @@ double TortuosityOhJang(double phi)
   double phi_cap = 0.5*phi  ;
   double phi_c   = 0.17 ;  /* Percolation capilar porosity */
     
-  double n = 2.7 ; 		      /* OPC n = 2.7,        Fly ash n = 4.5 */
-  double ds_norm = 1.e-4 ;	/* OPC ds_norm = 1e-4, Fly ash ds_norm = 5e-5 */
+  double n = 2.7 ;          /* OPC n = 2.7,        Fly ash n = 4.5 */
+  double ds_norm = 1.e-4 ;  /* OPC ds_norm = 1e-4, Fly ash ds_norm = 5e-5 */
   double m_phi = 0.5*(pow(ds_norm,1/n) + phi_cap/(1-phi_c)*(1 - pow(ds_norm,1/n)) - phi_c/(1-phi_c)) ;
   double iff =  pow(m_phi + sqrt(m_phi*m_phi +  pow(ds_norm,1/n)*phi_c/(1-phi_c)),n) ;
     

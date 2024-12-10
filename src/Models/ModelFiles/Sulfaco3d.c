@@ -846,7 +846,6 @@ int SetModelProp(Model_t* model)
   
   
   Model_GetComputePropertyIndex(model) = pm ;
-  Model_GetNbOfVariables(model) = NbOfVariables ;
   
   Model_GetSequentialIndexOfUnknown(model)[E_Sulfur] = 0 ;
   Model_GetSequentialIndexOfUnknown(model)[E_Calcium] = 0 ;

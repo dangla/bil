@@ -92,7 +92,7 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
 /* Macros for primary variables
  * ----------------------------*/
  
-#define CementSolutionChemistry_NbOfPrimaryVariables  (9)
+#define CementSolutionChemistry_NbOfPrimaryVariables  (13)
 
 /* Different primary variables may be used */
 #define CementSolutionChemistry_CaO          (0)
@@ -128,6 +128,14 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
 
 #define CementSolutionChemistry_Cl           (8)
 #define CementSolutionChemistry_LogA_Cl      (8)
+
+#define CementSolutionChemistry_Fe2O3        (9)
+
+#define CementSolutionChemistry_MgO          (10)
+
+#define CementSolutionChemistry_TiO2         (11)
+
+#define CementSolutionChemistry_P2O5         (12)
 
 
        
@@ -177,97 +185,6 @@ extern double*   (CementSolutionChemistry_GetValence)(void) ;
 /* List of compound names
  * ----------------------*/
 #define CementSolutionChemistry_NbOfSpecies  (31)
- 
-#define CementSolutionChemistry_C_0   H2O
-#define CementSolutionChemistry_C_1   H
-#define CementSolutionChemistry_C_2   OH
-
-#define CementSolutionChemistry_C_3   Ca
-#define CementSolutionChemistry_C_4   CaOH
-#define CementSolutionChemistry_C_5   CaO2H2
-
-#define CementSolutionChemistry_C_6   H2SiO4
-#define CementSolutionChemistry_C_7   H3SiO4
-#define CementSolutionChemistry_C_8   H4SiO4
-
-#define CementSolutionChemistry_C_9   CaH2SiO4
-#define CementSolutionChemistry_C_10  CaH3SiO4
-
-#define CementSolutionChemistry_C_11  Na
-#define CementSolutionChemistry_C_12  NaOH
-
-#define CementSolutionChemistry_C_13  K
-#define CementSolutionChemistry_C_14  KOH
-
-#define CementSolutionChemistry_C_15  H2CO3
-#define CementSolutionChemistry_C_16  HCO3
-#define CementSolutionChemistry_C_17  CO3
-#define CementSolutionChemistry_C_18  CO2
-
-#define CementSolutionChemistry_C_19  CaHCO3
-#define CementSolutionChemistry_C_20  CaCO3
-
-#define CementSolutionChemistry_C_21  NaHCO3
-#define CementSolutionChemistry_C_22  NaCO3
-
-#define CementSolutionChemistry_C_23  H2SO4
-#define CementSolutionChemistry_C_24  HSO4
-#define CementSolutionChemistry_C_25  SO4
-/*
-#define CementSolutionChemistry_C_XX  SO3
-#define CementSolutionChemistry_C_XX  S2O3
-
-#define CementSolutionChemistry_C_XX  H2S
-#define CementSolutionChemistry_C_XX  HS
-#define CementSolutionChemistry_C_XX  S
-#define CementSolutionChemistry_C_XX  S0
-*/
-
-#define CementSolutionChemistry_C_26  CaHSO4
-#define CementSolutionChemistry_C_27  CaSO4
-
-#define CementSolutionChemistry_C_28  Cl
-
-#define CementSolutionChemistry_C_29  Al
-#define CementSolutionChemistry_C_30  AlO4H4
-
-
-        
-
-#define CementSolutionChemistry_ListOfCompounds (\
-        H2O,H,OH \
-       ,Ca,CaOH,CaO2H2 \
-       ,H2SiO4,H3SiO4,H4SiO4 \
-       ,CaH2SiO4,CaH3SiO4 \
-       ,Na,NaOH \
-       ,K,KOH \
-       ,H2CO3,HCO3,CO3,CO2 \
-       ,CaHCO3,CaCO3 \
-       ,NaHCO3,NaCO3 \
-       ,H2SO4,HSO4,SO4 \
-       ,CaHSO4,CaSO4 \
-       ,Cl \
-       ,Al,AlO4H4 \
-       )
-       
-/*
-       ,H2SO4,HSO4,SO4,SO3,S2O3 \
-       ,H2S,HS,S,S0 \
-*/
-
-
-#include "Algos.h"
-
-/*
-#define CementSolutionChemistry_ENUM \
-        Tuple_SEQ(Algos_MAP(CementSolutionChemistry_ListOfCompounds,CementSolutionChemistry_GetIndexOf))
-*/
-
-
-enum CementSolutionChemistry_e {
-  CementSolutionChemistry_ENUM
-} ;
-
 
 
 /* Macros for the activities/concentrations
@@ -325,6 +242,45 @@ enum CementSolutionChemistry_e {
 #define CementSolutionChemistry_A_AlO4H4      (30)
 
 
+        
+
+#if 0
+#define CementSolutionChemistry_ListOfCompounds (\
+        H2O,H,OH \
+       ,Ca,CaOH,CaO2H2 \
+       ,H2SiO4,H3SiO4,H4SiO4 \
+       ,CaH2SiO4,CaH3SiO4 \
+       ,Na,NaOH \
+       ,K,KOH \
+       ,H2CO3,HCO3,CO3,CO2 \
+       ,CaHCO3,CaCO3 \
+       ,NaHCO3,NaCO3 \
+       ,H2SO4,HSO4,SO4 \
+       ,CaHSO4,CaSO4 \
+       ,Cl \
+       ,Al,AlO4H4 \
+       )
+       
+/*
+       ,H2SO4,HSO4,SO4,SO3,S2O3 \
+       ,H2S,HS,S,S0 \
+*/
+
+
+#include "Algos.h"
+
+/*
+#define CementSolutionChemistry_ENUM \
+        Tuple_SEQ(Algos_MAP(CementSolutionChemistry_ListOfCompounds,CementSolutionChemistry_GetIndexOf))
+*/
+
+
+enum CementSolutionChemistry_e {
+  CementSolutionChemistry_ENUM
+} ;
+#endif
+
+
 
 #include "Utils.h"
 
@@ -371,7 +327,7 @@ enum CementSolutionChemistry_e {
 
 /* Macros for element concentrations
  * ---------------------------------*/
-#define CementSolutionChemistry_NbOfElementConcentrations       (8)
+#define CementSolutionChemistry_NbOfElementConcentrations       (12)
 
 #define CementSolutionChemistry_E_Ca          (0)
 #define CementSolutionChemistry_E_Si          (1)
@@ -381,6 +337,10 @@ enum CementSolutionChemistry_e {
 #define CementSolutionChemistry_E_S           (5)
 #define CementSolutionChemistry_E_Al          (6)
 #define CementSolutionChemistry_E_Cl          (7)
+#define CementSolutionChemistry_E_Fe          (8)
+#define CementSolutionChemistry_E_Mg          (9)
+#define CementSolutionChemistry_E_Ti          (10)
+#define CementSolutionChemistry_E_P           (11)
 
 #define CementSolutionChemistry_GetElementConcentrationOf(CSC,A) \
        (CementSolutionChemistry_GetElementConcentration(CSC)[CementSolutionChemistry_E_##A])

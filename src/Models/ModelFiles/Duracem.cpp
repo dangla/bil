@@ -295,45 +295,77 @@ enum {
 
 
 
-#include <BaseName.h>
-
+#include "BaseName.h"
 #define ImplicitValues_t BaseName(_ImplicitValues_t)
 #define ExplicitValues_t BaseName(_ExplicitValues_t)
 #define ConstantValues_t BaseName(_ConstantValues_t)
-#define InputValues_t    BaseName(_InputValues_t)
 #define OtherValues_t    BaseName(_OtherValues_t)
+
+template<typename T>
+struct ImplicitValues_t ;
+
+template<typename T>
+struct ExplicitValues_t;
+
+template<typename T>
+struct ConstantValues_t;
+
+template<typename T>
+struct OtherValues_t;
+
+
+
+
+#include "CustomValues.h"
+template<typename T>
+using Values_t = CustomValues_t<T,ImplicitValues_t,ExplicitValues_t,ConstantValues_t,OtherValues_t> ;
+
+using Values_d = Values_t<double> ;
+
+#define Values_Index(V)  CustomValues_Index(Values_t,V)
+
+
+#include "MaterialPointModel.h"
+#define MPM_t      BaseName(_MPM_t)
+
+struct MPM_t: public MaterialPointModel_t<Values_d> {
+  MaterialPointModel_SetInputs_t<Values_d> SetInputs;
+  MaterialPointModel_Integrate_t<Values_d> Integrate;
+  MaterialPointModel_Initialize_t<Values_d> Initialize;
+  MaterialPointModel_SetTangentMatrix_t<Values_d> SetTangentMatrix;
+  MaterialPointModel_SetFluxes_t<Values_d> SetFluxes;
+  MaterialPointModel_SetIndexes_t SetIndexes;
+  MaterialPointModel_SetIncrements_t SetIncrements;
+} ;
+
+
+
+#include "ConstitutiveIntegrator.h"
+using CI_t = ConstitutiveIntegrator_t<Values_d>;
 
 
 template<typename T = double>
-struct InputValues_t {
+struct ImplicitValues_t {
   T U_calcium;
-#ifdef E_SILICON
+  #ifdef E_SILICON
   T U_silicon;
-#endif
+  #endif
   T U_sodium;
   T U_potassium;
   T U_charge;
   T U_mass;
-#ifdef E_CARBON
+  #ifdef E_CARBON
   T U_carbon;
-#endif
-#ifdef E_ENEUTRAL
+  #endif
+  #ifdef E_ENEUTRAL
   T U_eneutral;
-#endif
-#ifdef E_CHLORINE
+  #endif
+  #ifdef E_CHLORINE
   T U_chlorine;
-#endif
-#ifdef E_AIR
+  #endif
+  #ifdef E_AIR
   T U_air;
-#endif
-};
-
-
-#define NbOfImplicitTermsPerNode \
-        ((int) sizeof(ImplicitValues_t<char>))
-
-template<typename T = double>
-struct ImplicitValues_t {
+  #endif
   T Mole_carbon;
   T MolarFlow_carbon[Element_MaxNbOfNodes];
   T Mole_charge;
@@ -356,6 +388,11 @@ struct ImplicitValues_t {
   T Mole_solidcalcite;
   T Mole_solidfriedelsalt;
   T Concentration_oh;
+  T Concentration_carbondioxide;
+  T ChemicalPotential[CementSolutionDiffusion_NbOfConcentrations];
+  T Pressure_liquid;
+  T Pressure_gas;
+  T MassDensity_watervapor;
 } ;
 
 
@@ -367,20 +404,13 @@ struct OtherValues_t {
   T Mole_solidsilicon;
   T Volume_solidtotal;
   T Volume_solidcsh;
-  T Concentration_carbondioxide;
-  T Pressure_liquid;
-  T Pressure_gas;
-  T MassDensity_watervapor;
   T SaturationDegree_liquid;
   T Porosity;
-  T ChemicalPotential[CementSolutionDiffusion_NbOfConcentrations];
 };
 
 
 
 
-#define NbOfExplicitTermsPerNode \
-        ((int) sizeof(ExplicitValues_t<char>))
 
 template<typename T = double>
 struct ExplicitValues_t {
@@ -401,64 +431,17 @@ struct ExplicitValues_t {
 };
 
 
-#define NbOfConstantTermsPerNode \
-        ((int) sizeof(ConstantValues_t<char>))
 
 template<typename T = double>
 struct ConstantValues_t {
   T InitialVolume_solidtotal;
 };
 
+static MPM_t mpm1;
+//static MPM_t* mpm = (MPM_t*) &mpm1;
+static MaterialPointModel_t<Values_d>* mpm = &mpm1;
 
-
-#include <CustomValues.h>
-
-using Values_t = CustomValues_t<ImplicitValues_t<>,ExplicitValues_t<>,ConstantValues_t<>,InputValues_t<>,OtherValues_t<>> ;
-
-
-#define SetInputs_t BaseName(_SetInputs_t)
-#define Integrate_t BaseName(_Integrate_t)
-#define SetFluxes_t BaseName(_SetFluxes_t)
-#define Initialize_t BaseName(_Initialize_t)
-
-
-
-
-#include <ConstitutiveIntegrator.h>
-
-#define USEFUNCTOR 0
-
-#if USEFUNCTOR
-struct SetInputs_t {
-  ConstitutiveIntegrator_SetInputs_t<Values_t> operator();
-} ;
-
-struct Integrate_t {
-  ConstitutiveIntegrator_Integrate_t<Values_t> operator();
-} ;
-
-struct SetFluxes_t {
-  ConstitutiveIntegrator_SetFluxes_t<Values_t> operator();
-} ;
-
-struct Initialize_t {
-  ConstitutiveIntegrator_Initialize_t<Values_t> operator();
-} ;
-#else
-using SetInputs_t = ConstitutiveIntegrator_SetInputs_t<Values_t> ;
-using Integrate_t = ConstitutiveIntegrator_Integrate_t<Values_t> ;
-using SetFluxes_t = ConstitutiveIntegrator_SetFluxes_t<Values_t> ;
-using Initialize_t = ConstitutiveIntegrator_Initialize_t<Values_t> ;
-#endif
-
-
-using CI_t = ConstitutiveIntegrator_t<Values_t,SetInputs_t,Integrate_t>;
-
-static Integrate_t Integrate;
-static SetInputs_t SetInputs;
-static SetFluxes_t SetFluxes;
-static Initialize_t Initialize;
-
+static CI_t ci(mpm) ;
 
 
 
@@ -728,20 +711,12 @@ static Initialize_t Initialize;
 
 
 
-/* Access to Properties */
-#define GetProperty(a)                   (Element_GetProperty(el)[pm(a)])
-
-
 
 static int     pm(const char* s) ;
 static void    GetProperties(Element_t*) ;
 
 static double  dn1_caoh2sdt(double const,double const) ;
 static double  CHSolidContent_kin1(double const,double const,double const) ;
-
-
-static int     TangentCoefficients(Element_t*,double,double*) ;
-
 
 static void    ComputePhysicoChemicalProperties(double) ;
 
@@ -866,6 +841,8 @@ int pm(const char* s)
 
 void GetProperties(Element_t* el)
 {
+/* Access to Properties */
+#define GetProperty(a)  (Element_GetProperty(el)[pm(a)])
   phi0     = GetProperty("porosity") ;
   kl_int   = GetProperty("kl_int") ;
   kg_int   = GetProperty("kg_int") ;
@@ -892,6 +869,7 @@ void GetProperties(Element_t* el)
   adsorbedchloridecurve_a = Element_FindCurve(el,"alpha") ;
   adsorbedchloridecurve_b = Element_FindCurve(el,"beta") ;
 #endif
+#undef GetProperty
 }
 
 
@@ -981,6 +959,9 @@ int SetModelProp(Model_t* model)
 #ifdef E_AIR
   Model_CopyNameOfUnknown(model,E_AIR, "p_g") ;
 #endif
+  
+  //Model_GetComputePropertyIndex(model) = &pm ;
+  Model_GetComputeMaterialProperties(model) = &GetProperties;
   
   return(0) ;
 }
@@ -1191,15 +1172,24 @@ int PrintModelChar(Model_t* model,FILE *ficd)
 int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
 {
   int nn = Element_GetNbOfNodes(el) ;
-  Element_GetNbOfImplicitTerms(el) = NbOfImplicitTermsPerNode*nn ;
-  Element_GetNbOfExplicitTerms(el) = NbOfExplicitTermsPerNode*nn ;
-  Element_GetNbOfConstantTerms(el) = NbOfConstantTermsPerNode*nn ;
   
+  #define NVI ((int) sizeof(ImplicitValues_t<char>))
+  #define NVE ((int) sizeof(ExplicitValues_t<char>))
+  #define NVC ((int) sizeof(ConstantValues_t<char>))
+  Element_GetNbOfImplicitTerms(el) = NVI*nn ;
+  Element_GetNbOfExplicitTerms(el) = NVE*nn ;
+  Element_GetNbOfConstantTerms(el) = NVC*nn ;
+  #undef NVC
+  #undef NVE
+  #undef NVI
+  
+  #if 0
   {
     int dim = Element_GetDimension(el) ;
     int i   = IntFcts_FindIntFct(intfcts,nn,dim,"Nodes") ;
     Element_GetIntFct(el) = IntFcts_GetIntFct(intfcts) + i ;
   }
+  #endif
   
   return(0) ;
 }
@@ -1211,12 +1201,11 @@ int  ComputeLoads(Element_t* el,double t,double dt,Load_t* cg,double* r)
 {
   int nn = Element_GetNbOfNodes(el) ;
   FVM_t* fvm = FVM_GetInstance(el) ;
-  int    i ;
 
   {
     double* r1 = FVM_ComputeSurfaceLoadResidu(fvm,cg,t,dt) ;
     
-    for(i = 0 ; i < NEQ*nn ; i++) r[i] = -r1[i] ;
+    for(int i = 0 ; i < NEQ*nn ; i++) r[i] = -r1[i] ;
   }
   
   return(0) ;
@@ -1225,26 +1214,21 @@ int  ComputeLoads(Element_t* el,double t,double dt,Load_t* cg,double* r)
 
 
 int ComputeInitialState(Element_t* el)
-/* Initialise les variables du systeme (f,va) */ 
 {
   double* f  = Element_GetImplicitTerm(el) ;
-  double* va = Element_GetExplicitTerm(el) ;
-  double* v0 = Element_GetConstantTerm(el) ;
-  int nn = Element_GetNbOfNodes(el) ;
   double** u = Element_ComputePointerToNodalUnknowns(el) ;
-  CI_t ci(&SetInputs,&Integrate,el,0,0,u,f,u,f) ;
   
-  /*
-    Input data
-  */
-  GetProperties(el) ;
+  ci.Set(el,0,0,u,f,u,f) ;
+  
+  Element_ComputeMaterialProperties(el) ;
   
   
-  /* Pre-initialization */
+  /* Modifying the nodal unknowns */
   {
+    int nn = Element_GetNbOfNodes(el) ;
+    
     for(int i = 0 ; i < nn ; i++) {
-      Values_t& val = *ci.Initialize(&Initialize,i);
-      
+      Values_d& val = *ci.InitializeValues(i);
 
       #ifdef U_LogC_Na
         LogC_Na(i)  = val.U_sodium ;
@@ -1267,81 +1251,27 @@ int ComputeInitialState(Element_t* el)
           Z_OH(i)    = Z_OHDefinition(c_oh,c_h) ;
         #endif
       #endif
-        
-      /* storages */
-      ci.StoreImplicitTerms(i) ;
-      ci.StoreConstantTerms(i) ;
     }
   }
   
-
-  {
-    for(int i = 0 ; i < nn ; i++) {
-      /* Variables */
-      Values_t* val = ci.Integrate(i) ;
-      
-      if(!val) return(1) ;
-        
-      /* storage */
-      ci.StoreExplicitTerms(i) ;
   
-      if(Element_IsSubmanifold(el)) continue ;
-      
-      /* Flux */
-      {
-        for(int j = 0 ; j < i ; j++) {
-          Values_t& grdv = *ci.FiniteGradient(i,j);
-
-          ci.SetFluxes(&SetFluxes,i,j,grdv) ;
-        }
-      }
-    }
-  }
-  
-  /* storages */
-  {
-    for(int i = 0 ; i < nn ; i++) {
-      ci.StoreImplicitTerms(i) ;
-    }
-  }
-  
-  return(0) ;
+  return(ci.ComputeInitialStateByFVM());
 }
 
 
 
 int  ComputeExplicitTerms(Element_t* el,double t)
-/* Thermes explicites (va)  */
 {
   double*  f = Element_GetPreviousImplicitTerm(el) ;
-  double* va = Element_GetExplicitTerm(el) ;
   double** u = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  int nn = Element_GetNbOfNodes(el) ;
-  CI_t ci(&SetInputs,&Integrate,el,t,0,u,f,u,f) ;
+  
+  ci.Set(el,t,0,u,f,u,f) ;
   
   if(Element_IsSubmanifold(el)) return(0) ;
   
-  /*
-    Input data
-  */
-  GetProperties(el) ;
+  Element_ComputeMaterialProperties(el) ;
   
-  /*
-    Coefficients de transfert
-  */
-  {
-    
-    for(int i = 0 ; i < nn ; i++) {
-      Values_t* val = ci.Integrate(i) ;
-      
-      if(!val) return(1) ;
-        
-      /* storage */
-      ci.StoreExplicitTerms(i) ;
-    }
-  }
-
-  return(0) ;
+  return(ci.ComputeExplicitTermsByFVM()) ;
 }
 
 
@@ -1350,82 +1280,14 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
 {
   double* f   = Element_GetCurrentImplicitTerm(el) ;
   double* f_n = Element_GetPreviousImplicitTerm(el) ;
-  int nn = Element_GetNbOfNodes(el) ;
   double** u = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  CI_t ci(&SetInputs,&Integrate,el,t,dt,u_n,f_n,u,f) ;
   
-  /*
-    Input data
-  */
-  GetProperties(el) ;
+  ci.Set(el,t,dt,u_n,f_n,u,f) ;
   
+  Element_ComputeMaterialProperties(el) ;
   
-  /* Molar contents */
-  {
-    for(int i = 0 ; i < nn ; i++) {
-      Values_t* val = ci.Integrate(i) ;
-      
-      if(!val) return(1) ;
-
-      {
-        double c_co2 = val->Concentration_carbondioxide ;
-        
-        double c_h2o = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,H2O) ;
-        double c_oh = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,OH) ;
-        double c_ca = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Ca) ;
-        double c_na = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Na) ;
-        double c_k  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,K) ;
-        
-        double n_csh     = val->Mole_solidcsh ;
-        double n_ch      = val->Mole_solidportlandite ;
-      
-        if(c_co2 < 0 || c_oh <= 0 || c_h2o <= 0 || c_na < 0 || c_k < 0 || c_ca < 0 || n_csh < 0. || n_ch < 0.) {
-          double x0 = Element_GetNodeCoordinate(el,i)[0] ;
-          double n_cc     = val->Mole_solidcalcite ;
-          double c_naoh   = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaOH) ;
-          double c_nahco3 = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaHCO3) ;
-          double c_naco3  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaCO3) ;
-          double c_cl     = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) ;
-          printf("\n") ;
-          printf("en x     = %e\n",x0) ;
-          printf("c_co2    = %e\n",c_co2) ;
-          printf("c_oh     = %e\n",c_oh) ;
-          printf("c_h2o    = %e\n",c_h2o) ;
-          printf("n_cc     = %e\n",n_cc) ;
-          printf("c_na     = %e\n",c_na) ;
-          printf("c_k      = %e\n",c_k) ;
-          printf("c_ca     = %e\n",c_ca) ;
-          printf("n_csh    = %e\n",n_csh) ;
-          printf("c_naoh   = %e\n",c_naoh) ;
-          printf("c_nahco3 = %e\n",c_nahco3) ;
-          printf("c_naco3  = %e\n",c_naco3) ;
-          printf("c_cl     = %e\n",c_cl) ;
-          return(1) ;
-        }
-      }
-  
-      if(Element_IsSubmanifold(el)) continue ;
-      
-      /* Flux */
-      {
-        for(int j = 0 ; j < i ; j++) {
-          Values_t& grdv = *ci.FiniteGradient(i,j);
-
-          ci.SetFluxes(&SetFluxes,i,j,grdv) ;
-        }
-      }
-    }
-  }
-  
-  /* storage */
-  {
-    for(int i = 0 ; i < nn ; i++) {
-      ci.StoreImplicitTerms(i) ;
-    }
-  }
-
-  return(0) ;
+  return(ci.ComputeImplicitTermsByFVM());
 }
 
 
@@ -1433,33 +1295,29 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
 int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 {
 #define K(i,j)    (k[(i)*ndof + (j)])
+  double* f   = Element_GetCurrentImplicitTerm(el) ;
+  double* f_n = Element_GetPreviousImplicitTerm(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int ndof = nn*NEQ ;
-  FVM_t* fvm = FVM_GetInstance(el) ;
-  double c[4*NEQ*NEQ] ;
-  int    i ;
+  double** u   = Element_ComputePointerToNodalUnknowns(el) ;
+  double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   
-  /*
-    Initialisation 
-  */
-  for(i = 0 ; i < ndof*ndof ; i++) k[i] = 0. ;
+  ci.Set(el,t,dt,u_n,f_n,u,f) ;
+  
+  for(int i = 0 ; i < ndof*ndof ; i++) k[i] = 0. ;
 
   if(Element_IsSubmanifold(el)) return(0) ;
   
-  /*
-    Input data
-  */
-  GetProperties(el) ;
-  
-  if(TangentCoefficients(el,dt,c) < 0) return(1) ;
+  Element_ComputeMaterialProperties(el) ;
   
   {
-    double* km = FVM_ComputeMassAndIsotropicConductionMatrix(fvm,c,NEQ) ;
-    for(i = 0 ; i < ndof*ndof ; i++) k[i] = km[i] ;
+    double* km = ci.ComputeMassConservationMatrixByFVM();
+      
+    for(int i = 0 ; i < ndof*ndof ; i++) k[i] = km[i] ;
   }
 
 
-/* On output TangentCoefficients has computed the derivatives wrt
+/* On output SetTangentMatrix has computed the derivatives wrt
  * LogC_CO2, LogC_Na, LogC_K, LogC_OH, LogC_Cl
  * (see Integrate and Differentiate). */
 
@@ -1468,7 +1326,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
     
-    for(i = 0 ; i < 2*NEQ ; i++){
+    for(int i = 0 ; i < 2*NEQ ; i++){
       K(i,E_CARBON)     /= Ln10*C_CO2(0) ;
       K(i,E_CARBON+NEQ) /= Ln10*C_CO2(1) ;
     }
@@ -1480,7 +1338,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
     
-    for(i = 0 ; i < 2*NEQ ; i++){
+    for(int i = 0 ; i < 2*NEQ ; i++){
       K(i,E_SODIUM)     /= Ln10*C_Na(0) ;
       K(i,E_SODIUM+NEQ) /= Ln10*C_Na(1) ;
     }
@@ -1491,7 +1349,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
     
-    for(i = 0 ; i < 2*NEQ ; i++){
+    for(int i = 0 ; i < 2*NEQ ; i++){
       K(i,E_POTASSIUM)     /= Ln10*C_K(0) ;
       K(i,E_POTASSIUM+NEQ) /= Ln10*C_K(1) ;
     }
@@ -1503,7 +1361,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
     
-    for(i = 0 ; i < 2*NEQ ; i++){
+    for(int i = 0 ; i < 2*NEQ ; i++){
       K(i,E_ENEUTRAL)     /= Ln10*C_OH(0) ;
       K(i,E_ENEUTRAL+NEQ) /= Ln10*C_OH(1) ;
     }
@@ -1512,7 +1370,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
     
-    for(i = 0 ; i < 2*NEQ ; i++){
+    for(int i = 0 ; i < 2*NEQ ; i++){
       K(i,E_ENEUTRAL)     *= dLogC_OHdZ_OH(Z_OH(0)) ;
       K(i,E_ENEUTRAL+NEQ) *= dLogC_OHdZ_OH(Z_OH(1)) ;
     }
@@ -1525,7 +1383,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
     
-    for(i = 0 ; i < 2*NEQ ; i++){
+    for(int i = 0 ; i < 2*NEQ ; i++){
       K(i,E_CHLORINE)     /= Ln10*C_Cl(0) ;
       K(i,E_CHLORINE+NEQ) /= Ln10*C_Cl(1) ;
     }
@@ -1545,75 +1403,42 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 #define R(n,i)    (r[(n)*NEQ+(i)])
   double* f   = Element_GetCurrentImplicitTerm(el) ;
   double* f_n = Element_GetPreviousImplicitTerm(el) ;
+  double** u   = Element_ComputePointerToNodalUnknowns(el) ;
+  double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   FVM_t* fvm = FVM_GetInstance(el) ;
-  int    i ;
-  double zero = 0. ;
-  using TI = CustomValues_TypeOfImplicitValues(Values_t);
-  TI* val = (TI*) f ;
-  TI* val_n = (TI*) f_n ;
-  
-  /*
-    Initialization
-  */
-  for(i = 0 ; i < NEQ*nn ; i++) r[i] = zero ;
+
+  for(int i = 0 ; i < NEQ*nn ; i++) r[i] = 0 ;
 
   if(Element_IsSubmanifold(el)) return(0) ;
+  
+  ci.Set(el,t,dt,u_n,f_n,u,f) ;
 
   
-#ifdef E_CARBON
   /*
     Conservation of element C: (N_C - N_Cn) + dt * div(W_C) = 0
   */
+  #ifdef E_CARBON
   {
-    double g[Element_MaxNbOfNodes*Element_MaxNbOfNodes] ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      int j ;
+    int imass = Values_Index(Mole_carbon);
+    int iflow = Values_Index(MolarFlow_carbon[0]);
+    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
       
-      for(j = 0 ; j < nn ; j++) {
-        if(i == j) {
-          g[i*nn + i] = val[i].Mole_carbon - val_n[i].Mole_carbon ;
-        } else {
-          g[i*nn + j] = dt * val[i].MolarFlow_carbon[j] ;
-        }
-      }
-    }
-    
-    {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        R(i,E_CARBON) -= r1[i] ;
-      }
+    for(int i = 0 ; i < nn ; i++) {
+      R(i,E_CARBON) -= r1[i] ;
     }
   }
-#endif
+  #endif
   
   /*
     Conservation of charge: div(W_q) = 0
   */
   {
-    double g[Element_MaxNbOfNodes*Element_MaxNbOfNodes] ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      int j ;
-      
-      for(j = 0 ; j < nn ; j++) {
-        if(i == j) {
-          g[i*nn + i] = 0 ;
-        } else {
-          g[i*nn + j] = val[i].MolarFlow_charge[j] ;
-        }
-      }
-    }
-    
-    {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        R(i,E_CHARGE) -= r1[i] ;
-      }
+    int iflow = Values_Index(MolarFlow_charge[0]);
+    double* r1 = ci.ComputeFluxResiduByFVM(iflow);
+
+    for(int i = 0 ; i < nn ; i++) {
+      R(i,E_CHARGE) -= r1[i] ;
     }
   }
   
@@ -1621,26 +1446,12 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     Conservation of total mass: (M_tot - M_totn) + dt * div(W_tot) = 0
   */
   {
-    double g[Element_MaxNbOfNodes*Element_MaxNbOfNodes] ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      int j ;
+    int imass = Values_Index(Mass_total);
+    int iflow = Values_Index(MassFlow_total[0]);
+    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
       
-      for(j = 0 ; j < nn ; j++) {
-        if(i == j) {
-          g[i*nn + i] = val[i].Mass_total - val_n[i].Mass_total ;
-        } else {
-          g[i*nn + j] = dt * val[i].MassFlow_total[j] ;
-        }
-      }
-    }
-    
-    {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        R(i,E_MASS) -= r1[i] ;
-      }
+    for(int i = 0 ; i < nn ; i++) {
+      R(i,E_MASS) -= r1[i] ;
     }
   }
   
@@ -1648,26 +1459,12 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     Conservation of element Ca: (N_Ca - N_Can) + dt * div(W_Ca) = 0
   */
   {
-    double g[Element_MaxNbOfNodes*Element_MaxNbOfNodes] ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      int j ;
+    int imass = Values_Index(Mole_calcium);
+    int iflow = Values_Index(MolarFlow_calcium[0]);
+    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
       
-      for(j = 0 ; j < nn ; j++) {
-        if(i == j) {
-          g[i*nn + i] = val[i].Mole_calcium - val_n[i].Mole_calcium ;
-        } else {
-          g[i*nn + j] = dt * val[i].MolarFlow_calcium[j] ;
-        }
-      }
-    }
-    
-    {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        R(i,E_CALCIUM) -= r1[i] ;
-      }
+    for(int i = 0 ; i < nn ; i++) {
+      R(i,E_CALCIUM) -= r1[i] ;
     }
   }
   
@@ -1675,26 +1472,12 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     Conservation of element Na: (N_Na - N_Nan) + dt * div(W_Na) = 0
   */
   {
-    double g[Element_MaxNbOfNodes*Element_MaxNbOfNodes] ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      int j ;
+    int imass = Values_Index(Mole_sodium);
+    int iflow = Values_Index(MolarFlow_sodium[0]);
+    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
       
-      for(j = 0 ; j < nn ; j++) {
-        if(i == j) {
-          g[i*nn + i] = val[i].Mole_sodium - val_n[i].Mole_sodium ;
-        } else {
-          g[i*nn + j] = dt * val[i].MolarFlow_sodium[j] ;
-        }
-      }
-    }
-    
-    {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        R(i,E_SODIUM) -= r1[i] ;
-      }
+    for(int i = 0 ; i < nn ; i++) {
+      R(i,E_SODIUM) -= r1[i] ;
     }
   }
   
@@ -1702,146 +1485,75 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
     Conservation of element K: (N_K - N_Kn) + dt * div(W_K) = 0
   */
   {
-    double g[Element_MaxNbOfNodes*Element_MaxNbOfNodes] ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      int j ;
+    int imass = Values_Index(Mole_potassium);
+    int iflow = Values_Index(MolarFlow_potassium[0]);
+    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
       
-      for(j = 0 ; j < nn ; j++) {
-        if(i == j) {
-          g[i*nn + i] = val[i].Mole_potassium - val_n[i].Mole_potassium ;
-        } else {
-          g[i*nn + j] = dt * val[i].MolarFlow_potassium[j] ;
-        }
-      }
-    }
-    
-    {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        R(i,E_POTASSIUM) -= r1[i] ;
-      }
+    for(int i = 0 ; i < nn ; i++) {
+      R(i,E_POTASSIUM) -= r1[i] ;
     }
   }
 
-#ifdef E_SILICON
   /*
     Conservation of element Si: (N_Si - N_Sin) + dt * div(W_Si) = 0
   */
+  #ifdef E_SILICON
   {
-    double g[Element_MaxNbOfNodes*Element_MaxNbOfNodes] ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      int j ;
+    int imass = Values_Index(Mole_silicon);
+    int iflow = Values_Index(MolarFlow_silicon[0]);
+    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
       
-      for(j = 0 ; j < nn ; j++) {
-        if(i == j) {
-          g[i*nn + i] = val[i].Mole_silicon - val_n[i].Mole_silicon ;
-        } else {
-          g[i*nn + j] = dt * val[i].MolarFlow_silicon[j] ;
-        }
-      }
-    }
-    
-    {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        R(i,E_SILICON) -= r1[i] ;
-      }
+    for(int i = 0 ; i < nn ; i++) {
+      R(i,E_SILICON) -= r1[i] ;
     }
   }
-#endif
+  #endif
 
-#ifdef E_CHLORINE
   /*
     Conservation of element Cl: (N_Cl - N_Cln) + dt * div(W_Cl) = 0
   */
+  #ifdef E_CHLORINE
   {
-    double g[Element_MaxNbOfNodes*Element_MaxNbOfNodes] ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      int j ;
+    int imass = Values_Index(Mole_chlorine);
+    int iflow = Values_Index(MolarFlow_chlorine[0]);
+    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
       
-      for(j = 0 ; j < nn ; j++) {
-        if(i == j) {
-          g[i*nn + i] = val[i].Mole_chlorine - val_n[i].Mole_chlorine ;
-        } else {
-          g[i*nn + j] = dt * val[i].MolarFlow_chlorine[j] ;
-        }
-      }
-    }
-    
-    {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        R(i,E_CHLORINE) -= r1[i] ;
-      }
+    for(int i = 0 ; i < nn ; i++) {
+      R(i,E_CHLORINE) -= r1[i] ;
     }
   }
-#endif
+  #endif
   
   
-#ifdef E_ENEUTRAL
   /*
     Electroneutrality
   */
+  #ifdef E_ENEUTRAL
   {
-    double g[Element_MaxNbOfNodes*Element_MaxNbOfNodes] ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      int j ;
+    int ibforce = Values_Index(Mole_charge);
+    double* r1 = ci.ComputeBodyForceResiduByFVM(ibforce);
       
-      for(j = 0 ; j < nn ; j++) {
-        if(i == j) {
-          g[i*nn + i] = val[i].Mole_charge ;
-        } else {
-          g[i*nn + j] = 0 ;
-        }
-      }
-    }
-    
-    {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        R(i,E_ENEUTRAL) -= r1[i] ;
-      }
+    for(int i = 0 ; i < nn ; i++) {
+      R(i,E_ENEUTRAL) -= r1[i] ;
     }
   }
-#endif
+  #endif
 
 
-#ifdef E_AIR
   /*
     Conservation of dry air mass: (M_Air - M_Airn) + dt * div(W_Air) = 0
   */
+  #ifdef E_AIR
   {
-    double g[Element_MaxNbOfNodes*Element_MaxNbOfNodes] ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      int j ;
+    int imass = Values_Index(Mass_air);
+    int iflow = Values_Index(MassFlow_air[0]);
+    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
       
-      for(j = 0 ; j < nn ; j++) {
-        if(i == j) {
-          g[i*nn + i] = val[i].Mass_air - val_n[i].Mass_air ;
-        } else {
-          g[i*nn + j] = dt * val[i].MassFlow_air[j] ;
-        }
-      }
-    }
-    
-    {
-      double* r1 = FVM_ComputeMassAndFluxResidu(fvm,g) ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        R(i,E_AIR) -= r1[i] ;
-      }
+    for(int i = 0 ; i < nn ; i++) {
+      R(i,E_AIR) -= r1[i] ;
     }
   }
-#endif
+  #endif
 
   return(0) ;
 #undef R
@@ -1855,27 +1567,26 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   FVM_t* fvm = FVM_GetInstance(el) ;
   double** u = Element_ComputePointerToNodalUnknowns(el) ;
   int    nso = 70 ;
-  int    i ;
-  using TI = CustomValues_TypeOfImplicitValues(Values_t);
-  TI* vi = (TI*) f;
 
   if(Element_IsSubmanifold(el)) return(0) ;
   
   /*
     Input data
   */
-  GetProperties(el) ;
+  Element_ComputeMaterialProperties(el) ;
   
 
   /* Initialization */
-  for(i = 0 ; i < nso ; i++) {
+  for(int i = 0 ; i < nso ; i++) {
     Result_SetValuesToZero(r + i) ;
   }
+  
+  ci.Set(el,t,0,u,f,u,f) ;
 
   {
-    CI_t ci(&SetInputs,&Integrate,el,t,0,u,f,u,f) ;
+    int i;
     int j = FVM_FindLocalCellIndex(fvm,s) ;
-    Values_t& val = *ci.Integrate(j) ;
+    Values_d& val = *ci.IntegrateValues(j) ;
       
     //if(!x) return(0) ;
     
@@ -1979,13 +1690,17 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     Result_Store(r + i++,&val.Mass_total,"total mass",1) ;
     
     /* Mass flows */
-    Result_Store(r + i++,vi[0].MassFlow_total+1,"total mass flow",1) ;
-    Result_Store(r + i++,vi[0].MolarFlow_carbon+1,"carbon mass flow",1) ;
-    Result_Store(r + i++,vi[0].MolarFlow_calcium+1,"calcium mass flow",1) ;
-    Result_Store(r + i++,vi[0].MolarFlow_silicon+1,"silicon mass flow",1) ;
-    Result_Store(r + i++,vi[0].MolarFlow_sodium+1,"sodium mass flow",1) ;
-    Result_Store(r + i++,vi[0].MolarFlow_potassium+1,"potassium mass flow",1) ;
-    Result_Store(r + i++,vi[0].MolarFlow_chlorine+1,"chlorine mass flow",1) ;
+    {
+      CustomValues_t<double,ImplicitValues_t>* vi = (CustomValues_t<double,ImplicitValues_t>*) f ;
+      
+      Result_Store(r + i++,vi[0].MassFlow_total+1,"total mass flow",1) ;
+      Result_Store(r + i++,vi[0].MolarFlow_carbon+1,"carbon mass flow",1) ;
+      Result_Store(r + i++,vi[0].MolarFlow_calcium+1,"calcium mass flow",1) ;
+      Result_Store(r + i++,vi[0].MolarFlow_silicon+1,"silicon mass flow",1) ;
+      Result_Store(r + i++,vi[0].MolarFlow_sodium+1,"sodium mass flow",1) ;
+      Result_Store(r + i++,vi[0].MolarFlow_potassium+1,"potassium mass flow",1) ;
+      Result_Store(r + i++,vi[0].MolarFlow_chlorine+1,"chlorine mass flow",1) ;
+    }
     
     
     /* Miscellaneous */
@@ -2072,191 +1787,72 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       
       Result_Store(r + i++,&rho_l,"liquid mass density",1) ;
     }
+    
+    if(i != nso) arret("ComputeOutputs") ;
   }
   
   
-  if(i != nso) arret("ComputeOutputs") ;
   return(nso) ;
 }
 
 
 
-
-int TangentCoefficients(Element_t* el,double dt,double* c)
-/**  Tangent matrix coefficients (c) */
+int MPM_t::SetTangentMatrix(Element_t* el,double const& t,double const& dt,int const& i,Values_d const& val,Values_d const& dval,int const& k,double* c)
 {
-  double* f   = Element_GetCurrentImplicitTerm(el) ;
-  double* f_n = Element_GetPreviousImplicitTerm(el) ;
   int nn = Element_GetNbOfNodes(el) ;
-  int ndof = nn*NEQ ;
-  ObVal_t* obval = Element_GetObjectiveValue(el) ;
-  double** u   = Element_ComputePointerToNodalUnknowns(el) ;
-  double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  int    dec = NEQ*NEQ ;
-  double dui[NEQ] ;
   FVM_t* fvm   = FVM_GetInstance(el) ;
   double* dist = FVM_ComputeIntercellDistances(fvm) ;
-  CI_t ci(&SetInputs,&Integrate,el,0,dt,u_n,f_n,u,f) ;
-  int    i ;
-  
-  /* Initialization */
-  for(i = 0 ; i < ndof*ndof ; i++) c[i] = 0. ;
+  int    dec = NEQ*NEQ ;
 
-  if(Element_IsSubmanifold(el)) return(0) ;
-  
-  
-  for(i = 0 ; i < NEQ ; i++) {
-    dui[i] =  1.e-2 * ObVal_GetValue(obval + i) ;
-  }
 
-  
-#ifdef E_CARBON
-  dui[E_CARBON   ] =  1.e-4 * ObVal_GetValue(obval + E_CARBON) ;
-#endif
-
-  dui[E_SODIUM   ] =  1.e-3 * ObVal_GetValue(obval + E_SODIUM) ;
-  dui[E_POTASSIUM] =  1.e-3 * ObVal_GetValue(obval + E_POTASSIUM) ;
-  dui[E_CALCIUM  ] =  1.e-4 * ObVal_GetValue(obval + E_CALCIUM) ;
-  
-#ifdef E_SILICON
-  dui[E_SILICON  ] =  1.e-4 * ObVal_GetValue(obval + E_SILICON) ;
-#endif
-
-  dui[E_MASS     ] =  1.e-4 * ObVal_GetValue(obval + E_MASS) ;
-  dui[E_CHARGE   ] =  1.e+0 * ObVal_GetValue(obval + E_CHARGE) ;
-  
-#ifdef E_ENEUTRAL
-  dui[E_ENEUTRAL ] =  1.e-2 * ObVal_GetValue(obval + E_ENEUTRAL) ;
-#endif
-
-#ifdef E_CHLORINE
-  dui[E_CHLORINE ] =  1.e-3 * ObVal_GetValue(obval + E_CHLORINE) ;
-#endif
-
-#ifdef E_AIR
-  dui[E_AIR      ] =  1.e-4 * ObVal_GetValue(obval + E_AIR) ;
-#endif
-
-  
-    
-  
-  for(i = 0 ; i < nn ; i++) {
-    Values_t* val = ci.Integrate(i) ;
-    int k ;
-    #define Index(V)  CustomValues_Index(val,V,double)
-    
-    if(!val) return(-1) ;
-    
-    /* Derivation wrt LogC_CO2 -> relative value */
-#ifdef E_CARBON
-  #ifdef U_C_CO2
-    dui[E_CARBON   ] =  1.e-4 * ObVal_GetRelativeValue(obval + E_CARBON,Un_Calcium(i)) ;
-  #endif
-#endif
-    
-    /* Derivation wrt LogC_Na -> relative value */
-#ifdef U_C_Na
-    dui[E_SODIUM   ] =  1.e-3 * ObVal_GetRelativeValue(obval + E_SODIUM,Un_Sodium(i)) ;
-#endif
-    
-    /* Derivation wrt LogC_K -> relative value */
-#ifdef U_C_K
-    dui[E_POTASSIUM] =  1.e-3 * ObVal_GetRelativeValue(obval + E_POTASSIUM,Un_Potassium(i)) ;
-#endif
-    
-#if defined (U_ZN_Ca_S)
-    dui[E_CALCIUM  ] =  1.e-4 * ObVal_GetAbsoluteValue(obval + E_CALCIUM,Un_Calcium(i)) ;
-    //dui[E_CALCIUM  ] *= ((xi[E_CALCIUM] > Un_Calcium(i)) ? 1 : -1) ;
-    dui[E_CALCIUM  ] *= ((val->U_calcium > Un_Calcium(i)) ? 1 : -1) ;
-#elif defined (U_LogS_CH)
-    dui[E_CALCIUM  ] =  1.e-4 * ObVal_GetAbsoluteValue(obval + E_CALCIUM,Un_Calcium(i)) ;
-#endif
-    
-#ifdef E_SILICON
-    dui[E_SILICON  ] =  1.e-4 * ObVal_GetAbsoluteValue(obval + E_SILICON,Un_Silicon(i)) ;
-    //dui[E_SILICON  ] *= ((xi[E_SILICON] > Un_Silicon(i)) ? 1 : -1) ; 
-    dui[E_SILICON  ] *= ((val->U_silicon > Un_Silicon(i)) ? 1 : -1) ; 
-#endif
-    
-#ifdef E_ENEUTRAL
-  #if defined (U_C_OH)
-      /* Derivation wrt LogC_OH -> relative value */
-      dui[E_ENEUTRAL ] =  1.e-2 * ObVal_GetRelativeValue(obval + E_ENEUTRAL,C_OHn(i)) ;
-  #elif defined (U_Z_OH)
-      dui[E_ENEUTRAL ] =  1.e-3 * ObVal_GetAbsoluteValue(obval + E_ENEUTRAL,Z_OHn(i)) * C_OHn(i) * fabs(dLogC_OHdZ_OH(Z_OHn(i))) ;
-  #endif
-#endif
-    
-    /* Derivation wrt LogC_Cl -> relative value */
-#ifdef E_CHLORINE
-  #ifdef U_C_Cl
-      dui[E_CHLORINE ] =  1.e-3 * ObVal_GetRelativeValue(obval + E_CHLORINE,C_Cln(i)) ;
-  #endif
-#endif
-    
-    
-    for(k = 0 ; k < NEQ ; k++) {
-      double  dui_k = dui[k] ;
-      int i_k = Index(U_calcium) + k;
-      Values_t& dval = *ci.Differentiate(i,dui_k,i_k) ;
-      
+  {        
+    for(int j = 0 ; j < nn ; j++) {
+      double* cij = c + (i*nn + j)*NEQ*NEQ ;
+      double dij  = dist[nn*i + j] ;
+      double dtdij = dt/dij ;
+        
       /* Content terms at node i */
-      {
-        double* cii = c + (i*nn + i)*NEQ*NEQ ;
-    
-#ifdef E_CARBON
-        cii[E_CARBON*NEQ    + k] = dval.Mole_carbon ;
-#endif
-        cii[E_CALCIUM*NEQ   + k] = dval.Mole_calcium ;
-        cii[E_SODIUM*NEQ    + k] = dval.Mole_sodium ;
-#ifdef E_SILICON
-        cii[E_SILICON*NEQ   + k] = dval.Mole_silicon ;
-#endif
-        cii[E_POTASSIUM*NEQ + k] = dval.Mole_potassium ;
-        cii[E_MASS*NEQ      + k] = dval.Mass_total ;
-#ifdef E_ENEUTRAL
-        cii[E_ENEUTRAL*NEQ  + k] = dval.Mole_charge ;
-#endif
-#ifdef E_CHLORINE
-        cii[E_CHLORINE*NEQ  + k] = dval.Mole_chlorine ;
-#endif
-#ifdef E_AIR
-        cii[E_AIR*NEQ       + k] = dval.Mass_air ;
-#endif
+      if(j == i) {
+        #ifdef E_CARBON
+        cij[E_CARBON*NEQ    + k] = dval.Mole_carbon ;
+        #endif
+        cij[E_CALCIUM*NEQ   + k] = dval.Mole_calcium ;
+        cij[E_SODIUM*NEQ    + k] = dval.Mole_sodium ;
+        #ifdef E_SILICON
+        cij[E_SILICON*NEQ   + k] = dval.Mole_silicon ;
+        #endif
+        cij[E_POTASSIUM*NEQ + k] = dval.Mole_potassium ;
+        cij[E_MASS*NEQ      + k] = dval.Mass_total ;
+        #ifdef E_ENEUTRAL
+        cij[E_ENEUTRAL*NEQ  + k] = dval.Mole_charge ;
+        #endif
+        #ifdef E_CHLORINE
+        cij[E_CHLORINE*NEQ  + k] = dval.Mole_chlorine ;
+        #endif
+        #ifdef E_AIR
+        cij[E_AIR*NEQ       + k] = dval.Mass_air ;
+        #endif
       }
 
       /* Transfer terms from node i to node j: d(wij)/d(ui_k) */
-      {
-        int j ;
-        
-        for(j = 0 ; j < nn ; j++) {
-          if(j != i) {
-            {
-              double* cij = c + (i*nn + j)*NEQ*NEQ ;
-              double dij  = dist[nn*i + j] ;
-              double dtdij = dt/dij ;
-              Values_t& dv = *ci.SetFluxes(&SetFluxes,i,j,dval) ;
-#ifdef E_CARBON
-              cij[E_CARBON*NEQ    + k] = - dtdij*dv.MolarFlow_carbon[j] ;
-#endif
-              cij[E_CALCIUM*NEQ   + k] = - dtdij*dv.MolarFlow_calcium[j] ;
-              cij[E_SODIUM*NEQ    + k] = - dtdij*dv.MolarFlow_sodium[j] ;
-#ifdef E_SILICON
-              cij[E_SILICON*NEQ   + k] = - dtdij*dv.MolarFlow_silicon[j] ;
-#endif
-              cij[E_POTASSIUM*NEQ + k] = - dtdij*dv.MolarFlow_potassium[j] ;
-              cij[E_MASS*NEQ      + k] = - dtdij*dv.MassFlow_total[j] ;
-              //cij[E_CHARGE*NEQ    + k] = - dtdij*dv.MolarFlow_charge[j] ;
-              cij[E_CHARGE*NEQ    + k] = - dv.MolarFlow_charge[j]/dij;
-#ifdef E_CHLORINE
-              cij[E_CHLORINE*NEQ  + k] = - dtdij*dv.MolarFlow_chlorine[j]  ;
-#endif
-#ifdef E_AIR
-              cij[E_AIR*NEQ       + k] = - dtdij*dv.MassFlow_air[j] ;
-#endif
-            }
-          }
-        }
+      if(j != i) {        
+        #ifdef E_CARBON
+        cij[E_CARBON*NEQ    + k] = - dtdij*dval.MolarFlow_carbon[j] ;
+        #endif
+        cij[E_CALCIUM*NEQ   + k] = - dtdij*dval.MolarFlow_calcium[j] ;
+        cij[E_SODIUM*NEQ    + k] = - dtdij*dval.MolarFlow_sodium[j] ;
+        #ifdef E_SILICON
+        cij[E_SILICON*NEQ   + k] = - dtdij*dval.MolarFlow_silicon[j] ;
+        #endif
+        cij[E_POTASSIUM*NEQ + k] = - dtdij*dval.MolarFlow_potassium[j] ;
+        cij[E_MASS*NEQ      + k] = - dtdij*dval.MassFlow_total[j] ;
+        cij[E_CHARGE*NEQ    + k] = - dval.MolarFlow_charge[j]/dij;
+        #ifdef E_CHLORINE
+        cij[E_CHLORINE*NEQ  + k] = - dtdij*dval.MolarFlow_chlorine[j]  ;
+        #endif
+        #ifdef E_AIR
+        cij[E_AIR*NEQ       + k] = - dtdij*dval.MassFlow_air[j] ;
+        #endif
       }
     }
   }
@@ -2266,73 +1862,218 @@ int TangentCoefficients(Element_t* el,double dt,double* c)
 
 
 
-#if USEFUNCTOR
-Values_t* SetInputs_t::operator()(Element_t const* el,const double& t,const double& dt,double const* const* u,const int& n,Values_t& val)
-#else
-Values_t* SetInputs(Element_t const* el,const double& t,const double& dt,double const* const* u,const int& n,Values_t& val)
-#endif
+void  MPM_t::SetIndexes(Element_t* el,int* ind)
 {
-#ifdef E_CARBON
+  ind[0] = Values_Index(U_calcium);
+  
+  for(int k = 1 ; k < NEQ ; k++) {
+    ind[k] = ind[0] + k;
+  }
+}
+
+
+
+  
+  
+
+void MPM_t::SetIncrements(Element_t* el,double* dui)
+{
+  double** u = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
+  int ncols = NEQ;
+  int nn = Element_GetNbOfNodes(el);
+    
+    {
+      ObVal_t* obval = Element_GetObjectiveValue(el) ;
+      double un_calcium = 0;
+      double u_calcium = 0;
+    
+      for(int i = 0 ; i < NEQ ; i++) {
+        dui[i] =  1.e-2 * ObVal_GetValue(obval + i) ;
+      }
+
+    
+      #ifdef E_CARBON
+        dui[E_CARBON   ] =  1.e-4 * ObVal_GetValue(obval + E_CARBON) ;
+        /* Derivation wrt LogC_CO2 -> relative value */
+        #ifdef U_C_CO2
+        {
+          double un_carbon = 0;
+          
+          for(int i = 0 ; i < nn ; i++) {
+            un_carbon    += Un_Carbon(i)/nn;
+          }
+          
+          dui[E_CARBON   ] =  1.e-4 * ObVal_GetRelativeValue(obval + E_CARBON,un_carbon) ;
+        }
+        #endif
+      #endif
+
+      dui[E_SODIUM   ] =  1.e-3 * ObVal_GetValue(obval + E_SODIUM) ;
+      /* Derivation wrt LogC_Na -> relative value */
+      #ifdef U_C_Na
+      {
+        double un_sodium = 0;
+        
+        for(int i = 0 ; i < nn ; i++) {
+          un_sodium    += Un_Sodium(i)/nn;
+        }
+        
+        dui[E_SODIUM   ] =  1.e-3 * ObVal_GetRelativeValue(obval + E_SODIUM,un_sodium) ;
+      }
+      #endif
+    
+      dui[E_POTASSIUM] =  1.e-3 * ObVal_GetValue(obval + E_POTASSIUM) ;
+      /* Derivation wrt LogC_K -> relative value */
+      #ifdef U_C_K
+      {
+        double un_potassium = 0;
+        
+        for(int i = 0 ; i < nn ; i++) {
+          un_potassium += Un_Potassium(i)/nn;
+        }
+        
+        dui[E_POTASSIUM] =  1.e-3 * ObVal_GetRelativeValue(obval + E_POTASSIUM,un_potassium) ;
+      }
+      #endif
+
+      dui[E_CALCIUM  ] =  1.e-4 * ObVal_GetValue(obval + E_CALCIUM) ;
+      for(int i = 0 ; i < nn ; i++) {
+        un_calcium  += Un_Calcium(i)/nn;
+        u_calcium   += U_Calcium(i)/nn;
+      }
+      #if defined (U_ZN_Ca_S)
+        dui[E_CALCIUM  ] =  1.e-4 * ObVal_GetAbsoluteValue(obval + E_CALCIUM,un_calcium) ;
+        dui[E_CALCIUM  ] *= ((u_calcium > un_calcium) ? 1 : -1) ;
+      #elif defined (U_LogS_CH)
+        dui[E_CALCIUM  ] =  1.e-4 * ObVal_GetAbsoluteValue(obval + E_CALCIUM,un_calcium) ;
+      #endif
+  
+      #ifdef E_SILICON
+      {
+        double un_silicon = 0;
+        double u_silicon = 0;
+        
+        for(int i = 0 ; i < nn ; i++) {
+          un_silicon  += Un_Silicon(i)/nn;
+          u_silicon   += U_Silicon(i)/nn;
+        }
+        
+        dui[E_SILICON  ] =  1.e-4 * ObVal_GetValue(obval + E_SILICON) ;
+        dui[E_SILICON  ] =  1.e-4 * ObVal_GetAbsoluteValue(obval + E_SILICON,un_silicon) ;
+        dui[E_SILICON  ] *= ((u_silicon > un_silicon) ? 1 : -1) ; 
+      }
+      #endif
+
+      dui[E_MASS     ] =  1.e-4 * ObVal_GetValue(obval + E_MASS) ;
+      dui[E_CHARGE   ] =  1.e+0 * ObVal_GetValue(obval + E_CHARGE) ;
+  
+      #ifdef E_ENEUTRAL
+      {
+        double un_eneutral = 0;
+        
+        for(int i = 0 ; i < nn ; i++) {
+          un_eneutral += Un_eneutral(i)/nn;
+        }
+        dui[E_ENEUTRAL ] =  1.e-2 * ObVal_GetValue(obval + E_ENEUTRAL) ;
+        #if defined (U_C_OH)
+          /* Derivation wrt LogC_OH -> relative value */
+          dui[E_ENEUTRAL ] =  1.e-2 * ObVal_GetRelativeValue(obval + E_ENEUTRAL,un_eneutral) ;
+        #elif defined (U_Z_OH)
+        {
+          double z_oh = un_eneutral;
+          double c_oh = C_OHDefinition(z_oh);
+          dui[E_ENEUTRAL ] =  1.e-3 * ObVal_GetAbsoluteValue(obval + E_ENEUTRAL,z_oh) * c_oh * fabs(  dLogC_OHdZ_OH(z_oh)) ;
+        }
+        #endif
+      }
+      #endif
+
+      #ifdef E_CHLORINE
+      dui[E_CHLORINE ] =  1.e-3 * ObVal_GetValue(obval + E_CHLORINE) ;
+        /* Derivation wrt LogC_Cl -> relative value */
+        #ifdef U_C_Cl
+        {
+          double un_chlorine = 0;
+          
+          for(int i = 0 ; i < nn ; i++) {
+            un_chlorine  += Un_Chlorine(i)/nn;
+          }
+          
+          dui[E_CHLORINE ] =  1.e-3 * ObVal_GetRelativeValue(obval + E_CHLORINE,un_chlorine) ;
+        }
+        #endif
+      #endif
+
+      #ifdef E_AIR
+      dui[E_AIR      ] =  1.e-4 * ObVal_GetValue(obval + E_AIR) ;
+      #endif
+    }
+}
+
+
+
+
+Values_d* MPM_t::SetInputs(Element_t* el,const double& t,const int& n,double const* const* u,Values_d& val)
+{
+  #ifdef E_CARBON
   val.U_carbon = LogC_CO2(n) ;
-#endif
+  #endif
 
   val.U_sodium = LogC_Na(n) ;
   val.U_potassium = LogC_K(n) ;
   val.U_calcium = U_Calcium(n) ;
 
-#ifdef E_SILICON
+  #ifdef E_SILICON
   val.U_silicon = U_Silicon(n) ;
-#endif
+  #endif
 
   val.U_mass = P_L(n) ;
   val.U_charge = PSI(n) ;
 
-#ifdef E_ENEUTRAL
+  #ifdef E_ENEUTRAL
   val.U_eneutral = LogC_OH(n) ;
-#endif
+  #endif
 
-#ifdef E_CHLORINE
+  #ifdef E_CHLORINE
   val.U_chlorine = LogC_Cl(n) ;
-#endif
+  #endif
 
-#ifdef E_AIR
+  #ifdef E_AIR
   val.U_air = P_G(n) ;
-#endif
+  #endif
   
   return(&val) ;
 }
 
 
 
-#if USEFUNCTOR
-Values_t* Integrate_t::operator()(const Element_t* el,const double& t,const double& dt,const Values_t& val_n,Values_t& val)
-#else
-Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const Values_t& val_n,Values_t& val)
-#endif
+
+Values_d* MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Values_d const& val_n,Values_d& val)
 /** Compute the secondary variables from the primary ones. */
 {
-#ifdef E_CARBON
+  #ifdef E_CARBON
   double logc_co2   = val.U_carbon ;
-#else
+  #else
   double logc_co2   = -99 ;
-#endif
+  #endif
   double u_calcium  = val.U_calcium ;
-#ifdef E_SILICON
+  #ifdef E_SILICON
   double u_silicon  = val.U_silicon ;
-#else
+  #else
   double u_silicon  = 1 ;
-#endif
+  #endif
   double p_l        = val.U_mass ;
-#ifdef E_AIR
+  #ifdef E_AIR
   double p_g        = val.U_air ;
-#else
+  #else
   double p_g        = p_g0 ;
-#endif
-#ifdef E_CHLORINE
+  #endif
+  #ifdef E_CHLORINE
   double logc_cl    = val.U_chlorine ;
-#else
+  #else
   double logc_cl    = -99 ;
-#endif
+  #endif
   double c_cl       = pow(10,logc_cl) ;
   
   
@@ -2347,11 +2088,11 @@ Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const 
     double logc_na  = val.U_sodium ;
     double logc_k   = val.U_potassium ;
     //double logc_co2aq = log10(c_co2aq) ;
-#ifdef E_ENEUTRAL
+    #ifdef E_ENEUTRAL
     double logc_oh  = val.U_eneutral ;
-#else
+    #else
     double logc_oh  = log10(val_n.Concentration_oh) ;
-#endif
+    #endif
     //double logc_oh  = log10(c_oh) ;
     double psi      = val.U_charge ;
 
@@ -2382,21 +2123,21 @@ Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const 
     HardenedCementChemistry_GetElectricPotential(hcc) = psi ;
     HardenedCementChemistry_SetInput(hcc,LogC_Cl,logc_cl) ;
     
-#ifdef E_CHLORINE
+    #ifdef E_CHLORINE
     HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_CO2_Cl_H2O) ;
-#else
+    #else
     HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
     HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = logc_cl ;
     HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_CO2_H2O) ;
-#endif
+    #endif
 
-#ifndef E_ENEUTRAL
+    #ifndef E_ENEUTRAL
     {
       int k = HardenedCementChemistry_SolveElectroneutrality(hcc) ;
       
       if(k < 0) return(NULL) ;
     }
-#endif
+    #endif
   }
   
   
@@ -2500,6 +2241,27 @@ Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const 
   double m_air_g   = phi_g * rho_air_g ;
   double m_noair_g = phi_g * rho_noair_g ;
   //double m_g       = phi_g * rho_g ;
+  
+  
+      
+  if(c_co2 < 0) {
+    double c_naoh   = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaOH) ;
+    double c_nahco3 = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaHCO3) ;
+    double c_naco3  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,NaCO3) ;
+    double c_cl     = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) ;
+    printf("\n") ;
+    printf("c_co2    = %e\n",c_co2) ;
+    //printf("c_oh     = %e\n",pow(10,logc_oh)) ;
+    printf("n_cc     = %e\n",n_cc) ;
+    //printf("c_na     = %e\n",pow(10,logc_na)) ;
+    //printf("c_k      = %e\n",pow(10,logc_k)) ;
+    printf("n_csh    = %e\n",n_csh) ;
+    printf("c_naoh   = %e\n",c_naoh) ;
+    printf("c_nahco3 = %e\n",c_nahco3) ;
+    printf("c_naco3  = %e\n",c_naco3) ;
+    printf("c_cl     = %e\n",c_cl) ;
+    return(NULL) ;
+  }
 
 
   /* Back up */
@@ -2608,18 +2370,16 @@ Values_t*  Integrate(const Element_t* el,const double& t,const double& dt,const 
 
 
 
-#if USEFUNCTOR
-Values_t*  SetFluxes_t::operator()(const Element_t* el,const int& i,const int& j,const Values_t& grdval,Values_t& vali,Values_t& valj)
-#else
-Values_t* SetFluxes(Element_t const* el,int const& i,int const& j,Values_t const& grdval,Values_t& vali,Values_t& valj)
-#endif
+
+Values_d*  MPM_t::SetFluxes(Element_t* el,double const& t,int const& i,int const& j,Values_d const& grdval,Values_d* val)
 {
-  using TE = CustomValues_TypeOfExplicitValues(Values_t);
-  CustomValues_t<TE> valij ;
+  Values_d& vali = val[i];
+  Values_d& valj = val[j];
+  CustomValues_t<double,ExplicitValues_t> valij ;
   
   {
     double* va = Element_GetExplicitTerm(el) ;
-    CustomValues_t<TE>* vale = (CustomValues_t<TE>*) va ;
+    CustomValues_t<double,ExplicitValues_t>* vale = (CustomValues_t<double,ExplicitValues_t>*) va ;
     
     valij = 0.5 * (vale[i] + vale[j]);
   }
@@ -2689,37 +2449,37 @@ Values_t* SetFluxes(Element_t const* el,int const& i,int const& j,Values_t const
     /* Advection and diffusion in gas phase */
     {
       /* Mass flux of gas */
-#ifdef E_AIR
+      #ifdef E_AIR
       double grd_p_g = grdval.Pressure_gas ;
       double kd_g    = valij.Permeability_gas ;
       double w_g     = - kd_g * grd_p_g  ;
-#else
-      /* Actually kg_int -> infinity and w_g is undetermined ! */
+      #else
+      /* Actually kg_int -> infinity and w_g is undetermined! */
       double w_g     = 0  ;
-#endif
+      #endif
       
       
       /* Molar flux of CO2 */
       double grd_co2 = grdval.Concentration_carbondioxide ;
       double kf_co2  = valij.DiffusionCoefficient_carbondioxide ;
       double j_co2_g = - kf_co2 * grd_co2  ;
-#ifdef E_AIR
+      #ifdef E_AIR
       double kc_co2  = valij.MoleFractionGas_carbondioxide ;
       double w_co2_g =   kc_co2 * w_g + j_co2_g  ;
-#else
+      #else
       double w_co2_g =   j_co2_g  ;
-#endif
+      #endif
       
       /* Mass flux of water vapor */
       double grd_h2o = grdval.MassDensity_watervapor ;
       double kf_h2o  = valij.DiffusionCoefficient_watervapor ;
       double j_h2o_g = - kf_h2o * grd_h2o  ;
-#ifdef E_AIR
+      #ifdef E_AIR
       double kc_h2o  = valij.MassFractionGas_watervapor ;
       double w_h2o_g =   kc_h2o * w_g + j_h2o_g  ;
-#else
+      #else
       double w_h2o_g =   j_h2o_g  ;
-#endif
+      #endif
       
       /* Mass flux of dry air (if E_AIR == 0 this is wrong since w_g is undetermined) */
       double w_air   =   w_g - w_h2o_g - M_CO2 * w_co2_g ;
@@ -2731,144 +2491,142 @@ Values_t* SetFluxes(Element_t const* el,int const& i,int const& j,Values_t const
   }
   
   {
-    valj.MolarFlow_carbon[i] = - vali.MolarFlow_carbon[j] ;
-    valj.MolarFlow_calcium[i]  = - vali.MolarFlow_calcium[j]  ;
-    valj.MolarFlow_sodium[i]   = - vali.MolarFlow_sodium[j]  ;
-    valj.MolarFlow_silicon[i]  = - vali.MolarFlow_silicon[j]  ;
-    valj.MolarFlow_charge[i]   = - vali.MolarFlow_charge[j]  ;
-    valj.MolarFlow_potassium[i]  = - vali.MolarFlow_potassium[j]  ;
-    valj.MassFlow_total[i]    = - vali.MassFlow_total[j]  ;
-    valj.MolarFlow_chlorine[i] = - vali.MolarFlow_chlorine[j]  ;
-    valj.MassFlow_air[i]  = - vali.MassFlow_air[j]  ;
+    valj.MolarFlow_carbon[i]    = - vali.MolarFlow_carbon[j] ;
+    valj.MolarFlow_calcium[i]   = - vali.MolarFlow_calcium[j]  ;
+    valj.MolarFlow_sodium[i]    = - vali.MolarFlow_sodium[j]  ;
+    valj.MolarFlow_silicon[i]   = - vali.MolarFlow_silicon[j]  ;
+    valj.MolarFlow_charge[i]    = - vali.MolarFlow_charge[j]  ;
+    valj.MolarFlow_potassium[i] = - vali.MolarFlow_potassium[j]  ;
+    valj.MassFlow_total[i]      = - vali.MassFlow_total[j]  ;
+    valj.MolarFlow_chlorine[i]  = - vali.MolarFlow_chlorine[j]  ;
+    valj.MassFlow_air[i]        = - vali.MassFlow_air[j]  ;
   }
     
-  return(&vali) ;
+  return(val + i) ;
 }
 
 
 
 
 
-#if USEFUNCTOR
-Values_t*  Initialize_t::operator()(const Element_t* el,double const& t,Values_t& val)
-#else
-Values_t* Initialize(const Element_t* el,double const& t,Values_t& val)
-#endif
+
+Values_d*  MPM_t::Initialize(Element_t* el,double const& t,Values_d& val)
 {
-    double c_na_tot = c_na0 ;
-    double c_k_tot  = c_k0 ;
-    
+  double c_na_tot = c_na0 ;
+  double c_k_tot  = c_k0 ;
+
+  double c_na       = pow(10,val.U_sodium) ;
+  double c_k        = pow(10,val.U_potassium) ;
+  #ifdef E_CARBON
+  double c_co2      = pow(10,val.U_carbon) ;
+  #else
+  double c_co2     = 1.e-99 ;
+  #endif
+  double u_calcium  = val.U_calcium ;
+  #ifdef E_SILICON
+  double u_silicon  = val.U_silicon ;
+  #else
+  double u_silicon  = 1 ;
+  #endif
+  #ifdef E_CHLORINE
+  double c_cl       = pow(10,val.U_chlorine) ;
+  #else
+  double c_cl       = 1.e-99 ;
+  #endif
+  double logc_oh    = -7 ;
+  double c_oh       = pow(10,logc_oh) ;
+      
+  if(c_na_tot > 0 && c_k_tot > 0) {
+    c_na   = c_na_tot ;
+    c_k    = c_k_tot ;
+
+    /* Compute the concentrations of alkalis Na and K */
+    concentrations_oh_na_k(c_co2,u_calcium,u_silicon,c_cl,c_na_tot,c_k_tot) ;
+  
+    c_na = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Na) ;
+    c_k  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,K) ;
+        
+    /* We modify the nodal unknowns */
+    val.U_sodium = log10(c_na) ;
+    val.U_potassium = log10(c_k) ;
+        
+  /* Solve cement chemistry */
+  } else {
+    double c_co2aq    = k_h*c_co2 ;
+    double logc_co2aq = log10(c_co2aq) ;
+    double logc_na    = log10(c_na) ;
+    double logc_k     = log10(c_k) ;
+    double logc_cl    = log10(c_cl) ;
+    double psi        = 0 ;
+
+    #if defined (U_ZN_Ca_S)
     {
-      double c_na       = pow(10,val.U_sodium) ;
-      double c_k        = pow(10,val.U_potassium) ;
-      #ifdef E_CARBON
-      double c_co2      = pow(10,val.U_carbon) ;
-      #else
-      double c_co2     = 1.e-99 ;
-      #endif
-      double u_calcium  = val.U_calcium ;
-      #ifdef E_SILICON
-      double u_silicon  = val.U_silicon ;
-      #else
-      double u_silicon  = 1 ;
-      #endif
-      #ifdef E_CHLORINE
-      double c_cl       = pow(10,val.U_chlorine) ;
-      #else
-      double c_cl       = 1.e-99 ;
-      #endif
-      double logc_oh    = -7 ;
-      double c_oh       = pow(10,logc_oh) ;
-      
-      if(c_na_tot > 0 && c_k_tot > 0) {
-        c_na   = c_na_tot ;
-        c_k    = c_k_tot ;
-
-        /* Compute the concentrations of alkalis Na and K */
-        concentrations_oh_na_k(c_co2,u_calcium,u_silicon,c_cl,c_na_tot,c_k_tot) ;
-  
-        c_na = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Na) ;
-        c_k  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,K) ;
+      double si_ch_cc = Log10SaturationIndexOfCcH(u_calcium) ;
         
-        val.U_sodium = log10(c_na) ;
-        val.U_potassium = log10(c_k) ;
-        
-      /* Solve cement chemistry */
-      } else {
-        double c_co2aq    = k_h*c_co2 ;
-        double logc_co2aq = log10(c_co2aq) ;
-        double logc_na    = log10(c_na) ;
-        double logc_k     = log10(c_k) ;
-        double logc_cl    = log10(c_cl) ;
-        double psi        = 0 ;
-
-        #if defined (U_ZN_Ca_S)
-        {
-          double si_ch_cc = Log10SaturationIndexOfCcH(u_calcium) ;
-          
-          HardenedCementChemistry_SetInput(hcc,SI_CH_CC,si_ch_cc) ;
-        }
-        #elif defined (U_LogS_CH)
-        {
-          double si_ch = Log10SaturationIndexOfCH(u_calcium) ;
-          
-          HardenedCementChemistry_SetInput(hcc,SI_CH,si_ch) ;
-        }
-        #endif
-        
-        {
-          double si_csh = Log10SaturationIndexOfCSH(u_silicon) ;
-          
-          HardenedCementChemistry_SetInput(hcc,SI_CSH,si_csh) ;
-        }
-        
-        HardenedCementChemistry_SetInput(hcc,LogC_CO2,logc_co2aq) ;
-        HardenedCementChemistry_SetInput(hcc,LogC_Na,logc_na) ;
-        HardenedCementChemistry_SetInput(hcc,LogC_K,logc_k) ;
-        HardenedCementChemistry_SetInput(hcc,LogC_OH,logc_oh) ;
-        HardenedCementChemistry_GetElectricPotential(hcc) = psi ;
-        HardenedCementChemistry_SetInput(hcc,LogC_Cl,logc_cl) ;
-  
-        #ifdef E_CHLORINE
-        HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_CO2_Cl_H2O) ;
-        #else
-        HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
-        HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = logc_cl ;
-        HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_CO2_H2O) ;
-        #endif
-
-        {
-          int k = HardenedCementChemistry_SolveElectroneutrality(hcc) ;
-      
-          if(k < 0) return(1) ;
-        }
-      }
-      
-      /* pH */
-      {
-        c_oh = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,OH) ;
-        //double c_h  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,H) ;
-        
-        val.Concentration_oh = c_oh ;
-      }
-      
-      /* Solid contents */
-      {
-        double s_ch       = HardenedCementChemistry_GetSaturationIndexOf(hcc,CH) ;
-        double s_cc       = HardenedCementChemistry_GetSaturationIndexOf(hcc,CC) ;
-        double n_ch       = InitialCHSolidContent(u_calcium,s_ch,s_cc) ;
-        double n_cc       = InitialCCSolidContent(u_calcium,s_ch,s_cc) ;
-        double n_csh      = CSHSolidContent(u_silicon) ;
-        double x_csh      = HardenedCementChemistry_GetCalciumSiliconRatioInCSH(hcc) ;
-        double v_csh      = MolarVolumeOfCSH(x_csh) ;
-        double v_s0       = V_CH*n_ch + V_CC*n_cc + v_csh*n_csh ;
-        
-        val.InitialVolume_solidtotal = v_s0 ;
-        val.Mole_solidportlandite    = n_ch ;
-        val.Mole_solidcalcite     = n_cc ;
-        val.Mole_solidfriedelsalt = 0 ;
-      }
+      HardenedCementChemistry_SetInput(hcc,SI_CH_CC,si_ch_cc) ;
     }
+    #elif defined (U_LogS_CH)
+    {
+      double si_ch = Log10SaturationIndexOfCH(u_calcium) ;
+          
+      HardenedCementChemistry_SetInput(hcc,SI_CH,si_ch) ;
+    }
+    #endif
+        
+    {
+      double si_csh = Log10SaturationIndexOfCSH(u_silicon) ;
+          
+      HardenedCementChemistry_SetInput(hcc,SI_CSH,si_csh) ;
+    }
+        
+    HardenedCementChemistry_SetInput(hcc,LogC_CO2,logc_co2aq) ;
+    HardenedCementChemistry_SetInput(hcc,LogC_Na,logc_na) ;
+    HardenedCementChemistry_SetInput(hcc,LogC_K,logc_k) ;
+    HardenedCementChemistry_SetInput(hcc,LogC_OH,logc_oh) ;
+    HardenedCementChemistry_GetElectricPotential(hcc) = psi ;
+    HardenedCementChemistry_SetInput(hcc,LogC_Cl,logc_cl) ;
+  
+    #ifdef E_CHLORINE
+    HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_CO2_Cl_H2O) ;
+    #else
+    HardenedCementChemistry_GetAqueousConcentrationOf(hcc,Cl) = c_cl ;
+    HardenedCementChemistry_GetLogAqueousConcentrationOf(hcc,Cl) = logc_cl ;
+    HardenedCementChemistry_ComputeSystem(hcc,CaO_SiO2_Na2O_K2O_CO2_H2O) ;
+    #endif
+
+    {
+      int k = HardenedCementChemistry_SolveElectroneutrality(hcc) ;
+  
+      if(k < 0) return(NULL) ;
+    }
+  }
+      
+  /* pH */
+  {
+    c_oh = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,OH) ;
+    //double c_h  = HardenedCementChemistry_GetAqueousConcentrationOf(hcc,H) ;
+        
+    val.Concentration_oh = c_oh ;
+  }
+      
+  /* Solid contents */
+  {
+    double s_ch       = HardenedCementChemistry_GetSaturationIndexOf(hcc,CH) ;
+    double s_cc       = HardenedCementChemistry_GetSaturationIndexOf(hcc,CC) ;
+    double n_ch       = InitialCHSolidContent(u_calcium,s_ch,s_cc) ;
+    double n_cc       = InitialCCSolidContent(u_calcium,s_ch,s_cc) ;
+    double n_csh      = CSHSolidContent(u_silicon) ;
+    double x_csh      = HardenedCementChemistry_GetCalciumSiliconRatioInCSH(hcc) ;
+    double v_csh      = MolarVolumeOfCSH(x_csh) ;
+    double v_s0       = V_CH*n_ch + V_CC*n_cc + v_csh*n_csh ;
+        
+    val.InitialVolume_solidtotal = v_s0 ;
+    val.Mole_solidportlandite    = n_ch ;
+    val.Mole_solidcalcite     = n_cc ;
+    val.Mole_solidfriedelsalt = 0 ;
+  }
+  
+  return(&val);
 }
     
     

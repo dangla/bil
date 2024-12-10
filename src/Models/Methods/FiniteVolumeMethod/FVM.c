@@ -134,7 +134,7 @@ double* (FVM_ComputeSurfaceLoadResidu)(FVM_t* fvm,Load_t* load,double t,double d
   Element_t* el = FVM_GetElement(fvm) ;
   double** u = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   Geometry_t* geom = Element_GetGeometry(el) ;
-  unsigned short int dim = Geometry_GetDimension(geom) ;
+  unsigned int dim = Geometry_GetDimension(geom) ;
   Symmetry_t sym = Geometry_GetSymmetry(geom) ;
   Node_t* *no = Element_GetPointerToNode(el) ;
   Field_t* field = Load_GetField(load) ;
@@ -285,7 +285,7 @@ double* (FVM_ComputeSurfaceLoadResidu)(FVM_t* fvm,Load_t* load,double t,double d
 
 
 
-double* (FVM_ComputeBodyForceResidu)(FVM_t* fvm,double* f)
+double* (FVM_ComputeBodyForceResidu)(FVM_t* fvm,double const* f,int const dec)
 /** Return the body force residu (r) */
 {
   Element_t* el = FVM_GetElement(fvm) ;
@@ -297,7 +297,7 @@ double* (FVM_ComputeBodyForceResidu)(FVM_t* fvm,double* f)
   
   for(i = 0 ; i < nn ; i++) {
     /* f is the "force" density at node i */
-    r[i] = volume[i]*f[i] ;
+    r[i] = volume[i]*f[i*dec] ;
   }
   
   return(r) ;
@@ -305,7 +305,7 @@ double* (FVM_ComputeBodyForceResidu)(FVM_t* fvm,double* f)
 
 
 
-double*  (FVM_ComputeFluxResidu)(FVM_t* fvm,double* w)
+double*  (FVM_ComputeFluxResidu)(FVM_t* fvm,double const* w,int const dec)
 /** Return the flux residu (r) */
 {
   Element_t* el = FVM_GetElement(fvm) ;
@@ -320,14 +320,14 @@ double*  (FVM_ComputeFluxResidu)(FVM_t* fvm,double* w)
 
   for(i = 0 ; i < nn ; i++) {
     int j ;
-    for(j = i + 1 ; j < nn ; j++) {
+    for(j = 0 ; j < nn ; j++) {
       /* wij is the outflow from cell i to cell j
        * Note that wii is not used */
-      double wij = w[i*nn + j] ;
-      double wji = w[j*nn + i] ;
-      double a = surf[i*nn + j] ;
-      r[i] += a*wij ;
-      r[j] += a*wji ;
+      if(j != i) {
+        double wij = w[i*dec + j] ;
+        double a = surf[i*nn + j] ;
+        r[i] += a*wij ;
+      }
     }
   }
   
@@ -336,7 +336,7 @@ double*  (FVM_ComputeFluxResidu)(FVM_t* fvm,double* w)
 
 
 
-double* (FVM_ComputeMassAndFluxResidu)(FVM_t* fvm,double* c)
+double* (FVM_ComputeMassAndFluxResidu)(FVM_t* fvm,double const* c,int const dec)
 /** Return the body force and flux residu */
 {
   Element_t* el = FVM_GetElement(fvm) ;
@@ -344,11 +344,11 @@ double* (FVM_ComputeMassAndFluxResidu)(FVM_t* fvm,double* c)
   double* volume = FVM_ComputeCellVolumes(fvm) ;
   int    i ;
   
-  double* r = FVM_ComputeFluxResidu(fvm,c) ;
+  double* r = FVM_ComputeFluxResidu(fvm,c,dec) ;
   
   for(i = 0 ; i < nn ; i++) {
     /* f is the "force" density at node i */
-    double f = c[i*nn + i] ;
+    double f = c[i*dec + i] ;
     r[i] += volume[i]*f ;
   }
   
@@ -383,49 +383,11 @@ double* (FVM_ComputeMassBalanceEquationResidu)(FVM_t* fvm,double const* f,double
   }
     
   {
-    double* r = FVM_ComputeMassAndFluxResidu(fvm,g) ;
+    double* r = FVM_ComputeMassAndFluxResidu(fvm,g,nn) ;
       
     return(r) ;
   }
 }
-
-
-#if 0
-double* (FVM_ComputeMassBalanceEquationResidu)(FVM_t* fvm,double const* f,double const* f_n,double const dt,int const shift)
-/** Return a mass balance equation residu */
-{
-  Element_t* el = FVM_GetElement(fvm) ;
-  int nn  = Element_GetNbOfNodes(el) ;
-  double g[FVM_MaxNbOfNodes*FVM_MaxNbOfNodes] ;
-    
-  {
-    int i ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      double const* mass = f + i*shift;
-      double const* mass_n = f_n + i*shift;
-      double const* massflow = mass + 1;
-      int j ;
-      
-      for(j = 0 ; j < nn ; j++) {
-        int p = i*nn + j ;
-        
-        if(i == j) {
-          g[p] = mass[0] - mass_n[0] ;
-        } else {
-          g[p] = dt * massflow[j] ;
-        }
-      }
-    }
-  }
-    
-  {
-    double* r = FVM_ComputeMassAndFluxResidu(fvm,g) ;
-      
-    return(r) ;
-  }
-}
-#endif
 
 
 
@@ -901,58 +863,6 @@ double* (FVM_ComputeIntercellDistances)(FVM_t* fvm)
 
 
 
-double* (FVM_ComputeVariableFluxes)(FVM_t* fvm,FVM_ComputeFluxes_t* computefluxes,int i,int j)
-/** Compute the variable fluxes from cell i to cell j. 
- *  The variables at cell nodes should have been computed
- *  and stored in the specific locations of the model. */
-{
-  Element_t* el = FVM_GetElement(fvm) ;
-  Model_t* model = Element_GetModel(el) ;
-  double* grdij = Model_GetVariableDerivative(model,i) ;
-
-  {
-    int NbOfVariables = Model_GetNbOfVariables(model) ;
-  
-    if(NbOfVariables > Model_MaxNbOfVariables) {
-      arret("FVM_ComputeVariableFluxes(1)") ;
-    }
-    
-    {
-      double* xi  = Model_GetVariable(model,i) ;
-      double* xj  = Model_GetVariable(model,j) ;
-      double* dist = FVM_ComputeIntercellDistances(fvm) ;
-      int nn = Element_GetNbOfNodes(el) ;
-      double dij   = dist[nn*i + j] ;
-      int k ;
-      
-      for(k = 0 ; k < NbOfVariables ; k++)  {
-        grdij[k] = (xj[k] - xi[k])/dij ;
-      }
-    }
-  }
-  
-  /* Fluxes */
-  {
-    int NbOfVariableFluxes = Model_GetNbOfVariableFluxes(model) ;
-  
-    if(NbOfVariableFluxes > Model_MaxNbOfVariableFluxes) {
-      arret("FVM_ComputeVariableFluxes(2)") ;
-    }
-    
-    {
-      double* w = Model_GetVariableFlux(model,i) ;
-      
-      /* Indices i,j of cell nodes should be present because 
-       * transfer coefficients may depend on them */
-      computefluxes(fvm,grdij,w,i,j) ;
-    
-      return(w) ;
-    }
-  }
-}
-
-
-
 double* (FVM_ComputeTheNodalFluxVector)(FVM_t* fvm,double* w)
 /** Return the flux vectors at nodes. "w" points to an
  *  array of NxN doubles where N is the number of nodes and where
@@ -1283,7 +1193,7 @@ int (FVM_FindHalfSpace)(FVM_t* fvm,int i1,int i2,double* s)
  * Not used Functions
  */
 
-#ifdef NOTDEFINED
+#if 0
 static double*    (FVM_ComputeRelativeCellSurfaceAreas)(FVM_t*) ;
 static double*    (FVM_ComputeNormalGradientMatrix)(FVM_t*,int,double*) ;
 static double*    (FVM_ComputeOutFlowMatrix)(FVM_t*,int,double*) ;

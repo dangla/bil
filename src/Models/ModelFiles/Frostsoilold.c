@@ -7,7 +7,6 @@
 /* Choose the finite element method */
 #include "FEM.h"
 #include "Elasticity.h"
-#include "autodiff.h"
 
 #define TITLE "Frost actions in soil"
 #define AUTHORS "Li-Dangla"
@@ -20,10 +19,10 @@
 
 
 /* Indices of equations */
-#define E_Mech   (0)
-#define E_Mass   (dim)
-#define E_Salt   (dim+1)
-#define E_The    (dim+2)
+#define E_Mech   (3)
+#define E_Mass   (0)
+#define E_Salt   (1)
+#define E_The    (2)
 
 /* Indices of unknowns (generic indices) */
 #define U_Mech   E_Mech
@@ -54,7 +53,7 @@
 
 
 /* We define some names for implicit terms */
-#define NVI   (22)    /*  nb of implicit terms per point */
+#define NVI   (24)    /*  nb of implicit terms per point */
 #define M_TOT(vi)     (vi)[0]
 #define W_TOT(vi)     (vi + 1) /* this is a 3D vector */
 
@@ -232,11 +231,8 @@ static double vr_salt ;
 #define YoungModulus(EPSV) \
         young*ScaleFactor(EPSV,aa,youngfraction)
 
-#define Thickness(EPSV) \
-        (thickness + thicknesscoef*Math_Max(EPSV,0))
-
 #define Porosity(EPSV) \
-        phi0*Thickness(EPSV)
+        phi0*(thickness + Math_Max(EPSV,0))
 
 
 
@@ -258,17 +254,12 @@ static double biot ;
 static double thickness ;
 static double youngfraction ;
 static double capillarypressurefraction ;
-static double thicknesscoef ;
 
-template<typename T> T effectivediffusioncoef(double,T);
-template static double  effectivediffusioncoef(double,double) ;
-#ifdef HAVE_AUTODIFF
-template static real  effectivediffusioncoef(double,real) ;
-#endif
-template<typename T> T effectivediffusioncoef(double phi,T s)
+static double  effectivediffusioncoef(double,double) ;
+double effectivediffusioncoef(double phi,double s)
 {
-  T tau_l_sat = 0.296e-3*exp(9.95*phi)/phi ;
-  T tau = 0 ;
+  double tau_l_sat = 0.296e-3*exp(9.95*phi)/phi ;
+  double tau = 0 ;
   
   if(s > 0.) {
     tau = tau_l_sat/(s*(1 + 625*pow(1 - s,4))) ;
@@ -279,16 +270,12 @@ template<typename T> T effectivediffusioncoef(double phi,T s)
   return(thickness*phi*s*tau*D_salt) ;
 }
 
-template<typename T> T thermalconductivity(double,T);
-template static double thermalconductivity(double,double) ;
-#ifdef HAVE_AUTODIFF
-template static real thermalconductivity(double,real) ;
-#endif
-template<typename T> T thermalconductivity(double phi,T sd_l)
+static double thermalconductivity(double,double) ;
+double thermalconductivity(double phi,double sd_l)
 {
-  T sd_i = 1 - sd_l ;
-  T lam_h2o = sd_l*lam_l + sd_i*lam_i ;
-  T lam_hom = lam_s*(1 - 3*phi*(lam_s - lam_h2o)/(3*lam_s - (1 - phi)*(lam_s - lam_h2o))) ;
+  double sd_i = 1 - sd_l ;
+  double lam_h2o = sd_l*lam_l + sd_i*lam_i ;
+  double lam_hom = lam_s*(1 - 3*phi*(lam_s - lam_h2o)/(3*lam_s - (1 - phi)*(lam_s - lam_h2o))) ;
   
   return(thickness*lam_hom) ;
 }
@@ -341,13 +328,11 @@ void GetProperties(Element_t* el)
   thickness = 1 ;
   youngfraction  = 1 ;
   capillarypressurefraction = 1 ;
-  thicknesscoef = 0 ;
   
   if(Element_HasZeroThickness(el)) {
     thickness = GetProperty("thickness") ;
     youngfraction  = GetProperty("YoungFraction") ;
     capillarypressurefraction = 10 ;
-    thicknesscoef = 1 ;
 
     young    /= thickness ;
     k_int    *= thickness ;
@@ -364,17 +349,9 @@ void GetProperties(Element_t* el)
 
 /* Functions used below */
 static double* ComputeVariables(Element_t*,double**,double**,double*,double,double,int) ;
-
-template<typename T> void ComputeSecondaryVariables(Element_t*,double,double,const double*,T*) ;
-template static void ComputeSecondaryVariables(Element_t*,double,double,const double*,double*) ;
-#ifdef HAVE_AUTODIFF
-template static void ComputeSecondaryVariables(Element_t*,double,double,const double*,real*) ;
-#endif
-#ifdef HAVE_AUTODIFF
-double** ComputeVariableJacobian(Element_t*,double,double,double*);
-#endif
-
+static void    ComputeSecondaryVariables(Element_t*,double,double,const double*,double*) ;
 static double* ComputeVariableDerivatives(Element_t*,double,double,double*,double,int) ;
+
 
 static int     ComputeTransferCoefficients(Element_t*,double,double*) ;
 
@@ -382,19 +359,9 @@ static int     ComputeTangentCoefficients(Element_t*,double,double,double*) ;
 
 static void    ComputePhysicoChemicalProperties(void) ;
 
-template<typename T> T activity(T,T);
-template static double  activity(double,double) ;
-#ifdef HAVE_AUTODIFF
-template static real  activity(real,real) ;
-#endif
-
+static double  activity(double,double) ;
 static double  activity_w_ideal(double,double) ;
-
-template<typename T> T lna_i(T,T,double,double,double,T);
-template static double  lna_i(double,double,double,double,double,double) ;
-#ifdef HAVE_AUTODIFF
-template static real  lna_i(real,real,double,double,double,real) ;
-#endif
+static double  lna_i(double,double,double,double,double,double) ;
 
 
 
@@ -494,11 +461,6 @@ I_Last
 static double Variable[NbOfVariables] ;
 static double Variable_n[NbOfVariables] ;
 static double dVariable[NbOfVariables] ;
-static double v0[NbOfVariables] ;
-static double v1[NbOfVariables] ;
-static double v2[NbOfVariables] ;
-static double v3[NbOfVariables] ;
-static double* VariableJacobian[4] = {v0,v1,v2,v3} ;
 
 
 
@@ -970,7 +932,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     int n = 81 + 3*9 + 3*(9 + 3) ;
     double c[IntFct_MaxNbOfIntPoints*n] ;
     int dec = ComputeTangentCoefficients(el,t,dt,c) ;
-    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,3) ;
+    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,3,E_Mech) ;
     /* The matrix kp is stored as 
      * (u: displacement, p: pressure, c: concentration, t: temperature)
      * |Kuu  Kup  Kuc  Kut|
@@ -997,24 +959,48 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     int n = 9*9 ;
     double c[IntFct_MaxNbOfIntPoints*n] ;
     int dec = ComputeTransferCoefficients(el,dt,c) ;
-    double* k_mass    = FEM_ComputeConductionMatrix(fem,intfct,c,dec) ;
-    double* k_salt_pl = FEM_ComputeConductionMatrix(fem,intfct,c+9*3,dec) ;
-    double* k_salt    = FEM_ComputeConductionMatrix(fem,intfct,c+9*4,dec) ;
-    double* k_the_pl  = FEM_ComputeConductionMatrix(fem,intfct,c+9*6,dec) ;
-    double* k_the     = FEM_ComputeConductionMatrix(fem,intfct,c+9*8,dec) ;
-    int    i ;
+    #if 0
+    {
+      double* k_mass    = FEM_ComputeConductionMatrix(fem,intfct,c,dec) ;
+      double* k_salt_pl = FEM_ComputeConductionMatrix(fem,intfct,c+9*3,dec) ;
+      double* k_salt    = FEM_ComputeConductionMatrix(fem,intfct,c+9*4,dec) ;
+      double* k_the_pl  = FEM_ComputeConductionMatrix(fem,intfct,c+9*6,dec) ;
+      double* k_the     = FEM_ComputeConductionMatrix(fem,intfct,c+9*8,dec) ;
+      int    i ;
   
-    for(i = 0 ; i < nn ; i++) {
-      int    j ;
+      for(i = 0 ; i < nn ; i++) {
+        int    j ;
       
-      for(j = 0 ; j < nn ; j++) {
-        K(E_Mass + i*NEQ,U_Mass + j*NEQ) += dt*k_mass[i*nn + j] ;
-        K(E_Salt + i*NEQ,U_Mass + j*NEQ) += dt*k_salt_pl[i*nn + j] ;
-        K(E_Salt + i*NEQ,U_Salt + j*NEQ) += dt*k_salt[i*nn + j] ;
-        K(E_The  + i*NEQ,U_Mass + j*NEQ) += dt*k_the_pl[i*nn + j] ;
-        K(E_The  + i*NEQ,U_The  + j*NEQ) += dt*k_the[i*nn + j] ;
+        for(j = 0 ; j < nn ; j++) {
+          K(E_Mass + i*NEQ,U_Mass + j*NEQ) += dt*k_mass[i*nn + j] ;
+          K(E_Salt + i*NEQ,U_Mass + j*NEQ) += dt*k_salt_pl[i*nn + j] ;
+          K(E_Salt + i*NEQ,U_Salt + j*NEQ) += dt*k_salt[i*nn + j] ;
+          K(E_The  + i*NEQ,U_Mass + j*NEQ) += dt*k_the_pl[i*nn + j] ;
+          K(E_The  + i*NEQ,U_The  + j*NEQ) += dt*k_the[i*nn + j] ;
+        }
       }
     }
+    #else
+    {
+      int ndif = 3;
+      double* kc = FEM_ComputeConductionMatrix(fem,intfct,c,dec,ndif) ;
+      int i;
+  
+      #define KC(i,j)   (kc[(i)*nn*ndif + (j)])    
+      for(i = 0 ; i < nn ; i++) {
+        int    j ;
+      
+        for(j = 0 ; j < nn ; j++) {
+          K(E_Mass + i*NEQ,U_Mass + j*NEQ) += dt*KC(E_Mass + i*ndif,U_Mass + j*ndif) ;
+          K(E_Salt + i*NEQ,U_Mass + j*NEQ) += dt*KC(E_Salt + i*ndif,U_Mass + j*ndif) ;
+          K(E_Salt + i*NEQ,U_Salt + j*NEQ) += dt*KC(E_Salt + i*ndif,U_Salt + j*ndif) ;
+          K(E_The  + i*NEQ,U_Mass + j*NEQ) += dt*KC(E_The  + i*ndif,U_Mass + j*ndif) ;
+          K(E_The  + i*NEQ,U_The  + j*NEQ) += dt*KC(E_The  + i*ndif,U_The  + j*ndif) ;
+        }
+      }
+      #undef KC
+    }
+    #endif
   }
   
   return(0) ;
@@ -1357,7 +1343,6 @@ int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
     for(p = 0 ; p < np ; p++) {
       /* Variables */
       double* x = ComputeVariables(el,u,u_n,vi_n,t,dt,p) ;
-      double** xjac = ComputeVariableJacobian(el,t,dt,x) ;
       double* c0 = c + p*dec ;
 
 
@@ -1731,44 +1716,44 @@ double* ComputeVariables(Element_t* el,double** u,double** u_n,double* f_n,doubl
 }
 
 
-template<typename T>
-void  ComputeSecondaryVariables(Element_t* el,double t,double dt,const double* x_n,T* x)
+
+void  ComputeSecondaryVariables(Element_t* el,double t,double dt,const double* x_n,double* x)
 /** Compute the secondary variables from the primary ones. */
 {
   int dim = Element_GetDimensionOfSpace(el) ;
   /* Retrieve the primary variables from x */
   /* Strains */
-  T* eps   = x + I_EPS ;
+  double* eps   = x + I_EPS ;
   double* eps_n = x_n + I_EPS ;
-  T  epsv  = eps[0] + eps[4] + eps[8] ;
+  double  epsv  = eps[0] + eps[4] + eps[8] ;
   double  epsv_n = eps_n[0] + eps_n[4] + eps_n[8] ;
   /* Salt concentration */
-  T c_s    = x[I_C_SALT] ;
+  double c_s    = x[I_C_SALT] ;
   /* Temperature */
-  T tem    = x[I_TEM] ;
+  double tem    = x[I_TEM] ;
   /* Log of water activity */
-  T lna = LogActivityOfWater(c_s,tem) ;
+  double lna = LogActivityOfWater(c_s,tem) ;
   
   /* Pressures */
 #if defined (U_p_max)
-  T  p_max = x[I_U_Mass] ;
+  double  p_max = x[I_U_Mass] ;
   //     0 = V_Ice*(p_i   - p_m) - V_H2O*(p_l   - p_m) + S_m*(tem - T_m) - R_g*tem*lna
-  T c = V_Ice*(p_max - p_m) - V_H2O*(p_max - p_m) + S_m*(tem - T_m) - R_g*tem*lna ;
-  T p_min = (c > 0) ? p_max - c/V_Ice : p_max + c/V_H2O ;
-  T p_i   = (c > 0) ? p_min : p_max ;
-  T p_l   = (c > 0) ? p_max : p_min ;
+  double c = V_Ice*(p_max - p_m) - V_H2O*(p_max - p_m) + S_m*(tem - T_m) - R_g*tem*lna ;
+  double p_min = (c > 0) ? p_max - c/V_Ice : p_max + c/V_H2O ;
+  double p_i   = (c > 0) ? p_min : p_max ;
+  double p_l   = (c > 0) ? p_max : p_min ;
 #elif defined (U_p_l)
-  T p_l   = x[I_U_Mass] ;
-  T p_i   = p_m + (V_H2O*(p_l - p_m) - S_m*(tem - T_m) + R_g*tem*lna)/V_Ice ;
+  double p_l   = x[I_U_Mass] ;
+  double p_i   = p_m + (V_H2O*(p_l - p_m) - S_m*(tem - T_m) + R_g*tem*lna)/V_Ice ;
 #endif
-  T p_c = p_i - p_l ;
+  double p_c = p_i - p_l ;
   
   /* Porosity */
-  T phi1 = Porosity(epsv) ;
+  double phi1 = Porosity(epsv) ;
   
   /* Saturations */
-  T sd_l = SaturationDegree(p_c*CapillaryPressureFactor(epsv)) ;
-  T sd_i = 1 - sd_l ;
+  double sd_l = SaturationDegree(p_c*CapillaryPressureFactor(epsv)) ;
+  double sd_i = 1 - sd_l ;
   
   /* Backup */
     
@@ -1781,21 +1766,21 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,const double* x
   /* Mass contents and entropies */
   {
     /* Mass densities */
-    T alpha_l   = ALPHA_l(tem - T_m) ;
-    T rho_i     = rho_h2o_i0*(1. + (p_i - p_m)/K_i - alpha_i*(tem - T_m)) ;
-    T rho_salt  = M_Salt*c_s ;
-    T rho_l     = rho_h2o_l0*(1. + (p_l - p_m)/K_l - alpha_l*(tem - T_m) - vr_salt*rho_salt) ;
+    double alpha_l   = ALPHA_l(tem - T_m) ;
+    double rho_i     = rho_h2o_i0*(1. + (p_i - p_m)/K_i - alpha_i*(tem - T_m)) ;
+    double rho_salt  = M_Salt*c_s ;
+    double rho_l     = rho_h2o_l0*(1. + (p_l - p_m)/K_l - alpha_l*(tem - T_m) - vr_salt*rho_salt) ;
   
     /* Mass contents */
-    T m_l     = phi1*sd_l*rho_l ;
-    T m_i     = phi1*sd_i*rho_i ;
-    T m_salt  = phi1*sd_l*rho_salt ;
+    double m_l     = phi1*sd_l*rho_l ;
+    double m_i     = phi1*sd_i*rho_i ;
+    double m_salt  = phi1*sd_l*rho_salt ;
   
     /* Entropies */
-    T s_l   = C_l*log(tem/T_m) - alpha_l/rho_h2o_l0*(p_l - p_m) ;
-    T s_i   = C_i*log(tem/T_m) - alpha_i/rho_h2o_i0*(p_i - p_m) - S_m/M_H2O ;
-    T s_sol = C_s*log(tem/T_m) ;
-    T s_tot = s_sol + m_l*s_l + m_i*s_i ;
+    double s_l   = C_l*log(tem/T_m) - alpha_l/rho_h2o_l0*(p_l - p_m) ;
+    double s_i   = C_i*log(tem/T_m) - alpha_i/rho_h2o_i0*(p_i - p_m) - S_m/M_H2O ;
+    double s_sol = C_s*log(tem/T_m) ;
+    double s_tot = s_sol + m_l*s_l + m_i*s_i ;
   
     /*
     if(dphi > 0) {
@@ -1815,8 +1800,8 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,const double* x
   
   /* Chemical potentials */
   {
-    T mu_l = V_H2O*(p_l - p_m) + R_g*tem*lna ;
-    T mu_i = V_Ice*(p_i - p_m) + S_m*(tem - T_m) ;
+    double mu_l = V_H2O*(p_l - p_m) + R_g*tem*lna ;
+    double mu_i = V_Ice*(p_i - p_m) + S_m*(tem - T_m) ;
     
     x[I_MU_L    ] = mu_l ;
     x[I_MU_I    ] = mu_i ;
@@ -1827,14 +1812,14 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,const double* x
     double young1 = YoungModulus(epsv_n) ;
     double K = young1 / (3 - 6*poisson) ;
     double b    = biot ;
-    T b_i  = b*sd_i ;
-    T b_l  = b*sd_l ;
+    double b_i  = b*sd_i ;
+    double b_l  = b*sd_l ;
     
-    T dp_l = p_l - p0 ;
-    T dp_i = p_i - p0 ;
-    T dtem = tem - T0 ;
+    double dp_l = p_l - p0 ;
+    double dp_i = p_i - p0 ;
+    double dtem = tem - T0 ;
     
-    T* sig = x + I_SIG ;
+    double* sig = x + I_SIG ;
           
     Elasticity_SetParameters(elasty,young1,poisson) ;
     Elasticity_UpdateStiffnessTensor(elasty) ;
@@ -1873,38 +1858,38 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,const double* x
     double  s_l     = x_n[I_S_L] ;
     
     /* Fluxes */
-    T* w_tot   = x + I_W_TOT ;
-    T* w_salt  = x + I_W_SALT ;
-    T* w_the   = x + I_W_THE ; 
+    double* w_tot   = x + I_W_TOT ;
+    double* w_salt  = x + I_W_SALT ;
+    double* w_the   = x + I_W_THE ; 
     
     /* Gradients */
-    T* grd_c_s   = x + I_GRD_C_SALT ;
-    T* grd_tem   = x + I_GRD_TEM ;
+    double* grd_c_s   = x + I_GRD_C_SALT ;
+    double* grd_tem   = x + I_GRD_TEM ;
     int i ;
     
 #if defined (U_p_max)
-    T  grd_p_l[3] ;
-    T* grd_p_max = x + I_GRD_U_Mass ;  
+    double  grd_p_l[3] ;
+    double* grd_p_max = x + I_GRD_U_Mass ;  
     ObVal_t* obval = Element_GetObjectiveValue(el) ;
-    T dc_s = 1.e-2 * ObVal_GetValue(obval + U_Salt) ;
-    T dtlnadc_s = (tem * LogActivityOfWater(c_s + dc_s,tem) - tem * lna) / dc_s ;
-    T dtem = 1.e-2 * ObVal_GetValue(obval + U_The) ;
-    T dtlnadtem = ((tem + dtem) * LogActivityOfWater(c_s,tem + dtem) - tem * lna) / dtem ;
+    double dc_s = 1.e-2 * ObVal_GetValue(obval + U_Salt) ;
+    double dtlnadc_s = (tem * LogActivityOfWater(c_s + dc_s,tem) - tem * lna) / dc_s ;
+    double dtem = 1.e-2 * ObVal_GetValue(obval + U_The) ;
+    double dtlnadtem = ((tem + dtem) * LogActivityOfWater(c_s,tem + dtem) - tem * lna) / dtem ;
     
     for(i = 0 ; i < 3 ; i++) {
-      T grd_tlna = dtlnadc_s * grd_c_s[i] + dtlnadtem * grd_tem[i] ;
-      T grd_c    = (V_Ice - V_H2O) * grd_p_max[i] + S_m * grd_tem[i] - R_g * grd_tlna ;
-      T grd_p_min = (c > 0) ? grd_p_max[i] - grd_c/V_Ice : grd_p_max[i] + grd_c/V_H2O ;
+      double grd_tlna = dtlnadc_s * grd_c_s[i] + dtlnadtem * grd_tem[i] ;
+      double grd_c    = (V_Ice - V_H2O) * grd_p_max[i] + S_m * grd_tem[i] - R_g * grd_tlna ;
+      double grd_p_min = (c > 0) ? grd_p_max[i] - grd_c/V_Ice : grd_p_max[i] + grd_c/V_H2O ;
       
       grd_p_l[i]   = (c > 0) ? grd_p_max[i] : grd_p_min ;
     }
 #elif defined (U_p_l)
-    T* grd_p_l = x + I_GRD_U_Mass ;  
+    double* grd_p_l = x + I_GRD_U_Mass ;  
 #endif
     
     
     {
-      T rho_l = rho_h2o_l0 ; //x[I_RHO_L] ;
+      double rho_l = rho_h2o_l0 ; //x[I_RHO_L] ;
       
       for(i = 0 ; i < 3 ; i++) {
         w_tot[i] = - kd_liq * grd_p_l[i] ;
@@ -1913,9 +1898,9 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,const double* x
     }
 
     for(i = 0 ; i < 3 ; i++) {
-      T w_l     = w_tot[i] ;
-      T j_salt  = - kf_salt * grd_c_s[i] ;
-      T q       = - kth * grd_tem[i] ;
+      double w_l     = w_tot[i] ;
+      double j_salt  = - kf_salt * grd_c_s[i] ;
+      double q       = - kth * grd_tem[i] ;
 
       w_salt[i]  = mc_salt * w_l + j_salt ;
       w_the[i]   =     s_l * w_l + q ;
@@ -1924,14 +1909,14 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,const double* x
   
   /* Transfer coefficients at the current time */
   {
-    T rho_l   = x[I_RHO_L] ;
-    T mu_l    = WaterViscosity(tem) ;
-    T kr_l    = RelativePermeabilityToLiquid(p_c) ;
-    T kd_liq  = rho_l*k_int/mu_l*kr_l ;
-    T kf_salt = M_Salt*effectivediffusioncoef(phi0,sd_l) ;
-    T lam_hom = thermalconductivity(phi0,sd_l) ;
-    T kth     = lam_hom/tem ;
-    T mc_salt = M_Salt * c_s / rho_l ;
+    double rho_l   = x[I_RHO_L] ;
+    double mu_l    = WaterViscosity(tem) ;
+    double kr_l    = RelativePermeabilityToLiquid(p_c) ;
+    double kd_liq  = rho_l*k_int/mu_l*kr_l ;
+    double kf_salt = M_Salt*effectivediffusioncoef(phi0,sd_l) ;
+    double lam_hom = thermalconductivity(phi0,sd_l) ;
+    double kth     = lam_hom/tem ;
+    double mc_salt = M_Salt * c_s / rho_l ;
       
     x[I_KD_LIQ]  = kd_liq ;
     x[I_KF_SALT] = kf_salt ;
@@ -1941,8 +1926,8 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,const double* x
 
   /* Body force */
   {
-    T m_tot = x[I_M_TOT] ;
-    T* f_mass = x + I_Fmass ;
+    double m_tot = x[I_M_TOT] ;
+    double* f_mass = x + I_Fmass ;
     int i ;
       
     for(i = 0 ; i < 3 ; i++) f_mass[i] = 0 ;
@@ -1950,110 +1935,7 @@ void  ComputeSecondaryVariables(Element_t* el,double t,double dt,const double* x
   }
 }
 
-#if defined HAVE_AUTODIFF0
-double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,double dxi,int i)
-{
-  double** xjac = VariableJacobian ;
-  
-  switch(i) {
-    case(I_EPS) : {
-      return xjac[0] ;
-      break ;
-    }
-    case(I_U_Mass) : {
-      return xjac[1] ;
-      break ;
-    }
-    case(I_C_SALT) : {
-      return xjac[2] ;
-      break ;
-    }
-    case(I_TEM) : {
-      return xjac[3] ;
-      break ;
-    }
-    default : {
-      arret("non prevu") ;
-    }
-  }
-}
-double** ComputeVariableJacobian(Element_t* el,double t,double dt,double* x)
-{
-  double*  x_n = Variable_n ;
-  double** xjac = VariableJacobian ;
-  std::vector<real> v(4);
-  
-  v[0] = x[I_EPS]    ;
-  v[1] = x[I_U_Mass] ;
-  v[2] = x[I_C_SALT] ;
-  v[3] = x[I_TEM]    ;
-  
-  {
-    Eigen::MatrixXd J;
-    std::vector<real> u(NbOfVariables);
-    auto f1 = [](Element_t* el,double t,double dt,double* x_n,double* x,const std::vector<real> v)->std::vector<real>{
-      real r[NbOfVariables] ;
-      std::vector<real> w(NbOfVariables) ;
-  
-      for(int j = 0 ; j < NbOfVariables ; j++) {
-        r[j] = x[j] ;
-      }
-    
-      r[I_EPS]    = v[0] ;
-      r[I_U_Mass] = v[1] ;
-      r[I_C_SALT] = v[2] ;
-      r[I_TEM]    = v[3] ;
-    
-      ComputeSecondaryVariables(el,t,dt,x_n,r) ;
-  
-      for(int j = 0 ; j < NbOfVariables ; j++) {
-        w[j] = r[j] ;
-      }
-    
-      return(w) ;
-    };
 
-    J = jacobian(f1, wrt(v), at(el,t,dt,x_n,x,v),u) ;
-    
-    for(int j = 0 ; j < NbOfVariables ; j++) {
-      for(int i = 0 ; i < 4 ; i++) {
-        xjac[i][j] = J(j,i) ;
-      }
-    }
-  }
-
-  return(xjac) ;
-}
-#elif defined HAVE_AUTODIFF
-double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,double dxi,int i)
-{
-  double*  x_n = Variable_n ;
-  double* dx = dVariable ;
-  real r[NbOfVariables] ;
-  int j ;
-  
-  /* Primary Variables */
-  for(j = 0 ; j < NbOfVariables ; j++) {
-    r[j] = x[j] ;
-  }
-  
-  /* We increment the variable as (x + dx) */
-  r[i][1] = 1 ;
-  
-  ComputeSecondaryVariables(el,t,dt,x_n,r) ;
-  
-  /* The numerical derivative as (f(x + dx) - f(x))/dx */
-  for(j = 0 ; j < NbOfVariables ; j++) {
-    dx[j] = r[j][1] ;
-  }
-
-  return(dx) ;
-}
-double** ComputeVariableJacobian(Element_t* el,double t,double dt,double* x)
-{
-  return(NULL) ;
-}
-#else
 double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,double dxi,int i)
 {
   double*  x_n = Variable_n ;
@@ -2078,11 +1960,6 @@ double* ComputeVariableDerivatives(Element_t* el,double t,double dt,double* x,do
 
   return(dx) ;
 }
-double** ComputeVariableJacobian(Element_t* el,double t,double dt,double* x)
-{
-  return(NULL) ;
-}
-#endif
 
 
 
@@ -2090,13 +1967,13 @@ double** ComputeVariableJacobian(Element_t* el,double t,double dt,double* x)
 
 
 
-template<typename T>
-T activity(T c_s1,T tem1)
+
+double activity(double c_s1,double tem1)
 /* activity of water */
 {
-  T c_s = (c_s1 > 0) ? c_s1 : 0 ;
-  T tem = (tem1 > 200) ? tem1 : 200 ;
-  T T_0  = T_m ;
+  double c_s = (c_s1 > 0) ? c_s1 : 0 ;
+  double tem = (tem1 > 200) ? tem1 : 200 ;
+  double T_0  = T_m ;
   /* References */
   double b0   = sqrt(M_H2O) ;
   double S0   = pow(M_H2O,1.29) ;
@@ -2111,16 +1988,16 @@ T activity(T c_s1,T tem1)
   double S_ca_cacl2 = 18.321/S0 ;
   double S_cl_cacl2 = 10.745/S0 ;
 
-  T epsi = 0.0007*(tem - T_0)*(tem - T_0) - 0.3918*(tem - T_0) + 87.663 ;
-  T A    = 1398779.816/pow(epsi*tem,1.5)/b0 ;
+  double epsi = 0.0007*(tem - T_0)*(tem - T_0) - 0.3918*(tem - T_0) + 87.663 ;
+  double A    = 1398779.816/pow(epsi*tem,1.5)/b0 ;
 
   /* depend du sel */
   double b_cat ;
   double b_ani ;
   double S_cat ;
   double S_ani ;
-  T c_ani ;
-  T c_cat ;
+  double c_ani ;
+  double c_cat ;
   double z_ani ;
   double z_cat ;
 
@@ -2154,37 +2031,36 @@ T activity(T c_s1,T tem1)
   
   {
     /* concentrations */
-    T c_h2o = (1 - c_s*(NU_A*V_A + NU_C*V_C))/V_H2O ;
+    double c_h2o = (1 - c_s*(NU_A*V_A + NU_C*V_C))/V_H2O ;
     /* molalites * M_H2O */
-    T m_ani  = c_ani/c_h2o ;
-    T m_cat  = c_cat/c_h2o ;
+    double m_ani  = c_ani/c_h2o ;
+    double m_cat  = c_cat/c_h2o ;
 
     /* ionic strength */
-    T I     =  0.5*(z_ani*z_ani*m_ani + z_cat*z_cat*m_cat);
+    double I     =  0.5*(z_ani*z_ani*m_ani + z_cat*z_cat*m_cat);
   
-    T II_ani   = lna_i(tem,I,z_ani,b_ani,S_ani,A) ;
-    T II_cat   = lna_i(tem,I,z_cat,b_cat,S_cat,A) ;
+    double II_ani   = lna_i(tem,I,z_ani,b_ani,S_ani,A) ;
+    double II_cat   = lna_i(tem,I,z_cat,b_cat,S_cat,A) ;
 
     /* activity of water */
-    T lna_h2o = m_ani*II_ani + m_cat*II_cat ;
+    double lna_h2o = m_ani*II_ani + m_cat*II_cat ;
     /* linearized activity of water */
-    //T lna_h2o = - (m_ani + m_cat) ;
+    //double lna_h2o = - (m_ani + m_cat) ;
 
     return(lna_h2o) ;
   }
 }
 
 
-template<typename T>
-T lna_i(T tem,T I,double z,double b,double S,T A)
+double lna_i(double T,double I,double z,double b,double S,double A)
 /* Contribution de chaque ion au log de l'activite du solvant 
    lna_w = sum_i ( m_i*lna_i ) (T.Q Nguyen) */ 
 {
   double alpha = 1.29 ;
   double a1 = alpha/(1+alpha) ;
-  T II = sqrt(I) ;
-  T lna = A*II/(1 + b*II) - a1*S*pow(I,alpha)/tem ;
-  T lna_i = -1 + lna*z*z ;
+  double II = sqrt(I) ;
+  double lna = A*II/(1 + b*II) - a1*S*pow(I,alpha)/T ;
+  double lna_i = -1 + lna*z*z ;
   
   return(lna_i) ;
 }

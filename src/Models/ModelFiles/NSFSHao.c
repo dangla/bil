@@ -62,12 +62,10 @@
 static int    pm(const char *s) ;
 static void   GetProperties(Element_t*) ;
 
-static int    ComputeTangentCoefficients(FEM_t*,double,double,double*) ;
+static int    ComputeTangentCoefficients(Element_t*,double,double,double*) ;
 static int    ComputeTransferCoefficients(FEM_t*,double,double*) ;
 
-//static Model_ComputeVariables_t             ComputeVariables ;
 static double* ComputeVariables(Element_t*,void*,void*,void*,const double,const double,const int);
-//static Model_ComputeSecondaryVariables_t    ComputeSecondaryVariables ;
 static void  ComputeSecondaryVariables(Element_t*,double,double,double*,double*) ;
 static double* ComputeVariableDerivatives(Element_t*,double,double,double*,double,int) ;
 
@@ -243,10 +241,7 @@ int SetModelProp(Model_t* model)
   }
   
   Model_GetComputePropertyIndex(model) = pm ;
-  
-  Model_GetNbOfVariables(model) = NbOfVariables ;
-  //Model_GetComputeSecondaryVariables(model) = ComputeSecondaryVariables ;
-  
+    
   return(0) ;
 }
 
@@ -619,7 +614,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   */
   {
     double c[IntFct_MaxNbOfIntPoints*100] ;
-    int dec = ComputeTangentCoefficients(fem,t,dt,c) ;
+    int dec = ComputeTangentCoefficients(el,t,dt,c) ;
     double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,1) ;
     /* The matrix kp is stored as (u for displacement, p for pressure)
      * | Kuu Kup |
@@ -886,7 +881,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 
 
 
-int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
+int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
 /*
 **  Tangent matrix (c), return the shift (dec).
 */
@@ -895,7 +890,6 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
 #define T2(a,i,j)      ((a)[(i)*3+(j)])
 #define C1(i,j,k,l)    T4(c1,i,j,k,l)
 #define B1(i,j)        T2(c1,i,j)
-  Element_t* el  = FEM_GetElement(fem) ;
   int dim = Element_GetDimensionOfSpace(el) ;
   double*  vim0  = Element_GetCurrentImplicitTerm(el) ;
   double*  vim0_n = Element_GetPreviousImplicitTerm(el) ;
@@ -904,6 +898,7 @@ int ComputeTangentCoefficients(FEM_t* fem,double t,double dt,double* c)
   double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
+  FEM_t* fem = FEM_GetInstance(el) ;
   
   int    dec = 100 ;
   int    p ;
@@ -1080,13 +1075,6 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
   IntFct_t* intfct = Element_GetIntFct(el) ;
   FEM_t*    fem    = FEM_GetInstance(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
-//  Model_t*  model  = Element_GetModel(el) ;
-//  double*   x      = Model_GetVariable(model,p) ;
-  /* cast when type "const void*" is used 
-  const double* const* u   = (const double* const*) vu ;
-  const double* const* u_n = (const double* const*) vu_n ;
-  const double*        f_n = (const double*) vf_n ;
-  */
   double** u   = (double**) vu ;
   double** u_n = (double**) vu_n ;
   double*  f_n = (double*)  vf_n ;

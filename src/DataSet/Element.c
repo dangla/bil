@@ -176,7 +176,7 @@ void (Element_Delete)(void* self)
 
 
 
-void (Element_AllocateMicrostructureSolutions)(Element_t* el,Mesh_t* mesh,const int nsol)
+void (Element_AllocateMicrostructureSolutions)(Element_t const* el,Mesh_t* mesh,const int nsol)
 /** Allocate space as implicit generic data at the interpolation points 
  *  of the element "el" for the solutions of the microstructure defined by "mesh".
  */
@@ -219,7 +219,7 @@ void (Element_AllocateMicrostructureSolutions)(Element_t* el,Mesh_t* mesh,const 
 
 
 
-double** (Element_ComputePointerToNodalCoordinates)(Element_t* element)
+double** (Element_ComputePointerToNodalCoordinates)(Element_t const* element)
 /** Compute the nodal coordinates */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -236,7 +236,7 @@ double** (Element_ComputePointerToNodalCoordinates)(Element_t* element)
 
 
 
-double* (Element_ComputeNodalCoordinates)(Element_t* element)
+double* (Element_ComputeNodalCoordinates)(Element_t const* element)
 /** Compute the nodal coordinates */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -259,7 +259,7 @@ double* (Element_ComputeNodalCoordinates)(Element_t* element)
 
 
 
-double** (Element_ComputePointerToCurrentNodalUnknowns)(Element_t* element)
+double** (Element_ComputePointerToCurrentNodalUnknowns)(Element_t const* element)
 /** Compute a pointer to the nodal unknowns at the current time */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -276,7 +276,7 @@ double** (Element_ComputePointerToCurrentNodalUnknowns)(Element_t* element)
 
 
 
-double** (Element_ComputePointerToPreviousNodalUnknowns)(Element_t* element)
+double** (Element_ComputePointerToPreviousNodalUnknowns)(Element_t const* element)
 /** Compute a pointer to the nodal unknowns at the current time */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -293,7 +293,7 @@ double** (Element_ComputePointerToPreviousNodalUnknowns)(Element_t* element)
 
 
 
-double* (Element_ComputeDeepNodalUnknowns)(Element_t* element,unsigned int depth)
+double* (Element_ComputeDeepNodalUnknowns)(Element_t const* element,unsigned int depth)
 /** Compute the nodal unknowns at the some depth */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -322,7 +322,7 @@ double* (Element_ComputeDeepNodalUnknowns)(Element_t* element,unsigned int depth
 
 
 
-double* (Element_ComputeCurrentNodalUnknowns)(Element_t* element)
+double* (Element_ComputeCurrentNodalUnknowns)(Element_t const* element)
 /** Compute the nodal unknowns at the current time */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -351,7 +351,7 @@ double* (Element_ComputeCurrentNodalUnknowns)(Element_t* element)
 
 
 
-double* (Element_ComputePreviousNodalUnknowns)(Element_t* element)
+double* (Element_ComputePreviousNodalUnknowns)(Element_t const* element)
 /** Compute the nodal unknowns at the previous time */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -380,7 +380,7 @@ double* (Element_ComputePreviousNodalUnknowns)(Element_t* element)
 
 
 
-double* (Element_ComputeIncrementalNodalUnknowns)(Element_t* element)
+double* (Element_ComputeIncrementalNodalUnknowns)(Element_t const* element)
 /** Compute the incremental values of nodal unknowns */
 {
   int nn = Element_GetNbOfNodes(element) ;
@@ -410,7 +410,7 @@ double* (Element_ComputeIncrementalNodalUnknowns)(Element_t* element)
 
 
 
-double* (Element_ComputeIncrementalImplicitTerms)(Element_t* element)
+double* (Element_ComputeIncrementalImplicitTerms)(Element_t const* element)
 {
   int n = Element_GetNbOfImplicitTerms(element) ;
   double* vi1 = Element_GetCurrentImplicitTerm(element) ;
@@ -426,7 +426,7 @@ double* (Element_ComputeIncrementalImplicitTerms)(Element_t* element)
 
 
 
-int    (Element_FindUnknownPositionIndex)(Element_t* element,const char* s)
+int    (Element_FindUnknownPositionIndex)(Element_t const* element,const char* s)
 /** Find the unknown position index whose name is pointed to by s */
 {
   int n = Element_GetNbOfEquations(element) ;
@@ -451,7 +451,7 @@ int    (Element_FindUnknownPositionIndex)(Element_t* element,const char* s)
 
 
 
-int    (Element_FindEquationPositionIndex)(Element_t* element,const char* s)
+int    (Element_FindEquationPositionIndex)(Element_t const* element,const char* s)
 /** Find the equation position index whose name is pointed to by s */
 {
   int n = Element_GetNbOfEquations(element) ;
@@ -477,7 +477,7 @@ int    (Element_FindEquationPositionIndex)(Element_t* element,const char* s)
 
 
 #if 1
-double*  (Element_ComputeNormalVector)(Element_t* element,double* dh,int nn,const int dim_h)
+double*  (Element_ComputeNormalVector)(Element_t const* element,double* dh,int nn,const int dim_h)
 /** Compute the unit outward normal vector to a submanifold element
  *  of dimension dim-1 */
 {
@@ -521,7 +521,7 @@ double*  (Element_ComputeNormalVector)(Element_t* element,double* dh,int nn,cons
 
 
 #if 0
-double*  (Element_ComputeNormalVector)(Element_t* element,double* dh,int nn,const int dim_h)
+double*  (Element_ComputeNormalVector)(Element_t const* element,double* dh,int nn,const int dim_h)
 /** Compute the unit outward normal vector to a submanifold element
  *  of dimension dim-1 */
 {
@@ -597,7 +597,7 @@ double*  (Element_ComputeNormalVector)(Element_t* element,double* dh,int nn,cons
 
 
 
-double* (Element_ComputeJacobianMatrix)(Element_t* el,double* dh,int nn,const int dim_h)
+double* (Element_ComputeJacobianMatrix)(Element_t const* el,double* dh,int nn,const int dim_h)
 /** Compute the 3x3 jacobian matrix */
 {
 #define DH(n,i)  (dh[(n)*3 + (i)])
@@ -794,7 +794,7 @@ double* (Element_ComputeJacobianMatrix)(Element_t* el,double* dh,int nn,const in
 
 
 #if 1
-double (Element_ComputeJacobianDeterminant)(Element_t* el,double* dh,int nn,const int dim_h)
+double (Element_ComputeJacobianDeterminant)(Element_t const* el,double* dh,int nn,const int dim_h)
 /** Compute the determinant of the jacobian matrix */
 {
   double* jac  = Element_ComputeJacobianMatrix(el,dh,nn,dim_h) ;
@@ -815,7 +815,7 @@ double (Element_ComputeJacobianDeterminant)(Element_t* el,double* dh,int nn,cons
 
 
 #if 1
-double* (Element_ComputeInverseJacobianMatrix)(Element_t* el,double* dh,int nn,const int dim_h)
+double* (Element_ComputeInverseJacobianMatrix)(Element_t const* el,double* dh,int nn,const int dim_h)
 /** Compute the inverse jacobian matrix */
 {
   size_t SizeNeeded = 9*sizeof(double) ;
@@ -841,7 +841,7 @@ double* (Element_ComputeInverseJacobianMatrix)(Element_t* el,double* dh,int nn,c
 
 
 
-double* (Element_ComputeCoordinateVector)(Element_t* el,double* h)
+double* (Element_ComputeCoordinateVector)(Element_t const* el,double* h)
 /** Compute the coordinate vector */
 {
   int dim = Element_GetDimensionOfSpace(el) ;
@@ -871,11 +871,11 @@ double* (Element_ComputeCoordinateVector)(Element_t* el,double* h)
 
 
 #if 1
-double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t* el,double* x)
+double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t const* el,double* x)
 /** Compute the local coordinates in the reference element frame 
  *  which map into coordinates "x" in the actual space */
 {
-  unsigned short int dim   = Element_GetDimensionOfSpace(el) ;
+  unsigned int dim   = Element_GetDimensionOfSpace(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   double* x_e[Element_MaxNbOfNodes] ;
   double diameter ;
@@ -1001,7 +1001,7 @@ double*  (Element_ComputeCoordinateInReferenceFrame)(Element_t* el,double* x)
 
 
 
-int (Element_ComputeNbOfSolutions)(Element_t* el)
+int (Element_ComputeNbOfSolutions)(Element_t const* el)
 {
   Solution_t* solution = Element_GetSolution(el) ;
   int n = 0 ;
@@ -1018,7 +1018,7 @@ int (Element_ComputeNbOfSolutions)(Element_t* el)
 
 
 
-int* (Element_ComputeMatrixRowAndColumnIndices)(Element_t* el)
+int* (Element_ComputeMatrixRowAndColumnIndices)(Element_t const* el)
 {
   int  nn  = Element_GetNbOfNodes(el) ;
   int  neq = Element_GetNbOfEquations(el) ;
@@ -1047,7 +1047,7 @@ int* (Element_ComputeMatrixRowAndColumnIndices)(Element_t* el)
 
 
 
-int* (Element_ComputeSelectedMatrixRowAndColumnIndices)(Element_t* el,const int imatrix)
+int* (Element_ComputeSelectedMatrixRowAndColumnIndices)(Element_t const* el,const int imatrix)
 {
   int nn   = Element_GetNbOfNodes(el) ;
   int neq  = Element_GetNbOfEquations(el) ;
@@ -1077,7 +1077,7 @@ int* (Element_ComputeSelectedMatrixRowAndColumnIndices)(Element_t* el,const int 
 
 
 
-double (Element_ComputeSize)(Element_t* element)
+double (Element_ComputeSize)(Element_t const* element)
 {
   int nn = Element_GetNbOfNodes(element) ;
   int dim = Element_GetDimensionOfSpace(element) ;
@@ -1119,7 +1119,7 @@ double (Element_ComputeSize)(Element_t* element)
 
 
 
-double* (Element_ComputeSizes)(Element_t* element)
+double* (Element_ComputeSizes)(Element_t const* element)
 {
   int nn = Element_GetNbOfNodes(element) ;
   int dim = Element_GetDimensionOfSpace(element) ;
@@ -1178,7 +1178,7 @@ double* (Element_ComputeSizes)(Element_t* element)
 
 
 
-int (Element_HasZeroThickness)(Element_t* element)
+int (Element_HasZeroThickness)(Element_t const* element)
 {
   int nn = Element_GetNbOfNodes(element) ;
   ShapeFct_t* shapefct = Element_GetShapeFct(element) ;
@@ -1215,7 +1215,7 @@ int (Element_HasZeroThickness)(Element_t* element)
 
 
 
-int (Element_NbOfOverlappingNodes)(Element_t* element)
+int (Element_NbOfOverlappingNodes)(Element_t const* element)
 /** Return the number of overlapping nodes for zero-thickness element. */
 {
   int nn  = Element_GetNbOfNodes(element) ;
@@ -1254,7 +1254,7 @@ int (Element_NbOfOverlappingNodes)(Element_t* element)
 
 
 
-int (Element_OverlappingNode)(Element_t* element,const int n)
+int (Element_OverlappingNode)(Element_t const* element,const int n)
 /** Return the index of the first node other than n 
  *  overlapping node n or n if it fails. */
 {
@@ -1296,7 +1296,7 @@ int (Element_OverlappingNode)(Element_t* element,const int n)
 
 
 #if 0
-double (Element_ComputeThickness)(Element_t* element)
+double (Element_ComputeThickness)(Element_t const* element)
 {
   int nn = Element_GetNbOfNodes(element) ;
   int dim = Element_GetDimensionOfSpace(element) ;
@@ -1343,7 +1343,7 @@ double (Element_ComputeThickness)(Element_t* element)
 
 
 #if 0
-double (Element_DistanceBetweenNodes)(Element_t* element,const int i,const int j)
+double (Element_DistanceBetweenNodes)(Element_t const* element,const int i,const int j)
 {
   int nn = Element_GetNbOfNodes(element) ;
   int dim = Element_GetDimensionOfSpace(element) ;
@@ -1370,7 +1370,7 @@ double (Element_DistanceBetweenNodes)(Element_t* element,const int i,const int j
 
 
 
-int (Element_ComputeNbOfMatrixEntries)(Element_t* element)
+int (Element_ComputeNbOfMatrixEntries)(Element_t const* element)
 {
   int   ndof = Element_GetNbOfDOF(element) ;
   int*  row  = Element_ComputeMatrixRowAndColumnIndices(element) ;
@@ -1407,7 +1407,7 @@ int (Element_ComputeNbOfMatrixEntries)(Element_t* element)
 
 
 
-int (Element_ComputeNbOfSelectedMatrixEntries)(Element_t* element,const int imatrix)
+int (Element_ComputeNbOfSelectedMatrixEntries)(Element_t const* element,const int imatrix)
 {
   int   ndof = Element_GetNbOfDOF(element) ;
   int*  row  = Element_ComputeSelectedMatrixRowAndColumnIndices(element,imatrix) ;
@@ -1444,7 +1444,7 @@ int (Element_ComputeNbOfSelectedMatrixEntries)(Element_t* element,const int imat
 
 
 
-void (Element_MakeUnknownContinuousAcrossZeroThicknessElement)(Element_t* element,const char* name)
+void (Element_MakeUnknownContinuousAcrossZeroThicknessElement)(Element_t const* element,const char* name)
 {
   ShapeFct_t* shapefct = Element_GetShapeFct(element) ;
   int nf = ShapeFct_GetNbOfNodes(shapefct) ;
@@ -1459,7 +1459,7 @@ void (Element_MakeUnknownContinuousAcrossZeroThicknessElement)(Element_t* elemen
 
 
 
-void (Element_MakeEquationContinuousAcrossZeroThicknessElement)(Element_t* element,const char* name)
+void (Element_MakeEquationContinuousAcrossZeroThicknessElement)(Element_t const* element,const char* name)
 {
   ShapeFct_t* shapefct = Element_GetShapeFct(element) ;
   int nf = ShapeFct_GetNbOfNodes(shapefct) ;
@@ -1476,7 +1476,7 @@ void (Element_MakeEquationContinuousAcrossZeroThicknessElement)(Element_t* eleme
 
 
 
-int (Element_FindNodeIndex)(Element_t* element,const Node_t* node)
+int (Element_FindNodeIndex)(Element_t const* element,const Node_t* node)
 /** Return the local node index matching that of node
  *  or -1 if it fails. */
 {
@@ -1496,7 +1496,7 @@ int (Element_FindNodeIndex)(Element_t* element,const Node_t* node)
 
 /* The two following functions have not been tested yet */
 #if 0
-double* (Element_ComputeDiscreteGradientOperator)(Element_t* element,IntFct_t* intfct)
+double* (Element_ComputeDiscreteGradientOperator)(Element_t const* element,IntFct_t* intfct)
 /** Compute the discrete gradient operator.
  *  On ouput:
  *  a pointer to double with allocated space of DIM*NN*NN
@@ -1617,7 +1617,7 @@ double* (Element_ComputeDiscreteGradientOperator)(Element_t* element,IntFct_t* i
 
 
 
-double* (Element_ComputeLumpedMass)(Element_t* element,IntFct_t* intfct)
+double* (Element_ComputeLumpedMass)(Element_t const* element,IntFct_t* intfct)
 /** Compute the lumped mass.
  *  On ouput:
  *  a pointer to double with allocated space of NN
@@ -1700,7 +1700,7 @@ double* (Element_ComputeLumpedMass)(Element_t* element,IntFct_t* intfct)
 
 
 #if 0
-ElementSol_t* (Element_GetDeepElementSol)(Element_t* el,unsigned int depth)
+ElementSol_t* (Element_GetDeepElementSol)(Element_t const* el,unsigned int depth)
 {
   Solution_t* solution = Element_GetSolution(el) ;
   ElementSol_t* elementsol ;
@@ -1717,7 +1717,7 @@ ElementSol_t* (Element_GetDeepElementSol)(Element_t* el,unsigned int depth)
 
   
 
-void  (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t* el)
+void  (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t const* el)
 /** Copy the current solution into the previous solution */
 {
   {
@@ -1741,7 +1741,7 @@ void  (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t* el)
 }
 
 
-double** (Element_ConvertToNodalUnknown)(Element_t* el,double* f,int shift)
+double** (Element_ConvertToNodalUnknown)(Element_t const* el,double* f,int shift)
 /** Convert the node quantity pointed to by "f" into a simulated nodal unknown "u"
  *  at position 0. */
 {
@@ -1757,4 +1757,440 @@ double** (Element_ConvertToNodalUnknown)(Element_t* el,double* f,int shift)
   }
     
   return(u);
+}
+
+
+
+double   (Element_IntegrateOverElement)(Element_t* el,IntFct_t* intfct,double* f,int shift)
+/** Integrate f over the element through the integration points. 
+ *  Return the integration result. */
+{
+  int nn = IntFct_GetNbOfFunctions(intfct) ;
+  int dim_h = IntFct_GetDimension(intfct) ;
+  Symmetry_t sym = Element_GetSymmetry(el) ;
+  double* x[Element_MaxNbOfNodes] ;
+  double sum = 0 ;
+  int    i ;
+  
+  for(i = 0 ; i < nn ; i++) {
+    x[i] = Element_GetNodeCoordinate(el,i) ;
+  }
+
+  /* 0D */
+  if(dim_h == 0) {
+    if(nn == 1) {
+      double radius = x[0][0] ;
+      
+      sum = f[0] ;
+      
+      if(Symmetry_IsCylindrical(sym)) sum *= 2*M_PI*radius ;
+      else if(Symmetry_IsSpherical(sym)) sum *= 4*M_PI*radius*radius ;
+      
+    } else {
+      arret("FEM_IntegrateOverElement: impossible") ;
+    }
+    
+    return(sum) ;
+  }
+
+  /* 1D, 2D, 3D */
+  {
+    int np = IntFct_GetNbOfPoints(intfct) ;
+    double* weight = IntFct_GetWeight(intfct) ;
+    int p ;
+  
+    for(p = 0 ; p < np ; p++) {
+      double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
+      double d   = Element_ComputeJacobianDeterminant(el,dh,nn,dim_h) ;
+      double a   = weight[p]*d ;
+    
+      /* Axisymmetrical or spherical case */
+      if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
+        double* h  = IntFct_GetFunctionAtPoint(intfct,p) ;
+        double radius = 0 ;
+      
+        for(i = 0 ; i < nn ; i++) radius += h[i]*x[i][0] ;
+        
+        a *= 2*M_PI*radius ;
+        if(Symmetry_IsSpherical(sym)) a *= 2*radius ;
+      }
+    
+      sum += a*f[p*shift] ;
+    }
+  }
+  
+  return(sum) ;
+}
+
+
+
+double*  (Element_ComputeIsoShapeFctInActualSpace)(Element_t* el,double* x)
+/* fonction d'interpolation (h) et ses derivees (dh) en x */
+{
+  double* a = Element_ComputeCoordinateInReferenceFrame(el,x) ;
+  
+  {
+    unsigned short int dim_e = Element_GetDimension(el) ;
+    int nn = Element_GetNbOfNodes(el) ;
+    size_t SizeNeeded = (nn*4)*sizeof(double) ;
+    double* h = (double*) Element_AllocateInBuffer(el,SizeNeeded) ;
+    double* dh = h + Element_GetNbOfNodes(el) ;
+  
+    ShapeFct_ComputeValuesAtPoint(dim_e,nn,a,h,dh) ;
+
+    return(h) ;
+  }
+}
+
+
+
+void (Element_CheckNumberingOfOverlappingNodes)(Element_t const* el,const int nf)
+{
+  int j ;
+
+  for(j = 0 ; j < nf ; j++) {
+    int jj = Element_OverlappingNode(el,j) ;
+
+    if(jj != j && jj < nf) {
+      arret("FEM_CheckNumberingOfOverlappingNodes: bad numbering") ;
+    }
+  }
+}
+
+
+double (Element_ComputeUnknown)(Element_t* el,double const* const* u,IntFct_t* intfct,int p,int inc)
+/** Compute the unknown located at "inc" at the interpolation point "p" */
+{
+#define U(n)   (u[n][Element_GetNodalUnknownPosition(el,n,inc)])
+  int nn = IntFct_GetNbOfFunctions(intfct) ;
+  double* h  = IntFct_GetFunctionAtPoint(intfct,p) ;
+  double par = 0. ;
+  int i ;
+        
+  for(i = 0 ; i < nn ; i++) {
+    par += h[i]*U(i) ;
+  }
+        
+  return(par) ;
+#undef U
+}
+
+
+
+double* (Element_ComputeDisplacementVector)(Element_t* el,double const* const* u,IntFct_t* intfct,int p,int inc)
+/** Compute the displacement vector located at 
+ *  "inc,inc+1,inc+2" at the interpolation point "p" */
+{
+  size_t SizeNeeded = 3*sizeof(double) ;
+  double* dis = (double*) Element_AllocateInBuffer(el,SizeNeeded) ;
+
+  {
+    int dim = Element_GetDimensionOfSpace(el) ;
+    int i ;
+    
+    /* In case of a zero-thickness element (fracture) 
+     * we compute the discontinuous displacement vector */
+    #if 0
+    if(Element_HasZeroThickness(el)) {
+      int nf = IntFct_GetNbOfFunctions(intfct) ;
+      double* du[Element_MaxNbOfNodes] ;
+      double  du1[Element_MaxNbOfNodes*Element_MaxNbOfDOF] ;
+      
+      for(i = 0 ; i < nf ; i++) {
+        int ii = Element_OverlappingNode(el,i) ;
+        int j ;
+        
+        du[i] = du1 + i*Element_MaxNbOfDOF ;
+        
+        for(j = 0 ; j < dim ; j++) {
+          du[i][inc + j] = u[i][inc + j] - u[ii][inc + j] ;
+        }
+      }
+    
+      for(i = 0 ; i < dim ; i++) {
+        dis[i] = Element_ComputeUnknown(el,du,intfct,p,inc+i) ;
+      }
+    } else 
+    #endif
+    {
+      for(i = 0 ; i < dim ; i++) {
+        dis[i] = Element_ComputeUnknown(el,u,intfct,p,inc+i) ;
+      }
+    }
+    
+    for(i = dim ; i < 3 ; i++) dis[i] = 0 ;
+  }
+        
+  return(dis) ;
+}
+
+
+
+double* (Element_ComputeUnknownGradient)(Element_t* el,double const* const* u,IntFct_t* intfct,int p,int inc)
+/** Compute the unknown gradient located at "inc" at the interpolation point "p" */
+{
+#define U(n)   (u[n][Element_GetNodalUnknownPosition(el,n,inc)])
+#define DH(n,i)  (dh[(n)*3 + (i)])
+//#define DH(n,i)  (dh[(n)*dim_h + (i)])
+#define CJ(i,j)  (cj[(i)*3 + (j)])
+  int dim = Element_GetDimensionOfSpace(el) ;
+  int dim_e = Element_GetDimension(el) ;
+  size_t SizeNeeded = 3*sizeof(double) ;
+  double* grad = (double*) Element_AllocateInBuffer(el,SizeNeeded) ;
+  int nn = IntFct_GetNbOfFunctions(intfct) ;
+  int dim_h = IntFct_GetDimension(intfct) ;
+  
+  
+  /* One node mesh: for this special element the unknown stands for the gradient along x-axis */
+  if(nn == 1 && dim_e == 3){
+    int i ;
+    
+    for(i = 0 ; i < 3 ; i++) {
+      grad[i] = 0 ;
+    }
+
+    grad[0] = U(0) ;
+    
+    return(grad) ;
+  }
+  
+
+  {
+    /* interpolation functions */
+    double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
+    double* gu = grad ;
+    double grf[3] = {0,0,0} ;
+  
+    /* the gradient in the reference frame */
+    {
+      int l ;
+        
+      for(l = 0 ; l < dim_h ; l++) {
+        int k ;
+      
+        for(k = 0 ; k < nn ; k++) {
+          grf[l] += U(k) * DH(k,l) ;
+        }
+      }
+    }
+  
+    /* the parameter gradient (gu) */
+    {
+      /* inverse jacobian matrix (cj) */
+      double* cj = Element_ComputeInverseJacobianMatrix(el,dh,nn,dim_h) ;
+      int i ;
+      
+      for(i = 0 ; i < 3 ; i++)  gu[i] = 0. ;
+  
+      for(i = 0 ; i < dim ; i++) {
+        int l ;
+        
+        for(l = 0 ; l < dim_h ; l++) {
+          gu[i] += grf[l] * CJ(l,i) ;
+        }
+      }
+      
+      Element_FreeBufferFrom(el,cj) ;
+    }
+  }
+  
+  return(grad) ;
+  
+#undef U
+#undef DH
+#undef CJ
+}
+
+
+
+double* (Element_ComputeLinearStrainTensor)(Element_t* el,double const* const* u,IntFct_t* intfct,int p,int inc)
+/** Compute the 3D linearized strain tensor for the displacement vector 
+ *  located at "inc" and at the interpolation point "p" */
+{
+#define U(n,i)   (u[n][Element_GetNodalUnknownPosition(el,n,inc + (i))])
+#define DH(n,i)  (dh[(n)*3 + (i)])
+//#define DH(n,i)  (dh[(n)*dim_h + (i)])
+#define STRAIN(i,j) (strain[(i)*3 + (j)])
+#define CJ(i,j)  (cj[(i)*3 + (j)])
+  Symmetry_t sym = Element_GetSymmetry(el) ;
+  int dim = Element_GetDimensionOfSpace(el) ;
+  int dim_e = Element_GetDimension(el) ;
+  int dim_h = IntFct_GetDimension(intfct) ;
+  size_t SizeNeeded = 9*sizeof(double) ;
+  double* strain = (double*) Element_AllocateInBuffer(el,SizeNeeded) ;
+  int nn = IntFct_GetNbOfFunctions(intfct) ;
+  
+  
+  /* One node mesh: for this special element the displacement u_i stands for strain_ii */
+  if(nn == 1 && dim_e == 3){
+    int i ;
+    
+    for(i = 0 ; i < 9 ; i++) {
+      strain[i] = 0 ;
+    }
+
+    for(i = 0 ; i < dim ; i++) {
+      STRAIN(i,i) = U(0,i) ;
+    }
+    
+    return(strain) ;
+  }
+
+
+  {
+    /* interpolation functions */
+    double* h  = IntFct_GetFunctionAtPoint(intfct,p) ;
+    double* dh = IntFct_GetFunctionGradientAtPoint(intfct,p) ;
+    /* inverse jacobian matrix (cj) */
+    double* cj = Element_ComputeInverseJacobianMatrix(el,dh,nn,dim_h) ;
+    double  gu[3][3] ;
+    int     i ;
+  
+  
+    /* initialisation of gu */
+    for(i = 0 ; i < 3 ; i++) {
+      int j ;
+        
+      for(j = 0 ; j < 3 ; j++)  {
+        gu[i][j] = 0. ;
+      }
+    }
+  
+    /* displacement gradient (gu) */
+    if(Element_HasZeroThickness(el)) {
+      double* norm = Element_ComputeNormalVector(el,dh,nn,dim_h) ;
+      double du[3] = {0,0,0} ;
+      
+      /* the displacement discontinuity */
+      for(i = 0 ; i < dim ; i++) {
+        int k ;
+          
+        for(k = 0 ; k < nn ; k++) {
+          int kk = Element_OverlappingNode(el,k) ;
+            
+          du[i] += (U(k,i) - U(kk,i)) * h[k] ;
+        }
+      }
+      
+      #define NORM(i)  (norm[i])
+      for(i = 0 ; i < dim ; i++) {
+        int j ;
+        
+        for(j = 0 ; j < dim ; j++) {
+          gu[i][j] = du[i] * NORM(j) ;
+        }
+      }
+      #undef NORM
+      
+    } else if(dim_h > 0) {
+      double  grf[3][3] = {{0,0,0},{0,0,0},{0,0,0}} ;
+      
+      /* the gradient in the reference frame */
+      for(i = 0 ; i < dim ; i++) {
+        int l ;
+          
+        for(l = 0 ; l < dim_h ; l++) {
+          int k ;
+          
+          for(k = 0 ; k < nn ; k++) {
+            grf[i][l] += U(k,i) * DH(k,l) ;
+          }
+        }
+      }
+      
+      /* the gradient in the current frame */
+      for(i = 0 ; i < dim ; i++) {
+        int j ;
+        
+        for(j = 0 ; j < dim ; j++) {
+          int l ;
+          
+          for(l = 0 ; l < dim_h ; l++) {
+            gu[i][j] += grf[i][l] * CJ(l,j) ;
+          }
+        }
+      }
+    } else {
+      Message_FatalError("FEM_ComputeLinearStrainTensor: dim_h <= 0!") ;
+    }
+      
+    {
+      //double* eps = strain ;
+  
+      /* Linearized strain tensor */
+      for(i = 0 ; i < 3 ; i++) {
+        int j ;
+        
+        for(j = 0 ; j < 3 ; j++) {
+          STRAIN(i,j) = (gu[i][j] + gu[j][i])*0.5 ;
+        }
+      }
+  
+      /* symmetric cases: axisymmetrical or spherical */
+      if(Symmetry_IsCylindrical(sym) || Symmetry_IsSpherical(sym)) {
+        
+        if(Element_HasZeroThickness(el)) {
+          /* No additif terms */
+        } else {
+          double radius = 0. ;
+          double u_r   = 0. ;
+          
+          for(i = 0 ; i < nn ; i++) {
+            double* x = Element_GetNodeCoordinate(el,i) ;
+          
+            radius += h[i]*x[0] ;
+            u_r    += h[i]*U(i,0) ;
+          }
+          
+          if(radius > 0) {
+            STRAIN(2,2) += u_r/radius ;
+          
+            if(Symmetry_IsSpherical(sym)) STRAIN(1,1) += u_r/radius ;
+          }
+        }
+      }
+    }
+      
+    Element_FreeBufferFrom(el,cj) ;
+  }
+  
+  return(strain) ;
+#undef U
+#undef DH
+#undef STRAIN
+#undef CJ
+}
+
+
+
+double* (Element_ComputeInternodeDistances)(Element_t* el)
+/** Compute the intercell distances */
+{
+  int dim = Element_GetDimensionOfSpace(el) ;
+  int nn  = Element_GetNbOfNodes(el) ;
+  size_t SizeNeeded = nn*nn*(sizeof(double)) ;
+  double* dist = (double*) Element_AllocateInBuffer(el,SizeNeeded) ;
+  int    i ;
+  
+  /* initialization */
+  for(i = 0 ; i < nn*nn ; i++)  dist[i] = 0. ;
+
+  for(i = 0 ; i < nn ; i++) {
+    double* xi = Element_GetNodeCoordinate(el,i) ;
+    int j ;
+    for(j = i + 1 ; j < nn ; j++) {
+      double* xj = Element_GetNodeCoordinate(el,j) ;
+      double dij = 0 ;
+      int n ;
+      for (n = 0 ; n < dim ; n++) {
+        double xij = xj[n] - xi[n] ;
+        dij += xij*xij ;
+      }
+      dij = sqrt(dij) ;
+      dist[nn*i + j] = dij ;
+      dist[nn*j + i] = dij ;
+    }
+  }
+  
+  return(dist) ;
 }

@@ -18,7 +18,7 @@ extern "C" {
 /* Vacuous declarations and typedef names */
 
 /* class-like structure "Models_t" */
-struct Models_s       ; typedef struct Models_s       Models_t ;
+struct Models_t       ; typedef struct Models_t       Models_t ;
 
 
 #include <stdio.h>
@@ -54,7 +54,7 @@ extern Model_t*  (Models_FindOrAppendModel)(Models_t*,const char*,Geometry_t*,Da
 
 
 
-struct Models_s {             /* Models */
+struct Models_t {             /* Models */
   unsigned int maxn_model ;   /* Maximun nb of models */
   unsigned int n_model ;      /* Nb of models */
   Model_t* model ;            /* Point to the first model */

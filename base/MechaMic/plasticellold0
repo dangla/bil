@@ -1,0 +1,123 @@
+Geometry
+2 plan
+
+
+Mesh
+composite0.msh
+
+
+Periodicities
+4
+MasterRegion = 105 SlaveRegion = 13  PeriodVector = 0.04 0 0
+MasterRegion = 114 SlaveRegion = 125 PeriodVector = 0.04 0 0
+MasterRegion = 115 SlaveRegion = 104 PeriodVector = 0 0.04 0
+MasterRegion = 124 SlaveRegion = 14  PeriodVector = 0 0.04 0
+
+
+Material #1            # matrix
+Model = Plastold
+gravity = 0       # gravity
+rho_s = 0         # mass density of the dry material
+sig0_11 = 0       # initial stress 11
+sig0_22 = 0       # initial stress 22
+sig0_33 = 0       # initial stress 33
+young = 2713e6    # Young's modulus
+poisson = 0.339   # Poisson's ratio
+cohesion = 1.5e+06
+friction = 25
+dilatancy = 25
+macro-gradient_12 = 1.e-3
+macro-gradient_21 = 1.e-3
+macro-gradient_22 = 1.e-3
+macro-fctindex_12 = 1
+macro-fctindex_21 = 1
+macro-fctindex_22 = 2
+
+
+Material #2            # inclusion
+Model = Elast
+gravity = 0       # gravity
+rho_s = 0         # mass density of the dry material
+sig0_11 = 0       # initial stress 11
+sig0_22 = 0       # initial stress 22
+sig0_33 = 0       # initial stress 33
+young = 5000.e6   # Young's modulus
+poisson = 0.49    # Poisson's ratio
+macro-gradient_12 = 1.e-3
+macro-gradient_21 = 1.e-3
+macro-gradient_22 = 1.e-3
+macro-fctindex_12 = 1
+macro-fctindex_21 = 1
+macro-fctindex_22 = 2
+
+
+Fields
+0
+
+
+Initialization
+16
+Region = 100  Unknown = u_1  Field = 0
+Region = 101  Unknown = u_1  Field = 0
+Region = 102  Unknown = u_1  Field = 0
+Region = 108  Unknown = u_1  Field = 0
+Region = 112  Unknown = u_1  Field = 0
+Region = 118  Unknown = u_1  Field = 0
+Region = 122  Unknown = u_1  Field = 0
+Region = 128  Unknown = u_1  Field = 0
+Region = 100  Unknown = u_2  Field = 0
+Region = 101  Unknown = u_2  Field = 0
+Region = 102  Unknown = u_2  Field = 0
+Region = 108  Unknown = u_2  Field = 0
+Region = 112  Unknown = u_2  Field = 0
+Region = 118  Unknown = u_2  Field = 0
+Region = 122  Unknown = u_2  Field = 0
+Region = 128  Unknown = u_2  Field = 0
+
+
+Functions
+9
+N = 4 F(0) = 0  F(3) = 3  F(5) = 3   F(7) = 5
+N = 4 F(0) = 0  F(3) = 0  F(5) = 2   F(7) = 2
+N = 2 F(0) = 0  F(3) = 0
+N = 2 F(0) = 0  F(3) = 0
+N = 2 F(0) = 0  F(3) = 0
+N = 2 F(0) = 0  F(3) = 0
+N = 2 F(0) = 0  F(3) = 0
+N = 2 F(0) = 0  F(3) = 0
+N = 2 F(0) = 0  F(3) = 0
+
+
+Boundary Conditions
+2
+Region = 1 Unknown = u_1 Field = 0 Function = 0
+Region = 1 Unknown = u_2 Field = 0 Function = 0
+
+
+Loads
+0
+
+
+Points
+0
+
+
+Dates
+6
+0 1 2 3 4 5 6 7
+
+
+Objective Variations
+u_1 = 1.e-4
+u_2 = 1.e-4
+
+
+Iterative Process
+Iterations = 20
+Tolerance = 1.e-4
+Repetition = 0
+
+
+Time Steps
+Dtini = 1.e-2
+Dtmax = 10
