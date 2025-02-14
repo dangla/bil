@@ -1,0 +1,79 @@
+# Drainage d'une colonne de billes
+#
+Geometry
+2 plan
+
+
+Mesh
+columncomposite.msh
+
+
+Material
+Model = Richards
+Gravity = -9.81
+Porosity = 0.38
+LiquidMassDensity = 1000
+IntrinsicPermeability = 8.9e-12
+LiquidViscosity = 0.001
+ReferenceGasPressure = 0
+Curves = billes
+
+
+Material
+Model = Richards
+Gravity = -9.81
+Porosity = 0.38
+LiquidMassDensity = 1000
+IntrinsicPermeability = 8.9e-13
+LiquidViscosity = 0.001
+ReferenceGasPressure = 0
+Curves = billes
+
+
+Fields
+1
+Value = 0 Gradient = 0 -9810 0 Point = 0 0.2 0
+
+
+
+Initialization
+2
+Region = 100 Unknown = p_l Field = 1 Function = 0
+Region = 101 Unknown = p_l Field = 1 Function = 0
+
+
+Functions
+1
+N = 2 F(0) = 1 F(360) = 0
+
+
+Boundary Conditions
+1
+Region = 11 Unknown = p_l Field = 1 Function = 1
+
+
+Loads
+0
+
+
+Points
+0
+
+
+Dates
+16
+0 200 400 600 800 1000 1200 1400 1600 1800 2000 2200 2400 2600 2800 3000
+
+
+Objective Variations
+p_l = 1.e3
+
+Iterative Process
+Iter = 20
+Tol = 1.e-6
+Recom = 2
+
+
+Time Steps
+Dtini = 1
+Dtmax = 1000 

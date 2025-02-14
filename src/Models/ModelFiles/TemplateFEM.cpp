@@ -40,94 +40,99 @@
  * Uncomment/comment to let only one unknown per equation */
 
 /* Mechanics */
-#define U_dis     U_MECH
+#define U_DISP     U_MECH
 /* Unknown for equation E_MASS1 */
-#define U_unk1    U_MASS1
+#define U_P1       U_MASS1
 /* Unknown for equation E_MASS2 */
-#define U_unk2    U_MASS2
+#define U_P2       U_MASS2
 
 
 
-#include <BaseName_.h>
+#include "BaseName_.h"
+#include "CustomValues.h"
+#include "MaterialPointModel.h"
+
 
 #define ImplicitValues_t BaseName_(ImplicitValues_t)
 #define ExplicitValues_t BaseName_(ExplicitValues_t)
 #define ConstantValues_t BaseName_(ConstantValues_t)
+#define OtherValues_t    BaseName(_OtherValues_t)
 
-/* We define some names for implicit terms */
-#define NbOfImplicitTermsPerNode \
-        CustomValues_SizeOfImplicitValues(Values_t,double)
-#define NVI       NbOfImplicitTermsPerNode
+
+
+
+template<typename T>
+struct ImplicitValues_t ;
+
+template<typename T>
+struct ExplicitValues_t;
+
+template<typename T>
+struct ConstantValues_t;
+
+template<typename T>
+struct OtherValues_t;
+
+
+template<typename T>
+using Values_t = CustomValues_t<T,ImplicitValues_t,ExplicitValues_t,ConstantValues_t> ;
+
+using Values_d = Values_t<double> ;
+
+#define Values_Index(V)  CustomValues_Index(Values_d,V,double)
+
+
+#define MPM_t      BaseName(_MPM_t)
+
+
+
+
+struct MPM_t: public MaterialPointModel_t<Values_d> {
+  MaterialPointModel_SetInputs_t<Values_d> SetInputs;
+  MaterialPointModel_Integrate_t<Values_d> Integrate;
+  MaterialPointModel_Initialize_t<Values_d>  Initialize;
+  MaterialPointModel_SetTangentMatrix_t<Values_d> SetTangentMatrix;
+  MaterialPointModel_SetTransferMatrix_t<Values_d> SetTransferMatrix;
+  MaterialPointModel_SetIndexes_t SetIndexes;
+  MaterialPointModel_SetIncrements_t SetIncrements;
+} ;
+
+
+
+using CI_t = ConstitutiveIntegrator_t<Values_d,MPM_t>;
+
+
+
+
+
 struct ImplicitValues_t {
   double Displacement[3];
   double Strain[9];
-  double U_unk1;
-  double GradU_unk1[3];
-  double U_unk2;
-  double GradU_unk2[3];
-  double Mass_1;
-  double MassFlow_1[3];
-  double Mass_2;
-  double MassFlow_2[3];
+  double Pressure1;
+  double GradPressure1[3];
+  double Pressure2;
+  double GradPressure2[3];
+  double Mass1;
+  double MassFlow1[3];
+  double Mass2;
+  double MassFlow2[3];
   double Stress[9];
   double BodyForce[3];
 } ;
 
 
 
-/* We define some names for explicit terms */
-#define NbOfExplicitTermsPerNode \
-        CustomValues_SizeOfExplicitValues(Values_t,double)
-#define NVE       NbOfExplicitTermsPerNode
 struct ExplicitValues_t {
-  double Permeability;
-  double ThermalConductivity;
+  double Permeability1;
+  double Permeability2;
 } ;
 
 
 
-/* We define some names for constant terms (v0 must be used as pointer below) */
-#define NbOfConstantTermsPerNode \
-        CustomValues_SizeOfConstantValues(Values_t,double)
-#define NV0 NbOfConstantTermsPerNode
 struct ConstantValues_t {
   double InitialStress[9];
 };
 
-
-
-#include <CustomValues.h>
-
-using Values_t = CustomValues_t<ImplicitValues_t<>,ExplicitValues_t<>,ConstantValues_t<>> ;
-
-
-#include <ConstitutiveIntegrator.h>
-#include <LocalVariables.h>
-
-#define USEFUNCTOR 0
-
-#define SetInputs_t BaseName_(SetInputs_t)
-#define Integrate_t BaseName_(Integrate_t)
-
-#if USEFUNCTOR
-struct SetInputs_t {
-  Values_t* operator()(const LocalVariables_t<Values_t>&,const int&,Values_t&) ;
-} ;
-
-struct Integrate_t {
-  Values_t*  operator()(const Element_t*,const double&,const double&,const Values_t&,Values_t&) ;
-} ;
-
-using CI_t = ConstitutiveIntegrator_t<Values_t,SetInputs_t,Integrate_t>;
-#else
-using SetInputs_t = LocalVariables_SetInputs_t<Values_t> ;
-using Integrate_t = ConstitutiveIntegrator_Integrate_t<Values_t> ;
-using CI_t = ConstitutiveIntegrator_t<Values_t,SetInputs_t*,Integrate_t*>;
-#endif
-
-
-static Integrate_t Integrate;
-static SetInputs_t SetInputs;
 
 
 
@@ -160,9 +165,6 @@ static SetInputs_t SetInputs;
 
 
 
-/* Intern Functions used below */
-static int     ComputeTangentCoefficients(Element_t*,double,double,double*) ;
-static int     ComputeTransferCoefficients(Element_t*,double,double*) ;
 
 #define ComputeTangentStiffnessTensor(...) \
         Plasticity_ComputeTangentStiffnessTensor(plasty,__VA_ARGS__)
@@ -174,6 +176,21 @@ static int     ComputeTransferCoefficients(Element_t*,double,double*) ;
         Plasticity_CopyTangentStiffnessTensor(plasty,__VA_ARGS__)
 
 
+
+
+/* Parameters */
+/* The parameters below are read in the input data file */
+
+#define Parameters_t    BaseName(_Parameters_t)
+
+
+struct Parameters_t {
+  double Coef1;
+  double Coef2;
+  double Coef3;
+};
+
+static Parameters_t  param;
 
 
 /* The parameters below are read in the input data file */
@@ -191,6 +208,7 @@ static Elasticity_t* elasty ;
 static int  pm(const char* s) ;
 int pm(const char* s)
 {
+#define Parameters_Index(V)  CustomValues_Index(Parameters_t,V,double)
   if(strcmp(s,"prop1") == 0)        return (0) ;
   else if(strcmp(s,"prop2") == 0)   return (1) ;
   else if(strcmp(s,"prop3") == 0)   return (2) ;
@@ -201,6 +219,7 @@ int pm(const char* s)
 
      return(3 + 3*i + j) ;
   } else return(-1) ;
+#undef Parameters_Index
 }
 
 
@@ -246,17 +265,17 @@ int SetModelProp(Model_t* model)
   
   /** Names of the main (nodal) unknowns */
   for(i = 0 ; i < dim ; i++) {
-    Model_CopyNameOfUnknown(model,U_dis + i,name_unk[i]) ;
+    Model_CopyNameOfUnknown(model,U_DISP + i,name_unk[i]) ;
   }
 
-#if defined (U_unk1)
-  Model_CopyNameOfUnknown(model,U_unk1,"unk1") ;
+#if defined (U_P1)
+  Model_CopyNameOfUnknown(model,U_P1,"p1") ;
 #else
   #error "Ambiguous or undefined unknown"
 #endif
 
-#if defined (U_unk2)
-  Model_CopyNameOfUnknown(model,U_unk2,"unk2") ;
+#if defined (U_P2)
+  Model_CopyNameOfUnknown(model,U_P2,"p2") ;
 #else
   #error "Ambiguous or undefined unknown"
 #endif
@@ -319,11 +338,14 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) + 1 ;
+  int const nvi = CustomValues_NbOfImplicitValues(Values_d);
+  int const nve = CustomValues_NbOfExplicitValues(Values_d);
+  int const nv0 = CustomValues_NbOfConstantValues(Values_d);
 
   /** Define the length of tables */
-  Element_GetNbOfImplicitTerms(el) = NVI*NbOfIntPoints ;
-  Element_GetNbOfExplicitTerms(el) = NVE*NbOfIntPoints ;
-  Element_GetNbOfConstantTerms(el) = NV0*NbOfIntPoints ;
+  Element_GetNbOfImplicitTerms(el) = nvi*NbOfIntPoints ;
+  Element_GetNbOfExplicitTerms(el) = nve*NbOfIntPoints ;
+  Element_GetNbOfConstantTerms(el) = nv0*NbOfIntPoints ;
   
   /* Skip the rest of code for basic development.
    * For advanced developments find below 
@@ -439,6 +461,9 @@ int  ComputeLoads(Element_t* el,double t,double dt,Load_t* load,double* r)
 
 
 
+
+
+
 int ComputeInitialState(Element_t* el,double t)
 /** Compute the initial state i.e. 
  *  the constant terms,
@@ -448,79 +473,23 @@ int ComputeInitialState(Element_t* el,double t)
  */ 
 {
   double* vi0 = Element_GetImplicitTerm(el) ;
-  double* ve0 = Element_GetExplicitTerm(el) ;
-  double* v0  = Element_GetConstantTerm(el) ;
-  double** u = Element_ComputePointerToCurrentNodalUnknowns(el) ;
-  CI_t ci(el,t,0,u,u,vi0,SetInputs,Integrate) ;
+  double** u  = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  CI_t ci(mpm) ;
   
   /* Usually we have to skip if the element is a submanifold, 
    * e.g. a surface in 3D or a line in 2D */
   if(Element_IsSubmanifold(el)) return(0) ;
+
+    
+  ci.Set(el,t,0,u,vi0,u,vi0) ;
 
   /*
     We load some input data
   */
   GetProperties(el) ;
   
-
-  /* Compute here vi, ve and v0 for each integration points */
-
-  /* Pre-initialization */
-  {
-    DataFile_t* datafile = Element_GetDataFile(el) ;
-    IntFct_t*  intfct = Element_GetIntFct(el) ;
-    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-    int    p ;
-    
-    for(p = 0 ; p < NbOfIntPoints ; p++) {
-      Values_t& val = *ci.SetInputs(p);
-    
-      /* storage in vi */
-      {
-        int    i ;
-      
-        /* How to account for partial initialization? */
-        if(DataFile_ContextIsPartialInitialization(datafile)) {
-          for(i = 0 ; i < 9 ; i++) val.InitialStress[i] = val.Stress[i] ;
-        } else {
-          for(i = 0 ; i < 9 ; i++) val.InitialStress[i] = sig0[i] ;
-        }
-
-        /* ... */
-      }
-
-      /* storages */
-      //ci.StoreImplicitTerms(i,vi0) ;
-      ci.StoreConstantTerms(i,v0) ;
-    }
-  }
-
-
-
-  /* Loop on integration points */
-  {
-    IntFct_t*  intfct = Element_GetIntFct(el) ;
-    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-    int    p ;
-
-    
-    for(p = 0 ; p < NbOfIntPoints ; p++) {
-      Values_t* val = ci.Integrate(p) ;
-      
-      if(!val) return(1);
-      
-      /* storage in vi */
-      ci.StoreImplicitTerms(p,vi0) ;
-
-      /* storage in ve */
-      ci.StoreExplicitTerms(p,ve0) ;
-    }
-  }
-
-  
-  return(0) ;
+  return(ci.ComputeInitialStateByFEM());
 }
-
 
 
 int  ComputeExplicitTerms(Element_t* el,double t)
@@ -529,101 +498,63 @@ int  ComputeExplicitTerms(Element_t* el,double t)
  *  whatever they are, nodal values or implicit terms.
  *  Return 0 if succeeded and -1 if failed */
 {
-  double* ve0 = Element_GetExplicitTerm(el) ;
-  /* If you need the implicit terms, use the previous ones */
-  double* vi0 = Element_GetPreviousImplicitTerm(el) ;
+  double* vi_n = Element_GetPreviousImplicitTerm(el) ;
   /* If you need the nodal values, use the previous ones */
   double** u = Element_ComputePointerToPreviousNodalUnknowns(el) ;
+  CI_t ci(mpm) ;
   
   /* If needed ! */
   if(Element_IsSubmanifold(el)) return(0) ;
+    
+  ci.Set(el,t,0,u,vi_n,u,vi_n) ;
 
   /*
     We load some input data
   */
   GetProperties(el) ;
   
-  
-  /* Compute here ve */
-  /* Loop on integration points */
-  if(NVE) {
-    IntFct_t*  intfct = Element_GetIntFct(el) ;
-    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-    int    p ;
-    
-    CI_t ci(el,t,0,u,u,vi0,SetInputs,Integrate) ;
-    
-    for(p = 0 ; p < NbOfIntPoints ; p++) {
-      Values_t* val = ci.Integrate(p) ;
-      
-      if(!val) return(1);
-    
-      /* storage in ve */
-      ci.StoreExplicitTerms(p,ve0) ;
-    }
-  }
-  
-  return(0) ;
+  return(ci.ComputeExplicitTermsByFEM());
 }
-
 
 
 int  ComputeImplicitTerms(Element_t* el,double t,double dt)
 /** Compute the (current) implicit terms 
  *  Return 0 if succeeded and -1 if failed */
 {
-  double* vi0  = Element_GetCurrentImplicitTerm(el) ;
+  double* vi    = Element_GetCurrentImplicitTerm(el) ;
   double* vi_n  = Element_GetPreviousImplicitTerm(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
+  CI_t ci(mpm) ;
 
+  if(Element_IsSubmanifold(el)) return(0) ;
+    
+  ci.Set(el,t,dt,u_n,vi_n,u,vi) ;
+  
   /*
     We load some input data
   */
   GetProperties(el) ;
   
-  
-  /* Compute here vi (with the help of vi_n if needed) */
-  /* Loop on integration points */
-  {
-    IntFct_t*  intfct = Element_GetIntFct(el) ;
-    int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-    int p ;
-    
-    CI_t ci(el,t,dt,u,u_n,vi_n,SetInputs,Integrate) ;
-    
-    for(p = 0 ; p < NbOfIntPoints ; p++) {
-      Values_t* val = ci.Integrate(p) ;
-      
-      if(!val) return(1);
-      
-      /* storage in vi */
-      ci.StoreImplicitTerms(p,vi0) ;
-    }
-  }
-
-  return(0) ;
+  return(ci.ComputeImplicitTermsByFEM()) ;
 }
-
 
 
 int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 /** Compute the matrix (k) 
  *  Return 0 if succeeded and -1 if failed */
 {
-#define K(i,j)    (k[(i)*ndof + (j)])
-  IntFct_t*  intfct = Element_GetIntFct(el) ;
+  double*  vi   = Element_GetCurrentImplicitTerm(el) ;
+  double*  vi_n = Element_GetPreviousImplicitTerm(el) ;
+  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   int nn = Element_GetNbOfNodes(el) ;
-  int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
+  int dim = Element_GetDimensionOfSpace(el) ;
   int ndof = nn*NEQ ;
-  FEM_t* fem = FEM_GetInstance(el) ;
+  CI_t ci(mpm) ;
 
   /* Initialization */
-  {
-    int    i ;
-    
-    for(i = 0 ; i < ndof*ndof ; i++) k[i] = 0. ;
-  }
+  for(int i = 0 ; i < ndof*ndof ; i++) k[i] = 0. ;
 
 
   /* We skip if the element is a submanifold */
@@ -634,108 +565,24 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     We load some input data
   */
   GetProperties(el) ;
+  
 
-  /* Compute here the matrix K(i,j) */
-  
-  /* Example of a poromechanical problem */
-  
+  ci.Set(el,t,dt,u_n,vi_n,u,vi) ;
+
+
   /*
-  ** Poromechanics matrix
+  ** Poromechanical matrix
   */
   {
-    int m = 2 ; /* Two coupling terms */
-    int n = 81 + m*9 + m*(9 + m) ;
-    double c[IntFct_MaxNbOfIntPoints*n] ;
-    int dec = ComputeTangentCoefficients(el,t,dt,c) ;
-    double* kp = FEM_ComputePoroelasticMatrix(fem,intfct,c,dec,m,E_MECH) ;
-    /* The entry c should be stored as 
-     * (u for displacement, p for unk1, h for unk2)
-     * | Kuu  Kup  Kuh  |
-     * | Kpu  Kpp  Kph  |
-     * | Khu  Khp  Khh  |
-     * i.e. the displacements u are in the positions 0 to dim-1 and
-     * p is in the position dim, h in dim+1
-     */
-    {
-      int i ;
-      
-      for(i = 0 ; i < ndof*ndof ; i++) {
-        k[i] = kp[i] ;
-      }
-    }
-  }
-  
-  
-  /*
-  ** Conduction Matrix
-  */
-  {
-    int m = 2 ;
-    int n = m*m*9 ;
-    double c[IntFct_MaxNbOfIntPoints*n] ;
-    int dec = ComputeTransferCoefficients(el,dt,c) ;
-  
-    /* Conduction Matrix (dW_1/dUnk1) */
-    {
-      double* kc = FEM_ComputeConductionMatrix(fem,intfct,c,dec) ;
-      int    i ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        int    j ;
-      
-        for(j = 0 ; j < nn ; j++) {
-          K(E_MASS1 + i*NEQ,U_unk1 + j*NEQ) += dt*kc[i*nn + j] ;
-        }
-      }
-    }
-  
-    /* Conduction Matrix (dW_1/dUnk2) */
-    {
-      double* kc = FEM_ComputeConductionMatrix(fem,intfct,c+9,dec) ;
-      int    i ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        int    j ;
-      
-        for(j = 0 ; j < nn ; j++) {
-          K(E_MASS1 + i*NEQ,U_unk2 + j*NEQ) += dt*kc[i*nn + j] ;
-        }
-      }
-    }
-  
-    /* Conduction Matrix (dW_2/dUnk1) */
-    {
-      double* kc = FEM_ComputeConductionMatrix(fem,intfct,c+2*9,dec) ;
-      int    i ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        int    j ;
-      
-        for(j = 0 ; j < nn ; j++) {
-          K(E_MASS2 + i*NEQ,U_unk1 + j*NEQ) += dt*kc[i*nn + j] ;
-        }
-      }
-    }
-  
-    /* Conduction Matrix (dW_2/dUnk2) */
-    {
-      double* kc = FEM_ComputeConductionMatrix(fem,intfct,c+3*9,dec) ;
-      int    i ;
-      
-      for(i = 0 ; i < nn ; i++) {
-        int    j ;
-      
-        for(j = 0 ; j < nn ; j++) {
-          K(E_MASS2 + i*NEQ,U_unk2 + j*NEQ) += dt*kc[i*nn + j] ;
-        }
-      }
+    double* kp = ci.ComputePoromechanicalMatrixByFEM(E_MECH);
+
+    for(int i = 0 ; i < ndof*ndof ; i++) {
+      k[i] = kp[i] ;
     }
   }
   
   return(0) ;
-#undef K
 }
-
 
 
 int  ComputeResidu(Element_t* el,double t,double dt,double* r)
@@ -743,124 +590,68 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
  *  Return 0 if succeeded and -1 if failed */
 {
 #define R(n,i)    (r[(n)*NEQ + (i)])
-  double* vi = Element_GetCurrentImplicitTerm(el) ;
-  double* vi_n = Element_GetPreviousImplicitTerm(el) ;
+  double* vi1   = Element_GetCurrentImplicitTerm(el) ;
+  double* vi1_n = Element_GetPreviousImplicitTerm(el) ;
+  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   int nn = Element_GetNbOfNodes(el) ;
   int dim = Element_GetDimensionOfSpace(el) ;
-  IntFct_t*  intfct = Element_GetIntFct(el) ;
-  int np = IntFct_GetNbOfPoints(intfct) ;
   int ndof = nn*NEQ ;
-  FEM_t* fem = FEM_GetInstance(el) ;
-  using TI = CustomValues_TypeOfImplicitValues(Values_t);
-  TI* val   = (TI*) vi ;
-  TI* val_n = (TI*) vi_n ;
-  
+  CI_t ci(mpm) ;
   
   /* Initialization */
-  {
-    double zero = 0. ;
-    int i ;
-    
-    for(i = 0 ; i < ndof ; i++) r[i] = zero ;
+  {    
+    for(int i = 0 ; i < ndof ; i++) r[i] = 0. ;
   }
 
   if(Element_IsSubmanifold(el)) return(0) ;
+      
+  ci.Set(el,t,dt,u_n,vi1_n,u,vi1) ;
   
 
   /* Compute here the residu R(n,i) */
   
 
-
   /* 1. Mechanics */
-  
-  /* 1.1 Stresses */
+  if(Element_EquationIsActive(el,E_MECH)) 
   {
-    double* rw = FEM_ComputeStrainWorkResidu(fem,intfct,val[0].Stress,NVI) ;
-    int i ;
+    int istress = Values_Index(Stress[0]);
+    int ibforce = Values_Index(BodyForce[0]);
+    double* rw = ci.ComputeMechanicalEquilibiumResiduByFEM(istress,ibforce);
     
-    for(i = 0 ; i < nn ; i++) {
-      int j ;
-      
-      for(j = 0 ; j < dim ; j++) R(i,E_MECH + j) -= rw[i*dim + j] ;
-    }
-    
-  }
-  
-  /* 1.2 Body forces */
-  {
-    double* rbf = FEM_ComputeBodyForceResidu(fem,intfct,val[0].BodyForce + dim - 1,NVI) ;
-    int i ;
-    
-    for(i = 0 ; i < nn ; i++) {
-      R(i,E_MECH + dim - 1) -= -rbf[i] ;
-    }
-    
-  }
-  
-  
-  
-  /* 2. First conservation equation */
-  
-  /* 2.1 Accumulation Terms */
-  {
-    double* vi = vi0 ;
-    double* vi_n = Element_GetPreviousImplicitTerm(el) ;
-    double g1[IntFct_MaxNbOfIntPoints] ;
-    int i ;
-    
-    for(i = 0 ; i < np ; i++) {
-      g1[i] = val[i].Mass_1 - val_n[i].Mass_1 ;
-    }
-    
-    {
-      double* ra = FEM_ComputeBodyForceResidu(fem,intfct,g1,1) ;
-    
-      for(i = 0 ; i < nn ; i++) R(i,E_MASS1) -= ra[i] ;
+    for(int i = 0 ; i < nn ; i++) {      
+      for(int j = 0 ; j < dim ; j++) R(i,E_MECH + j) -= rw[i*dim + j] ;
     }
   }
   
-  /* 2.2 Transport Terms */
-  {
-    double* vi = vi0 ;
-    double* rf = FEM_ComputeFluxResidu(fem,intfct,val[0].MassFlow_1,NVI) ;
-    int i ;
+  
+  
+  /* 2. Conservation of mass 1 */
+  if(Element_EquationIsActive(el,E_MASS1))
+  {  
+    int imass = Values_Index(Mass1);
+    int iflow = Values_Index(MassFlow1[0]);
+    double* ra =  ci.ComputeMassConservationResiduByFEM(imass,iflow);
     
-    for(i = 0 ; i < nn ; i++) R(i,E_MASS1) -= -dt*rf[i] ;
+    for(int i = 0 ; i < nn ; i++) R(i,E_MASS1) -= ra[i] ;
   }
   
   
   
-  /* 3. Second conservation equation */
-  
-  /* 3.1 Accumulation Terms */
-  {
+  /* 3. Conservation of mass 2 */
+  if(Element_EquationIsActive(el,E_SALT))
+  {  
+    int imass = Values_Index(Mass2);
+    int iflow = Values_Index(MassFlow2[0]);
+    double* ra =  ci.ComputeMassConservationResiduByFEM(imass,iflow);
     
-    double g1[IntFct_MaxNbOfIntPoints] ;
-    int i ;
-    
-    for(i = 0 ; i < np ; i++) {
-      g1[i] = val[i].Mass_2 - val_n[i].Mass_2 ;
-    }
-    
-    {
-      double* ra = FEM_ComputeBodyForceResidu(fem,intfct,g1,1) ;
-    
-      for(i = 0 ; i < nn ; i++) R(i,E_MASS2) -= ra[i] ;
-    }
-  }
-  
-  /* 3.2 Transport Terms */
-  {
-    double* vi = vi0 ;
-    double* rf = FEM_ComputeFluxResidu(fem,intfct,val[0].MassFlow_2,NVI) ;
-    int i ;
-    
-    for(i = 0 ; i < nn ; i++) R(i,E_MASS2) -= -dt*rf[i] ;
+    for(int i = 0 ; i < nn ; i++) R(i,E_MASS2) -= ra[i] ;
   }
   
   return(0) ;
 #undef R
 }
+
 
 
 
@@ -870,10 +661,11 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 {
   int NbOfOutputs  = 5 ;
   double** u  = Element_ComputePointerToNodalUnknowns(el) ;
-  double *vi0 = Element_GetImplicitTerm(el) ;
-  double *ve0 = Element_GetExplicitTerm(el) ;
-  IntFct_t  *intfct = Element_GetIntFct(el) ;
+  double* vi = Element_GetImplicitTerm(el) ;
+  double* ve = Element_GetExplicitTerm(el) ;
+  IntFct_t* intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
+  CI_t ci(mpm) ;
   
   /* initialization */
   {
@@ -883,6 +675,9 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
       Result_SetValuesToZero(r + i) ;
     }
   }
+
+  
+  ci.Set(el,t,0,u,vi,u,vi) ;
   
   {
     int dim = Element_GetDimensionOfSpace(el) ;
@@ -890,31 +685,25 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     /* Interpolation functions at s */
     double* a = Element_ComputeCoordinateInReferenceFrame(el,s) ;
     int p = IntFct_ComputeFunctionIndexAtPointOfReferenceFrame(intfct,a) ;
-    /* Variables */
-    Values_t val = ci.Integrate(p) ;
-    
-    /* Extract some values at p from val */
-    //double x = val[p].SomeQuantity
-    
+    /* Pressure */
+    double p1 = Element_ComputeUnknown(el,u,intfct,p,U_P1) ;
+    /* Displacement */
+    double* dis = Element_ComputeDisplacementVector(el,u,intfct,p,U_DISP) ;
     /* Other quantities */
     double scalar    = 1 ;
     double vector[3] = {1,2,3} ;
     double tensor[9] = {11,12,13,21,22,23,31,32,33} ;
+    CustomValues_t<double,ImplicitValues_t>* vali = (CustomValues_t<double,ImplicitValues_t>*) vi ;
+    CustomValues_t<double,ExplicitValues_t>* vale = (CustomValues_t<double,ExplicitValues_t>*) ve ;
     
-    /* Average some quantities over the element from vi0 */
-    //
-    //double x_av = 0;
+    /* Average some quantities over the element from vi and ve */
+    double x_av = 0;
     for(int i = 0 ; i < np ; i++) {
-      double * vi = vi0 + i*NVI ;
-      double * ve = ve0 + i*NVE ;
-      int j ;
-      
-      x_av += val.SomeOtherQuantity ;
+      x_av += vali[i].SomeOtherQuantity/np ;
     }
     
     i = 0  ;
-    Result_Store(r + i++,&unk1,"Unknown 1",1) ;
-    Result_Store(r + i++,&unk2,"Unknown 2",1) ;
+    Result_Store(r + i++,&p1,"Pressure1",1) ;
     
     Result_Store(r + i++,&scalar,"NameOfView_x",1) ; /* scalar */
     Result_Store(r + i++,vector ,"NameOfView_v",3) ; /* vector */
@@ -930,367 +719,250 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 
 
 
-int ComputeTangentCoefficients(Element_t* el,double t,double dt,double* c)
-/*
-**  Tangent matrix (c), return the shift (dec).
-*/
-{
-#define T4(a,i,j,k,l)  ((a)[(((i)*3+(j))*3+(k))*3+(l)])
-#define T2(a,i,j)      ((a)[(i)*3+(j)])
-#define C1(i,j,k,l)    T4(c1,i,j,k,l)
-#define B1(i,j)        T2(c1,i,j)
-  double*  vi0   = Element_GetCurrentImplicitTerm(el) ;
-  double*  vi0_n = Element_GetPreviousImplicitTerm(el) ;
-//  double*  ve0  = Element_GetExplicitTerm(el) ;
-  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
-  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  int dim = Element_GetDimensionOfSpace(el) ;
-  double dui[NEQ] ;
-  int m = 2 ;
-  int dec = 81 + m*9 + m*(9 + m) ;
-  
-  
-  if(Element_IsSubmanifold(el)) return(0) ;
-  
-  
-  {
-    ObVal_t* obval = Element_GetObjectiveValue(el) ;
-    int i ;
-    
-    for(i = 0 ; i < NEQ ; i++) {
-      dui[i] =  1.e-2*ObVal_GetValue(obval + i) ;
-    }
-  }
 
-
-  {
-    IntFct_t*  intfct = Element_GetIntFct(el) ;
-    int np = IntFct_GetNbOfPoints(intfct) ;
-    int    p ;
-    
-    for(p = 0 ; p < np ; p++) {
-      double* vi   = vi0   + p*NVI ;
-      double* vi_n = vi0_n + p*NVI ;
-      /* Variables */
-      double* x = ComputeVariables(el,u,u_n,vi0_n,t,dt,p) ;
-      double* c0 = c + p*dec ;
-
-
-      /* initialization */
-      {
-        int i ;
-      
-        for(i = 0 ; i < dec ; i++) c0[i] = 0. ;
-      }
-      
-      
-      /* The derivative of equations wrt to unknwons */
-      
-      /* Loop on the unknowns */
-    
-
-      /* Derivatives with respect to strains */
-      {
-        double deps = 1.e-6 ;
-        double* dx = ComputeVariableDerivatives(el,t,dt,x,deps,I_EPS) ;
-    
-        /* Mechanics (tangent stiffness matrix) */
-        {
-          double* c1 = c0 ;
-        
-          {
-            double young   = 1.e9 ;
-            double poisson = 0.25 ;
-            double* cel = Elasticity_GetStiffnessTensor(elasty) ;
-          
-            Elasticity_SetParameters(elasty,young,poisson) ;
-            Elasticity_ComputeStiffnessTensor(elasty,cel) ;
-          }
-      
-          {
-              CopyElasticTensor(c1) ;
-          }
-        }
-        
-    
-        /* Coupling matrices */
-        {
-          double* c00 = c0 + 81 + m*9 ;
-    
-          /* assuming to be the same for the derivatives wrt I_EPS+4 and I_EPS+8
-           * and zero for the derivatives w.r.t others */
-          /* Coupling matrix */
-          
-          /* First conservation equation */
-          {
-            double* c1 = c00 ;
-            int i ;
-
-            for(i = 0 ; i < 3 ; i++) B1(i,i) = dx[I_N_1] ;
-          }
-          
-          /* Second conservation equation */
-          {
-            double* c1 = c00 + 9 + m ;
-            int i ;
-
-            for(i = 0 ; i < 3 ; i++) B1(i,i) = dx[I_N_2] ;
-          }
-        }
-      }
-      
-      
-      /* Derivatives with respect to unk1 */
-      {
-        double  dunk1 = dui[U_MASS1] ;
-        double* dx = ComputeVariableDerivatives(el,t,dt,x,dunk1,I_Unk1) ;
-        
-        /* Mechanics: tangent Biot's type coefficient */
-        {
-          double* dsig = dx + I_SIG ;
-          double* c1 = c0 + 81 ;
-          int i ;
-
-          for(i = 0 ; i < 9 ; i++) c1[i] = dsig[i] ;
-        }
-    
-        /* General storage matrix */
-        {
-          double* c00 = c0 + 81 + m*9 + 9 ;
-          
-          /* First conservation equation */
-          {
-            double* c1 = c00 ;
-        
-            c1[0] = dx[I_N_1] ;
-          }
-          
-          /* Second conservation equation */
-          {
-            double* c1 = c00 + 9 + m ;
-        
-            c1[0] = dx[I_N_2] ;
-          }
-        }
-      }
-      
-      
-      /* Derivatives with respect to unk2 */
-      {
-        double  dunk2 = dui[U_MASS2] ;
-        double* dx = ComputeVariableDerivatives(el,t,dt,x,dunk2,I_Unk2) ;
-        
-        /* Mechanics: tangent Biot's type coefficient */
-        {
-          double* dsig = dx + I_SIG ;
-          double* c1 = c0 + 81 + 9 ;
-          int i ;
-
-          for(i = 0 ; i < 9 ; i++) c1[i] = dsig[i] ;
-        }
-    
-        /* General storage matrix */
-        {
-          double* c00 = c0 + 81 + m*9 + 9 + 1 ;
-          
-          /* First conservation equation */
-          {
-            double* c1 = c00 ;
-        
-            c1[0] = dx[I_N_1] ;
-          }
-          
-          /* Second conservation equation */
-          {
-            double* c1 = c00 + 9 + m ;
-        
-            c1[0] = dx[I_N_2] ;
-          }
-        }
-      }
-    }
-  }
-  
-  return(dec) ;
-#undef C1
-#undef B1
-#undef T2
-#undef T4
-}
-
-
-int ComputeTransferCoefficients(Element_t* el,double dt,double* c)
-/*
-**  Conduction matrix (c) and shift (dec)
-*/
-{
-  double* ve = Element_GetExplicitTerm(el) ;
-  IntFct_t  *intfct = Element_GetIntFct(el) ;
-  int np = IntFct_GetNbOfPoints(intfct) ;
-  int    dec = 9 ;
-  int    p ;
-  
-  for(p = 0 ; p < np ; p++ , ve += NVE) {
-    double* c1 = c + p*dec ;
-    int    i ;
-    
-    /* initialisation */
-    for(i = 0 ; i < dec ; i++) c1[i] = 0. ;
-    
-    /* Permeability tensor */
-    c1[0] = K_1 ;
-    c1[4] = K_1 ;
-    c1[8] = K_1 ;
-  }
-  
-  return(dec) ;
-}
-
-
-
-
-
-
-
-
-double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const double t,const double dt,const int p)
-/** This locally defined function compute the intern variables at
- *  the interpolation point p, from the nodal unknowns.
- *  Return a pointer on the locally defined array of the variables. */
+/** Explanation of the parameters common to all functions.
+ *  el    = pointer to element object
+ *  t     = current time
+ *  dt    = time increment (i.e. the previous time is t-dt)
+ *  u     = pointer to pointer to primary nodal unknowns
+ *  p     = p^th interpolation Gauss point of the FE
+ *  val   = custom values at the current time
+ *  val_n = custom values at the previous time (always an input)
+ */
+Values_d* MPM_t::SetInputs(Element_t* el,const double& t,const int& p,double const* const* u,Values_d& val)
+/** On output:
+ *  val is initialized with the primary nodal unknowns (strain,pressure,temperature,etc...)
+ * 
+ *  Return a pointer to val
+ */
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
-  FEM_t*    fem    = FEM_GetInstance(el) ;
-  int dim = Element_GetDimensionOfSpace(el) ; 
-  double** u   = (double**) vu ;
-  double** u_n = (double**) vu_n ;
-  double*  f_n = (double*)  vf_n ;
-  double*  x   = Variable ;
-  double*  x_n = Variable_n ;
+    
+  /* Displacements */
+  {
+    int dim = Element_GetDimensionOfSpace(el) ;
+  
+    for(int i = 0 ; i < dim ; i++) {
+      val.Displacement[i] = Element_ComputeUnknown(el,u,intfct,p,U_MECH + i) ;
+    }
+    
+    for(int i = dim ; i < 3 ; i++) {
+      val.Displacement[i] = 0 ;
+    }
+  }
+    
+  /* Strain */
+  {
+    double* eps =  Element_ComputeLinearStrainTensor(el,u,intfct,p,U_MECH) ;
+    
+    for(int i = 0 ; i < 9 ; i++) {
+      val.Strain[i] = eps[i] ;
+    }
+      
+    Element_FreeBufferFrom(el,eps) ;
+  }
+    
+  /* Pressures */
+  {
+    val.Pressure1 = Element_ComputeUnknown(el,u,intfct,p,U_P1) ;
+    val.Pressure2 = Element_ComputeUnknown(el,u,intfct,p,U_P2) ;
+  }
+  
+  return(&val) ;
+}
 
-  /*
-   * The variables are stored in the array x by using some indexes.
-   * Two sets of indexes are used:
-   * 1. The first set is used for the primary nodal unknowns. The
-   *    notation used for these indexes begins with "U_", e.g. "U_MECH", 
-   *    "U_MASS1", etc.... E.g if displacements, pressure and temperature 
-   *    are the nodal unknowns used in this order at each interpolation
-   *    point then "U_MECH = 0, U_MASS1 = 3, U_MASS2 = 4". 
-   *    They are used to extract the value of the primary unknowns 
-   *    which will be used to compute the secondary variables.
-   * 2. The second set is used for the secondary variables. The 
-   *    notation used for these indexes begins with "I_". These
-   *    secondary variables are stored in the x at these locations.
-   */
-  
-    
-  /* Load the primary variables in x */
-  {
-    int    i ;
-    
-    /* Displacements */
-    for(i = 0 ; i < dim ; i++) {
-      x[I_U + i] = FEM_ComputeUnknown(fem,u,intfct,p,U_MECH + i) ;
-    }
-    
-    for(i = dim ; i < 3 ; i++) {
-      x[I_U + i] = 0 ;
-    }
-    
-    /* Strains */
-    {
-      double* eps =  FEM_ComputeLinearStrainTensor(fem,u,intfct,p,U_MECH) ;
-    
-      for(i = 0 ; i < 9 ; i++) {
-        x[I_EPS + i] = eps[i] ;
-      }
-      
-      FEM_FreeBufferFrom(fem,eps) ;
-    }
-    
-    /* Unknown 1 */
-    x[I_Unk1] = FEM_ComputeUnknown(fem,u,intfct,p,U_MASS1) ;
-    
-    /* Unknown gradient */
-    {
-      double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_MASS1) ;
-    
-      for(i = 0 ; i < 3 ; i++) {
-        x[I_GRD_Unk1 + i] = grd[i] ;
-      }
-      
-      FEM_FreeBufferFrom(fem,grd) ;
-    }
-    
-    /* Unknown 2 */
-    x[I_Unk2] = FEM_ComputeUnknown(fem,u,intfct,p,U_MASS2) ;
-    
-    /* Unknown gradient */
-    {
-      double* grd = FEM_ComputeUnknownGradient(fem,u,intfct,p,U_MASS2) ;
-    
-      for(i = 0 ; i < 3 ; i++) {
-        x[I_GRD_Unk2 + i] = grd[i] ;
-      }
-      
-      FEM_FreeBufferFrom(fem,grd) ;
-    }
-  }
-  
-  
-  /* Needed variables to compute secondary variables */
-  {
-  }
-    
-  ComputeSecondaryVariables(el,t,dt,x_n,x) ;
-  
-  return(x) ;
+Values_d* MPM_t::Initialize(Element_t* el,double const& t,Values_d& val)
+/** On output:
+ *  val = initialize val.
+ * 
+ *  Return a pointer to val.
+ */
+{
+  return(&val);
 }
 
 
-
-void  ComputeSecondaryVariables(Element_t* el,const double t,const double dt,double* x_n,double* x)
-/** Compute the secondary variables from the primary ones. */
+Values_d* MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Values_d const& val_n,Values_t<T>& val)
+/** On output:
+ *  val = update from the integration of the constitutive law from t-dt to t.
+ * 
+ *  Return a pointer to val.
+ **/
 {
-  int dim = Element_GetDimensionOfSpace(el) ;
-  /* Retrieve the primary variables from x */
   /* Strains */
-  double* eps   =  x   + I_EPS ;
-  double* eps_n =  x_n + I_EPS ;
+  double* eps   =  val.Strain ;
+  double* eps_n =  val_n.Strain ;
   /* Stresses */
-  double* sig_n =  x_n + I_SIG ;
+  double* sig_n =  val_n.Stress ;
   /* Pressures */
-  double  unk1   = x[I_Unk1] ;
-  double  unk1_n = x_n[I_Unk1] ;
-  
+  double  p1   = val.Pressure1 ;
+  double  p2   = val.Pressure2 ;  
   
   /* Compute the secondary variables in terms of the primary ones
    * and backup them in x */
   {
   }
+  
+  return(&val) ;
 }
 
-
-double* ComputeVariableDerivatives(Element_t* el,const double t,const double dt,double* x,const double dxi,const int i)
+void MPM_t::SetIndexes(Element_t* el,int* ind)
+/** On ouput:
+ *  ind = a pointer to an array of ncol integers
+ *  ncol = nb of the tangent matrix columns
+ *  
+ *  ind[k] = index of the k^th unknown in the custom values struct
+ */
 {
-  double*  x_n = Variable_n ;
-  double* dx = dVariable ;
-  int j ;
-  
-  /* Primary Variables */
-  for(j = 0 ; j < NbOfVariables ; j++) {
-    dx[j] = x[j] ;
-  }
-  
-  /* We increment the variable as (x + dx) */
-  dx[i] += dxi ;
-  
-  ComputeSecondaryVariables(el,t,dt,x_n,dx) ;
-  
-  /* The numerical derivative as (f(x + dx) - f(x))/dx */
-  for(j = 0 ; j < NbOfVariables ; j++) {
-    dx[j] -= x[j] ;
-    dx[j] /= dxi ;
+}
+
+void MPM_t::SetIncrements(Element_t* el,double* dui)
+/** On ouputs:
+ *  dui = a pointer to an array of ncol doubles
+ *  ncol = nb of the tangent matrix columns
+ *  
+ *  dui[k] = arbitrary small increment of the k^th unknown used for 
+ *           the numerical derivatives (see operator Differentiate)
+ */
+{
+}
+
+int MPM_t::SetTangentMatrix(Element_t* el,double const& dt,int const& p,Values_d const& val,Values_d const& dval,int const& k,double* c)
+/** On input:
+ *  k = the k^th column of the tangent matrix to be filled.
+ *  dval = the derivatives of val wrt the k^th primary unknown
+ * 
+ *  On output:
+ *  c = pointer to the matrix to be partially filled (only the column k).
+ * 
+ *  Return the shift (the size of the matrix: ncols*nrows) if succeeds 
+ *  or < 0 if fails.
+ *  Exemples:
+ *    - for an elastic matrix, shift = 81
+ *    - for a poroelastic matrix, shift = 100
+ */
+{
+  int dim = Element_GetDimensionOfSpace(el) ;
+  int m = 2 ;
+  int dec = (9 + m)*(9 + m) ;
+  double* c0 = c + p*dec ;
+
+  /* initialization */
+  {      
+    for(int i = 0 ; i < dec ; i++) c0[i] = 0. ;
   }
 
-  return(dx) ;
+
+  /* Derivatives with respect to strains */
+  if(k == 0) {
+    /* Mechanics (tangent stiffness matrix) */
+    {
+      double* c1 = c0 ;
+        
+      {
+        double young   = 1.e9 ;
+        double poisson = 0.25 ;
+        double* cel = Elasticity_GetStiffnessTensor(elasty) ;
+          
+        Elasticity_SetParameters(elasty,young,poisson) ;
+        Elasticity_ComputeStiffnessTensor(elasty,cel) ;
+      }
+      
+      {
+          CopyElasticTensor(c1) ;
+      }
+    }
+        
+    
+    /* Coupling matrices */
+    {
+      double* c00 = c0 + 9*(9 + m) ;
+    
+      /* assuming to be the same for the derivatives wrt I_EPS+4 and I_EPS+8
+        * and zero for the derivatives w.r.t others */
+      /* Coupling matrix */
+          
+      /* First conservation equation */
+      {
+        double* c1 = c00 ;
+
+        for(int i = 0 ; i < 3 ; i++) B1(i,i) = dval.Mass1 ;
+      }
+          
+      /* Second conservation equation */
+      {
+        double* c1 = c00 + 9 + m ;
+
+        for(int i = 0 ; i < 3 ; i++) B1(i,i) = dval.Mass2 ;
+      }
+    }
+  }
+      
+      
+  /* Derivatives with respect to unk1 */
+  if(k >= 9) {
+    /* Mechanics: tangent Biot's type coefficient */
+    {
+      double* c1 = c0 + 9*k ;
+
+      for(int i = 0 ; i < 9 ; i++) c1[i] = dval.Stress[i] ;
+    }
+    
+    /* General storage matrix */
+    {
+      double* c00 = c0 + 9*(9 + m) + k ;
+          
+      /* First conservation equation */
+      {
+        double* c1 = c00 ;
+        
+        c1[0] = dval.Mass1 ;
+      }
+          
+      /* Second conservation equation */
+      {
+        double* c1 = c00 + 9 + m ;
+        
+        c1[0] = dval.Mass2 ;
+      }
+    }
+  }
+
+  return(dec) ;
 }
+
+int MPM_t::SetTransferMatrix(Element_t* el,double const& dt,int const& p,Values_d const& val,double* c)
+/** On output:
+ *  c = pointer to the transfer matrix to be filled
+ * 
+ *  Return the shift (the size of the matrix: ncols*nrows)
+ *  Example: if there are ndif diffusion process, shift = 9*ndif*ndif
+ */
+{
+  int dec = 6*6 ;
+  double* c0 = c + p*dec ;
+        
+  /* initialisation */
+  for(int i = 0 ; i < dec ; i++) c0[i] = 0. ;
+  
+  /* Permeability tensor 1 */
+  {
+    double* c1 = c0 ;
+      
+    c1[0] = val.Permeability1 ;
+    c1[4] = c1[0] ;
+    c1[8] = c1[0] ;
+  }
+    
+  /* Permeability tensor 2 */
+  {
+    double* c1 = c0 + 27 ;
+      
+    c1[0] = val.Permeability2 ;
+    c1[4] = c1[0] ;
+    c1[8] = c1[0] ;
+  }
+  
+  return(dec) ;
+}
+

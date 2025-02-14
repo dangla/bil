@@ -7,17 +7,17 @@
 #include "ShapeFct.h"
 #include "IntFct.h"
 
-static void   IntFct_ComputeAtGaussPoints(IntFct_t*,int,int) ;
-static void   IntFct_ComputeAtNodes(IntFct_t*,int,int) ;
-static void   gaussp(int,double*,double*) ;
-static void   hammer(int,double*,double*) ;
-static void   gauss_tetraedre(int,double*,double*) ;
-static void   (IntFct_ComputeIsoShapeFct)(int,int,double*,double*,double*) ;
-static void   IntFct_ComputeAtMidSurfacePoints(IntFct_t*,int,int) ;
-static void   midpoints(double*,double) ;
+static void      (IntFct_ComputeAtGaussPoints)(IntFct_t*,int,int) ;
+static void      (IntFct_ComputeAtNodes)(IntFct_t*,int,int) ;
+static void      (gaussp)(int,double*,double*) ;
+static void      (hammer)(int,double*,double*) ;
+static void      (gauss_tetraedre)(int,double*,double*) ;
+static void      (IntFct_ComputeIsoShapeFct)(int,int,double*,double*,double*) ;
+static void      (IntFct_ComputeAtMidSurfacePoints)(IntFct_t*,int,int) ;
+static void      (midpoints)(double*,double) ;
+static IntFct_t* (IntFct_New)(void);
 
 
-/* Extern functions */
 
 IntFct_t* (IntFct_New)(void)
 {
@@ -51,6 +51,7 @@ IntFct_t* (IntFct_New)(void)
 }
 
 
+/* Extern functions */
 
 IntFct_t* (IntFct_Create)(int nn,int dim,const char* type)
 {

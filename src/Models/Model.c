@@ -215,7 +215,7 @@ Model_t* (Model_Initialize)(Model_t* model,const char* codename,Geometry_t* geom
 {
   int n_models = Models_NbOfModels ;
   const char* modelnames[] = {Models_ListOfNames} ;
-  Model_SetModelProperties_t* xModel_SetModelProp[] = {Models_ListOfSetModelProp} ;
+  Model_SetModelProperties_t* xModel_SetModelProperties[] = {Models_ListOfSetModelProp} ;
   int i = 0 ;
   
   Model_GetGeometry(model) = geom ; /* Important! */
@@ -225,8 +225,8 @@ Model_t* (Model_Initialize)(Model_t* model,const char* codename,Geometry_t* geom
     
   if(i < n_models) {
     Model_CopyCodeNameOfModel(model,modelnames[i]) ;
-    Model_GetSetModelProp(model) = xModel_SetModelProp[i] ;
-    Model_SetModelProp(model) ; /* Call to SetModelProp */
+    Model_GetSetModelProperties(model) = xModel_SetModelProperties[i] ;
+    Model_SetModelProperties(model) ; /* Call to SetModelProperties */
     
     return(model) ;
   } else {

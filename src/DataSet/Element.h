@@ -54,13 +54,15 @@ extern void        (Element_MakeUnknownContinuousAcrossZeroThicknessElement)(Ele
 extern void        (Element_MakeEquationContinuousAcrossZeroThicknessElement)(Element_t const*,const char*);
 extern int         (Element_FindNodeIndex)                         (Element_t const*,const Node_t*) ;
 extern double*     (Element_ComputeCoordinateVector)               (Element_t const*,double*) ;
-extern void        (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t const*) ;extern double      (Element_IntegrateOverElement)                  (Element_t*,IntFct_t*,double*,int);
-extern double*     (Element_ComputeIsoShapeFctInActualSpace)       (Element_t*,double*);extern void        (Element_CheckNumberingOfOverlappingNodes)      (Element_t const*,const int) ;
-extern double      (Element_ComputeUnknown)(Element_t*,double const* const*,IntFct_t*,int,int);
-extern double*     (Element_ComputeDisplacementVector)(Element_t*,double const* const*,IntFct_t*,int,int);
-extern double*     (Element_ComputeUnknownGradient)(Element_t*,double const* const*,IntFct_t*,int,int);
-extern double*     (Element_ComputeLinearStrainTensor)(Element_t*,double const* const*,IntFct_t*,int,int);
-extern double*     (Element_ComputeInternodeDistances)(Element_t*);
+extern void        (Element_CopyCurrentSolutionIntoPreviousSolution)(Element_t const*) ;
+extern double      (Element_IntegrateOverElement)                  (Element_t*,IntFct_t*,double*,int);
+extern double*     (Element_ComputeIsoShapeFctInActualSpace)       (Element_t*,double*);
+extern void        (Element_CheckNumberingOfOverlappingNodes)      (Element_t const*,const int) ;
+extern double      (Element_ComputeUnknown)                        (Element_t*,double const* const*,IntFct_t*,int,int);
+extern double*     (Element_ComputeDisplacementVector)             (Element_t*,double const* const*,IntFct_t*,int,int);
+extern double*     (Element_ComputeUnknownGradient)                (Element_t*,double const* const*,IntFct_t*,int,int);
+extern double*     (Element_ComputeLinearStrainTensor)             (Element_t*,double const* const*,IntFct_t*,int,int);
+extern double*     (Element_ComputeInternodeDistances)             (Element_t*);
 
 
 
@@ -283,8 +285,8 @@ extern double*     (Element_ComputeInternodeDistances)(Element_t*);
 #define Element_FindMaterialGenericData(ELT,T,N) \
         Material_FindGenericData(Element_GetMaterial(ELT),T,N)
 
-#define Element_ComputeMaterialProperties(ELT) \
-        Model_GetComputeMaterialProperties(Element_GetModel(ELT))(ELT)
+#define Element_ComputeMaterialProperties(ELT,...) \
+        Model_GetComputeMaterialProperties(Element_GetModel(ELT))(ELT,__VA_ARGS__)
 
 
 

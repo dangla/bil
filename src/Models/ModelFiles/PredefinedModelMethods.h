@@ -5,39 +5,39 @@
 #include "Utils.h"
 
 #define ComputeInitialState(...) \
-        Utils_CAT_NARG(ComputeInitialState_,__VA_ARGS__)(__VA_ARGS__)
+        Utils_CAT_NARG(ComputeInitialState,__VA_ARGS__)(__VA_ARGS__)
         
-#define ComputeInitialState_1(A) \
-        ComputeInitialState_2(A,double t)
-
-#define ComputeInitialState_2 \
-        ComputeInitialState_
+#define ComputeInitialState1(A) \
+        ComputeInitialState2(A,double t)
         
 
 #include "IntFcts.h"
 #include "ShapeFcts.h"
 
 #define DefineElementProp(...) \
-        Utils_CAT_NARG(DefineElementProp_,__VA_ARGS__)(__VA_ARGS__)
+        Utils_CAT_NARG(DefineElementProp,__VA_ARGS__)(__VA_ARGS__)
         
-#define DefineElementProp_1(A) \
-        DefineElementProp_3(A,IntFcts_t* intfcts,ShapeFcts_t* shapefcts)
+#define DefineElementProp1(A) \
+        DefineElementProp3(A,IntFcts_t* intfcts,ShapeFcts_t* shapefcts)
         
-#define DefineElementProp_2(A,B) \
-        DefineElementProp_3(A,B,ShapeFcts_t* shapefcts)
+#define DefineElementProp2(A,B) \
+        DefineElementProp3(A,B,ShapeFcts_t* shapefcts)
 
-#define DefineElementProp_3 \
-        DefineElementProp_
-        
+
+#define PrintModelProp(...) \
+        Utils_CAT_NARG(PrintModelProp,__VA_ARGS__)(__VA_ARGS__)
+
+#define PrintModelProp1(A) \
+        PrintModelProp2(A,FILE* NULL)
 
 
 #include "Model.h"
 
 static Model_SetModelProperties_t       SetModelProp ;
 static Model_ReadMaterialProperties_t   ReadMatProp ;
-static Model_PrintModelProperties_t     PrintModelProp ;
-static Model_DefineElementProperties_t  DefineElementProp_ ;
-static Model_ComputeInitialState_t      ComputeInitialState_ ;
+static Model_PrintModelProperties_t     PrintModelProp2 ;
+static Model_DefineElementProperties_t  DefineElementProp3 ;
+static Model_ComputeInitialState_t      ComputeInitialState2 ;
 static Model_ComputeExplicitTerms_t     ComputeExplicitTerms ;
 static Model_ComputeImplicitTerms_t     ComputeImplicitTerms ;
 static Model_ComputeLoads_t             ComputeLoads ;
@@ -54,11 +54,11 @@ extern Model_SetModelProperties_t BaseName_SetModelProp ;
 
 int BaseName_SetModelProp(Model_t* model)
 {
-  Model_GetSetModelProp(model) = &SetModelProp ;
+  Model_GetSetModelProperties(model) = &SetModelProp ;
   Model_GetReadMaterialProperties(model) = &ReadMatProp ;
-  Model_GetPrintModelProp(model) = &PrintModelProp ;
-  Model_GetDefineElementProperties(model) = &DefineElementProp_ ;
-  Model_GetComputeInitialState(model) = &ComputeInitialState_ ;
+  Model_GetPrintModelProperties(model) = &PrintModelProp2 ;
+  Model_GetDefineElementProperties(model) = &DefineElementProp3 ;
+  Model_GetComputeInitialState(model) = &ComputeInitialState2 ;
   Model_GetComputeExplicitTerms(model) = &ComputeExplicitTerms ;
   Model_GetComputeImplicitTerms(model) = &ComputeImplicitTerms ;
   Model_GetComputeLoads(model) = &ComputeLoads ;

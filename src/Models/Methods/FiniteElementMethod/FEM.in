@@ -956,7 +956,7 @@ _INLINE_ double* (FEM_ComputeConductionMatrix)(FEM_t* fem,IntFct_t* fi,const dou
   
   for(int idif = 0 ; idif < ndif ; idif++) {
     for(int jdif = 0 ; jdif < ndif ; jdif++) {
-      double* cij = c + 9*(idif*ndif + jdif);
+      double const* cij = c + 9*(idif*ndif + jdif);
       double* kij = FEM_ComputeConductionMatrix(fem,fi,cij,dec);
 
       for(int i = 0 ; i < nn ; i++) {      
@@ -2779,9 +2779,7 @@ _INLINE_ double* (FEM_ComputeLinearStrainTensor)(FEM_t* fem,double const* const*
       Message_FatalError("FEM_ComputeLinearStrainTensor: dim_h <= 0!") ;
     }
       
-    {
-      double* eps = strain ;
-  
+    {  
       /* Linearized strain tensor */
       for(i = 0 ; i < 3 ; i++) {
         int j ;

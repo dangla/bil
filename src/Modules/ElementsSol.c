@@ -123,6 +123,7 @@ void (ElementsSol_AllocateMemoryForConstantTerms)(ElementsSol_t* elementssol)
 
 
 
+#if 0
 void (ElementsSol_Copy)(ElementsSol_t* elementssol_dest,ElementsSol_t* elementssol_src)
 /** Copy the (im/ex)plicit and constant terms 
  *  from elementssol_src to elementssol_dest */
@@ -193,3 +194,22 @@ void (ElementsSol_Copy)(ElementsSol_t* elementssol_dest,ElementsSol_t* elementss
       }
     }
 }
+#else
+void (ElementsSol_Copy)(ElementsSol_t* elementssol_dest,ElementsSol_t* elementssol_src)
+/** Copy the (im/ex)plicit and constant terms 
+ *  from elementssol_src to elementssol_dest */
+{
+  unsigned int nelts = ElementsSol_GetNbOfElements(elementssol_src) ;
+  ElementSol_t* elementsol_s = ElementsSol_GetElementSol(elementssol_src) ;
+  ElementSol_t* elementsol_d = ElementsSol_GetElementSol(elementssol_dest) ;
+  
+  ElementsSol_GetNbOfElements(elementssol_dest) = nelts ;
+
+  for(unsigned int ie = 0 ; ie < nelts ; ie++) {
+    ElementSol_t* elementsoli_s = elementsol_s + ie ;
+    ElementSol_t* elementsoli_d = elementsol_d + ie ;
+        
+    ElementSol_Copy(elementsoli_d,elementsoli_s);
+  }
+}
+#endif

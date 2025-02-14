@@ -1,0 +1,73 @@
+Geometry
+2 plan
+
+
+Mesh
+square.msh
+
+
+Periodicities
+2
+MasterRegion = 14 SlaveRegion = 12  PeriodVector = 3 0 0
+MasterRegion = 11 SlaveRegion = 13  PeriodVector = 0 3 0
+
+
+Material # matrix
+Model = M10
+gravite = 0
+phi = 0
+rho_l = 1000
+k_int = 1 #8.9e-12
+mu_l = 0.001
+p_g = 0
+Curves = sat
+macro-gradient_1 = 1.e6
+macro-fctindex_1 = 1
+
+
+Fields
+0
+
+
+Initialization
+0
+
+
+Functions
+1
+N = 2 F(0) = 0 F(5) = 5
+
+
+Boundary Conditions
+0
+
+
+
+
+Loads
+0
+
+
+Points
+0
+
+
+Dates
+2
+0 1.e1
+
+
+Objective Variations
+p_l = 1.e3
+
+
+
+Iterative Process
+Iterations = 4
+Tolerance = 1.e-4
+Repetition = 0
+
+
+Time Steps
+Dtini = 1.e10
+Dtmax = 1.e99

@@ -55,7 +55,7 @@ typedef int    (Model_ComputeOutputs_t)(Element_t*,double,double*,Result_t*) ;
 
 typedef int    (Model_ReadMaterialProperties_t)(Material_t*,DataFile_t*) ;
 
-typedef void   (Model_ComputeMaterialProperties_t)(Element_t*) ;
+typedef void   (Model_ComputeMaterialProperties_t)(Element_t*,double) ;
 
 
 
@@ -97,9 +97,9 @@ extern void      (Model_Scan)(Model_t*,DataFile_t*,Geometry_t*) ;
 #define Model_GetViews(MOD)                ((MOD)->views)
 
 
-#define Model_GetSetModelProp(MOD)            ((MOD)->setmodelprop)
+#define Model_GetSetModelProperties(MOD)      ((MOD)->setmodelprop)
 #define Model_GetReadMaterialProperties(MOD)  ((MOD)->readmatprop)
-#define Model_GetPrintModelProp(MOD)          ((MOD)->printmodelprop)
+#define Model_GetPrintModelProperties(MOD)    ((MOD)->printmodelprop)
 #define Model_GetDefineElementProperties(MOD) ((MOD)->defineelementprop)
 #define Model_GetComputeInitialState(MOD)     ((MOD)->computeinitialstate)
 #define Model_GetComputeExplicitTerms(MOD)    ((MOD)->computeexplicitterms)
@@ -136,17 +136,17 @@ extern void      (Model_Scan)(Model_t*,DataFile_t*,Geometry_t*) ;
 
 
 /* Short hands */
-#define Model_SetModelProp(MOD) \
+#define Model_SetModelProperties(MOD) \
         do {\
-          if(Model_GetSetModelProp(MOD)) {\
-            Model_GetSetModelProp(MOD)(MOD);\
+          if(Model_GetSetModelProperties(MOD)) {\
+            Model_GetSetModelProperties(MOD)(MOD);\
           }\
         } while(0)
 
 #define Model_PrintModelProp(MOD,file) \
         do {\
-          if(Model_GetPrintModelProp(MOD)) {\
-            Model_GetPrintModelProp(MOD)(MOD,file);\
+          if(Model_GetPrintModelProperties(MOD)) {\
+            Model_GetPrintModelProperties(MOD)(MOD,file);\
           }\
         } while(0)
 
@@ -156,9 +156,9 @@ extern void      (Model_Scan)(Model_t*,DataFile_t*,Geometry_t*) ;
 
 
 struct Model_t {              /* model */
-  Model_SetModelProperties_t*             setmodelprop ;
+  Model_SetModelProperties_t*       setmodelprop ;
   Model_ReadMaterialProperties_t*   readmatprop ;
-  Model_PrintModelProperties_t*           printmodelprop ;
+  Model_PrintModelProperties_t*     printmodelprop ;
   Model_DefineElementProperties_t*  defineelementprop ;
   Model_ComputeInitialState_t*      computeinitialstate ;
   Model_ComputeExplicitTerms_t*     computeexplicitterms ;

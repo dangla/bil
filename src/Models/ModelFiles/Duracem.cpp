@@ -296,6 +296,10 @@ enum {
 
 
 #include "BaseName.h"
+#include "CustomValues.h"
+#include "MaterialPointModel.h"
+
+
 #define ImplicitValues_t BaseName(_ImplicitValues_t)
 #define ExplicitValues_t BaseName(_ExplicitValues_t)
 #define ConstantValues_t BaseName(_ConstantValues_t)
@@ -316,7 +320,6 @@ struct OtherValues_t;
 
 
 
-#include "CustomValues.h"
 template<typename T>
 using Values_t = CustomValues_t<T,ImplicitValues_t,ExplicitValues_t,ConstantValues_t,OtherValues_t> ;
 
@@ -325,23 +328,17 @@ using Values_d = Values_t<double> ;
 #define Values_Index(V)  CustomValues_Index(Values_t,V)
 
 
-#include "MaterialPointModel.h"
 #define MPM_t      BaseName(_MPM_t)
 
-struct MPM_t: public MaterialPointModel_t<Values_d> {
-  MaterialPointModel_SetInputs_t<Values_d> SetInputs;
-  MaterialPointModel_Integrate_t<Values_d> Integrate;
-  MaterialPointModel_Initialize_t<Values_d> Initialize;
-  MaterialPointModel_SetTangentMatrix_t<Values_d> SetTangentMatrix;
-  MaterialPointModel_SetFluxes_t<Values_d> SetFluxes;
+struct MPM_t: public MaterialPointModel_t<Values_t> {
+  MaterialPointModel_SetInputs_t<Values_t> SetInputs;
+  MaterialPointModel_Integrate_t<Values_t> Integrate;
+  MaterialPointModel_Initialize_t<Values_t> Initialize;
+  MaterialPointModel_SetTangentMatrix_t<Values_t> SetTangentMatrix;
+  MaterialPointModel_SetFluxes_t<Values_t> SetFluxes;
   MaterialPointModel_SetIndexes_t SetIndexes;
   MaterialPointModel_SetIncrements_t SetIncrements;
 } ;
-
-
-
-#include "ConstitutiveIntegrator.h"
-using CI_t = ConstitutiveIntegrator_t<Values_d>;
 
 
 template<typename T = double>
@@ -437,11 +434,6 @@ struct ConstantValues_t {
   T InitialVolume_solidtotal;
 };
 
-static MPM_t mpm1;
-//static MPM_t* mpm = (MPM_t*) &mpm1;
-static MaterialPointModel_t<Values_d>* mpm = &mpm1;
-
-static CI_t ci(mpm) ;
 
 
 
@@ -713,7 +705,7 @@ static CI_t ci(mpm) ;
 
 
 static int     pm(const char* s) ;
-static void    GetProperties(Element_t*) ;
+static void    GetProperties(Element_t*,double) ;
 
 static double  dn1_caoh2sdt(double const,double const) ;
 static double  CHSolidContent_kin1(double const,double const,double const) ;
@@ -839,7 +831,7 @@ int pm(const char* s)
 }
 
 
-void GetProperties(Element_t* el)
+void GetProperties(Element_t* el,double t)
 {
 /* Access to Properties */
 #define GetProperty(a)  (Element_GetProperty(el)[pm(a)])
@@ -1173,15 +1165,7 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
 {
   int nn = Element_GetNbOfNodes(el) ;
   
-  #define NVI ((int) sizeof(ImplicitValues_t<char>))
-  #define NVE ((int) sizeof(ExplicitValues_t<char>))
-  #define NVC ((int) sizeof(ConstantValues_t<char>))
-  Element_GetNbOfImplicitTerms(el) = NVI*nn ;
-  Element_GetNbOfExplicitTerms(el) = NVE*nn ;
-  Element_GetNbOfConstantTerms(el) = NVC*nn ;
-  #undef NVC
-  #undef NVE
-  #undef NVI
+  MaterialPointModel_DefineNbOfInternalValues(MPM_t,el,nn);
   
   #if 0
   {
@@ -1215,21 +1199,15 @@ int  ComputeLoads(Element_t* el,double t,double dt,Load_t* cg,double* r)
 
 int ComputeInitialState(Element_t* el)
 {
-  double* f  = Element_GetImplicitTerm(el) ;
   double** u = Element_ComputePointerToNodalUnknowns(el) ;
-  
-  ci.Set(el,0,0,u,f,u,f) ;
-  
-  Element_ComputeMaterialProperties(el) ;
-  
   
   /* Modifying the nodal unknowns */
   {
     int nn = Element_GetNbOfNodes(el) ;
-    
-    for(int i = 0 ; i < nn ; i++) {
-      Values_d& val = *ci.InitializeValues(i);
 
+    for(int i = 0 ; i < nn ; i++) {
+      Values_d val = MaterialPointModel_InitializeValues(MPM_t,el,0,i);
+      
       #ifdef U_LogC_Na
         LogC_Na(i)  = val.U_sodium ;
       #else
@@ -1254,74 +1232,44 @@ int ComputeInitialState(Element_t* el)
     }
   }
   
+  {
+    int i = MaterialPointModel_ComputeInitialStateByFVM(MPM_t,el,0);
   
-  return(ci.ComputeInitialStateByFVM());
+    return(i);
+  }
 }
 
 
 
 int  ComputeExplicitTerms(Element_t* el,double t)
 {
-  double*  f = Element_GetPreviousImplicitTerm(el) ;
-  double** u = Element_ComputePointerToPreviousNodalUnknowns(el) ;
+  int i = MaterialPointModel_ComputeExplicitTermsByFVM(MPM_t,el,t);
   
-  ci.Set(el,t,0,u,f,u,f) ;
-  
-  if(Element_IsSubmanifold(el)) return(0) ;
-  
-  Element_ComputeMaterialProperties(el) ;
-  
-  return(ci.ComputeExplicitTermsByFVM()) ;
+  return(i);
 }
 
 
 
 int  ComputeImplicitTerms(Element_t* el,double t,double dt)
 {
-  double* f   = Element_GetCurrentImplicitTerm(el) ;
-  double* f_n = Element_GetPreviousImplicitTerm(el) ;
-  double** u = Element_ComputePointerToCurrentNodalUnknowns(el) ;
-  double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
+  int i = MaterialPointModel_ComputeImplicitTermsByFVM(MPM_t,el,t,dt);
   
-  ci.Set(el,t,dt,u_n,f_n,u,f) ;
-  
-  Element_ComputeMaterialProperties(el) ;
-  
-  return(ci.ComputeImplicitTermsByFVM());
+  return(i);
 }
 
 
 
 int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 {
-#define K(i,j)    (k[(i)*ndof + (j)])
-  double* f   = Element_GetCurrentImplicitTerm(el) ;
-  double* f_n = Element_GetPreviousImplicitTerm(el) ;
-  int nn = Element_GetNbOfNodes(el) ;
-  int ndof = nn*NEQ ;
-  double** u   = Element_ComputePointerToNodalUnknowns(el) ;
-  double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  
-  ci.Set(el,t,dt,u_n,f_n,u,f) ;
-  
-  for(int i = 0 ; i < ndof*ndof ; i++) k[i] = 0. ;
-
-  if(Element_IsSubmanifold(el)) return(0) ;
-  
-  Element_ComputeMaterialProperties(el) ;
-  
-  {
-    double* km = ci.ComputeMassConservationMatrixByFVM();
-      
-    for(int i = 0 ; i < ndof*ndof ; i++) k[i] = km[i] ;
-  }
+  int i = MaterialPointModel_ComputeMassConservationMatrixByFVM(MPM_t,el,t,dt,k);
 
 
 /* On output SetTangentMatrix has computed the derivatives wrt
  * LogC_CO2, LogC_Na, LogC_K, LogC_OH, LogC_Cl
  * (see Integrate and Differentiate). */
 
-#ifdef E_CARBON
+  #define K(i,j)    (k[(i)*ndof + (j)])
+  #ifdef E_CARBON
   #ifdef U_C_CO2
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
@@ -1332,9 +1280,9 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     }
   }
   #endif
-#endif
+  #endif
 
-#ifdef U_C_Na
+  #ifdef U_C_Na
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
     
@@ -1343,9 +1291,9 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
       K(i,E_SODIUM+NEQ) /= Ln10*C_Na(1) ;
     }
   }
-#endif
+  #endif
 
-#ifdef U_C_K
+  #ifdef U_C_K
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
     
@@ -1354,9 +1302,9 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
       K(i,E_POTASSIUM+NEQ) /= Ln10*C_K(1) ;
     }
   }
-#endif
+  #endif
   
-#ifdef E_ENEUTRAL
+  #ifdef E_ENEUTRAL
   #if defined (U_C_OH)
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
@@ -1376,9 +1324,9 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     }
   }
   #endif
-#endif
+  #endif
   
-#ifdef E_CHLORINE
+  #ifdef E_CHLORINE
   #ifdef U_C_Cl
   {
     double** u = Element_ComputePointerToNodalUnknowns(el) ;
@@ -1389,174 +1337,83 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
     }
   }
   #endif
-#endif
+  #endif
+  #undef K
 
 
   return(0) ;
-
-#undef K
 }
 
 
 int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 {
-#define R(n,i)    (r[(n)*NEQ+(i)])
-  double* f   = Element_GetCurrentImplicitTerm(el) ;
-  double* f_n = Element_GetPreviousImplicitTerm(el) ;
-  double** u   = Element_ComputePointerToNodalUnknowns(el) ;
-  double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  int nn = Element_GetNbOfNodes(el) ;
-  FVM_t* fvm = FVM_GetInstance(el) ;
-
-  for(int i = 0 ; i < NEQ*nn ; i++) r[i] = 0 ;
-
-  if(Element_IsSubmanifold(el)) return(0) ;
-  
-  ci.Set(el,t,dt,u_n,f_n,u,f) ;
-
-  
-  /*
-    Conservation of element C: (N_C - N_Cn) + dt * div(W_C) = 0
-  */
+  /* Initialization */
+  {
+    int ndof = Element_GetNbOfDOF(el) ;
+    
+    for(int i = 0 ; i < ndof ; i++) r[i] = 0. ;
+  }
+  /* 1. Conservation of Carbon: (N_C - N_Cn) + dt * div(W_C) = 0 */
   #ifdef E_CARBON
   {
-    int imass = Values_Index(Mole_carbon);
-    int iflow = Values_Index(MolarFlow_carbon[0]);
-    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
-      
-    for(int i = 0 ; i < nn ; i++) {
-      R(i,E_CARBON) -= r1[i] ;
-    }
+    MaterialPointModel_ComputeMassConservationResiduByFVM(MPM_t,el,t,dt,r,E_CARBON,Mole_carbon,MolarFlow_carbon);
   }
   #endif
   
-  /*
-    Conservation of charge: div(W_q) = 0
-  */
+  /* 2. Conservation of charge: div(W_q) = 0 */
   {
-    int iflow = Values_Index(MolarFlow_charge[0]);
-    double* r1 = ci.ComputeFluxResiduByFVM(iflow);
-
-    for(int i = 0 ; i < nn ; i++) {
-      R(i,E_CHARGE) -= r1[i] ;
-    }
+    MaterialPointModel_ComputeFluxResiduByFVM(MPM_t,el,t,dt,r,E_CHARGE,MolarFlow_charge);
   }
   
-  /*
-    Conservation of total mass: (M_tot - M_totn) + dt * div(W_tot) = 0
-  */
+  /* 3. Conservation of total mass: (M_tot - M_totn) + dt * div(W_tot) = 0 */
   {
-    int imass = Values_Index(Mass_total);
-    int iflow = Values_Index(MassFlow_total[0]);
-    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
-      
-    for(int i = 0 ; i < nn ; i++) {
-      R(i,E_MASS) -= r1[i] ;
-    }
+    MaterialPointModel_ComputeMassConservationResiduByFVM(MPM_t,el,t,dt,r,E_MASS,Mass_total,MassFlow_total);
   }
   
-  /*
-    Conservation of element Ca: (N_Ca - N_Can) + dt * div(W_Ca) = 0
-  */
+  /* 4. Conservation of Calcium: (N_Ca - N_Can) + dt * div(W_Ca) = 0 */
   {
-    int imass = Values_Index(Mole_calcium);
-    int iflow = Values_Index(MolarFlow_calcium[0]);
-    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
-      
-    for(int i = 0 ; i < nn ; i++) {
-      R(i,E_CALCIUM) -= r1[i] ;
-    }
+    MaterialPointModel_ComputeMassConservationResiduByFVM(MPM_t,el,t,dt,r,E_CALCIUM,Mole_calcium,MolarFlow_calcium);
   }
   
-  /*
-    Conservation of element Na: (N_Na - N_Nan) + dt * div(W_Na) = 0
-  */
+  /* 5. Conservation of Sodium: (N_Na - N_Nan) + dt * div(W_Na) = 0 */
   {
-    int imass = Values_Index(Mole_sodium);
-    int iflow = Values_Index(MolarFlow_sodium[0]);
-    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
-      
-    for(int i = 0 ; i < nn ; i++) {
-      R(i,E_SODIUM) -= r1[i] ;
-    }
+    MaterialPointModel_ComputeMassConservationResiduByFVM(MPM_t,el,t,dt,r,E_SODIUM,Mole_sodium,MolarFlow_sodium);
   }
   
-  /*
-    Conservation of element K: (N_K - N_Kn) + dt * div(W_K) = 0
-  */
+  /* 6. Conservation of Potassium: (N_K - N_Kn) + dt * div(W_K) = 0 */
   {
-    int imass = Values_Index(Mole_potassium);
-    int iflow = Values_Index(MolarFlow_potassium[0]);
-    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
-      
-    for(int i = 0 ; i < nn ; i++) {
-      R(i,E_POTASSIUM) -= r1[i] ;
-    }
+    MaterialPointModel_ComputeMassConservationResiduByFVM(MPM_t,el,t,dt,r,E_POTASSIUM,Mole_potassium,MolarFlow_potassium);
   }
 
-  /*
-    Conservation of element Si: (N_Si - N_Sin) + dt * div(W_Si) = 0
-  */
+  /* 7. Conservation of Silicon: (N_Si - N_Sin) + dt * div(W_Si) = 0 */
   #ifdef E_SILICON
   {
-    int imass = Values_Index(Mole_silicon);
-    int iflow = Values_Index(MolarFlow_silicon[0]);
-    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
-      
-    for(int i = 0 ; i < nn ; i++) {
-      R(i,E_SILICON) -= r1[i] ;
-    }
+    MaterialPointModel_ComputeMassConservationResiduByFVM(MPM_t,el,t,dt,r,E_SILICON,Mole_silicon,MolarFlow_silicon);
   }
   #endif
 
-  /*
-    Conservation of element Cl: (N_Cl - N_Cln) + dt * div(W_Cl) = 0
-  */
+  /* 8. Conservation of Chlorine: (N_Cl - N_Cln) + dt * div(W_Cl) = 0 */
   #ifdef E_CHLORINE
   {
-    int imass = Values_Index(Mole_chlorine);
-    int iflow = Values_Index(MolarFlow_chlorine[0]);
-    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
-      
-    for(int i = 0 ; i < nn ; i++) {
-      R(i,E_CHLORINE) -= r1[i] ;
-    }
+    MaterialPointModel_ComputeMassConservationResiduByFVM(MPM_t,el,t,dt,r,E_CHLORINE,Mole_chlorine,MolarFlow_chlorine);
   }
   #endif
   
-  
-  /*
-    Electroneutrality
-  */
+  /* 9. Electroneutrality */
   #ifdef E_ENEUTRAL
   {
-    int ibforce = Values_Index(Mole_charge);
-    double* r1 = ci.ComputeBodyForceResiduByFVM(ibforce);
-      
-    for(int i = 0 ; i < nn ; i++) {
-      R(i,E_ENEUTRAL) -= r1[i] ;
-    }
+    MaterialPointModel_ComputeBodyForceResiduByFVM(MPM_t,el,t,dt,r,E_ENEUTRAL,Mole_charge);
   }
   #endif
 
-
-  /*
-    Conservation of dry air mass: (M_Air - M_Airn) + dt * div(W_Air) = 0
-  */
+  /* 10.  Conservation of dry air mass: (M_Air - M_Airn) + dt * div(W_Air) = 0 */
   #ifdef E_AIR
   {
-    int imass = Values_Index(Mass_air);
-    int iflow = Values_Index(MassFlow_air[0]);
-    double* r1 = ci.ComputeMassConservationResiduByFVM(imass,iflow);
-      
-    for(int i = 0 ; i < nn ; i++) {
-      R(i,E_AIR) -= r1[i] ;
-    }
+    MaterialPointModel_ComputeMassConservationResiduByFVM(MPM_t,el,t,dt,r,E_AIR,Mass_air,MassFlow_air);
   }
   #endif
 
   return(0) ;
-#undef R
 }
 
 
@@ -1573,23 +1430,19 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   /*
     Input data
   */
-  Element_ComputeMaterialProperties(el) ;
+  Element_ComputeMaterialProperties(el,t) ;
   
 
   /* Initialization */
   for(int i = 0 ; i < nso ; i++) {
     Result_SetValuesToZero(r + i) ;
   }
-  
-  ci.Set(el,t,0,u,f,u,f) ;
 
   {
     int i;
     int j = FVM_FindLocalCellIndex(fvm,s) ;
-    Values_d& val = *ci.IntegrateValues(j) ;
-      
-    //if(!x) return(0) ;
-    
+    Values_d val = MaterialPointModel_OutputValues(MPM_t,el,t,j) ;
+
     /* Macros */
 #define ptC(CPD)   &(HardenedCementChemistry_GetAqueousConcentrationOf(hcc,CPD))
 #define ptEC(CPD)  &(HardenedCementChemistry_GetElementAqueousConcentrationOf(hcc,CPD))

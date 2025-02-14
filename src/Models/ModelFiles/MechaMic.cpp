@@ -33,7 +33,6 @@
 
 #include "BaseName.h"
 #include "CustomValues.h"
-#include "ConstitutiveIntegrator.h"
 #include "MaterialPointModel.h"
 
 #define ImplicitValues_t BaseName(_ImplicitValues_t)
@@ -56,7 +55,11 @@ struct OtherValues_t;
 
 
 
-using Values_d = CustomValues_t<double,ImplicitValues_t,ExplicitValues_t,ConstantValues_t,OtherValues_t> ;
+template<typename T>
+using Values_t = CustomValues_t<T,ImplicitValues_t,ExplicitValues_t,ConstantValues_t,OtherValues_t> ;
+
+
+using Values_d = Values_t<double> ;
 
 #define Values_Index(V)  CustomValues_Index(Values_d,V,double)
 
@@ -66,17 +69,12 @@ using Values_d = CustomValues_t<double,ImplicitValues_t,ExplicitValues_t,Constan
 
 
 
-struct MPM_t: public MaterialPointModel_t<Values_d> {
-  MaterialPointModel_SetInputs_t<Values_d> SetInputs;
-  MaterialPointModel_Integrate_t<Values_d> Integrate;
-  MaterialPointModel_Initialize_t<Values_d>  Initialize;
-  MaterialPointModel_SetTangentMatrix_t<Values_d> SetTangentMatrix;
+struct MPM_t: public MaterialPointModel_t<Values_t> {
+  MaterialPointModel_SetInputs_t<Values_t> SetInputs;
+  MaterialPointModel_Integrate_t<Values_t> Integrate;
+  MaterialPointModel_Initialize_t<Values_t>  Initialize;
+  MaterialPointModel_SetTangentMatrix_t<Values_t> SetTangentMatrix;
 } ;
-
-
-
-//using CI_t = ConstitutiveIntegrator_t<Values_d,MPM_t>;
-using CI_t = ConstitutiveIntegrator_t<Values_d>;
 
 
 
@@ -88,12 +86,12 @@ struct ImplicitValues_t {
   T Strain[9];
   T Stress[9];
   T BodyForce[3];
-  alignas(T) Solutions_t* Solutions;
+  Solutions_t* Solutions;
 } ;
 
 
 template<typename T = double>
-struct alignas(T) OtherValues_t {
+struct OtherValues_t {
   int InterpolationPointIndex;
 };
 
@@ -112,9 +110,14 @@ struct ConstantValues_t {
   T InitialStress[9];
 };
 
+
+
+using CI_t = ConstitutiveIntegrator_t<MPM_t>;
+//using CI_t = ConstitutiveIntegrator_t<MaterialPointModel_t<Values_t>>;
+
 static MPM_t mpm1;
-//static MPM_t* mpm = &mpm1;
-static MaterialPointModel_t<Values_d>* mpm = &mpm1;
+static MPM_t* mpm = &mpm1;
+//static MaterialPointModel_t<Values_t>* mpm = &mpm1;
 
 static CI_t ci(mpm) ;
 
@@ -122,7 +125,7 @@ static CI_t ci(mpm) ;
 
 /* Functions */
 static Model_ComputePropertyIndex_t  pm ;
-static void   GetProperties(Element_t*) ;
+static void    GetProperties(Element_t*,double) ;
 static double* MacroGradient(Element_t*,double) ;
 static double* MacroStrain(Element_t*,double) ;
 
@@ -222,7 +225,7 @@ double* MacroStrain(Element_t* el,double t)
 
 
 
-void GetProperties(Element_t* el)
+void GetProperties(Element_t* el,double t)
 {
   //gravity = GetProperty("gravity") ;
   //rho_s   = GetProperty("rho_s") ;
@@ -260,7 +263,8 @@ int SetModelProp(Model_t* model)
     Model_CopyNameOfUnknown(model,U_DISP + i,name_unk) ;
   }
   
-  Model_GetComputePropertyIndex(model) = pm ;
+  Model_GetComputePropertyIndex(model) = &pm ;
+  Model_GetComputeMaterialProperties(model) = &GetProperties;
     
   return(0) ;
 }
@@ -393,14 +397,8 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) ;
-  int const nvi = ((int) sizeof(ImplicitValues_t<char>));
-  int const nve = ((int) sizeof(ExplicitValues_t<char>));
-  int const nv0 = ((int) sizeof(ConstantValues_t<char>));
   
-  /** Define the length of tables */
-  Element_GetNbOfImplicitTerms(el) = NbOfIntPoints*nvi ;
-  Element_GetNbOfExplicitTerms(el) = NbOfIntPoints*nve ;
-  Element_GetNbOfConstantTerms(el) = NbOfIntPoints*nv0 ;
+  MaterialPointModel_DefineNbOfInternalValues(MPM_t,el,NbOfIntPoints);
 
 
   /** The solutions from the microstructures */
@@ -445,6 +443,7 @@ int  ComputeLoads(Element_t* el,double t,double dt,Load_t* cg,double* r)
 
 int ComputeInitialState(Element_t* el,double t)
 {
+  #if 1
   double* vim0  = Element_GetImplicitTerm(el) ;
   double** u   = Element_ComputePointerToNodalUnknowns(el) ;
   
@@ -454,7 +453,7 @@ int ComputeInitialState(Element_t* el,double t)
   /*
     Input data
   */
-  GetProperties(el) ;
+  GetProperties(el,t) ;
       
   ci.Set(el,t,0,u,vim0,u,vim0) ;
   
@@ -463,6 +462,11 @@ int ComputeInitialState(Element_t* el,double t)
     
     return(i);
   }
+  #else
+  int i = MaterialPointModel_ComputeInitialStateByFEM(MPM_t,el,t);
+  
+  return(i);
+  #endif
 }
 
 
@@ -476,6 +480,7 @@ int  ComputeExplicitTerms(Element_t* el,double t)
 
 int  ComputeImplicitTerms(Element_t* el,double t,double dt)
 {
+  #if 1
   double* vim0   = Element_GetCurrentImplicitTerm(el) ;
   double* vim_n  = Element_GetPreviousImplicitTerm(el) ;
   double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
@@ -487,7 +492,7 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
   /*
     Input data
   */
-  GetProperties(el) ;
+  GetProperties(el,t) ;
     
   ci.Set(el,t,dt,u_n,vim_n,u,vim0) ;
   
@@ -496,6 +501,11 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
     
     return(i);
   }
+  #else
+  int i = MaterialPointModel_ComputeImplicitTermsByFEM(MPM_t,el,t,dt);
+  
+  return(i);
+  #endif
 }
 
 
@@ -503,7 +513,8 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
 int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 /** Compute the matrix (k) */
 {
-#define K(i,j)    (k[(i)*ndof + (j)])
+  #if 1
+  #define K(i,j)    (k[(i)*ndof + (j)])
   double*  vi   = Element_GetCurrentImplicitTerm(el) ;
   double*  vi_n = Element_GetPreviousImplicitTerm(el) ;
   double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
@@ -526,7 +537,7 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   /*
     Input data
   */
-  GetProperties(el) ;
+  GetProperties(el,t) ;
       
   ci.Set(el,t,dt,u_n,vi_n,u,vi) ;
 
@@ -539,7 +550,12 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
   }
   
   return(0) ;
-#undef K
+  #undef K
+  #else
+  int i = MaterialPointModel_ComputeTangentStifnessMatrixByFEM(MPM_t,el,t,dt,k);
+  
+  return(i);
+  #endif
 }
 
 
@@ -548,7 +564,8 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 /** Comput the residu (r) */
 {
-#define R(n,i)    (r[(n)*NEQ+(i)])
+  #if 1
+  #define R(n,i)    (r[(n)*NEQ+(i)])
   double*  vi   = Element_GetCurrentImplicitTerm(el) ;
   double*  vi_n = Element_GetPreviousImplicitTerm(el) ;
   double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
@@ -562,7 +579,7 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 
   if(Element_IsSubmanifold(el)) return(0) ;
 
-  GetProperties(el) ;
+  GetProperties(el,t) ;
       
   ci.Set(el,t,dt,u_n,vi_n,u,vi) ;
 
@@ -577,9 +594,21 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
       for(j = 0 ; j < dim ; j++) R(i,E_MECH + j) -= rw[i*dim + j] ;
     }
   }
+  #undef R
   
   return(0) ;
-#undef R
+  #else
+  /* Initialization */
+  {
+    int ndof = Element_GetNbOfDOF(el) ;
+    
+    for(int i = 0 ; i < ndof ; i++) r[i] = 0. ;
+  }
+  
+  MaterialPointModel_ComputeMechanicalEquilibriumResiduByFEM(MPM_t,el,t,dt,r,E_MECH,Stress,BodyForce);
+
+  return(0);
+  #endif
 }
 
 
@@ -606,16 +635,12 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   /*
     Input data
   */
-  GetProperties(el) ;
-  
-  ci.Set(el,t,0,u,vim0,u,vim0) ;
+  GetProperties(el,t) ;
 
   {
     /* Interpolation functions at s */
     double* a = Element_ComputeCoordinateInReferenceFrame(el,s) ;
     int p = IntFct_ComputeFunctionIndexAtPointOfReferenceFrame(intfct,a) ;
-    /* Variables */
-    //Values_d& val = *ci.IntegrateValues(p) ;
     /* Displacement */
     double* pdis = Element_ComputeDisplacementVector(el,u,intfct,p,U_DISP) ;
     double dis[3] = {0,0,0} ;
@@ -647,9 +672,9 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     
     /* Averaging */
     for(p = 0 ; p < np ; p++) {
-      Values_d& val1 = *ci.ExtractValues(p);
+      CustomValues_t<double,ImplicitValues_t>* val1 = (CustomValues_t<double,ImplicitValues_t>*) vim0 ;
 
-      for(int j = 0 ; j < 9 ; j++) sig[j] += val1.Stress[j]/np ;
+      for(int j = 0 ; j < 9 ; j++) sig[j] += val1[p].Stress[j]/np ;
     }
       
     {
@@ -734,10 +759,31 @@ int MPM_t::SetTangentMatrix(Element_t* el,double const& t,double const& dt,int c
 
 Values_d* MPM_t::SetInputs(Element_t* el,const double& t,const int& p,double const* const* u,Values_d& val)
 {
-  LocalVariables_t<Values_d> var(u,NULL);
+  IntFct_t* intfct = Element_GetIntFct(el) ;
+    
+  /* Displacements */
+  {
+    int dim = Element_GetDimensionOfSpace(el) ;
   
-  /* Displacements and strains */
-  var.DisplacementVectorAndStrainFEM(el,p,U_MECH,val.Displacement) ;
+    for(int i = 0 ; i < dim ; i++) {
+      val.Displacement[i] = Element_ComputeUnknown(el,u,intfct,p,U_MECH + i) ;
+    }
+    
+    for(int i = dim ; i < 3 ; i++) {
+      val.Displacement[i] = 0 ;
+    }
+  }
+    
+  /* Strain */
+  {
+    double* eps =  Element_ComputeLinearStrainTensor(el,u,intfct,p,U_MECH) ;
+    
+    for(int i = 0 ; i < 9 ; i++) {
+      val.Strain[i] = eps[i] ;
+    }
+      
+    Element_FreeBufferFrom(el,eps) ;
+  }
   
   if(ItIsPeriodic) {
     for(int i = 0 ; i < 9 ; i++) {

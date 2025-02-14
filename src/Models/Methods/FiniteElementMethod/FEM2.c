@@ -366,7 +366,7 @@ int (FEM2_ComputeHomogenizedStressTensor)(FEM2_t* fem2,double t,double dt,double
       }
       
       {
-        Mesh_t* mesh = DataSet_GetMesh(dataset) ;
+        //Mesh_t* mesh = DataSet_GetMesh(dataset) ;
         int i ;
         
         /* Both method work */

@@ -45,6 +45,8 @@
 /* To retrieve the material properties */
 #define GetProperty(a)   (Element_GetProperty(el)[pm(a)])
 
+#define ItIsPeriodic  (Geometry_IsPeriodic(Element_GetGeometry(el)))
+
 
 /* Functions */
 static int    pm(const char *s) ;
@@ -56,9 +58,12 @@ static double* ComputeVariables(Element_t*,void*,void*,void*,const double,const 
 static void    ComputeSecondaryVariables(Element_t*,const double,const double,double*,double*) ;
 static double* ComputeVariableDerivatives(Element_t*,const double,const double,double*,const double,const int) ;
 
+static double* MacroGradient(Element_t*,double) ;
+
 
 /* Parameters */
 static double gravite,phi,rho_l,k_int,mu_l,p_g ;
+static double  macrogradient[3] ;
 
   
 enum {
@@ -78,6 +83,31 @@ static double Variables[NP][NbOfVariables] ;
 static double dVariables[NbOfVariables] ;
 
 
+double* MacroGradient(Element_t* el,double t)
+{
+  Functions_t* fcts = Material_GetFunctions(Element_GetMaterial(el)) ;
+  Function_t*  fct = Functions_GetFunction(fcts) ;
+  int nf = Functions_GetNbOfFunctions(fcts) ;
+  double* fctindex = &GetProperty("macro-fctindex") ;
+  double* g = &GetProperty("macro-gradient") ;
+  double  f[3] = {0,0,0} ;
+    
+  for(int i = 0 ; i < 3 ; i++) {
+    int idx = floor(fctindex[i] + 0.5) ;
+    
+    if(0 < idx && idx < nf + 1) {
+      Function_t* macrogradfct = fct + idx - 1 ;
+      
+      f[i] = Function_ComputeValue(macrogradfct,t) ;
+    }
+        
+    macrogradient[i] = g[i] * f[i] ;
+  }
+    
+  return(macrogradient);
+}
+
+
 int pm(const char *s) {
   if(strcmp(s,"gravite") == 0)    return (0) ;
   else if(strcmp(s,"phi") == 0)   return (1) ;
@@ -85,7 +115,21 @@ int pm(const char *s) {
   else if(strcmp(s,"k_int") == 0) return (3) ;
   else if(strcmp(s,"mu_l") == 0)  return (4) ;
   else if(strcmp(s,"p_g") == 0)   return (5) ;
-  else return(-1) ;
+    
+  else if(!strcmp(s,"macro-gradient")) {
+    return(6) ;
+  } else if(!strncmp(s,"macro-gradient_",15)) {
+    int i = (strlen(s) > 15) ? s[15] - '1' : 0 ;
+    
+    return(6 + i) ;
+    
+  } else if(!strcmp(s,"macro-fctindex")) {
+    return(9) ;
+  } else if(!strncmp(s,"macro-fctindex_",15)) {
+    int i = (strlen(s) > 15) ? s[15] - '1' : 0 ;
+    
+    return(9 + i) ;
+  } else return(-1) ;
 }
 
 
@@ -116,6 +160,9 @@ int ReadMatProp(Material_t *mat,DataFile_t *datafile)
 /* Lecture des donnees materiaux dans le fichier ficd */
 {
   int  NbOfProp = 7 ;
+
+  /* Par defaut tout a 0 */
+  for(int i = 0 ; i < NbOfProp ; i++) Material_GetProperty(mat)[i] = 0. ;
 
   Material_ScanProperties(mat,datafile,pm) ;
   
@@ -392,6 +439,14 @@ int  ComputeMatrix(Element_t *el,double t,double dt,double *k)
     for(i = 0 ; i < ndof*ndof ; i++) {
       k[i] += dt*kc[i] ;
     }
+    
+    #if 0
+    {
+      printf("\n");
+      printf("Element %d\n",Element_GetElementIndex(el));
+      Math_PrintMatrix(k,ndof);
+    }
+    #endif
   }
 
   return(0) ;
@@ -619,6 +674,18 @@ double* ComputeVariables(Element_t* el,void* vu,void* vu_n,void* vf_n,const doub
       }
       
       FEM_FreeBufferFrom(fem,grd) ;
+    }
+    
+    if(ItIsPeriodic) {
+      double* mgrad = MacroGradient(el,t);
+      IntFct_t* intfct = Element_GetIntFct(el) ;
+      double* h = IntFct_GetFunctionAtPoint(intfct,p) ;
+      double* coor = Element_ComputeCoordinateVector(el,h) ;
+      
+      for(i = 0 ; i < 3 ; i++) {
+        x[I_GRD_P_L + i] += mgrad[i] ;
+        x[I_P_L] += mgrad[i]*coor[i] ;
+      }
     }
   }
   

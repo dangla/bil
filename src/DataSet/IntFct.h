@@ -12,7 +12,6 @@ extern "C" {
 struct IntFct_s       ; typedef struct IntFct_s       IntFct_t ;
 
 
-extern IntFct_t*  (IntFct_New)(void) ;
 extern IntFct_t*  (IntFct_Create)(int,int,const char*) ;
 extern void       (IntFct_Delete)(void*) ;
 //extern void       (IntFct_ComputeIsoShapeFctInActualSpace)(int,int,double**,double*,int,double*,double*) ;

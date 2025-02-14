@@ -5,9 +5,7 @@
 #include "CommonModel.h"
 
 #ifdef HAVE_AUTODIFF
-#define USE_AUTODIFF 0
-#else
-#define USE_AUTODIFF 0
+#define USE_AUTODIFF
 #endif
 
 
@@ -60,7 +58,6 @@
 
 #include "BaseName.h"
 #include "CustomValues.h"
-#include "ConstitutiveIntegrator.h"
 #include "MaterialPointModel.h"
 
 #define ImplicitValues_t BaseName(_ImplicitValues_t)
@@ -95,21 +92,18 @@ using Values_d = Values_t<double> ;
 
 
 
-struct MPM_t: public MaterialPointModel_t<Values_d> {
-  MaterialPointModel_SetInputs_t<Values_d> SetInputs;
+struct MPM_t: public MaterialPointModel_t<Values_t> {
+  MaterialPointModel_SetInputs_t<Values_t> SetInputs;
   template<typename T>
-  MaterialPointModel_Integrate_t<Values_d,Values_t<T>> Integrate;
-  MaterialPointModel_Initialize_t<Values_d>  Initialize;
-  MaterialPointModel_SetTangentMatrix_t<Values_d> SetTangentMatrix;
-  MaterialPointModel_SetTransferMatrix_t<Values_d> SetTransferMatrix;
+  MaterialPointModel_Integrate_t<Values_t,T> Integrate;
+  MaterialPointModel_Initialize_t<Values_t>  Initialize;
+  MaterialPointModel_SetTangentMatrix_t<Values_t> SetTangentMatrix;
+  MaterialPointModel_SetTransferMatrix_t<Values_t> SetTransferMatrix;
   MaterialPointModel_SetIndexes_t SetIndexes;
   MaterialPointModel_SetIncrements_t SetIncrements;
 } ;
 
 
-
-using CI_t = ConstitutiveIntegrator_t<Values_d,MPM_t>;
-//using CI_t = ConstitutiveIntegrator_t<Values_d>;
 
 
 
@@ -166,11 +160,6 @@ struct ExplicitValues_t {
 /* We define some names for constant terms (v0 must be used as pointer below) */
 template<typename T = double>
 struct ConstantValues_t {};
-
-
-static MPM_t mpm1;
-//static MPM_t* mpm = (MPM_t*) &mpm1;
-static MaterialPointModel_t<Values_d>* mpm = &mpm1;
 
 
 
@@ -315,46 +304,55 @@ static double vr_salt ;
         (((EPSV) > 0) ? 1 + ((C) - 1)*(1 - exp(-(A)*(EPSV))) : 1)
 
 #define aa  (1000)
-//#define capillarypressurefraction  (10)
 #define CapillaryPressureFactor(EPSV) \
-        ScaleFactor(EPSV,aa,capillarypressurefraction)
+        ScaleFactor(EPSV,aa,param.CapillaryPressureFraction)
 
-#define YoungModulus(EPSV) \
-        young*ScaleFactor(EPSV,aa,youngfraction)
+#define YoungModulusFactor(EPSV) \
+        ScaleFactor(EPSV,aa,param.YoungFraction)
 
-#define Porosity(EPSV) \
-        phi0*(thickness + Math_Max(EPSV,0))
+#define PorosityFactor(EPSV) \
+        (param.Thickness + Math_Max(EPSV,0))
 
 
 
 /* The parameters below are read in the input data file */
-static double gravity ;
-static double rho_s ;
-static double phi0 ;
-static double k_int ;
-static double lam_s ;
-static double C_s ;
-static double alpha_s ;
-static double p0 ;
-static double T0 ;
+
+#define Parameters_t    BaseName(_Parameters_t)
+
+struct Parameters_t {
+  double Porosity;
+  double IntrinsicPermeability;
+  double SolidVolumetricHeat;
+  double SolidThermalConductivity;
+  double SolidMatrixBulkModulus;
+  double SolidMatrixShearModulus;
+  double SolidMatrixThermalDilation;
+  double ReferencePressure;
+  double ReferenceTemperature;
+  double YoungModulus;
+  double PoissonRatio;
+  double BiotCoefficient;
+  double Thickness;
+  double YoungFraction;
+  double Gravity;
+  double SolidSkeletonMassDensity;
+  double CapillaryPressureFraction;
+};
+
+static Parameters_t param;
 static double* cijkl ;
 static Elasticity_t* elasty ;
-static double young ;
-static double poisson ;
-static double biot ;
-static double thickness ;
-static double youngfraction ;
-static double capillarypressurefraction ;
 
 template<typename T>
 static T effectivediffusioncoef(double,T);
 template static double  effectivediffusioncoef(double,double) ;
-#if USE_AUTODIFF
+#ifdef USE_AUTODIFF
 template static real  effectivediffusioncoef(double,real) ;
 #endif
 template<typename T>
 T effectivediffusioncoef(double phi,T s)
 {
+  double h = param.Thickness;
   T tau_l_sat = 0.296e-3*exp(9.95*phi)/phi ;
   T tau = 0 ;
   
@@ -364,24 +362,26 @@ T effectivediffusioncoef(double phi,T s)
     tau = 0 ;
   }
   
-  return(thickness*phi*s*tau*D_salt) ;
+  return(h*phi*s*tau*D_salt) ;
 }
 
 
 template<typename T>
 static T thermalconductivity(double,T);
 template static double thermalconductivity(double,double) ;
-#if USE_AUTODIFF
+#ifdef USE_AUTODIFF
 template static real thermalconductivity(double,real) ;
 #endif
 template<typename T>
 T thermalconductivity(double phi,T sd_l)
 {
+  double lam_s = param.SolidThermalConductivity;
+  double h = param.Thickness;
   T sd_i = 1 - sd_l ;
   T lam_h2o = sd_l*lam_l + sd_i*lam_i ;
   T lam_hom = lam_s*(1 - 3*phi*(lam_s - lam_h2o)/(3*lam_s - (1 - phi)*(lam_s - lam_h2o))) ;
   
-  return(thickness*lam_hom) ;
+  return(h*lam_hom) ;
 }
 
 
@@ -411,37 +411,37 @@ int pm(const char* s)
 
 
 /* They are retrieved automatically by calling the following function */
-static void    GetProperties(Element_t*) ;
-void GetProperties(Element_t* el)
+static void    GetProperties(Element_t*,double) ;
+void GetProperties(Element_t* el,double t)
 {
 /* To retrieve the material properties */
 #define GetProperty(a)   (Element_GetProperty(el)[pm(a)])
-  gravity = GetProperty("gravity") ;
-  rho_s   = GetProperty("rho_s") ;
-  phi0    = GetProperty("porosity") ;
-  k_int   = GetProperty("k_int") ;
-  C_s     = GetProperty("C_s") ;
-  lam_s   = GetProperty("lam_s") ;
-  alpha_s = GetProperty("alpha_s") ;
-  p0      = GetProperty("p0") ;
-  T0      = GetProperty("T0") ;
-  young   = GetProperty("Young") ;
-  poisson = GetProperty("Poisson") ;
-  biot    = GetProperty("Biot") ;
+  param.Gravity                    = GetProperty("gravity") ;
+  param.SolidSkeletonMassDensity   = GetProperty("rho_s") ;
+  param.Porosity                   = GetProperty("porosity") ;
+  param.IntrinsicPermeability      = GetProperty("k_int") ;
+  param.SolidVolumetricHeat        = GetProperty("C_s") ;
+  param.SolidThermalConductivity   = GetProperty("lam_s") ;
+  param.SolidMatrixThermalDilation = GetProperty("alpha_s") ;
+  param.ReferencePressure          = GetProperty("p0") ;
+  param.ReferenceTemperature       = GetProperty("T0") ;
+  param.YoungModulus               = GetProperty("Young") ;
+  param.PoissonRatio               = GetProperty("Poisson") ;
+  param.BiotCoefficient            = GetProperty("Biot") ;
   
-  thickness = 1 ;
-  youngfraction  = 1 ;
-  capillarypressurefraction = 1 ;
+  param.Thickness = 1 ;
+  param.YoungFraction  = 1 ;
+  param.CapillaryPressureFraction = 1 ;
   
   if(Element_HasZeroThickness(el)) {
-    thickness = GetProperty("thickness") ;
-    youngfraction  = GetProperty("YoungFraction") ;
-    capillarypressurefraction = 10 ;
+    param.Thickness                 = GetProperty("thickness") ;
+    param.YoungFraction             = GetProperty("YoungFraction") ;
+    param.CapillaryPressureFraction = 10 ;
 
-    young    /= thickness ;
-    k_int    *= thickness ;
-    C_s      *= thickness ;
-    alpha_s  *= thickness ;
+    param.YoungModulus               /= param.Thickness ;
+    param.IntrinsicPermeability      *= param.Thickness ;
+    param.SolidVolumetricHeat        *= param.Thickness ;
+    param.SolidMatrixThermalDilation *= param.Thickness ;
   }
   
   elasty  = Element_FindMaterialData(el,Elasticity_t,"Elasticity") ;
@@ -457,7 +457,7 @@ static void    ComputePhysicoChemicalProperties(void) ;
 template<typename T>
 static T activity(T,T);
 template static double  activity(double,double) ;
-#if USE_AUTODIFF
+#ifdef USE_AUTODIFF
 template static real  activity(real,real) ;
 #endif
 
@@ -466,7 +466,7 @@ static double  activity_w_ideal(double,double) ;
 template<typename T>
 static T lna_i(T,T,double,double,double,T);
 template static double  lna_i(double,double,double,double,double,double) ;
-#if USE_AUTODIFF
+#ifdef USE_AUTODIFF
 template static real  lna_i(real,real,double,double,double,real) ;
 #endif
 
@@ -605,8 +605,7 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
   if(Material_GetProperty(mat)[pm("Young")] < 0) {
     double k_s  = Material_GetPropertyValue(mat,"k_s") ;
     double g_s  = Material_GetPropertyValue(mat,"g_s") ;
-    
-    phi0  = Material_GetPropertyValue(mat,"porosity") ;
+    double phi0  = Material_GetPropertyValue(mat,"porosity") ;
     
     if(k_s > 0 && g_s > 0) {
       /* Elastic moduli (Mori-Tanaka) */
@@ -616,11 +615,10 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
       double b_0 = 6 * (k_0 + 2 * g_0) / (9 * k_0 + 8 * g_0) ;
       double K = (1 - phi0) * k_s / (1 + phi0 * a_0 * k_s / k_0) ;
       double G = (1 - phi0) * g_s / (1 + phi0 * b_0 * g_s / g_0) ;
-      
-      young =  9 * G * K / (3 * K + G) ;
-      poisson = 0.5 * (1 - young / (3 * K)) ;
-      //poisson = (1.5 * K - G) / (3 * K + G) ;
-      biot = 1 - K/k_s ;
+      double young =  9 * G * K / (3 * K + G) ;
+      double poisson = 0.5 * (1 - young / (3 * K)) ;
+      //double poisson = (1.5 * K - G) / (3 * K + G) ;
+      double biot = 1 - K/k_s ;
       
       Material_GetProperty(mat)[pm("Young")] = young ;
       Material_GetProperty(mat)[pm("Poisson")] = poisson ;
@@ -643,8 +641,8 @@ int ReadMatProp(Material_t* mat,DataFile_t* datafile)
 
     /* isotropic Hooke's law */
     { 
-      young =  Material_GetProperty(mat)[pm("Young")] ;
-      poisson = Material_GetProperty(mat)[pm("Poisson")] ;
+      double young =  Material_GetProperty(mat)[pm("Young")] ;
+      double poisson = Material_GetProperty(mat)[pm("Poisson")] ;
     
       Elasticity_SetToIsotropy(elasty) ;
       Elasticity_SetParameters(elasty,young,poisson) ;
@@ -725,15 +723,8 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
 {
   IntFct_t* intfct = Element_GetIntFct(el) ;
   int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) + 1 ;
-  int const nvi = ((int) sizeof(ImplicitValues_t<char>));
-  int const nve = ((int) sizeof(ExplicitValues_t<char>));
-  int const nv0 = ((int) sizeof(ConstantValues_t<char>));
   
-  /** Define the length of tables */
-  Element_GetNbOfImplicitTerms(el) = NbOfIntPoints*nvi ;
-  Element_GetNbOfExplicitTerms(el) = NbOfIntPoints*nve ;
-  Element_GetNbOfConstantTerms(el) = NbOfIntPoints*nv0 ;
-
+  MaterialPointModel_DefineNbOfInternalValues(MPM_t,el,NbOfIntPoints);
 
   /* Continuity of unknowns across zero-thickness element */
   {
@@ -801,23 +792,9 @@ int ComputeInitialState(Element_t* el,double t)
  *  Return 0 if succeeded and -1 if failed
  */ 
 {
-  double* vi0 = Element_GetImplicitTerm(el) ;
-  double** u  = Element_ComputePointerToCurrentNodalUnknowns(el) ;
-  CI_t ci(mpm) ;
+  int i = MaterialPointModel_ComputeInitialStateByFEM(MPM_t,el,t);
   
-  /* Usually we have to skip if the element is a submanifold, 
-   * e.g. a surface in 3D or a line in 2D */
-  if(Element_IsSubmanifold(el)) return(0) ;
-
-    
-  ci.Set(el,t,0,u,vi0,u,vi0) ;
-
-  /*
-    We load some input data
-  */
-  Element_ComputeMaterialProperties(el) ;
-  
-  return(ci.ComputeInitialStateByFEM());
+  return(i);
 }
 
 
@@ -827,22 +804,9 @@ int  ComputeExplicitTerms(Element_t* el,double t)
  *  whatever they are, nodal values or implicit terms.
  *  Return 0 if succeeded and -1 if failed */
 {
-  double* vi_n = Element_GetPreviousImplicitTerm(el) ;
-  /* If you need the nodal values, use the previous ones */
-  double** u = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  CI_t ci(mpm) ;
+  int i = MaterialPointModel_ComputeExplicitTermsByFEM(MPM_t,el,t);
   
-  /* If needed ! */
-  if(Element_IsSubmanifold(el)) return(0) ;
-    
-  ci.Set(el,t,0,u,vi_n,u,vi_n) ;
-
-  /*
-    We load some input data
-  */
-  Element_ComputeMaterialProperties(el) ;
-  
-  return(ci.ComputeExplicitTermsByFEM());
+  return(i);
 }
 
 
@@ -850,22 +814,9 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
 /** Compute the (current) implicit terms 
  *  Return 0 if succeeded and -1 if failed */
 {
-  double* vi    = Element_GetCurrentImplicitTerm(el) ;
-  double* vi_n  = Element_GetPreviousImplicitTerm(el) ;
-  double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
-  double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  CI_t ci(mpm) ;
-
-  if(Element_IsSubmanifold(el)) return(0) ;
-    
-  ci.Set(el,t,dt,u_n,vi_n,u,vi) ;
+  int i = MaterialPointModel_ComputeImplicitTermsByFEM(MPM_t,el,t,dt);
   
-  /*
-    We load some input data
-  */
-  Element_ComputeMaterialProperties(el) ;
-  
-  return(ci.ComputeImplicitTermsByFEM()) ;
+  return(i);
 }
 
 
@@ -873,50 +824,9 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 /** Compute the matrix (k) 
  *  Return 0 if succeeded and -1 if failed */
 {
-  double*  vi   = Element_GetCurrentImplicitTerm(el) ;
-  double*  vi_n = Element_GetPreviousImplicitTerm(el) ;
-  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
-  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  int nn = Element_GetNbOfNodes(el) ;
-  int dim = Element_GetDimensionOfSpace(el) ;
-  int ndof = nn*NEQ ;
-  CI_t ci(mpm) ;
-
-  /* Initialization */
-  for(int i = 0 ; i < ndof*ndof ; i++) k[i] = 0. ;
-
-
-  /* We skip if the element is a submanifold */
-  if(Element_IsSubmanifold(el)) return(0) ;
+  int i = MaterialPointModel_ComputePoromechanicalMatrixByFEM(MPM_t,el,t,dt,k,E_MECH);
   
-  
-  /*
-    We load some input data
-  */
-  Element_ComputeMaterialProperties(el) ;
-  
-
-  ci.Set(el,t,dt,u_n,vi_n,u,vi) ;
-
-
-  /*
-  ** Poromechanical matrix
-  */
-  {
-    {
-      #if USE_AUTODIFF
-      double* kp = ci.ComputeAutodiffPoromechanicalMatrixByFEM<Values_t<real>>(E_MECH);
-      #else
-      double* kp = ci.ComputePoromechanicalMatrixByFEM(E_MECH);
-      #endif
-
-      for(int i = 0 ; i < ndof*ndof ; i++) {
-        k[i] = kp[i] ;
-      }
-    }
-  }
-  
-  return(0) ;
+  return(i);
 }
 
 
@@ -924,79 +834,30 @@ int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 /** Compute the residu (r) 
  *  Return 0 if succeeded and -1 if failed */
 {
-#define R(n,i)    (r[(n)*NEQ + (i)])
-  double* vi1   = Element_GetCurrentImplicitTerm(el) ;
-  double* vi1_n = Element_GetPreviousImplicitTerm(el) ;
-  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
-  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  int nn = Element_GetNbOfNodes(el) ;
-  int dim = Element_GetDimensionOfSpace(el) ;
-  int ndof = nn*NEQ ;
-  CI_t ci(mpm) ;
-  
   /* Initialization */
-  {    
+  {
+    int ndof = Element_GetNbOfDOF(el) ;
+    
     for(int i = 0 ; i < ndof ; i++) r[i] = 0. ;
   }
-
-  if(Element_IsSubmanifold(el)) return(0) ;
-      
-  ci.Set(el,t,dt,u_n,vi1_n,u,vi1) ;
-  
-
-  /* Compute here the residu R(n,i) */
-  
-
   /* 1. Mechanics */
-  if(Element_EquationIsActive(el,E_MECH)) 
-  {
-    int istress = Values_Index(Stress[0]);
-    int ibforce = Values_Index(BodyForce[0]);
-    double* rw = ci.ComputeMechanicalEquilibiumResiduByFEM(istress,ibforce);
-    
-    for(int i = 0 ; i < nn ; i++) {      
-      for(int j = 0 ; j < dim ; j++) R(i,E_MECH + j) -= rw[i*dim + j] ;
-    }
+  if(Element_EquationIsActive(el,E_MECH)) {
+    MaterialPointModel_ComputeMechanicalEquilibriumResiduByFEM(MPM_t,el,t,dt,r,E_MECH,Stress,BodyForce);
   }
-  
-  
-  
   /* 2. Conservation of total mass */
-  if(Element_EquationIsActive(el,E_MASS))
-  {  
-    int imass = Values_Index(Mass_total);
-    int iflow = Values_Index(MassFlow_total[0]);
-    double* ra =  ci.ComputeMassConservationResiduByFEM(imass,iflow);
-    
-    for(int i = 0 ; i < nn ; i++) R(i,E_MASS) -= ra[i] ;
+  if(Element_EquationIsActive(el,E_MASS)) {
+    MaterialPointModel_ComputeMassConservationResiduByFEM(MPM_t,el,t,dt,r,E_MASS,Mass_total,MassFlow_total);
   }
-  
-  
-  
   /* 3. Conservation of salt */
-  if(Element_EquationIsActive(el,E_SALT))
-  {  
-    int imass = Values_Index(Mass_salt);
-    int iflow = Values_Index(MassFlow_salt[0]);
-    double* ra =  ci.ComputeMassConservationResiduByFEM(imass,iflow);
-    
-    for(int i = 0 ; i < nn ; i++) R(i,E_SALT) -= ra[i] ;
+  if(Element_EquationIsActive(el,E_SALT)) {  
+    MaterialPointModel_ComputeMassConservationResiduByFEM(MPM_t,el,t,dt,r,E_SALT,Mass_salt,MassFlow_salt);
   }
-  
-  
-  
   /* 4. Entropy balance */
-  if(Element_EquationIsActive(el,E_THER))
-  {  
-    int imass = Values_Index(Entropy_total);
-    int iflow = Values_Index(HeatFlow[0]);
-    double* ra =  ci.ComputeMassConservationResiduByFEM(imass,iflow);
-    
-    for(int i = 0 ; i < nn ; i++) R(i,E_THER) -= ra[i] ;
+  if(Element_EquationIsActive(el,E_THER)) {  
+    MaterialPointModel_ComputeMassConservationResiduByFEM(MPM_t,el,t,dt,r,E_THER,Entropy_total,HeatFlow);
   }
   
-  return(0) ;
-#undef R
+  return(0);
 }
 
 
@@ -1011,7 +872,6 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   double** u_n  = Element_ComputePointerToPreviousNodalUnknowns(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
-  CI_t ci(mpm) ;
 
   if(Element_IsSubmanifold(el)) return(0) ;
   
@@ -1026,18 +886,17 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   /*
     Input data
   */
-  Element_ComputeMaterialProperties(el) ;
+  Element_ComputeMaterialProperties(el,t) ;
 
   
-  ci.Set(el,t,0,u,vi,u,vi) ;
+  //ci.Set(el,t,0,u,vi,u,vi) ;
   
   
   {
     /* Interpolation functions at s */
     double* a = Element_ComputeCoordinateInReferenceFrame(el,s) ;
     int p = IntFct_ComputeFunctionIndexAtPointOfReferenceFrame(intfct,a) ;
-    /* Variables */
-    //Values_d& val = *ci.IntegrateValues(p) ;
+    //Values_d& val = *ci.ExtractInputs(p) ;
     /* displacements */
     double* disp = Element_ComputeDisplacementVector(el,u,intfct,p,U_MECH) ;
     /* strains */
@@ -1047,7 +906,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double  epsv_n = eps_n[0] + eps_n[4] + eps_n[8] ;
     /* temperature */
     double tem = Element_ComputeUnknown(el,u,intfct,p,U_THER) ;
-    double dtem = tem - T0 ;
+    double dtem = tem - param.ReferenceTemperature ;
     /* salt concentration */
     double c_salt = Element_ComputeUnknown(el,u,intfct,p,U_SALT) ;
     /* Log of water activity */
@@ -1065,42 +924,41 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double p_l   = u_mass ;
     double p_i   = p_m + (V_H2O*(p_l - p_m) - S_m*(tem - T_m) + R_g*tem*lna)/V_Ice ;
     #endif
-    double dp_l = p_l - p0 ;
-    double dp_i = p_i - p0 ;
+    double dp_l = p_l - param.ReferencePressure ;
+    double dp_i = p_i - param.ReferencePressure ;
     double p_c  = p_i - p_l ;
     /* fluxes */
     double w_tot[3]  = {0,0,0} ;
     double w_salt[3] = {0,0,0} ;
     double w_the[3]  = {0,0,0} ;
-    double young1 = YoungModulus(epsv_n) ;
-    double K = young1 / (3 - 6*poisson) ;
-    double G = 0.5 * young1 / (1 + poisson) ;
-    double b = biot ;
+    double young1 = param.YoungModulus*YoungModulusFactor(epsv_n) ;
+    double K = young1 / (3 - 6*param.PoissonRatio) ;
+    double G = 0.5 * young1 / (1 + param.PoissonRatio) ;
+    double b = param.BiotCoefficient ;
     double sd_l = SaturationDegree(p_c*CapillaryPressureFactor(epsv)) ;
     double sd_i = 1 - sd_l ;
     double b_i  = b*sd_i ;
     double b_l  = b*sd_l ;
-    double N_il = (K > 0) ? - (b - phi0) / K * b * sd_i * sd_l  : 0 ;
-    double N_ii = (K > 0) ?   (b - phi0) / K * sd_i * (1 - b_i) : 0 ;
-    double N_ll = (K > 0) ?   (b - phi0) / K * sd_l * (1 - b_l) : 0 ;
-    double alpha_phi = (b - phi0)*alpha_s ;
+    double N_il = (K > 0) ? - (b - param.Porosity) / K * b * sd_i * sd_l  : 0 ;
+    double N_ii = (K > 0) ?   (b - param.Porosity) / K * sd_i * (1 - b_i) : 0 ;
+    double N_ll = (K > 0) ?   (b - param.Porosity) / K * sd_l * (1 - b_l) : 0 ;
+    double alpha_phi = (b - param.Porosity)*param.SolidMatrixThermalDilation ;
     double alpha_phi_l = sd_l*alpha_phi ;
     double alpha_phi_i = sd_i*alpha_phi ;
     
     double k_oedo = (K + 4/3.*G) ; /* k_oedo Oedometric modulus */
-    double Kk_oedo = (1 + poisson)/(3 - 3*poisson) ; /* K/k_oedo */
+    double Kk_oedo = (1 + param.PoissonRatio)/(3 - 3*param.PoissonRatio) ; /* K/k_oedo */
     /* stresses */
     double sig[9] = {0,0,0,0,0,0,0,0,0} ;
+    CustomValues_t<double,ImplicitValues_t>* val1 = (CustomValues_t<double,ImplicitValues_t>*) vi ;
     int i;
     
     /* Averaging */
     for(int i = 0 ; i < np ; i++) {
-      Values_d& val1 = *ci.ExtractValues(i);
-      
-      for(int j = 0 ; j < 3 ; j++) w_tot[j]  += val1.MassFlow_total[j]/np ;
-      for(int j = 0 ; j < 3 ; j++) w_salt[j] += val1.MassFlow_salt[j]/np ;
-      for(int j = 0 ; j < 3 ; j++) w_the[j]  += val1.HeatFlow[j]/np ;
-      for(int j = 0 ; j < 9 ; j++) sig[j]    += val1.Stress[j]/np ;
+      for(int j = 0 ; j < 3 ; j++) w_tot[j]  += val1[i].MassFlow_total[j]/np ;
+      for(int j = 0 ; j < 3 ; j++) w_salt[j] += val1[i].MassFlow_salt[j]/np ;
+      for(int j = 0 ; j < 3 ; j++) w_the[j]  += val1[i].HeatFlow[j]/np ;
+      for(int j = 0 ; j < 9 ; j++) sig[j]    += val1[i].Stress[j]/np ;
     }
     
     i = 0  ;
@@ -1130,7 +988,7 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     Result_Store(r + i++,disp,"Displacement vector",3) ;
       
     {
-      double Eps_T  = alpha_s*Kk_oedo*dtem ;
+      double Eps_T  = param.SolidMatrixThermalDilation*Kk_oedo*dtem ;
       
       Result_Store(r + i++,&Eps_T,"Strain_temperature",1) ;
     }
@@ -1443,7 +1301,7 @@ Values_t<T>* MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Val
   T p_c = p_i - p_l ;
   
   /* Porosity */
-  T phi1 = Porosity(epsv) ;
+  T phi1 = param.Porosity*PorosityFactor(epsv) ;
   
   /* Saturations */
   T sd_l = SaturationDegree(p_c*CapillaryPressureFactor(epsv)) ;
@@ -1472,7 +1330,7 @@ Values_t<T>* MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Val
     /* Entropies */
     T s_l   = C_l*log(tem/T_m) - alpha_l/rho_h2o_l0*(p_l - p_m) ;
     T s_i   = C_i*log(tem/T_m) - alpha_i/rho_h2o_i0*(p_i - p_m) - S_m/M_H2O ;
-    T s_sol = C_s*log(tem/T_m) ;
+    T s_sol = param.SolidVolumetricHeat*log(tem/T_m) ;
     T s_tot = s_sol + m_l*s_l + m_i*s_i ;
   
     /*
@@ -1501,19 +1359,19 @@ Values_t<T>* MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Val
   
   /* Stresses */
   {
-    double young1 = YoungModulus(epsv_n) ;
-    double K = young1 / (3 - 6*poisson) ;
-    double b    = biot ;
+    double young1 = param.YoungModulus*YoungModulusFactor(epsv_n) ;
+    double K = young1 / (3 - 6*param.PoissonRatio) ;
+    double b    = param.BiotCoefficient ;
     T b_i  = b*sd_i ;
     T b_l  = b*sd_l ;
     
-    T dp_l = p_l - p0 ;
-    T dp_i = p_i - p0 ;
-    T dtem = tem - T0 ;
+    T dp_l = p_l - param.ReferencePressure ;
+    T dp_i = p_i - param.ReferencePressure ;
+    T dtem = tem - param.ReferenceTemperature ;
     
     T* sig = val.Stress ;
           
-    Elasticity_SetParameters(elasty,young1,poisson) ;
+    Elasticity_SetParameters(elasty,young1,param.PoissonRatio) ;
     Elasticity_UpdateStiffnessTensor(elasty) ;
     
     {    
@@ -1530,9 +1388,9 @@ Values_t<T>* MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Val
     }
     
     {
-      sig[0] += - b_l * dp_l - b_i * dp_i - alpha_s * K * dtem ;
-      sig[4] += - b_l * dp_l - b_i * dp_i - alpha_s * K * dtem ;
-      sig[8] += - b_l * dp_l - b_i * dp_i - alpha_s * K * dtem ;
+      sig[0] += - b_l * dp_l - b_i * dp_i - param.SolidMatrixThermalDilation * K * dtem ;
+      sig[4] += - b_l * dp_l - b_i * dp_i - param.SolidMatrixThermalDilation * K * dtem ;
+      sig[8] += - b_l * dp_l - b_i * dp_i - param.SolidMatrixThermalDilation * K * dtem ;
     }
   }
   
@@ -1595,7 +1453,7 @@ Values_t<T>* MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Val
       for(int i = 0 ; i < 3 ; i++) {
         w_tot[i] = - kd_liq * grd_p_l[i] ;
       }
-      w_tot[dim - 1] += kd_liq*rho_l*gravity ;
+      w_tot[dim - 1] += kd_liq*rho_l*param.Gravity  ;
     }
 
     for(int i = 0 ; i < 3 ; i++) {
@@ -1613,9 +1471,9 @@ Values_t<T>* MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Val
     T rho_l   = val.MassDensity_liquid ;
     T mu_l    = WaterViscosity(tem) ;
     T kr_l    = RelativePermeabilityToLiquid(p_c) ;
-    T kd_liq  = rho_l*k_int/mu_l*kr_l ;
-    T kf_salt = M_Salt*effectivediffusioncoef(phi0,sd_l) ;
-    T lam_hom = thermalconductivity(phi0,sd_l) ;
+    T kd_liq  = rho_l*param.IntrinsicPermeability/mu_l*kr_l ;
+    T kf_salt = M_Salt*effectivediffusioncoef(param.Porosity,sd_l) ;
+    T lam_hom = thermalconductivity(param.Porosity,sd_l) ;
     T kth     = lam_hom/tem ;
     T mc_salt = M_Salt * c_s / rho_l ;
       
@@ -1631,7 +1489,7 @@ Values_t<T>* MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Val
     T* f_mass = val.BodyForce ;
       
     for(int i = 0 ; i < 3 ; i++) f_mass[i] = 0 ;
-    f_mass[dim - 1] = (rho_s + m_tot)*gravity ;
+    f_mass[dim - 1] = (param.SolidSkeletonMassDensity + m_tot)*param.Gravity  ;
   }
   
   return(&val) ;

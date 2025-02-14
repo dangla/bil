@@ -1,0 +1,129 @@
+
+  /* Affectation */
+  template <typename U,template<typename> class... D>
+  inline CustomValues_t& operator=(CustomValues_t<U,D...> const& a) {
+    if(this != (CustomValues_t*) &a) {
+      T* u = (T*) this;
+      U const* v = (U const*) &a;
+  
+      if(sizeof(CustomValues_t)/sizeof(T) != sizeof(CustomValues_t<U,D...>)/sizeof(U)) {
+        Message_FatalError("CustomValues_t::operator=: not the same size!");
+      }
+  
+      for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+        u[i] = v[i];
+      }
+    }
+        
+    return(*this) ;
+  }
+
+
+  /* Unary operations */
+  CustomValues_t& operator+(void){return(*this);}
+  
+
+  inline CustomValues_t& operator-(void) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] = -u[i];
+    }
+  
+    return(*this) ;
+  }
+  
+  /* Add and assign */
+  inline CustomValues_t& operator+=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] += v[i];
+    }
+        
+    return(*this) ;
+  }
+  
+
+  inline CustomValues_t& operator+=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] += a;
+    }
+        
+    return(*this) ;
+  }
+  
+  
+  /* Substract and assign */
+  inline CustomValues_t& operator-=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] -= v[i];
+    }
+        
+    return(*this) ;
+  }
+  
+
+  inline CustomValues_t& operator-=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] -= a;
+    }
+        
+    return(*this) ;
+  }
+  
+  
+  /* Multiply and assign */
+  inline CustomValues_t& operator*=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] *= v[i];
+    }
+        
+    return(*this) ;
+  }
+  
+
+  inline CustomValues_t& operator*=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] *= a;
+    }
+        
+    return(*this) ;
+  }
+  
+  
+  /* Divide and assign */
+  inline CustomValues_t& operator/=(CustomValues_t const& a) {
+    T* u = (T*) this;
+    T const* v = (T const*) &a;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] /= v[i];
+    }
+  
+    return(*this) ;
+  }
+
+
+  inline CustomValues_t& operator/=(T const& a) {
+    T* u = (T*) this;
+  
+    for (size_t i = 0; i < sizeof(CustomValues_t)/sizeof(T); ++i) {
+      u[i] /= a;
+    }
+  
+    return(*this) ;
+  }

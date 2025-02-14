@@ -230,7 +230,7 @@ Options are:
 @sp 1
 @end ignore
 
-The way Bil will run may depend whether there are some other files (@pxref{Other files}). The most important of them, namely @file{my_file.graph.iperm}, defines the way nodes are renumbered so as to optimize the storage of the LU decomposition of the matrix, in case of a Gauss elimination method (Crout's method). Except in 1D problems where nodes are numbered from one end to the other of the mesh, it is very important, if not essential, to create this file with an aquedate option, e.g. -iperm, (see Bil options). In case of multi-frontal methods (such as SuperLU or MA38) this file is not needed.
+The way Bil will run may depend whether there are some other files (@pxref{Other files}). The most important of them, namely @file{my_file.graph.iperm}, defines the way nodes are renumbered so as to optimize the storage of the LU decomposition of the matrix, in case of a Gauss elimination method (Crout's method). Except in 1D problems where nodes are numbered from one end to the other of the mesh, it is very important, if not essential, to create this file with an aquedate option, e.g. -iperm, (see Bil options). In case of multi-frontal methods (such as SuperLU or MA38) or Krylov space methods (such as those found in Petsc library), this file is not needed.
 
 @c =========================================================================
 @c Input data file

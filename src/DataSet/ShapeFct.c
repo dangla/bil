@@ -7,16 +7,12 @@
 #include "ShapeFct.h"
 
 
+static ShapeFct_t* (ShapeFct_New)(void);
 
-/* Extern functions */
 
-
-ShapeFct_t* (ShapeFct_Create)(int nn,int dim)
+ShapeFct_t* (ShapeFct_New)(void)
 {
   ShapeFct_t* shapefct = (ShapeFct_t*) Mry_New(ShapeFct_t) ;
-  
-  ShapeFct_GetDimension(shapefct) = dim ;
-  ShapeFct_GetNbOfNodes(shapefct) = nn ;
   
   {
     int k = 3 + ShapeFct_MaxNbOfNodes*(1 + 3) ;
@@ -26,6 +22,22 @@ ShapeFct_t* (ShapeFct_Create)(int nn,int dim)
     ShapeFct_GetFunction(shapefct)         = b + 3 ;
     ShapeFct_GetFunctionGradient(shapefct) = b + 3 + ShapeFct_MaxNbOfNodes ;
   }
+  
+  ShapeFct_GetDimension(shapefct) = 0 ;
+  ShapeFct_GetNbOfNodes(shapefct) = 0 ;
+  
+  return(shapefct) ;
+}
+
+
+/* Extern functions */
+
+ShapeFct_t* (ShapeFct_Create)(int nn,int dim)
+{
+  ShapeFct_t* shapefct = (ShapeFct_t*) ShapeFct_New() ;
+  
+  ShapeFct_GetDimension(shapefct) = dim ;
+  ShapeFct_GetNbOfNodes(shapefct) = nn ;
   
   return(shapefct) ;
 }

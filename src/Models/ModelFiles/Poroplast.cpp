@@ -34,7 +34,6 @@
 
 #include "BaseName.h"
 #include "CustomValues.h"
-#include "ConstitutiveIntegrator.h"
 #include "MaterialPointModel.h"
 
 #define ImplicitValues_t BaseName(_ImplicitValues_t)
@@ -69,18 +68,13 @@ using Values_d = Values_t<double> ;
 
 
 
-struct MPM_t: public MaterialPointModel_t<Values_d> {
-  MaterialPointModel_SetInputs_t<Values_d> SetInputs;
-  MaterialPointModel_Integrate_t<Values_d> Integrate;
-  MaterialPointModel_Initialize_t<Values_d>  Initialize;
-  MaterialPointModel_SetTangentMatrix_t<Values_d> SetTangentMatrix;
-  MaterialPointModel_SetTransferMatrix_t<Values_d> SetTransferMatrix;
+struct MPM_t: public MaterialPointModel_t<Values_t> {
+  MaterialPointModel_SetInputs_t<Values_t> SetInputs;
+  MaterialPointModel_Integrate_t<Values_t> Integrate;
+  MaterialPointModel_Initialize_t<Values_t>  Initialize;
+  MaterialPointModel_SetTangentMatrix_t<Values_t> SetTangentMatrix;
+  MaterialPointModel_SetTransferMatrix_t<Values_t> SetTransferMatrix;
 } ;
-
-
-
-//using CI_t = ConstitutiveIntegrator_t<Values_d,MPM_t>;
-using CI_t = ConstitutiveIntegrator_t<Values_d>;
 
 
 
@@ -126,14 +120,10 @@ struct OtherValues_t {
 };
 
 
-static MPM_t mpm1;
-//static MPM_t* mpm = (MPM_t*) &mpm1;
-static MaterialPointModel_t<Values_d>* mpm = &mpm1;
-
 
 /* Functions */
 static int    pm(const char *s) ;
-static void   GetProperties(Element_t*) ;
+static void   GetProperties(Element_t*,double) ;
 
 
 #define ComputeTangentStiffnessTensor(...)  Plasticity_ComputeTangentStiffnessTensor(plasty,__VA_ARGS__)
@@ -151,7 +141,7 @@ static double  hardv0 ;
 static double  rho_l0 ;
 static double  p_l0 ;
 static double  phi0 ;
-static double  b,N ;
+static double  biot,N ;
 static double  k_l ;
 static double  k_int,mu_l ;
 static double  beta ;
@@ -236,7 +226,7 @@ int pm(const char *s)
 }
 
 
-void GetProperties(Element_t* el)
+void GetProperties(Element_t* el,double t)
 {
   gravite = GetProperty("gravity") ;
   phi0    = GetProperty("porosity") ;
@@ -246,7 +236,7 @@ void GetProperties(Element_t* el)
   k_l     = GetProperty("k_l") ;
   rho_s   = GetProperty("rho_s") ;
   p_l0    = GetProperty("p_l0") ;
-  b       = GetProperty("b") ;
+  biot    = GetProperty("b") ;
   N       = GetProperty("N") ;
   beta    = GetProperty("beta") ;
   sig0    = &GetProperty("sig0") ;
@@ -286,7 +276,8 @@ int SetModelProp(Model_t* model)
     Model_CopyNameOfUnknown(model,U_DISP + i,name_unk[i]) ;
   }
   
-  Model_GetComputePropertyIndex(model) = pm ;
+  Model_GetComputePropertyIndex(model) = &pm ;
+  Model_GetComputeMaterialProperties(model) = &GetProperties;
     
   return(0) ;
 }
@@ -434,14 +425,8 @@ int DefineElementProp(Element_t* el,IntFcts_t* intfcts)
   {
     IntFct_t* intfct = Element_GetIntFct(el) ;
     int NbOfIntPoints = IntFct_GetNbOfPoints(intfct) + 1 ;
-    int const nvi = ((int) sizeof(ImplicitValues_t<char>));
-    int const nve = ((int) sizeof(ExplicitValues_t<char>));
-    int const nv0 = ((int) sizeof(ConstantValues_t<char>));
   
-    /** Define the length of tables */
-    Element_GetNbOfImplicitTerms(el) = NbOfIntPoints*nvi ;
-    Element_GetNbOfExplicitTerms(el) = NbOfIntPoints*nve ;
-    Element_GetNbOfConstantTerms(el) = NbOfIntPoints*nv0 ;
+    MaterialPointModel_DefineNbOfInternalValues(MPM_t,el,NbOfIntPoints);
   }
   
   return(0) ;
@@ -479,65 +464,27 @@ int  ComputeLoads(Element_t* el,double t,double dt,Load_t* cg,double* r)
 
 int ComputeInitialState(Element_t* el)
 {
-  double* vi0  = Element_GetImplicitTerm(el) ;
-  double** u   = Element_ComputePointerToNodalUnknowns(el) ;
-  CI_t ci(mpm) ;
+  int i = MaterialPointModel_ComputeInitialStateByFEM(MPM_t,el,t);
   
-  /* We skip if the element is a submanifold */
-  if(Element_IsSubmanifold(el)) return(0) ;
-
-  ci.Set(el,t,0,u,vi0,u,vi0) ;
-
-  /*
-    Input data
-  */
-  GetProperties(el) ;
-  
-  return(ci.ComputeInitialStateByFEM());
+  return(i);
 }
 
 
 int  ComputeExplicitTerms(Element_t* el,double t)
 /** Compute the explicit terms */
 {
-  double* vi_n = Element_GetPreviousImplicitTerm(el) ;
-  double** u = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  CI_t ci(mpm) ;
+  int i = MaterialPointModel_ComputeExplicitTermsByFEM(MPM_t,el,t);
   
-  /* We skip if the element is a submanifold */
-  if(Element_IsSubmanifold(el)) return(0) ;
-    
-  ci.Set(el,t,0,u,vi_n,u,vi_n) ;
-
-  /*
-    Input data
-  */
-  GetProperties(el) ;
-  
-  return(ci.ComputeExplicitTermsByFEM());
+  return(i);
 }
 
 
 
 int  ComputeImplicitTerms(Element_t* el,double t,double dt)
 {
-  double* vi  = Element_GetCurrentImplicitTerm(el) ;
-  double* vi_n  = Element_GetPreviousImplicitTerm(el) ;
-  double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
-  double** u_n = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  CI_t ci(mpm) ;
+  int i = MaterialPointModel_ComputeImplicitTermsByFEM(MPM_t,el,t,dt);
   
-  /* We skip if the element is a submanifold */
-  if(Element_IsSubmanifold(el)) return(0) ;
-    
-  ci.Set(el,t,dt,u_n,vi_n,u,vi) ;
-
-  /*
-    Input data
-  */
-  GetProperties(el) ;
-  
-  return(ci.ComputeImplicitTermsByFEM()) ;
+  return(i);
 }
 
 
@@ -545,51 +492,9 @@ int  ComputeImplicitTerms(Element_t* el,double t,double dt)
 int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 /** Compute the matrix (k) */
 {
-#define K(i,j)    (k[(i)*ndof + (j)])
-  double*  vi   = Element_GetCurrentImplicitTerm(el) ;
-  double*  vi_n = Element_GetPreviousImplicitTerm(el) ;
-  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
-  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  int nn = Element_GetNbOfNodes(el) ;
-  int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
-  int ndof = nn*NEQ ;
-  CI_t ci(mpm) ;
-
-
-  /* Initialization */
-  {
-    for(int i = 0 ; i < ndof*ndof ; i++) k[i] = 0 ;
-  }
-
-
-  /* We skip if the element is a submanifold */
-  if(Element_IsSubmanifold(el)) return(0) ;
+  int i = MaterialPointModel_ComputePoromechanicalMatrixByFEM(MPM_t,el,t,dt,k,E_MECH);
   
-  
-  /*
-    Input data
-  */
-  GetProperties(el) ;
-  
-
-  ci.Set(el,t,dt,u_n,vi_n,u,vi) ;
-
-
-  /*
-  ** Poromechanical matrix
-  */
-  {
-    {
-      double* kp = ci.ComputePoromechanicalMatrixByFEM(E_MECH);
-
-      for(int i = 0 ; i < ndof*ndof ; i++) {
-        k[i] = kp[i] ;
-      }
-    }
-  }
-  
-  return(0) ;
-#undef K
+  return(i);
 }
 
 
@@ -598,51 +503,18 @@ int  ComputeMatrix(Element_t* el,double t,double dt,double* k)
 int  ComputeResidu(Element_t* el,double t,double dt,double* r)
 /** Comput the residu (r) */
 {
-#define R(n,i)    (r[(n)*NEQ+(i)])
-  double* vi1 = Element_GetCurrentImplicitTerm(el) ;
-  double* vi1_n = Element_GetPreviousImplicitTerm(el) ;
-  double** u     = Element_ComputePointerToCurrentNodalUnknowns(el) ;
-  double** u_n   = Element_ComputePointerToPreviousNodalUnknowns(el) ;
-  int nn = Element_GetNbOfNodes(el) ;
-  int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
-  int ndof = nn*NEQ ;
-  CI_t ci(mpm) ;
-
   /* Initialization */
-  for(int i = 0 ; i < ndof ; i++) r[i] = 0 ;
-
-  if(Element_IsSubmanifold(el)) return(0) ;
-      
-  ci.Set(el,t,dt,u_n,vi1_n,u,vi1) ;
-  
-
-  /* Compute here the residu R(n,i) */
-  
-
-  /* 1. Mechanics */
   {
-    int istress = Values_Index(Stress[0]);
-    int ibforce = Values_Index(BodyForce[0]);
-    double* rw = ci.ComputeMechanicalEquilibiumResiduByFEM(istress,ibforce);
+    int ndof = Element_GetNbOfDOF(el) ;
     
-    for(int i = 0 ; i < nn ; i++) {      
-      for(int j = 0 ; j < dim ; j++) R(i,E_MECH + j) -= rw[i*dim + j] ;
-    }
+    for(int i = 0 ; i < ndof ; i++) r[i] = 0 ;
   }
-  
-  
-  
+  /* 1. Mechanics */
+  MaterialPointModel_ComputeMechanicalEquilibriumResiduByFEM(MPM_t,el,t,dt,r,E_MECH,Stress,BodyForce);
   /* 2. Conservation of total mass */
-  {  
-    int imass = Values_Index(Mass_liquid);
-    int iflow = Values_Index(MassFlow_liquid[0]);
-    double* ra =  ci.ComputeMassConservationResiduByFEM(imass,iflow);
-    
-    for(int i = 0 ; i < nn ; i++) R(i,E_MASS) -= ra[i] ;
-  }
+  MaterialPointModel_ComputeMassConservationResiduByFEM(MPM_t,el,t,dt,r,E_MASS,Mass_liquid,MassFlow_liquid);
   
-  return(0) ;
-#undef R
+  return(0);
 }
 
 
@@ -652,11 +524,11 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
 {
   int NbOfOutputs = 9 ;
   double* vi  = Element_GetCurrentImplicitTerm(el) ;
-  double** u   = Element_ComputePointerToCurrentNodalUnknowns(el) ;
+  double* ve  = Element_GetExplicitTerm(el) ;
+  double** u  = Element_ComputePointerToCurrentNodalUnknowns(el) ;
   IntFct_t*  intfct = Element_GetIntFct(el) ;
   int np = IntFct_GetNbOfPoints(intfct) ;
   int dim = Geometry_GetDimension(Element_GetGeometry(el)) ;
-  CI_t ci(mpm) ;
 
   if(Element_IsSubmanifold(el)) return(0) ;
 
@@ -672,17 +544,12 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
   /*
     Input data
   */
-  GetProperties(el) ;
-
-  
-  ci.Set(el,t,0,u,vi,u,vi) ;
+  GetProperties(el,t) ;
 
   {
     /* Interpolation functions at s */
     double* a = Element_ComputeCoordinateInReferenceFrame(el,s) ;
     int p = IntFct_ComputeFunctionIndexAtPointOfReferenceFrame(intfct,a) ;
-    /* Variables */
-    //Values_d& val = *ci.IntegrateValues(p) ;
     /* Pressure */
     double p_l = Element_ComputeUnknown(el,u,intfct,p,U_P_L) ;
     /* Displacement */
@@ -695,28 +562,29 @@ int  ComputeOutputs(Element_t* el,double t,double* s,Result_t* r)
     double hardv = 0 ;
     double crit = 0 ;
     double k_h = 0 ;
+    CustomValues_t<double,ImplicitValues_t>* val1 = (CustomValues_t<double,ImplicitValues_t>*) vi ;
+    CustomValues_t<double,ExplicitValues_t>* val2 = (CustomValues_t<double,ExplicitValues_t>*) ve ;
     int i;
     
     /* Averaging */
     for(i = 0 ; i < np ; i++) {
-      Values_d& val1 = *ci.ExtractValues(i);
-      double p_l1 = val1.Pressure ;
+      double p_l1 = val1[i].Pressure ;
       
-      for(int j = 0 ; j < 3 ; j++) w_l[j]  += val1.MassFlow_liquid[j]/np ;
-      for(int j = 0 ; j < 9 ; j++) sig[j]  += val1.Stress[j]/np ;
-      for(int j = 0 ; j < 9 ; j++) effsig[j] += val1.Stress[j]/np ;
+      for(int j = 0 ; j < 3 ; j++) w_l[j]  += val1[i].MassFlow_liquid[j]/np ;
+      for(int j = 0 ; j < 9 ; j++) sig[j]  += val1[i].Stress[j]/np ;
+      for(int j = 0 ; j < 9 ; j++) effsig[j] += val1[i].Stress[j]/np ;
       
       effsig[0] += beta * p_l1 / np ;
       effsig[4] += beta * p_l1 / np ;
       effsig[8] += beta * p_l1 / np ;
       
-      for(int j = 0 ; j < 9 ; j++) eps_p[j] += val1.PlasticStrain[j]/np ;
+      for(int j = 0 ; j < 9 ; j++) eps_p[j] += val1[i].PlasticStrain[j]/np ;
       
-      hardv += val1.HardeningVariable/np ;
+      hardv += val1[i].HardeningVariable/np ;
       
-      k_h += val1.Permeability_liquid/np ;
+      k_h += val2[i].Permeability_liquid/np ;
       
-      crit += val1.YieldFunctionValue/np ;
+      crit += val1[i].YieldFunctionValue/np ;
     }
       
     i = 0 ;
@@ -833,7 +701,7 @@ int MPM_t::SetTangentMatrix(Element_t* el,double const& t,double const& dt,int c
       {
         double* c1 = c0 + 81 ;
         
-        for(i = 0 ; i < 3 ; i++) B1(i,i) = - b ;
+        for(i = 0 ; i < 3 ; i++) B1(i,i) = - biot ;
       
         if(crit >= 0.) {
           double* dfsds = Plasticity_GetYieldFunctionGradient(plasty) ;
@@ -841,7 +709,7 @@ int MPM_t::SetTangentMatrix(Element_t* el,double const& t,double const& dt,int c
           double trf = dfsds[0] + dfsds[4] + dfsds[8] ;
         
           for(i = 0 ; i < 9 ; i++) {
-            c1[i] -= cg[i]*(beta - b)*trf*roted ;
+            c1[i] -= cg[i]*(beta - biot)*trf*roted ;
           }
         }
       }
@@ -859,7 +727,7 @@ int MPM_t::SetTangentMatrix(Element_t* el,double const& t,double const& dt,int c
         double* c1 = c0 + 81 + 9 ;
         int i ;
         
-        for(i = 0 ; i < 3 ; i++) B1(i,i) = rho_l*b ;
+        for(i = 0 ; i < 3 ; i++) B1(i,i) = rho_l*biot ;
       
         if(crit >= 0.) {
           double* dgsds = Plasticity_GetPotentialFunctionGradient(plasty) ;
@@ -867,7 +735,7 @@ int MPM_t::SetTangentMatrix(Element_t* el,double const& t,double const& dt,int c
           double trg = dgsds[0] + dgsds[4] + dgsds[8] ;
       
           for(i = 0 ; i < 9 ; i++) {
-            c1[i] += rho_l*fc[i]*(beta - b)*trg*roted ;
+            c1[i] += rho_l*fc[i]*(beta - biot)*trg*roted ;
           }
         }
       }
@@ -881,7 +749,7 @@ int MPM_t::SetTangentMatrix(Element_t* el,double const& t,double const& dt,int c
         double tre   = eps[0] + eps[4] + eps[8] ;
         double tre_p = eps_p[0] + eps_p[4] + eps_p[8] ;
         double phi_p = beta*tre_p ;
-        double phi   = phi0 + b*(tre - tre_p) + N*(pl - p_l0) + phi_p ;
+        double phi   = phi0 + biot*(tre - tre_p) + N*(pl - p_l0) + phi_p ;
         
         c1[0] = rho_l*N + rho_l0*phi/k_l ;
       
@@ -891,7 +759,7 @@ int MPM_t::SetTangentMatrix(Element_t* el,double const& t,double const& dt,int c
           double trg = dgsds[0] + dgsds[4] + dgsds[8] ;
           double trf = dfsds[0] + dfsds[4] + dfsds[8] ;
         
-          c1[0] += rho_l*(beta - b)*(beta - b)*trf*trg*roted ;
+          c1[0] += rho_l*(beta - biot)*(beta - biot)*trf*trg*roted ;
         }
       }
     }
@@ -970,9 +838,9 @@ Values_d* MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Values
       }
       #undef C
       
-      sig[0] += - b*dpl ;
-      sig[4] += - b*dpl ;
-      sig[8] += - b*dpl ;
+      sig[0] += - biot*dpl ;
+      sig[4] += - biot*dpl ;
+      sig[8] += - biot*dpl ;
     
       /* Elastic trial effective stresses (with beta coefficient) */
       sig[0] += beta*pl ;
@@ -1008,7 +876,7 @@ Values_d* MPM_t::Integrate(Element_t* el,const double& t,const double& dt,Values
     double tre   = eps[0] + eps[4] + eps[8] ;
     double tre_p = eps_p[0] + eps_p[4] + eps_p[8] ;
     double phi_p = beta*tre_p ;
-    double phi   = phi0 + b*(tre - tre_p) + N*(pl - p_l0) + phi_p ;
+    double phi   = phi0 + biot*(tre - tre_p) + N*(pl - p_l0) + phi_p ;
     
     /* Fluid mass density */
     double rho_l = rho_l0*(1. + (pl - p_l0)/k_l) ;

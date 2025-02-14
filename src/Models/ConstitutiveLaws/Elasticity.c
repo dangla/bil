@@ -686,7 +686,7 @@ double* (Elasticity_InvertStiffnessMatrix)(double* c)
 
 
 #if 0
-double* (Elasticit_IsotropicStiffnessTensor)(const double k, const double g,double* c)
+double* (Elasticity_IsotropicStiffnessTensor)(const double k, const double g,double* c)
 /** Compute the 4th rank isotropic elastic tensor from k and g.
  *  Return c  */
 {
